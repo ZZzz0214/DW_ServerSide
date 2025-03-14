@@ -53,6 +53,7 @@ public class ErpProductController {
         return success(true);
     }
 
+
     @DeleteMapping("/delete")
     @Operation(summary = "删除产品")
     @Parameter(name = "id", description = "编号", required = true)
