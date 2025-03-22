@@ -53,7 +53,6 @@ public class ErpProductController {
         return success(true);
     }
 
-
     @DeleteMapping("/delete")
     @Operation(summary = "删除产品")
     @Parameter(name = "id", description = "编号", required = true)
@@ -90,9 +89,7 @@ public class ErpProductController {
                 .setCategoryId(product.getCategoryId())
                 .setUnitId(product.getUnitId())
                 .setUnitName(product.getUnitName())
-                .setPurchasePrice(product.getPurchasePrice())
-                .setSalePrice(product.getSalePrice())
-                .setMinPrice(product.getMinPrice())));
+                .setPurchasePrice(product.getPurchasePrice())));
     }
 
     @GetMapping("/export-excel")
