@@ -36,11 +36,6 @@ public class ErpProductDO extends BaseDO {
     private String name;
 
     /**
-     * 产品条码
-     */
-    private String barCode;
-
-    /**
      * 产品图片
      */
     private String image;
@@ -51,44 +46,15 @@ public class ErpProductDO extends BaseDO {
     private String productShortName;
 
     /**
-     * 进货编码
+     * 发货编码
      */
-    private String purchaseCode;
-
-    /**
-     * 商品备案
-     */
-    private String productRecord;
-
-    /**
-     * 产品分类编号
-     */
-    private Long categoryId;
+    private String shippingCode;
 
     /**
      * 单位编号
      */
     private Long unitId;
 
-    /**
-     * 品牌
-     */
-    private String brand;
-
-    /**
-     * 产品状态
-     */
-    private Integer status;
-
-    /**
-     * 产品备注
-     */
-    private String remark;
-
-    /**
-     * 产品卖点
-     */
-    private String productSellingPoints;
 
     /**
      * 产品规格
@@ -96,24 +62,59 @@ public class ErpProductDO extends BaseDO {
     private String standard;
 
     /**
-     * 产品长宽高
+     * 产品重量（单位：kg）
      */
-    private String productDimensions;
+    private BigDecimal weight;
 
     /**
-     * 箱规
+     * 产品日期
      */
-    private String cartonSpecifications;
+    private LocalDateTime productionDate;
 
     /**
-     * 箱规长宽高
+     * 保质期天数
      */
-    private String cartonDimensions;
+    private Integer expiryDay;
 
     /**
-     * 箱规重量
+     * 品牌名称
      */
-    private Double cartonWeight;
+    private String brand;
+
+    /**
+     * 产品品类编号
+     */
+    private Long categoryId;
+
+    /**
+     * 产品状态
+     */
+    private Integer status;
+
+    /**
+     * 产品卖点
+     */
+    private String productSellingPoints;
+
+    /**
+     * 条形编号
+     */
+    private String barCode;
+
+    /**
+     * 备案编号
+     */
+    private String productRecord;
+
+    /**
+     * 执行编号
+     */
+    private String executionCode;
+
+    /**
+     * 商标编号
+     */
+    private String trademarkCode;
 
     /**
      * 现货数量
@@ -131,6 +132,26 @@ public class ErpProductDO extends BaseDO {
     private LocalDateTime orderReplenishmentLeadTime;
 
     /**
+     * 产品长宽高
+     */
+    private String productDimensions;
+
+    /**
+     * 产品箱规
+     */
+    private String cartonSpecifications;
+
+    /**
+     * 箱长宽高
+     */
+    private String cartonDimensions;
+
+    /**
+     * 箱规重量
+     */
+    private Double cartonWeight;
+
+    /**
      * 发货地址
      */
     private String shippingAddress;
@@ -141,17 +162,17 @@ public class ErpProductDO extends BaseDO {
     private String returnAddress;
 
     /**
-     * 物流公司
+     * 快递公司
      */
     private String logisticsCompany;
 
     /**
-     * 不发货地
+     * 不发货区
      */
     private String nonshippingArea;
 
     /**
-     * 加邮区域
+     * 加邮地区
      */
     private String addonShippingArea;
 
@@ -191,72 +212,47 @@ public class ErpProductDO extends BaseDO {
     private BigDecimal groupBuyEventMinimunPrice;
 
     /**
-     * 供应商
+     * 采购人员
+     */
+    private String purchaser;
+
+    /**
+     * 供应商名
      */
     private String supplier;
 
     /**
-     * 代发单价
+     * 采购单价（单位：元）
      */
-    private BigDecimal dropshippingUnitPrice;
+    private BigDecimal purchasePrice;
 
     /**
-     * 批发单价
+     * 批发单价（单位：元）
      */
-    private BigDecimal wholesaleUnitPrice;
+    private BigDecimal wholesalePrice;
 
     /**
-     * 基础运费
+     * 备注信息
      */
-    private BigDecimal baseShippingFee;
+    private String remark;
 
     /**
-     * 采购详情
+     * 对外最低采购单价（单位：元）
      */
-    private String purchaseDetails;
+    private BigDecimal minPurchasePrice;
 
     /**
-     * 采购备注
+     * 对外最低批发单价（单位：元）
      */
-    private String purchaseNote;
+    private BigDecimal minWholesalePrice;
 
     /**
-     * 销售详情
+     * 运费类型（0：固定运费，1：按件计费，2：按重计费）
      */
-    private String salesDetails;
+    private Integer shippingFeeType;
 
     /**
-     * 销售备注
-     */
-    private String salesNote;
-
-    /**
-     * 一级代发单价
-     */
-    private BigDecimal levelOneDropshippingPrice;
-
-    /**
-     * 二级代发单价
-     */
-    private BigDecimal levelTwoDropshippingPrice;
-
-    /**
-     * 一级批发单价
-     */
-    private BigDecimal levelOneWholesalePrice;
-
-    /**
-     * 二级批发单价
-     */
-    private BigDecimal levelTwoWholesalePrice;
-
-    /**
-     * 代发运费类型
-     */
-    private Boolean dropshippingShippingFeeType;
-
-    /**
-     * 固定运费
+     * 固定运费（单位：元）
      */
     private BigDecimal fixedShippingFee;
 
@@ -266,68 +262,37 @@ public class ErpProductDO extends BaseDO {
     private Integer firstItemQuantity;
 
     /**
-     * 首件价格
+     * 首件价格（单位：元）
      */
     private BigDecimal firstItemPrice;
 
     /**
      * 续件数量
      */
-    private Integer additonalItemQuantity;
+    private Integer additionalItemQuantity;
 
     /**
-     * 续件价格
+     * 续件价格（单位：元）
      */
-    private BigDecimal additonalItemPrice;
+    private BigDecimal additionalItemPrice;
 
     /**
-     * 首重重量
+     * 首重重量（单位：kg）
      */
     private BigDecimal firstWeight;
 
     /**
-     * 首重价格
+     * 首重价格（单位：元）
      */
     private BigDecimal firstWeightPrice;
 
     /**
-     * 首批生产日期
-     */
-    private LocalDateTime firstBatchProductionDate;
-
-    /**
-     * 续重重量
+     * 续重重量（单位：kg）
      */
     private BigDecimal additionalWeight;
 
     /**
-     * 续重价格
+     * 续重价格（单位：元）
      */
     private BigDecimal additionalWeightPrice;
-
-    /**
-     * 保质期天数
-     */
-    private Integer expiryDay;
-
-    /**
-     * 基础重量（kg）
-     */
-    private BigDecimal weight;
-
-    /**
-     * 采购价格，单位：元
-     */
-    private BigDecimal purchasePrice;
-
-    /**
-     * 销售价格，单位：元
-     */
-    private BigDecimal salePrice;
-
-    /**
-     * 最低价格，单位：元
-     */
-    private BigDecimal minPrice;
-
 }

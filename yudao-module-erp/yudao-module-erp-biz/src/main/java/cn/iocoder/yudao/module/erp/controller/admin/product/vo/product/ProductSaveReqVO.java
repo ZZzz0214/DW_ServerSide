@@ -29,11 +29,17 @@ public class ProductSaveReqVO {
     @Schema(description = "产品简称")
     private String productShortName;
 
-    @Schema(description = "进货编码")
-    private String purchaseCode;
+    @Schema(description = "发货编码")
+    private String shippingCode;
 
-    @Schema(description = "商品备案")
+    @Schema(description = "备案编号")
     private String productRecord;
+
+    @Schema(description = "执行编号")
+    private String executionCode;
+
+    @Schema(description = "商标编号")
+    private String trademarkCode;
 
     @Schema(description = "产品分类编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "11161")
     @NotNull(message = "产品分类编号不能为空")
@@ -58,6 +64,9 @@ public class ProductSaveReqVO {
 
     @Schema(description = "产品规格")
     private String standard;
+
+    @Schema(description = "产品重量（kg）")
+    private BigDecimal weight;
 
     @Schema(description = "产品长宽高")
     private String productDimensions;
@@ -153,7 +162,7 @@ public class ProductSaveReqVO {
     private BigDecimal levelTwoWholesalePrice;
 
     @Schema(description = "代发运费类型")
-    private Boolean dropshippingShippingFeeType;
+    private Integer shippingFeeType;
 
     @Schema(description = "固定运费")
     private BigDecimal fixedShippingFee;
@@ -165,10 +174,10 @@ public class ProductSaveReqVO {
     private BigDecimal firstItemPrice;
 
     @Schema(description = "续件数量")
-    private Integer additonalItemQuantity;
+    private Integer additionalItemQuantity;
 
     @Schema(description = "续件价格")
-    private BigDecimal additonalItemPrice;
+    private BigDecimal additionalItemPrice;
 
     @Schema(description = "首重重量")
     private BigDecimal firstWeight;
@@ -177,7 +186,7 @@ public class ProductSaveReqVO {
     private BigDecimal firstWeightPrice;
 
     @Schema(description = "首批生产日期")
-    private LocalDateTime firstBatchProductionDate;
+    private LocalDateTime productionDate;
 
     @Schema(description = "续重重量")
     private BigDecimal additionalWeight;
@@ -188,15 +197,12 @@ public class ProductSaveReqVO {
     @Schema(description = "保质期天数", example = "10")
     private Integer expiryDay;
 
-    @Schema(description = "基础重量（kg）", example = "1.00")
-    private BigDecimal weight;
-
     @Schema(description = "采购价格，单位：元", example = "10.30")
     private BigDecimal purchasePrice;
 
-    @Schema(description = "销售价格，单位：元", example = "74.32")
-    private BigDecimal salePrice;
-
-    @Schema(description = "最低价格，单位：元", example = "161.87")
-    private BigDecimal minPrice;
+//    @Schema(description = "销售价格，单位：元", example = "74.32")
+//    private BigDecimal salePrice;
+//
+//    @Schema(description = "最低价格，单位：元", example = "161.87")
+//    private BigDecimal minPrice;
 }
