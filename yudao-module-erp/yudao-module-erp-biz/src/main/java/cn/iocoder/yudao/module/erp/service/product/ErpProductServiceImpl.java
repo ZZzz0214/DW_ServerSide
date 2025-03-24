@@ -49,6 +49,7 @@ public class ErpProductServiceImpl implements ErpProductService {
         // TODO 芋艿：校验分类
         // 插入
         ErpProductDO product = BeanUtils.toBean(createReqVO, ErpProductDO.class);
+        System.out.println(product);
         productMapper.insert(product);
         // 返回
         return product.getId();

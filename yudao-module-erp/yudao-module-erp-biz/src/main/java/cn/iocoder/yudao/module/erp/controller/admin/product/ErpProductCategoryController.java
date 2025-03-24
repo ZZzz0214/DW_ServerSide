@@ -82,7 +82,7 @@ public class ErpProductCategoryController {
         // 这里可以添加获取关联信息的逻辑，如果有的话
         return success(BeanUtils.toBean(category, ErpProductCategoryRespVO.class));
     }
-    
+
     @GetMapping("/list")
     @Operation(summary = "获得产品分类列表")
     @PreAuthorize("@ss.hasPermission('erp:product-category:query')")
@@ -94,6 +94,7 @@ public class ErpProductCategoryController {
     @GetMapping("/simple-list")
     @Operation(summary = "获得产品分类精简列表", description = "只包含被开启的分类，主要用于前端的下拉选项")
     public CommonResult<List<ErpProductCategoryRespVO>> getProductCategorySimpleList() {
+        System.out.println("调用了产品分类");
         List<ErpProductCategoryDO> list = productCategoryService.getProductCategoryList(
                 new ErpProductCategoryListReqVO().setStatus(CommonStatusEnum.ENABLE.getStatus()));
         return success(convertList(list, category -> new ErpProductCategoryRespVO()

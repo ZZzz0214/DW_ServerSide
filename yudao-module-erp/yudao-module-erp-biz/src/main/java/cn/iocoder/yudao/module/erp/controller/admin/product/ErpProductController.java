@@ -42,6 +42,7 @@ public class ErpProductController {
     @Operation(summary = "创建产品")
     @PreAuthorize("@ss.hasPermission('erp:product:create')")
     public CommonResult<Long> createProduct(@Valid @RequestBody ProductSaveReqVO createReqVO) {
+        System.out.println("Vo: "+createReqVO);
         return success(productService.createProduct(createReqVO));
     }
 
@@ -75,6 +76,7 @@ public class ErpProductController {
     @Operation(summary = "获得产品分页")
     @PreAuthorize("@ss.hasPermission('erp:product:query')")
     public CommonResult<PageResult<ErpProductRespVO>> getProductPage(@Valid ErpProductPageReqVO pageReqVO) {
+        System.out.println("调用产品分类");
         return success(productService.getProductVOPage(pageReqVO));
     }
 
