@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -103,9 +104,17 @@ public class ErpProductUnitServiceImpl implements ErpProductUnitService {
         return productUnitMapper.selectListByStatus(status);
     }
 
-    @Override
-    public List<ErpProductUnitDO> getProductUnitList(Collection<Long> ids) {
-         return productUnitMapper.selectBatchIds(ids);
+//    @Override
+//    public List<ErpProductUnitDO> getProductUnitList(Collection<Long> ids) {
+//         return productUnitMapper.selectBatchIds(ids);
+//    }
+@Override
+public List<ErpProductUnitDO> getProductUnitList(Collection<Long> ids) {
+    // 添加空值检查
+    if (ids == null || ids.isEmpty()) {
+        return Collections.emptyList(); // 返回空列表，避免执行 SQL 查询
     }
+    return productUnitMapper.selectBatchIds(ids);
+}
 
 }

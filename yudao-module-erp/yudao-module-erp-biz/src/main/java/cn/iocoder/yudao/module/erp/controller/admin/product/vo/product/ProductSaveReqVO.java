@@ -19,10 +19,6 @@ public class ProductSaveReqVO {
     @NotEmpty(message = "产品名称不能为空")
     private String name;
 
-    @Schema(description = "产品条码", requiredMode = Schema.RequiredMode.REQUIRED, example = "X110")
-    @NotEmpty(message = "产品条码不能为空")
-    private String barCode;
-
     @Schema(description = "产品图片")
     private String image;
 
@@ -31,6 +27,39 @@ public class ProductSaveReqVO {
 
     @Schema(description = "发货编码")
     private String shippingCode;
+
+    @Schema(description = "单位编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "8869")
+    private Long unitId;
+
+    @Schema(description = "产品规格")
+    private String standard;
+
+    @Schema(description = "产品重量（单位：kg）")
+    private BigDecimal weight;
+
+    @Schema(description = "产品日期")
+    private LocalDateTime productionDate;
+
+    @Schema(description = "保质期天数")
+    private Integer expiryDay;
+
+    @Schema(description = "品牌名称")
+    private String brand;
+
+    @Schema(description = "产品品类编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "11161")
+    @NotNull(message = "产品品类编号不能为空")
+    private Long categoryId;
+
+    @Schema(description = "产品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
+    @NotNull(message = "产品状态不能为空")
+    private Integer status;
+
+    @Schema(description = "产品卖点")
+    private String productSellingPoints;
+
+    @Schema(description = "条形编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "X110")
+    @NotEmpty(message = "条形编号不能为空")
+    private String barCode;
 
     @Schema(description = "备案编号")
     private String productRecord;
@@ -41,45 +70,6 @@ public class ProductSaveReqVO {
     @Schema(description = "商标编号")
     private String trademarkCode;
 
-    @Schema(description = "产品分类编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "11161")
-    @NotNull(message = "产品分类编号不能为空")
-    private Long categoryId;
-
-    @Schema(description = "单位编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "8869")
-    @NotNull(message = "单位编号不能为空")
-    private Long unitId;
-
-    @Schema(description = "品牌")
-    private String brand;
-
-    @Schema(description = "产品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
-    @NotNull(message = "产品状态不能为空")
-    private Integer status;
-
-    @Schema(description = "产品备注")
-    private String remark;
-
-    @Schema(description = "产品卖点")
-    private String productSellingPoints;
-
-    @Schema(description = "产品规格")
-    private String standard;
-
-    @Schema(description = "产品重量（kg）")
-    private BigDecimal weight;
-
-    @Schema(description = "产品长宽高")
-    private String productDimensions;
-
-    @Schema(description = "箱规")
-    private String cartonSpecifications;
-
-    @Schema(description = "箱规长宽高")
-    private String cartonDimensions;
-
-    @Schema(description = "箱规重量")
-    private Double cartonWeight;
-
     @Schema(description = "现货数量")
     private Integer availableStockQuantity;
 
@@ -89,19 +79,31 @@ public class ProductSaveReqVO {
     @Schema(description = "返单时效")
     private LocalDateTime orderReplenishmentLeadTime;
 
+    @Schema(description = "产品长宽高")
+    private String productDimensions;
+
+    @Schema(description = "产品箱规")
+    private String cartonSpecifications;
+
+    @Schema(description = "箱长宽高")
+    private String cartonDimensions;
+
+    @Schema(description = "箱规重量")
+    private Double cartonWeight;
+
     @Schema(description = "发货地址")
     private String shippingAddress;
 
     @Schema(description = "退货地址")
     private String returnAddress;
 
-    @Schema(description = "物流公司")
+    @Schema(description = "快递公司")
     private String logisticsCompany;
 
-    @Schema(description = "不发货地")
+    @Schema(description = "不发货区")
     private String nonshippingArea;
 
-    @Schema(description = "加邮区域")
+    @Schema(description = "加邮地区")
     private String addonShippingArea;
 
     @Schema(description = "售后标准")
@@ -125,84 +127,54 @@ public class ProductSaveReqVO {
     @Schema(description = "团购活动最低价")
     private BigDecimal groupBuyEventMinimunPrice;
 
-    @Schema(description = "供应商")
+    @Schema(description = "采购人员")
+    private String purchaser;
+
+    @Schema(description = "供应商名")
     private String supplier;
 
-    @Schema(description = "代发单价")
-    private BigDecimal dropshippingUnitPrice;
+    @Schema(description = "采购单价（单位：元）")
+    private BigDecimal purchasePrice;
 
-    @Schema(description = "批发单价")
-    private BigDecimal wholesaleUnitPrice;
+    @Schema(description = "批发单价（单位：元）")
+    private BigDecimal wholesalePrice;
 
-    @Schema(description = "基础运费")
-    private BigDecimal baseShippingFee;
+    @Schema(description = "备注信息")
+    private String remark;
 
-    @Schema(description = "采购详情")
-    private String purchaseDetails;
+    @Schema(description = "对外最低采购单价（单位：元）")
+    private BigDecimal minPurchasePrice;
 
-    @Schema(description = "采购备注")
-    private String purchaseNote;
+    @Schema(description = "对外最低批发单价（单位：元）")
+    private BigDecimal minWholesalePrice;
 
-    @Schema(description = "销售详情")
-    private String salesDetails;
-
-    @Schema(description = "销售备注")
-    private String salesNote;
-
-    @Schema(description = "一级代发单价")
-    private BigDecimal levelOneDropshippingPrice;
-
-    @Schema(description = "二级代发单价")
-    private BigDecimal levelTwoDropshippingPrice;
-
-    @Schema(description = "一级批发单价")
-    private BigDecimal levelOneWholesalePrice;
-
-    @Schema(description = "二级批发单价")
-    private BigDecimal levelTwoWholesalePrice;
-
-    @Schema(description = "代发运费类型")
+    @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
     private Integer shippingFeeType;
 
-    @Schema(description = "固定运费")
+    @Schema(description = "固定运费（单位：元）")
     private BigDecimal fixedShippingFee;
 
     @Schema(description = "首件数量")
     private Integer firstItemQuantity;
 
-    @Schema(description = "首件价格")
+    @Schema(description = "首件价格（单位：元）")
     private BigDecimal firstItemPrice;
 
     @Schema(description = "续件数量")
     private Integer additionalItemQuantity;
 
-    @Schema(description = "续件价格")
+    @Schema(description = "续件价格（单位：元）")
     private BigDecimal additionalItemPrice;
 
-    @Schema(description = "首重重量")
+    @Schema(description = "首重重量（单位：kg）")
     private BigDecimal firstWeight;
 
-    @Schema(description = "首重价格")
+    @Schema(description = "首重价格（单位：元）")
     private BigDecimal firstWeightPrice;
 
-    @Schema(description = "首批生产日期")
-    private LocalDateTime productionDate;
-
-    @Schema(description = "续重重量")
+    @Schema(description = "续重重量（单位：kg）")
     private BigDecimal additionalWeight;
 
-    @Schema(description = "续重价格")
+    @Schema(description = "续重价格（单位：元）")
     private BigDecimal additionalWeightPrice;
-
-    @Schema(description = "保质期天数", example = "10")
-    private Integer expiryDay;
-
-    @Schema(description = "采购价格，单位：元", example = "10.30")
-    private BigDecimal purchasePrice;
-
-//    @Schema(description = "销售价格，单位：元", example = "74.32")
-//    private BigDecimal salePrice;
-//
-//    @Schema(description = "最低价格，单位：元", example = "161.87")
-//    private BigDecimal minPrice;
 }
