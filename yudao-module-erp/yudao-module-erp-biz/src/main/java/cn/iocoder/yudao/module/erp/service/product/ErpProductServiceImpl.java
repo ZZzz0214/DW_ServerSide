@@ -3,15 +3,18 @@ package cn.iocoder.yudao.module.erp.service.product;
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.framework.common.util.collection.MapUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ProductSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductUnitDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -150,4 +153,27 @@ public class ErpProductServiceImpl implements ErpProductService {
         return productMapper.selectCountByUnitId(unitId);
     }
 
+    @Override
+    public List<ErpProductRespVO> searchProducts(ErpProductSearchReqVO searchReqVO) {
+        // 构造查询条件
+        ErpProductDO productDO = new ErpProductDO();
+        if (searchReqVO.getId() != null) {
+            productDO.setId(searchReqVO.getId());
+        }
+        if (searchReqVO.getName() != null) {
+            productDO.setName(searchReqVO.getName());
+        }
+        if (searchReqVO.getCreateTime() != null) {
+            productDO.setCreateTime(searchReqVO.getCreateTime());
+        }
+
+        // 执行查询
+        List<ErpProductDO> productDOList = productMapper.selectList(new LambdaQueryWrapper<ErpProductDO>()
+                .eq(productDO.getId() != null, ErpProductDO::getId, productDO.getId())
+                .like(productDO.getName() != null, ErpProductDO::getName, productDO.getName())
+                .eq(productDO.getCreateTime() != null, ErpProductDO::getCreateTime, productDO.getCreateTime()));
+
+        // 转换为响应对象
+        return CollectionUtils.convertList(productDOList, product -> BeanUtils.toBean(product, ErpProductRespVO.class));
+    }
 }

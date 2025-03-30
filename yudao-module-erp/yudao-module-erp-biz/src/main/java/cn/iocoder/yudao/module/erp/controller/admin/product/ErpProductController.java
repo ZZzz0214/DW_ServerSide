@@ -10,6 +10,7 @@ import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ProductSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -105,6 +106,14 @@ public class ErpProductController {
         // 导出 Excel
         ExcelUtils.write(response, "产品.xls", "数据", ErpProductRespVO.class,
                 pageResult.getList());
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "搜索产品")
+    @PreAuthorize("@ss.hasPermission('erp:product:query')")
+    public CommonResult<List<ErpProductRespVO>> searchProducts(@Valid ErpProductSearchReqVO searchReqVO) {
+        List<ErpProductRespVO> products = productService.searchProducts(searchReqVO);
+        return success(products);
     }
 
 }
