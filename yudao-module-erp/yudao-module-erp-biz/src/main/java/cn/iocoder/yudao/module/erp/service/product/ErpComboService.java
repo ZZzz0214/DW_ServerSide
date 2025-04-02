@@ -99,4 +99,12 @@ public interface ErpComboService {
      * @param comboProduct 组品信息
      */
     void createComboWithItems(ErpComboProductCreateReqVO comboProduct);
+
+    /**
+     * 通过组品 ID 查询组品及其关联的单品数据
+     *
+     * @param id 组品 ID
+     * @return 包含组品和单品数据的响应对象
+     */
+    ErpComboRespVO getComboWithItems(Long id);
 }
