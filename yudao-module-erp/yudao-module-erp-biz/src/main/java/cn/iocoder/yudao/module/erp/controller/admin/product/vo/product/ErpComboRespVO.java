@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "管理后台 - ERP 组合产品 Response VO")
 @Data
@@ -124,4 +125,7 @@ public class ErpComboRespVO {
     @Schema(description = "产品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
     @ExcelProperty("产品状态")
     private Integer status;
+
+    @Schema(description = "单品列表")
+    private List<ErpProductRespVO> items;
 }

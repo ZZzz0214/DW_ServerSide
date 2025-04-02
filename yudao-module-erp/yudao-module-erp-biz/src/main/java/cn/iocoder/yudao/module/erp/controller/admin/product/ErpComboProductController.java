@@ -72,8 +72,9 @@ public class ErpComboProductController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:combo-product:query')")
     public CommonResult<ErpComboRespVO> getComboProduct(@RequestParam("id") Long id) {
-        ErpComboProductDO comboProduct = comboProductService.getCombo(id);
-        return success(BeanUtils.toBean(comboProduct, ErpComboRespVO.class));
+        ErpComboRespVO comboProduct = comboProductService.getComboWithItems(id);
+        System.out.println(comboProduct);
+        return CommonResult.success(comboProduct);
     }
 
     @GetMapping("/page")
