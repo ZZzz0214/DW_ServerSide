@@ -29,7 +29,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.COMBO_NOT_EXI
 
 @Service
 @Validated
-public class ErpComboProductServiceImpl implements ErpComboService {
+public class ErpComboProductServiceImpl implements ErpComboProductService {
 
     @Resource
     private ErpComboMapper erpComboMapper;

@@ -19,7 +19,7 @@ import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.
  *
  * @author 芋道源码
  */
-public interface ErpComboService {
+public interface ErpComboProductService {
 
     /**
      * 创建组合产品

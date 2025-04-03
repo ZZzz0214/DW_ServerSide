@@ -5,13 +5,11 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
-import cn.iocoder.yudao.module.erp.service.product.ErpComboService;
+import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,7 +34,7 @@ import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.
 public class ErpComboProductController {
 
     @Resource
-    private ErpComboService comboProductService;
+    private ErpComboProductService comboProductService;
 
 //    @PostMapping("/create")
 //    @Operation(summary = "创建组合产品")
