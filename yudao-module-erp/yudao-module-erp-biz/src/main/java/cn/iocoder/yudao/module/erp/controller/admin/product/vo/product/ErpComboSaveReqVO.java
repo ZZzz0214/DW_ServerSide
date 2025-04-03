@@ -84,22 +84,25 @@ public class ErpComboSaveReqVO {
     @NotNull(message = "产品状态不能为空")
     private Integer status;
 
+//    @Schema(description = "关联的单品列表", requiredMode = Schema.RequiredMode.REQUIRED)
+//    @NotEmpty(message = "至少需要关联一个单品")
+//    private List<ComboItem> items;
+//
+//    @Data
+//    public static class ComboItem {
+//        @Schema(description = "单品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+//        @NotNull(message = "单品编号不能为空")
+//        private Long productId;
+//
+//        @Schema(description = "单品数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
+//        @NotNull(message = "单品数量不能为空")
+//        private Integer quantity;
+//
+//        // 确保包含 itemQuantity 字段
+//        private Integer itemQuantity;
+//    }
+
     @Schema(description = "关联的单品列表", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotEmpty(message = "至少需要关联一个单品")
-    private List<ComboItem> items;
-
-    @Data
-    public static class ComboItem {
-        @Schema(description = "单品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-        @NotNull(message = "单品编号不能为空")
-        private Long productId;
-
-        @Schema(description = "单品数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
-        @NotNull(message = "单品数量不能为空")
-        private Integer quantity;
-
-        // 确保包含 itemQuantity 字段
-        private Integer itemQuantity;
-    }
+    private List<ErpProductRespVO> items;
 
 }

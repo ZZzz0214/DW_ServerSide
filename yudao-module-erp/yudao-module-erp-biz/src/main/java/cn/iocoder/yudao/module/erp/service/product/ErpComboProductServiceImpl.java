@@ -47,16 +47,24 @@ public class ErpComboProductServiceImpl implements ErpComboService {
         erpComboMapper.insert(comboProductDO);
 
         // 如果有单品关联信息，保存关联关系
+//        if (createReqVO.getItems() != null) {
+//            for (ErpComboSaveReqVO.ComboItem item : createReqVO.getItems()) {
+//                ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
+//                itemDO.setComboProductId(comboProductDO.getId());
+//                itemDO.setItemProductId(item.getProductId());
+//                itemDO.setItemQuantity(item.getItemQuantity());
+//                erpComboProductItemMapper.insert(itemDO);
+//            }
+//        }
         if (createReqVO.getItems() != null) {
-            for (ErpComboSaveReqVO.ComboItem item : createReqVO.getItems()) {
+            for (ErpProductRespVO item : createReqVO.getItems()) {
                 ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
                 itemDO.setComboProductId(comboProductDO.getId());
-                itemDO.setItemProductId(item.getProductId());
-                itemDO.setItemQuantity(item.getItemQuantity());
+                itemDO.setItemProductId(item.getId()); // 假设 ErpProductRespVO 中有 id 字段
+                itemDO.setItemQuantity(1); // 假设数量默认为 1，或者从其他字段获取
                 erpComboProductItemMapper.insert(itemDO);
             }
         }
-
         return comboProductDO.getId();
     }
 
@@ -71,12 +79,21 @@ public class ErpComboProductServiceImpl implements ErpComboService {
             // 删除旧的关联
             erpComboProductItemMapper.deleteByComboProductId(updateReqVO.getId());
 
+//            // 插入新的关联
+//            for (ErpComboSaveReqVO.ComboItem item : updateReqVO.getItems()) {
+//                ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
+//                itemDO.setComboProductId(updateReqVO.getId());
+//                itemDO.setItemProductId(item.getProductId());
+//                itemDO.setItemQuantity(item.getQuantity());
+//                erpComboProductItemMapper.insert(itemDO);
+//            }
+//        }
             // 插入新的关联
-            for (ErpComboSaveReqVO.ComboItem item : updateReqVO.getItems()) {
+            for (ErpProductRespVO item : updateReqVO.getItems()) {
                 ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
                 itemDO.setComboProductId(updateReqVO.getId());
-                itemDO.setItemProductId(item.getProductId());
-                itemDO.setItemQuantity(item.getQuantity());
+                itemDO.setItemProductId(item.getId()); // 假设 ErpProductRespVO 中有 id 字段
+                itemDO.setItemQuantity(1); // 假设数量默认为 1，或者从其他字段获取
                 erpComboProductItemMapper.insert(itemDO);
             }
         }
