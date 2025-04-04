@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.erp.dal.dataobject.purchase;
 
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpAccountDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -56,7 +55,26 @@ public class ErpPurchaseOrderDO extends BaseDO {
      * 下单时间
      */
     private LocalDateTime orderTime;
-
+    /**
+     * 物流公司
+     */
+    private String logisticsCompany;
+    /**
+     * 物流单号
+     */
+    private String trackingNumber;
+    /**
+     * 收件姓名
+     */
+    private String receiverName;
+    /**
+     * 联系电话
+     */
+    private String receiverPhone;
+    /**
+     * 详细地址
+     */
+    private String receiverAddress;
     /**
      * 合计数量
      */
@@ -67,7 +85,6 @@ public class ErpPurchaseOrderDO extends BaseDO {
      * totalPrice = totalProductPrice + totalTaxPrice - discountPrice
      */
     private BigDecimal totalPrice;
-
     /**
      * 合计产品价格，单位：元
      */
@@ -90,26 +107,57 @@ public class ErpPurchaseOrderDO extends BaseDO {
      * 定金金额，单位：元
      */
     private BigDecimal depositPrice;
-
+    /**
+     * 采购运费（合计）
+     */
+    private BigDecimal shippingFee;
+    /**
+     * 其他费用（合计）
+     */
+    private BigDecimal otherFees;
+    /**
+     * 采购总额（合计）
+     */
+    private BigDecimal totalPurchaseAmount;
     /**
      * 附件地址
      */
     private String fileUrl;
     /**
-     * 备注
+     * 备注信息
      */
     private String remark;
-
-    // ========== 采购入库 ==========
     /**
      * 采购入库数量
      */
     private BigDecimal inCount;
-
-    // ========== 采购退货（出库）） ==========
     /**
      * 采购退货数量
      */
     private BigDecimal returnCount;
+    /**
+     * 创建者
+     */
+    private String creator;
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+    /**
+     * 更新者
+     */
+    private String updater;
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+    /**
+     * 是否删除
+     */
+    private Boolean deleted;
+    /**
+     * 租户编号
+     */
+    private Long tenantId;
 
 }

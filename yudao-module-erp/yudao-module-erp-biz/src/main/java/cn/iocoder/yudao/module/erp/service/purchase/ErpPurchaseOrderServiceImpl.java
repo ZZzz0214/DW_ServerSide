@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.util.number.MoneyUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderItemDO;
@@ -15,6 +16,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseOrderMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
+import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +58,8 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     private ErpSupplierService supplierService;
     @Resource
     private ErpAccountService accountService;
+    @Resource
+    private ErpComboProductService comboProductService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -151,21 +155,61 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     }
 
     private List<ErpPurchaseOrderItemDO> validatePurchaseOrderItems(List<ErpPurchaseOrderSaveReqVO.Item> list) {
+//        // 1. 校验产品存在
+//        List<ErpProductDO> productList = productService.validProductList(
+//                convertSet(list, ErpPurchaseOrderSaveReqVO.Item::getProductId));
+//        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
+
         // 1. 校验产品存在
         List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpPurchaseOrderSaveReqVO.Item::getProductId));
+                convertSet(list, item -> item.getType() == 0 ? item.getProductId() : null));
         Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
-        // 2. 转化为 ErpPurchaseOrderItemDO 列表
-        return convertList(list, o -> BeanUtils.toBean(o, ErpPurchaseOrderItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
-            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
-            if (item.getTotalPrice() == null) {
-                return;
+
+        // 2. 校验组合产品存在
+        List<ErpComboProductDO> comboProductList = comboProductService.validComboList(
+                convertSet(list, item -> item.getType() == 1 ? item.getComboProductId() : null));
+        Map<Long, ErpComboProductDO> comboProductMap = convertMap(comboProductList, ErpComboProductDO::getId);
+
+        // 3. 转化为 ErpPurchaseOrderItemDO 列表
+//        return convertList(list, o -> BeanUtils.toBean(o, ErpPurchaseOrderItemDO.class, item -> {
+//            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
+////            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
+//            if (item.getTotalPrice() == null) {
+//                return;
+//            }
+//            if (item.getTaxPercent() != null) {
+//                item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
+//            }
+//        }));
+// 3. 转化为 ErpPurchaseOrderItemDO 列表
+        return convertList(list, o -> {
+            ErpPurchaseOrderItemDO item = BeanUtils.toBean(o, ErpPurchaseOrderItemDO.class);
+            if (item.getType() == 0) { // 单品
+                ErpProductDO product = productMap.get(item.getProductId());
+                if (product == null) {
+                    throw exception(PRODUCT_NOT_EXISTS, item.getProductId());
+                }
+                // 设置单品的 productId
+                item.setProductId(product.getId());
+                item.setComboProductId(null); // 单品时组合产品编号为空
+            } else { // 组合产品
+                ErpComboProductDO comboProduct = comboProductMap.get(item.getComboProductId());
+                if (comboProduct == null) {
+                    throw exception(COMBO_PRODUCT_NOT_EXISTS, item.getComboProductId());
+                }
+                // 设置组合产品的 comboProductId
+                item.setComboProductId(comboProduct.getId());
+                item.setProductId(null); // 组合产品时产品编号为空
             }
-            if (item.getTaxPercent() != null) {
-                item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
-            }
-        }));
+            // 注释掉计算总价和税额的代码
+            // if (item.getTotalPrice() == null) {
+            //     item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
+            // }
+            // if (item.getTaxPercent() != null) {
+            //     item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
+            // }
+            return item;
+        });
     }
 
     private void updatePurchaseOrderItemList(Long id, List<ErpPurchaseOrderItemDO> newList) {
