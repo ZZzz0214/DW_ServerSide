@@ -15,5 +15,8 @@ public interface ErpComboProductItemMapper extends BaseMapper<ErpComboProductIte
                 .eq(ErpComboProductItemDO::getComboProductId, comboProductId));
     }
 
-    void deleteByComboProductId(Long comboProductId);
+    default void deleteByComboProductId(Long comboProductId) {
+        delete(new LambdaQueryWrapperX<ErpComboProductItemDO>()
+                .eq(ErpComboProductItemDO::getComboProductId, comboProductId));
+    }
 }

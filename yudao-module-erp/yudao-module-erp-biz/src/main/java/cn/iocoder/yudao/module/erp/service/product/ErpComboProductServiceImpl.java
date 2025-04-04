@@ -25,11 +25,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.COMBO_NOT_EXISTS;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.COMBO_PRODUCT_NOT_EXISTS;
 
 @Service
 @Validated
-public class ErpComboProductServiceImpl implements ErpComboService {
+public class ErpComboProductServiceImpl implements ErpComboProductService {
 
     @Resource
     private ErpComboMapper erpComboMapper;
@@ -118,7 +119,7 @@ public class ErpComboProductServiceImpl implements ErpComboService {
 
     private void validateComboExists(Long id) {
         if (erpComboMapper.selectById(id) == null) {
-            throw exception(COMBO_NOT_EXISTS);
+            throw exception(COMBO_PRODUCT_NOT_EXISTS);
         }
     }
 

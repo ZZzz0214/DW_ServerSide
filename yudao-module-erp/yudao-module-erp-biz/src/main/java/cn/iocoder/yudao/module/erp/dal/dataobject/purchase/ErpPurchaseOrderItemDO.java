@@ -1,13 +1,13 @@
 package cn.iocoder.yudao.module.erp.dal.dataobject.purchase;
 
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * ERP 采购订单项 DO
@@ -36,30 +36,65 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
      */
     private Long orderId;
     /**
-     * 产品编号
+     * 产品类型：0-单品，1-组合产品
+     */
+    private Integer type;
+    /**
+     * 产品编号（指向单品或组合产品）
      *
      * 关联 {@link ErpProductDO#getId()}
      */
     private Long productId;
     /**
-     * 产品单位单位
-     *
-     * 冗余 {@link ErpProductDO#getUnitId()}
+     * 组品编号
+     */
+    private Long comboProductId;
+    /**
+     * 原表商品名称
+     */
+    private String originalProductName;
+    /**
+     * 原表规格
+     */
+    private String originalStandard;
+    /**
+     * 原表数量
+     */
+    private Integer originalQuantity;
+    /**
+     * 售后状况
+     */
+    private Integer afterSalesStatus;
+    /**
+     * 发货编码
+     */
+    private String shippingCode;
+    /**
+     * 产品数量
+     */
+    private Integer productQuantity;
+    /**
+     * 采购运费
+     */
+    private BigDecimal shippingFee;
+    /**
+     * 其他费用
+     */
+    private BigDecimal otherFees;
+    /**
+     * 采购总额
+     */
+    private BigDecimal totalPurchaseAmount;
+    /**
+     * 产品单位编号
      */
     private Long productUnitId;
-
-    /**
-     * 产品单位单价，单位：元
-     */
-    private BigDecimal productPrice;
     /**
      * 数量
      */
     private BigDecimal count;
     /**
-     * 总价，单位：元
-     *
-     * totalPrice = productPrice * count
+     * 总价
      */
     private BigDecimal totalPrice;
     /**
@@ -68,26 +103,43 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
     private BigDecimal taxPercent;
     /**
      * 税额，单位：元
-     *
-     * taxPrice = totalPrice * taxPercent
      */
     private BigDecimal taxPrice;
-
     /**
-     * 备注
+     * 备注信息
      */
     private String remark;
-
-    // ========== 采购入库 ==========
     /**
      * 采购入库数量
      */
     private BigDecimal inCount;
-
-    // ========== 采购退货（出库）） ==========
     /**
      * 采购退货数量
      */
     private BigDecimal returnCount;
+    /**
+     * 创建者
+     */
+    private String creator;
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+    /**
+     * 更新者
+     */
+    private String updater;
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+    /**
+     * 是否删除
+     */
+    private Boolean deleted;
+    /**
+     * 租户编号
+     */
+    private Long tenantId;
 
 }

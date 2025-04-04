@@ -130,7 +130,10 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     // ========== ERP 产品 1-030-500-000 ==========
     ErrorCode PRODUCT_NOT_EXISTS = new ErrorCode(1_030_500_000, "产品不存在");
     ErrorCode PRODUCT_NOT_ENABLE = new ErrorCode(1_030_500_001, "产品({})未启用");
-    ErrorCode COMBO_NOT_EXISTS = new ErrorCode(1_030_500_002, "组品不存在");
+    ErrorCode COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_500_002, "组品不存在");
+    ErrorCode COMBO_PRODUCT_ALREADY_EXISTS = new ErrorCode(1_030_500_003, "组品已存在");
+    ErrorCode COMBO_PRODUCT_UPDATE_FAIL = new ErrorCode(1_030_500_004, "组品更新失败");
+    ErrorCode COMBO_PRODUCT_DELETE_FAIL = new ErrorCode(1_030_500_005, "组品删除失败");
 
     // ========== ERP 产品分类 1-030-501-000 ==========
     ErrorCode PRODUCT_CATEGORY_NOT_EXISTS = new ErrorCode(1_030_501_000, "产品分类不存在");
