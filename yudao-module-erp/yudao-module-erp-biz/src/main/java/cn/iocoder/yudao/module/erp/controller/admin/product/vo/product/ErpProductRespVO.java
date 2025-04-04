@@ -238,4 +238,8 @@ public class ErpProductRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "组_单数量关系")
+    @ExcelProperty("组_单数量关系")
+    private Integer count;
 }
