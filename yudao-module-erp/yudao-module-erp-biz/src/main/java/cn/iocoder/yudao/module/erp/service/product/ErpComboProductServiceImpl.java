@@ -61,7 +61,7 @@ public class ErpComboProductServiceImpl implements ErpComboService {
                 ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
                 itemDO.setComboProductId(comboProductDO.getId());
                 itemDO.setItemProductId(item.getId()); // 假设 ErpProductRespVO 中有 id 字段
-                itemDO.setItemQuantity(1); // 假设数量默认为 1，或者从其他字段获取
+                itemDO.setItemQuantity(item.getCount()); // 假设数量默认为 1，或者从其他字段获取
                 erpComboProductItemMapper.insert(itemDO);
             }
         }
@@ -93,7 +93,7 @@ public class ErpComboProductServiceImpl implements ErpComboService {
                 ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
                 itemDO.setComboProductId(updateReqVO.getId());
                 itemDO.setItemProductId(item.getId()); // 假设 ErpProductRespVO 中有 id 字段
-                itemDO.setItemQuantity(1); // 假设数量默认为 1，或者从其他字段获取
+                itemDO.setItemQuantity(item.getCount()); // 假设数量默认为 1，或者从其他字段获取
                 erpComboProductItemMapper.insert(itemDO);
             }
         }
@@ -184,6 +184,7 @@ public class ErpComboProductServiceImpl implements ErpComboService {
         // 查询单品详细信息
         List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
 
+
         // 组装响应对象
         ErpComboRespVO comboRespVO = BeanUtils.toBean(comboProduct, ErpComboRespVO.class);
 
@@ -192,6 +193,10 @@ public class ErpComboProductServiceImpl implements ErpComboService {
                 .map(product -> BeanUtils.toBean(product, ErpProductRespVO.class))
                 .collect(Collectors.toList());
 
+        // 将 itemQuantity 赋值给 count
+        for (int i = 0; i < productVOs.size(); i++) {
+            productVOs.get(i).setCount(comboItems.get(i).getItemQuantity());
+        }
         comboRespVO.setItems(productVOs);
         return comboRespVO;
     }
