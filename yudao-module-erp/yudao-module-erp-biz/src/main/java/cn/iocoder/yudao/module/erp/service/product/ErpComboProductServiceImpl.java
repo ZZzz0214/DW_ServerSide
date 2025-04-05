@@ -8,12 +8,14 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboR
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboProductCreateReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboProductItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -200,5 +202,32 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         }
         comboRespVO.setItems(productVOs);
         return comboRespVO;
+    }
+
+
+
+
+    @Override
+    public List<ErpComboRespVO> searchCombos(ErpComboSearchReqVO searchReqVO) {
+        // 构造查询条件
+        ErpComboProductDO comboProductDO = new ErpComboProductDO();
+        if (searchReqVO.getId() != null) {
+            comboProductDO.setId(searchReqVO.getId());
+        }
+        if (searchReqVO.getName() != null) {
+            comboProductDO.setName(searchReqVO.getName());
+        }
+        if (searchReqVO.getCreateTime() != null) {
+            comboProductDO.setCreateTime(searchReqVO.getCreateTime());
+        }
+
+        // 执行查询
+        List<ErpComboProductDO> comboProductDOList = erpComboMapper.selectList(new LambdaQueryWrapper<ErpComboProductDO>()
+                .eq(comboProductDO.getId() != null, ErpComboProductDO::getId, comboProductDO.getId())
+                .like(comboProductDO.getName() != null, ErpComboProductDO::getName, comboProductDO.getName())
+                .eq(comboProductDO.getCreateTime() != null, ErpComboProductDO::getCreateTime, comboProductDO.getCreateTime()));
+
+        // 转换为响应对象
+        return BeanUtils.toBean(comboProductDOList, ErpComboRespVO.class);
     }
 }
