@@ -64,6 +64,13 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode SALE_ORDER_PROCESS_FAIL_EXISTS_OUT = new ErrorCode(1_020_201_008, "反审核失败，已存在对应的销售出库单");
     ErrorCode SALE_ORDER_ITEM_RETURN_FAIL_OUT_EXCEED = new ErrorCode(1_020_201_009, "销售订单项({})超过最大允许退货数量({})");
     ErrorCode SALE_ORDER_PROCESS_FAIL_EXISTS_RETURN = new ErrorCode(1_020_201_010, "反审核失败，已存在对应的销售退货单");
+    // ========== ERP 销售价格 (1-030-300-000) ==========
+    ErrorCode SALE_PRICE_NOT_EXISTS = new ErrorCode(1_030_300_000, "销售价格记录不存在");
+    ErrorCode SALE_PRICE_GROUP_PRODUCT_ID_REQUIRED = new ErrorCode(1_030_300_001, "组品编号不能为空");
+    ErrorCode SALE_PRICE_CUSTOMER_NAME_REQUIRED = new ErrorCode(1_030_300_002, "客户名称不能为空");
+    ErrorCode SALE_PRICE_DISTRIBUTION_PRICE_REQUIRED = new ErrorCode(1_030_300_003, "代发单价不能为空");
+    ErrorCode SALE_PRICE_WHOLESALE_PRICE_REQUIRED = new ErrorCode(1_030_300_004, "批发单价不能为空");
+    ErrorCode SALE_PRICE_SHIPPING_FEE_TYPE_REQUIRED = new ErrorCode(1_030_300_005, "运费类型不能为空");
 
     // ========== ERP 销售出库（1-030-202-000） ==========
     ErrorCode SALE_OUT_NOT_EXISTS = new ErrorCode(1_020_202_000, "销售出库单不存在");
