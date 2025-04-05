@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboP
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboProductCreateReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 
 import javax.validation.Valid;
@@ -107,4 +108,12 @@ public interface ErpComboProductService {
      * @return 包含组品和单品数据的响应对象
      */
     ErpComboRespVO getComboWithItems(Long id);
+
+    /**
+     * 搜索功能
+     *
+     * @param searchReqVO 搜索结果请求
+     * @return 搜索结果列表
+     */
+    List<ErpComboRespVO> searchCombos(ErpComboSearchReqVO searchReqVO);
 }

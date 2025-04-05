@@ -9,6 +9,7 @@ import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -105,5 +106,13 @@ public class ErpComboProductController {
         // 导出 Excel
         ExcelUtils.write(response, "组合产品.xls", "数据", ErpComboRespVO.class,
                 pageResult.getList());
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "搜索组合产品")
+    @PreAuthorize("@ss.hasPermission('erp:combo-product:query')")
+    public CommonResult<List<ErpComboRespVO>> searchCombos(@Valid ErpComboSearchReqVO searchReqVO) {
+        List<ErpComboRespVO> combos = comboProductService.searchCombos(searchReqVO);
+        return success(combos);
     }
 }
