@@ -135,22 +135,22 @@ public class ErpPurchaseOrderDO extends BaseDO {
      * 采购退货数量
      */
     private BigDecimal returnCount;
-    /**
-     * 创建者
-     */
-    private String creator;
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-    /**
-     * 更新者
-     */
-    private String updater;
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
+//    /**
+//     * 创建者
+//     */
+//    private String creator;
+//    /**
+//     * 创建时间
+//     */
+//    private LocalDateTime createTime;
+//    /**
+//     * 更新者
+//     */
+//    private String updater;
+//    /**
+//     * 更新时间
+//     */
+//    private LocalDateTime updateTime;
     /**
      * 是否删除
      */

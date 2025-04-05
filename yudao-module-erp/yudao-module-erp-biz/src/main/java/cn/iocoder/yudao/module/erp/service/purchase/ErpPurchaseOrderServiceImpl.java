@@ -81,7 +81,7 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         // 2.1 插入订单
         ErpPurchaseOrderDO purchaseOrder = BeanUtils.toBean(createReqVO, ErpPurchaseOrderDO.class, in -> in
                 .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus()));
-        calculateTotalPrice(purchaseOrder, purchaseOrderItems);
+        //calculateTotalPrice(purchaseOrder, purchaseOrderItems);
         purchaseOrderMapper.insert(purchaseOrder);
         // 2.2 插入订单项
         purchaseOrderItems.forEach(o -> o.setOrderId(purchaseOrder.getId()));
@@ -108,7 +108,7 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
 
         // 2.1 更新订单
         ErpPurchaseOrderDO updateObj = BeanUtils.toBean(updateReqVO, ErpPurchaseOrderDO.class);
-        calculateTotalPrice(updateObj, purchaseOrderItems);
+        //calculateTotalPrice(updateObj, purchaseOrderItems);
         purchaseOrderMapper.updateById(updateObj);
         // 2.2 更新订单项
         updatePurchaseOrderItemList(updateReqVO.getId(), purchaseOrderItems);
@@ -231,6 +231,7 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         }
     }
 
+    //这两个方法的作用分别是更新采购订单项的入库数量和退货数量，并相应地更新采购订单的总计入库数量和退货数量。
     @Override
     public void updatePurchaseOrderInCount(Long id, Map<Long, BigDecimal> inCountMap) {
         List<ErpPurchaseOrderItemDO> orderItems = purchaseOrderItemMapper.selectListByOrderId(id);
