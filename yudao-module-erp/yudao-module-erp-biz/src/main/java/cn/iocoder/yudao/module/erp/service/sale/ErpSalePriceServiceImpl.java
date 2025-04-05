@@ -13,56 +13,44 @@ import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
-
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.SALE_PRICE_NOT_EXISTS;
 
-/**
- * ERP 销售价格 Service 实现类
- *
- * @author 芋道源码
- */
 @Service
 @Validated
 public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 
     @Resource
     private ErpSalePriceMapper erpSalePriceMapper;
-    @Resource
-    private ErpComboProductService comboService;
 
+    @Resource
+    private ErpComboProductService erpComboProductService;
     @Override
-    public Long createSalePrice(ErpSalePriceSaveReqVO createReqVO) {
-        // 校验请求参数
-        validateSalePrice(createReqVO);
-        // 插入
-        ErpSalePriceDO salePrice = BeanUtils.toBean(createReqVO, ErpSalePriceDO.class);
-        erpSalePriceMapper.insert(salePrice);
-        // 返回
-        return salePrice.getId();
+    public Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO) {
+        // 保存销售价格信息
+        ErpSalePriceDO salePriceDO = BeanUtils.toBean(createReqVO, ErpSalePriceDO.class);
+        erpSalePriceMapper.insert(salePriceDO);
+        return salePriceDO.getId();
     }
 
     @Override
-    public void updateSalePrice(ErpSalePriceSaveReqVO updateReqVO) {
-        // 校验存在
+    public void updateSalePrice(@Valid ErpSalePriceSaveReqVO updateReqVO) {
         validateSalePriceExists(updateReqVO.getId());
-        // 校验请求参数
-        validateSalePrice(updateReqVO);
-        // 更新
         ErpSalePriceDO updateObj = BeanUtils.toBean(updateReqVO, ErpSalePriceDO.class);
         erpSalePriceMapper.updateById(updateObj);
     }
 
     @Override
     public void deleteSalePrice(Long id) {
-        // 校验存在
         validateSalePriceExists(id);
-        // 删除
         erpSalePriceMapper.deleteById(id);
     }
 
@@ -71,18 +59,17 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        List<ErpSalePriceDO> list = erpSalePriceMapper.selectBatchIds(ids);
-        // 校验是否存在
-        for (Long id : ids) {
-            if (!list.stream().anyMatch(item -> item.getId().equals(id))) {
-                throw exception(SALE_PRICE_NOT_EXISTS);
-            }
+        return erpSalePriceMapper.selectBatchIds(ids);
+    }
+
+    private void validateSalePriceExists(Long id) {
+        if (erpSalePriceMapper.selectById(id) == null) {
+            throw exception(SALE_PRICE_NOT_EXISTS);
         }
-        return list;
     }
 
     @Override
-    public ErpSalePriceDO getSalePriceById(Long id) {
+    public ErpSalePriceDO getSalePrice(Long id) {
         return erpSalePriceMapper.selectById(id);
     }
 
@@ -92,87 +79,66 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             return Collections.emptyList();
         }
         List<ErpSalePriceDO> list = erpSalePriceMapper.selectBatchIds(ids);
-        return buildSalePriceVOList(list);
+        return BeanUtils.toBean(list, ErpSalePriceRespVO.class);
     }
 
     @Override
     public PageResult<ErpSalePriceRespVO> getSalePriceVOPage(ErpSalePricePageReqVO pageReqVO) {
         PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
-        return new PageResult<>(buildSalePriceVOList(pageResult.getList()), pageResult.getTotal());
+        return new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpSalePriceRespVO.class), pageResult.getTotal());
     }
 
 //    @Override
-//    public List<ErpSalePriceRespVO> searchSalePrices(ErpSalePriceSearchReqVO searchReqVO) {
-//        // 构造查询条件
-//        LambdaQueryWrapper<ErpSalePriceDO> queryWrapper = new LambdaQueryWrapper<>();
-//        if (searchReqVO.getGroupProductId() != null) {
-//            queryWrapper.eq(ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId());
-//        }
-//        if (searchReqVO.getCustomerName() != null) {
-//            queryWrapper.like(ErpSalePriceDO::getCustomerName, searchReqVO.getCustomerName());
-//        }
-//        if (searchReqVO.getDistributionPriceRange() != null && searchReqVO.getDistributionPriceRange().length == 2) {
-//            queryWrapper.ge(ErpSalePriceDO::getDistributionPrice, searchReqVO.getDistributionPriceRange()[0])
-//                    .le(ErpSalePriceDO::getDistributionPrice, searchReqVO.getDistributionPriceRange()[1]);
-//        }
-//        if (searchReqVO.getWholesalePriceRange() != null && searchReqVO.getWholesalePriceRange().length == 2) {
-//            queryWrapper.ge(ErpSalePriceDO::getWholesalePrice, searchReqVO.getWholesalePriceRange()[0])
-//                    .le(ErpSalePriceDO::getWholesalePrice, searchReqVO.getWholesalePriceRange()[1]);
+//    public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
+//        // 查询销售价格基本信息
+//        ErpSalePriceDO salePrice = erpSalePriceMapper.selectById(id);
+//        if (salePrice == null) {
+//            return null;
 //        }
 //
-//        // 执行查询
-//        List<ErpSalePriceDO> salePriceList = erpSalePriceMapper.selectList(queryWrapper);
-//        // 转换为响应对象
-//        return convertList(salePriceList, salePrice -> BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class));
+//        // 组装响应对象
+//        ErpSalePriceRespVO respVO = BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class);
+//
+//        // 如果需要关联其他数据，可以在这里查询并设置
+//        // 例如：respVO.setComboList(...);
+//
+//        return respVO;
 //    }
-
-    private List<ErpSalePriceRespVO> buildSalePriceVOList(List<ErpSalePriceDO> list) {
-        if (CollUtil.isEmpty(list)) {
-            return Collections.emptyList();
-        }
-        return BeanUtils.toBean(list, ErpSalePriceRespVO.class);
+@Override
+public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
+    // 查询销售价格基本信息
+    ErpSalePriceDO salePrice = erpSalePriceMapper.selectById(id);
+    if (salePrice == null) {
+        return null;
     }
 
-    private void validateSalePrice(ErpSalePriceSaveReqVO reqVO) {
-        // 校验必填字段
-        if (reqVO.getGroupProductId() == null) {
-            throw exception(SALE_PRICE_GROUP_PRODUCT_ID_REQUIRED);
-        }
-        if (reqVO.getCustomerName() == null) {
-            throw exception(SALE_PRICE_CUSTOMER_NAME_REQUIRED);
-        }
-        if (reqVO.getDistributionPrice() == null) {
-            throw exception(SALE_PRICE_DISTRIBUTION_PRICE_REQUIRED);
-        }
-        if (reqVO.getWholesalePrice() == null) {
-            throw exception(SALE_PRICE_WHOLESALE_PRICE_REQUIRED);
-        }
-        if (reqVO.getShippingFeeType() == null) {
-            throw exception(SALE_PRICE_SHIPPING_FEE_TYPE_REQUIRED);
+    // 组装响应对象
+    ErpSalePriceRespVO respVO = BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class);
+
+    // 根据 groupProductId 查询组合产品信息
+    if (salePrice.getGroupProductId() != null) {
+        // 调用组合产品服务层查询组合产品信息
+        ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(salePrice.getGroupProductId());
+        if (comboRespVO != null) {
+            // 将组合产品信息赋值给 comboList
+            respVO.setComboList(Collections.singletonList(comboRespVO));
         }
     }
 
-    private void validateSalePriceExists(Long id) {
-        if (erpSalePriceMapper.selectById(id) == null) {
-            throw exception(SALE_PRICE_NOT_EXISTS);
-        }
-    }
-    @Override
-    public ErpSalePriceRespVO getSalePriceWithCombo(Long id) {
-        // 查询销售价格基本信息
-        ErpSalePriceDO salePriceDO = erpSalePriceMapper.selectById(id);
-        if (salePriceDO == null) {
-            return null;
-        }
-
-        // 动态查询组品信息（假设通过 salePriceDO 的 id 查询组品）
-        ErpComboRespVO combo = comboService.getComboWithItems(id); // 使用 salePriceDO 的 id 作为组品编号
-
-        // 组装响应对象
-        ErpSalePriceRespVO respVO = BeanUtils.toBean(salePriceDO, ErpSalePriceRespVO.class);
-        respVO.setComboList(combo != null ? Collections.singletonList(combo) : Collections.emptyList());
-
-        return respVO;
-    }
+    return respVO;
 }
 
+    @Override
+    public List<ErpSalePriceRespVO> getSalePriceVOListByGroupProductId(Long groupProductId) {
+//        List<ErpSalePriceDO> list = erpSalePriceMapper.selectListByGroupProductId(groupProductId);
+//        return BeanUtils.toBean(list, ErpSalePriceRespVO.class);
+        return  null;
+    }
+
+    @Override
+    public List<ErpSalePriceRespVO> getSalePriceVOListByCustomerName(String customerName) {
+//        List<ErpSalePriceDO> list = erpSalePriceMapper.selectListByCustomerName(customerName);
+//        return BeanUtils.toBean(list, ErpSalePriceRespVO.class);
+        return  null;
+    }
+}

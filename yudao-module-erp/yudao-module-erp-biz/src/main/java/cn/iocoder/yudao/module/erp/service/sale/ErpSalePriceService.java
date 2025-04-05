@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
+
 /**
  * ERP 销售价格 Service 接口
  *
@@ -25,14 +27,12 @@ public interface ErpSalePriceService {
      * @return 编号
      */
     Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO);
-
     /**
      * 更新销售价格
      *
      * @param updateReqVO 更新信息
      */
     void updateSalePrice(@Valid ErpSalePriceSaveReqVO updateReqVO);
-
     /**
      * 删除销售价格
      *
@@ -49,15 +49,15 @@ public interface ErpSalePriceService {
     List<ErpSalePriceDO> validSalePriceList(Collection<Long> ids);
 
     /**
-     * 获得销售价格
+     * 获取销售价格
      *
      * @param id 编号
      * @return 销售价格
      */
-    ErpSalePriceDO getSalePriceById(Long id);
+    ErpSalePriceDO getSalePrice(Long id);
 
     /**
-     * 获得销售价格 VO 列表
+     * 获取销售价格 VO 列表
      *
      * @param ids 编号数组
      * @return 销售价格 VO 列表
@@ -65,17 +65,17 @@ public interface ErpSalePriceService {
     List<ErpSalePriceRespVO> getSalePriceVOList(Collection<Long> ids);
 
     /**
-     * 获得销售价格 VO Map
+     * 获取销售价格 VO Map
      *
      * @param ids 编号数组
      * @return 销售价格 VO Map
      */
     default Map<Long, ErpSalePriceRespVO> getSalePriceVOMap(Collection<Long> ids) {
-        return cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap(getSalePriceVOList(ids), ErpSalePriceRespVO::getId);
+        return convertMap(getSalePriceVOList(ids), ErpSalePriceRespVO::getId);
     }
 
     /**
-     * 获得销售价格 VO 分页
+     * 获取销售价格 VO 分页
      *
      * @param pageReqVO 分页查询
      * @return 销售价格分页
@@ -83,12 +83,26 @@ public interface ErpSalePriceService {
     PageResult<ErpSalePriceRespVO> getSalePriceVOPage(ErpSalePricePageReqVO pageReqVO);
 
     /**
-     * 搜索功能
+     * 通过组品 ID 查询组品及其关联的单品数据
      *
-     * @param searchReqVO 搜索功能请求参数
-     * @return 搜索结果列表
+     * @param id 组品 ID
+     * @return 包含组品和单品数据的响应对象
      */
-//    List<ErpSalePriceRespVO> searchSalePrices(ErpSalePriceSearchReqVO searchReqVO);
+    ErpSalePriceRespVO getSalePriceWithItems(Long id);
 
-    public ErpSalePriceRespVO getSalePriceWithCombo(Long id);
+    /**
+     * 获取销售价格 VO 列表（通过组品编号）
+     *
+     * @param groupProductId 组品编号
+     * @return 销售价格 VO 列表
+     */
+    List<ErpSalePriceRespVO> getSalePriceVOListByGroupProductId(Long groupProductId);
+
+    /**
+     * 获取销售价格 VO 列表（通过客户名称）
+     *
+     * @param customerName 客户名称
+     * @return 销售价格 VO 列表
+     */
+    List<ErpSalePriceRespVO> getSalePriceVOListByCustomerName(String customerName);
 }
