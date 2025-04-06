@@ -41,6 +41,23 @@ public class ErpPurchaseOrderRespVO {
     @ExcelProperty("采购时间")
     private LocalDateTime orderTime;
 
+    //新增的字段
+    @Schema(description = "物流公司", example = "顺丰速运")
+    private String logisticsCompany;
+
+    @Schema(description = "物流单号", example = "SF1234567890")
+    private String trackingNumber;
+
+    @Schema(description = "收件姓名", example = "张三")
+    private String receiverName;
+
+    @Schema(description = "联系电话", example = "13800138000")
+    private String receiverPhone;
+
+    @Schema(description = "详细地址", example = "北京市朝阳区XX街道XX号")
+    private String receiverAddress;
+    //
+
     @Schema(description = "合计数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "15663")
     @ExcelProperty("合计数量")
     private BigDecimal totalCount;
@@ -62,6 +79,17 @@ public class ErpPurchaseOrderRespVO {
 
     @Schema(description = "定金金额，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "7127")
     private BigDecimal depositPrice;
+
+    //新增的字段
+    @Schema(description = "采购运费（合计）", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
+    private BigDecimal shippingFee;
+
+    @Schema(description = "其他费用（合计）", requiredMode = Schema.RequiredMode.REQUIRED, example = "200.00")
+    private BigDecimal otherFees;
+
+    @Schema(description = "采购总额（合计）", requiredMode = Schema.RequiredMode.REQUIRED, example = "10000.00")
+    private BigDecimal totalPurchaseAmount;
+    //
 
     @Schema(description = "附件地址", example = "https://www.iocoder.cn")
     @ExcelProperty("附件地址")
@@ -103,49 +131,80 @@ public class ErpPurchaseOrderRespVO {
         @Schema(description = "订单项编号", example = "11756")
         private Long id;
 
-        @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
+        @Schema(description = "采购订单编号", example = "17386")
+        private Long orderId;
+
+        @Schema(description = "产品类型：0-单品，1-组合产品", example = "0")
+        private Integer type;
+
+        @Schema(description = "产品编号（指向单品或组合产品）", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         private Long productId;
 
-        @Schema(description = "产品单位单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
+        @Schema(description = "组品编号", example = "3114")
+        private Long comboProductId;
+
+        @Schema(description = "原表商品名称", example = "商品A")
+        private String originalProductName;
+
+        @Schema(description = "原表规格", example = "规格A")
+        private String originalStandard;
+
+        @Schema(description = "原表数量", example = "100")
+        private Integer originalQuantity;
+
+        @Schema(description = "售后状况", example = "0")
+        private Integer afterSalesStatus;
+
+        @Schema(description = "发货编码", example = "SH202503250001")
+        private String shippingCode;
+
+        @Schema(description = "产品数量", example = "100")
+        private Integer productQuantity;
+
+        @Schema(description = "采购单价", example = "100.00")
+        private BigDecimal purchasePrice;
+
+        @Schema(description = "采购运费", example = "100.00")
+        private BigDecimal shippingFee;
+
+        @Schema(description = "其他费用", example = "200.00")
+        private BigDecimal otherFees;
+
+        @Schema(description = "采购总额", example = "10000.00")
+        private BigDecimal totalPurchaseAmount;
+
+        @Schema(description = "总价", example = "10000.00")
+        private BigDecimal totalPrice;
+
+        @Schema(description = "产品单位编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         private Long productUnitId;
 
-        @Schema(description = "产品单价", example = "100.00")
-        private BigDecimal productPrice;
-
-        @Schema(description = "产品数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
-        @NotNull(message = "产品数量不能为空")
+        @Schema(description = "数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         private BigDecimal count;
 
         @Schema(description = "税率，百分比", example = "99.88")
         private BigDecimal taxPercent;
 
-        @Schema(description = "税额，单位：元", example = "100.00")
+        @Schema(description = "税额，单位：元", example = "1000.00")
         private BigDecimal taxPrice;
 
-        @Schema(description = "备注", example = "随便")
+        @Schema(description = "备注信息", example = "随便")
         private String remark;
 
-        // ========== 采购入库 ==========
+        @Schema(description = "采购人员", example = "采购员A")
+        private String purchaser;
 
         @Schema(description = "采购入库数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         private BigDecimal inCount;
 
-        // ========== 采购退货（入库）） ==========
-
-        @Schema(description = "采购退货数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
+        @Schema(description = "采购退货数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "0.00")
         private BigDecimal returnCount;
 
-        // ========== 关联字段 ==========
+        @Schema(description = "是否删除", example = "false")
+        private Boolean deleted;
 
-        @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "巧克力")
-        private String productName;
-        @Schema(description = "产品条码", requiredMode = Schema.RequiredMode.REQUIRED, example = "A9985")
-        private String productBarCode;
-        @Schema(description = "产品单位名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "盒")
-        private String productUnitName;
-
-        @Schema(description = "库存数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
-        private BigDecimal stockCount; // 该字段仅仅在“详情”和“编辑”时使用
+        @Schema(description = "租户编号", example = "1")
+        private Long tenantId;
 
     }
 

@@ -214,6 +214,9 @@ public class ErpPurchaseOrderSaveReqVO {
         @Schema(description = "产品数量", example = "100")
         private Integer productQuantity;
 
+        @Schema(description = "采购单价", example = "100.00")
+        private BigDecimal purchasePrice;
+
         @Schema(description = "采购运费", example = "100.00")
         private BigDecimal shippingFee;
 
@@ -223,19 +226,16 @@ public class ErpPurchaseOrderSaveReqVO {
         @Schema(description = "采购总额", example = "10000.00")
         private BigDecimal totalPurchaseAmount;
 
+        @Schema(description = "总价", example = "10000.00")
+        private BigDecimal totalPrice;
+
         @Schema(description = "产品单位编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         @NotNull(message = "产品单位编号不能为空")
         private Long productUnitId;
 
-        @Schema(description = "产品单价", example = "100.00")
-        private BigDecimal productPrice;
-
         @Schema(description = "数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         @NotNull(message = "数量不能为空")
         private BigDecimal count;
-
-        @Schema(description = "总价", example = "10000.00")
-        private BigDecimal totalPrice;
 
         @Schema(description = "税率，百分比", example = "99.88")
         private BigDecimal taxPercent;
@@ -251,12 +251,6 @@ public class ErpPurchaseOrderSaveReqVO {
 
         @Schema(description = "采购退货数量", example = "0.00")
         private BigDecimal returnCount;
-
-        @Schema(description = "创建者", example = "admin")
-        private String creator;
-
-        @Schema(description = "更新者", example = "admin")
-        private String updater;
 
         @Schema(description = "是否删除", example = "false")
         private Boolean deleted;
