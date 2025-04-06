@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * @author 芋道源码
  */
 @TableName("erp_purchase_order_items")
-@KeySequence("erp_purchase_order_items_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("erp_purchase_order_items_seq") // 用于 Oracle、PostgreSQL 等数据库的主键自增
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -31,8 +31,6 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
     private Long id;
     /**
      * 采购订单编号
-     *
-     * 关联 {@link ErpPurchaseOrderDO#getId()}
      */
     private Long orderId;
     /**
@@ -41,8 +39,6 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
     private Integer type;
     /**
      * 产品编号（指向单品或组合产品）
-     *
-     * 关联 {@link ErpProductDO#getId()}
      */
     private Long productId;
     /**
@@ -74,6 +70,10 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
      */
     private Integer productQuantity;
     /**
+     * 采购单价
+     */
+    private BigDecimal purchasePrice;
+    /**
      * 采购运费
      */
     private BigDecimal shippingFee;
@@ -86,6 +86,10 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
      */
     private BigDecimal totalPurchaseAmount;
     /**
+     * 总价
+     */
+    private BigDecimal totalPrice;
+    /**
      * 产品单位编号
      */
     private Long productUnitId;
@@ -93,10 +97,6 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
      * 数量
      */
     private BigDecimal count;
-    /**
-     * 总价
-     */
-    private BigDecimal totalPrice;
     /**
      * 税率，百分比
      */
@@ -110,6 +110,10 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
      */
     private String remark;
     /**
+     * 采购人员
+     */
+    private String purchaser;
+    /**
      * 采购入库数量
      */
     private BigDecimal inCount;
@@ -117,22 +121,6 @@ public class ErpPurchaseOrderItemDO extends BaseDO {
      * 采购退货数量
      */
     private BigDecimal returnCount;
-    /**
-     * 创建者
-     */
-    private String creator;
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-    /**
-     * 更新者
-     */
-    private String updater;
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
     /**
      * 是否删除
      */

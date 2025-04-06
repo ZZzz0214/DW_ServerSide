@@ -72,7 +72,6 @@ public class ErpComboProductController {
     @PreAuthorize("@ss.hasPermission('erp:combo-product:query')")
     public CommonResult<ErpComboRespVO> getComboProduct(@RequestParam("id") Long id) {
         ErpComboRespVO comboProduct = comboProductService.getComboWithItems(id);
-        System.out.println(comboProduct);
         return CommonResult.success(comboProduct);
     }
 

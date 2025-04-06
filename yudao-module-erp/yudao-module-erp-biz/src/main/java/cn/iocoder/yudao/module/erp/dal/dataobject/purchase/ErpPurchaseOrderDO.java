@@ -52,7 +52,7 @@ public class ErpPurchaseOrderDO extends BaseDO {
      */
     private Long accountId;
     /**
-     * 下单时间
+     * 采购时间
      */
     private LocalDateTime orderTime;
     /**
