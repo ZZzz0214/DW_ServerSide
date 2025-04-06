@@ -23,6 +23,10 @@ public class ErpSaleOrderRespVO {
     @ExcelProperty("销售单编号")
     private String no;
 
+    @Schema(description = "订单号", requiredMode = Schema.RequiredMode.REQUIRED, example = "DD001")
+    @ExcelProperty("订单号")
+    private String orderNumber;
+
     @Schema(description = "销售状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
     @ExcelProperty("销售状态")
     private Integer status;
@@ -39,66 +43,74 @@ public class ErpSaleOrderRespVO {
 
     @Schema(description = "销售员编号", example = "1888")
     private Long saleUserId;
+    @Schema(description = "销售人员名称", example = "芋道")
+    private String salesPersonName;
 
     @Schema(description = "下单时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("下单时间")
     private LocalDateTime orderTime;
 
+    @Schema(description = "物流公司", example = "顺丰")
+    @ExcelProperty("物流公司")
+    private String logisticsCompany;
+    @Schema(description = "物流单号", example = "SF123456789")
+    @ExcelProperty("物流单号")
+    private String logisticsNumber;
+    @Schema(description = "收件姓名", example = "张三")
+    @ExcelProperty("收件姓名")
+    private String consigneeName;
+    @Schema(description = "联系电话", example = "13800138000")
+    @ExcelProperty("联系电话")
+    private String contactNumber;
+    @Schema(description = "详细地址", example = "北京市朝阳区")
+    @ExcelProperty("详细地址")
+    private String detailedAddress;
+    @Schema(description = "售后状况", example = "未售后")
+    @ExcelProperty("售后状况")
+    private String afterSaleStatus;
+    @Schema(description = "备注信息", example = "备注信息")
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @Schema(description = "合计数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "15663")
     @ExcelProperty("合计数量")
     private BigDecimal totalCount;
-    @Schema(description = "最终合计价格", requiredMode = Schema.RequiredMode.REQUIRED, example = "24906")
-    @ExcelProperty("最终合计价格")
+    @Schema(description = "合计价格，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "24906")
+    @ExcelProperty("合计价格")
     private BigDecimal totalPrice;
-
     @Schema(description = "合计产品价格，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "7127")
     private BigDecimal totalProductPrice;
-
     @Schema(description = "合计税额，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "7127")
     private BigDecimal totalTaxPrice;
-
     @Schema(description = "优惠率，百分比", requiredMode = Schema.RequiredMode.REQUIRED, example = "99.88")
     private BigDecimal discountPercent;
-
     @Schema(description = "优惠金额，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "7127")
     private BigDecimal discountPrice;
-
     @Schema(description = "定金金额，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "7127")
     private BigDecimal depositPrice;
-
+    @Schema(description = "出货运费合计", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
+    private BigDecimal totalShippingFee;
+    @Schema(description = "其他费用合计", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
+    private BigDecimal totalOtherFees;
+    @Schema(description = "销售总额（合计）", requiredMode = Schema.RequiredMode.REQUIRED, example = "25000")
+    private BigDecimal totalSaleAmount;
     @Schema(description = "附件地址", example = "https://www.iocoder.cn")
     @ExcelProperty("附件地址")
     private String fileUrl;
 
-    @Schema(description = "备注", example = "你猜")
-    @ExcelProperty("备注")
-    private String remark;
-
     @Schema(description = "创建人", example = "芋道")
     private String creator;
-    @Schema(description = "创建人名称", example = "芋道")
-    private String creatorName;
-
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
-    @Schema(description = "订单项列表", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<Item> items;
-
-    @Schema(description = "产品信息", requiredMode = Schema.RequiredMode.REQUIRED)
-    @ExcelProperty("产品信息")
-    private String productNames;
-
-    // ========== 销售出库 ==========
-
     @Schema(description = "销售出库数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
     private BigDecimal outCount;
-
-    // ========== 销售退货（出库）） ==========
-
     @Schema(description = "销售退货数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
     private BigDecimal returnCount;
+
+    @Schema(description = "订单项列表", requiredMode = Schema.RequiredMode.REQUIRED)
+    private List<Item> items;
 
     @Data
     public static class Item {
@@ -106,50 +118,56 @@ public class ErpSaleOrderRespVO {
         @Schema(description = "订单项编号", example = "11756")
         private Long id;
 
+        @Schema(description = "销售订单编号", example = "17386")
+        private Long orderId;
+
+        @Schema(description = "组品编号", example = "12345")
+        private Long groupProductId;
+        @Schema(description = "产品名称", example = "产品A")
+        private String productName;
+        @Schema(description = "客户名称", example = "客户A")
+        private String customerName;
+        @Schema(description = "销售人员", example = "芋道")
+        private String salesPerson;
+        @Schema(description = "原表商品", example = "原表商品A")
+        private String originalProduct;
+        @Schema(description = "原表规格", example = "规格A")
+        private String originalSpecification;
+        @Schema(description = "原表数量", example = "10")
+        private Integer originalQuantity;
+        @Schema(description = "产品数量", example = "10")
+        private Integer productQuantity;
+        @Schema(description = "出货运费", example = "10.00")
+        private BigDecimal shippingFee;
+        @Schema(description = "其他费用", example = "10.00")
+        private BigDecimal otherFees;
+        @Schema(description = "出货总额", example = "200.00")
+        private BigDecimal shippingTotal;
+
         @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         private Long productId;
-
         @Schema(description = "产品单位单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         private Long productUnitId;
-
-        @Schema(description = "产品单价", example = "100.00")
+        @Schema(description = "产品单价（出货单价）", example = "100.00")
         private BigDecimal productPrice;
-
-        @Schema(description = "产品数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
-        @NotNull(message = "产品数量不能为空")
+        @Schema(description = "数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         private BigDecimal count;
-
+        @Schema(description = "总价", example = "1000.00")
+        private BigDecimal totalPrice;
         @Schema(description = "税率，百分比", example = "99.88")
         private BigDecimal taxPercent;
-
         @Schema(description = "税额，单位：元", example = "100.00")
         private BigDecimal taxPrice;
-
         @Schema(description = "备注", example = "随便")
         private String remark;
 
-        // ========== 销售出库 ==========
-
         @Schema(description = "销售出库数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         private BigDecimal outCount;
-
-        // ========== 销售退货（入库）） ==========
-
         @Schema(description = "销售退货数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         private BigDecimal returnCount;
-
-        // ========== 关联字段 ==========
-
-        @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "巧克力")
-        private String productName;
-        @Schema(description = "产品条码", requiredMode = Schema.RequiredMode.REQUIRED, example = "A9985")
-        private String productBarCode;
-        @Schema(description = "产品单位名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "盒")
-        private String productUnitName;
-
-        @Schema(description = "库存数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
-        private BigDecimal stockCount; // 该字段仅仅在“详情”和“编辑”时使用
-
+        @Schema(description = "创建人", example = "芋道")
+        private String creator;
+        @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
+        private LocalDateTime createTime;
     }
-
 }

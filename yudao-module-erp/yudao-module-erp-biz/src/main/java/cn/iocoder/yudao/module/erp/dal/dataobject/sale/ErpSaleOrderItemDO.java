@@ -9,6 +9,88 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
+///**
+// * ERP 销售订单项 DO
+// *
+// * @author 芋道源码
+// */
+//@TableName("erp_sale_order_items")
+//@KeySequence("erp_sale_order_items_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+//@Data
+//@EqualsAndHashCode(callSuper = true)
+//@ToString(callSuper = true)
+//@Builder
+//@NoArgsConstructor
+//@AllArgsConstructor
+//public class ErpSaleOrderItemDO extends BaseDO {
+//
+//    /**
+//     * 编号
+//     */
+//    @TableId
+//    private Long id;
+//    /**
+//     * 销售订单编号
+//     *
+//     * 关联 {@link ErpSaleOrderDO#getId()}
+//     */
+//    private Long orderId;
+//    /**
+//     * 产品编号
+//     *
+//     * 关联 {@link ErpProductDO#getId()}
+//     */
+//    private Long productId;
+//    /**
+//     * 产品单位单位
+//     *
+//     * 冗余 {@link ErpProductDO#getUnitId()}
+//     */
+//    private Long productUnitId;
+//
+//    /**
+//     * 产品单位单价，单位：元
+//     */
+//    private BigDecimal productPrice;
+//    /**
+//     * 数量
+//     */
+//    private BigDecimal count;
+//    /**
+//     * 总价，单位：元
+//     *
+//     * totalPrice = productPrice * count
+//     */
+//    private BigDecimal totalPrice;
+//    /**
+//     * 税率，百分比
+//     */
+//    private BigDecimal taxPercent;
+//    /**
+//     * 税额，单位：元
+//     *
+//     * taxPrice = totalPrice * taxPercent
+//     */
+//    private BigDecimal taxPrice;
+//
+//    /**
+//     * 备注
+//     */
+//    private String remark;
+//
+//    // ========== 销售出库 ==========
+//    /**
+//     * 销售出库数量
+//     */
+//    private BigDecimal outCount;
+//
+//    // ========== 销售退货（入库）） ==========
+//    /**
+//     * 销售退货数量
+//     */
+//    private BigDecimal returnCount;
+//
+//}
 /**
  * ERP 销售订单项 DO
  *
@@ -36,6 +118,50 @@ public class ErpSaleOrderItemDO extends BaseDO {
      */
     private Long orderId;
     /**
+     * 组品编号
+     */
+    private Long groupProductId;
+    /**
+     * 产品名称
+     */
+    private String productName;
+    /**
+     * 客户名称
+     */
+    private String customerName;
+    /**
+     * 销售人员
+     */
+    private String salesPerson;
+    /**
+     * 原表商品
+     */
+    private String originalProduct;
+    /**
+     * 原表规格
+     */
+    private String originalSpecification;
+    /**
+     * 原表数量
+     */
+    private Integer originalQuantity;
+    /**
+     * 产品数量
+     */
+    private Integer productQuantity;
+    /**
+     * 出货运费
+     */
+    private BigDecimal shippingFee;
+    /**
+     * 其他费用
+     */
+    private BigDecimal otherFees;
+    /**
+     * 出货总额
+     */
+    private BigDecimal shippingTotal;
+    /**
      * 产品编号
      *
      * 关联 {@link ErpProductDO#getId()}
@@ -47,9 +173,8 @@ public class ErpSaleOrderItemDO extends BaseDO {
      * 冗余 {@link ErpProductDO#getUnitId()}
      */
     private Long productUnitId;
-
     /**
-     * 产品单位单价，单位：元
+     * 产品单价（出货单价），单位：元
      */
     private BigDecimal productPrice;
     /**
@@ -72,22 +197,40 @@ public class ErpSaleOrderItemDO extends BaseDO {
      * taxPrice = totalPrice * taxPercent
      */
     private BigDecimal taxPrice;
-
     /**
      * 备注
      */
     private String remark;
-
-    // ========== 销售出库 ==========
     /**
      * 销售出库数量
      */
     private BigDecimal outCount;
-
-    // ========== 销售退货（入库）） ==========
     /**
      * 销售退货数量
      */
     private BigDecimal returnCount;
-
+//    /**
+//     * 创建者
+//     */
+//    private String creator;
+//    /**
+//     * 更新者
+//     */
+//    private String updater;
+//    /**
+//     * 创建时间
+//     */
+//    private LocalDateTime createTime;
+//    /**
+//     * 更新时间
+//     */
+//    private LocalDateTime updateTime;
+    /**
+     * 是否删除
+     */
+    private Boolean deleted;
+    /**
+     * 租户编号
+     */
+    private Long tenantId;
 }
