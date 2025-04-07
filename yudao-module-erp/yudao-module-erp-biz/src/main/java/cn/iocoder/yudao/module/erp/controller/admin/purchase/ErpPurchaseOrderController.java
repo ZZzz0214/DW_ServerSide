@@ -106,10 +106,10 @@ public class ErpPurchaseOrderController {
                 convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
         return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO ->
                 purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
-                    BigDecimal purchaseCount = stockService.getStockCount(item.getProductId());
-                    item.setStockCount(purchaseCount != null ? purchaseCount : BigDecimal.ZERO);
-                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName())
-                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
+//                    BigDecimal purchaseCount = stockService.getStockCount(item.getProductId());
+//                    item.setStockCount(purchaseCount != null ? purchaseCount : BigDecimal.ZERO);
+                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()));
+//                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
                 }))));
     }
 
@@ -153,12 +153,14 @@ public class ErpPurchaseOrderController {
         // 2. 开始拼接
         return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class, purchaseOrder -> {
             purchaseOrder.setItems(BeanUtils.toBean(purchaseOrderItemMap.get(purchaseOrder.getId()), ErpPurchaseOrderRespVO.Item.class,
-                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName())
-                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
-            purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getProductName));
+                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()))));
+//                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
+            //purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getProductName));
+            purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getOriginalProductName));
             MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
             MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
         });
+//        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class);
     }
 
 }
