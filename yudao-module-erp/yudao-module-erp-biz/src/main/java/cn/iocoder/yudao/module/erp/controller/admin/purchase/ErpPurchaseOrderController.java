@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.collection.MapUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderRespVO;
@@ -15,6 +16,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchas
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
+import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpPurchaseOrderService;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpSupplierService;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -55,6 +58,8 @@ public class ErpPurchaseOrderController {
     private ErpProductService productService;
     @Resource
     private ErpSupplierService supplierService;
+    @Resource
+    private ErpComboProductService comboProductService;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -102,15 +107,43 @@ public class ErpPurchaseOrderController {
             return success(null);
         }
         List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderId(id);
+       // 分离单品和组品
+        List<ErpPurchaseOrderItemDO> singleItemList = purchaseOrderItemList.stream()
+                .filter(item -> item.getType() == 0)
+                .collect(Collectors.toList());
+        List<ErpPurchaseOrderItemDO> comboItemList = purchaseOrderItemList.stream()
+                .filter(item -> item.getType() == 1)
+                .collect(Collectors.toList());
+        // 获取单品信息
         Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
-                convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
-        return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO ->
-                purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
-//                    BigDecimal purchaseCount = stockService.getStockCount(item.getProductId());
-//                    item.setStockCount(purchaseCount != null ? purchaseCount : BigDecimal.ZERO);
-                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()));
-//                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
-                }))));
+                convertSet(singleItemList, ErpPurchaseOrderItemDO::getProductId));
+        // 获取组品信息
+        Map<Long, ErpComboRespVO> comboMap = comboProductService.getComboVOMap(
+                convertSet(comboItemList, ErpPurchaseOrderItemDO::getComboProductId));
+
+        return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO -> {
+            purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
+                if (item.getType() == 0) {
+                    // 单品
+                    MapUtils.findAndThen(productMap, item.getProductId(), product ->
+                            item.setOriginalProductName(product.getName()));
+                } else {
+                    // 组品
+                    MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
+                            item.setOriginalProductName(combo.getName()));
+                }
+            }));
+        }));
+
+//        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
+//                convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
+//        return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO ->
+//                purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
+////                    BigDecimal purchaseCount = stockService.getStockCount(item.getProductId());
+////                    item.setStockCount(purchaseCount != null ? purchaseCount : BigDecimal.ZERO);
+//                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()));
+////                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
+//                }))));
     }
 
     @GetMapping("/page")
@@ -133,34 +166,85 @@ public class ErpPurchaseOrderController {
         ExcelUtils.write(response, "采购订单.xls", "数据", ErpPurchaseOrderRespVO.class, list);
     }
 
-    private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageResult<ErpPurchaseOrderDO> pageResult) {
-        if (CollUtil.isEmpty(pageResult.getList())) {
-            return PageResult.empty(pageResult.getTotal());
-        }
-        // 1.1 订单项
-        List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderIds(
-                convertSet(pageResult.getList(), ErpPurchaseOrderDO::getId));
-        Map<Long, List<ErpPurchaseOrderItemDO>> purchaseOrderItemMap = convertMultiMap(purchaseOrderItemList, ErpPurchaseOrderItemDO::getOrderId);
-        // 1.2 产品信息
-        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
-                convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
-        // 1.3 供应商信息
-        Map<Long, ErpSupplierDO> supplierMap = supplierService.getSupplierMap(
-                convertSet(pageResult.getList(), ErpPurchaseOrderDO::getSupplierId));
-        // 1.4 管理员信息
-        Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(
-                convertSet(pageResult.getList(), purchaseOrder -> Long.parseLong(purchaseOrder.getCreator())));
-        // 2. 开始拼接
-        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class, purchaseOrder -> {
-            purchaseOrder.setItems(BeanUtils.toBean(purchaseOrderItemMap.get(purchaseOrder.getId()), ErpPurchaseOrderRespVO.Item.class,
-                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()))));
-//                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
-            //purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getProductName));
-            purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getOriginalProductName));
-            MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
-            MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
-        });
-//        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class);
+//    private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageResult<ErpPurchaseOrderDO> pageResult) {
+//        if (CollUtil.isEmpty(pageResult.getList())) {
+//            return PageResult.empty(pageResult.getTotal());
+//        }
+//        // 1.1 订单项
+//        List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderIds(
+//                convertSet(pageResult.getList(), ErpPurchaseOrderDO::getId));
+//        Map<Long, List<ErpPurchaseOrderItemDO>> purchaseOrderItemMap = convertMultiMap(purchaseOrderItemList, ErpPurchaseOrderItemDO::getOrderId);
+//        // 1.2 产品信息
+//        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
+//                convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
+//        // 1.3 供应商信息
+//        Map<Long, ErpSupplierDO> supplierMap = supplierService.getSupplierMap(
+//                convertSet(pageResult.getList(), ErpPurchaseOrderDO::getSupplierId));
+//        // 1.4 管理员信息
+//        Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(
+//                convertSet(pageResult.getList(), purchaseOrder -> Long.parseLong(purchaseOrder.getCreator())));
+//        // 2. 开始拼接
+//        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class, purchaseOrder -> {
+//            purchaseOrder.setItems(BeanUtils.toBean(purchaseOrderItemMap.get(purchaseOrder.getId()), ErpPurchaseOrderRespVO.Item.class,
+//                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()))));
+////                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
+//            //purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getProductName));
+//            purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getOriginalProductName));
+//            MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
+//            MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
+//        });
+////        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class);
+//    }
+private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageResult<ErpPurchaseOrderDO> pageResult) {
+    if (CollUtil.isEmpty(pageResult.getList())) {
+        return PageResult.empty(pageResult.getTotal());
     }
+
+    // 1.1 订单项
+    List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderIds(
+            convertSet(pageResult.getList(), ErpPurchaseOrderDO::getId));
+
+    // 分离单品和组品
+    List<ErpPurchaseOrderItemDO> singleItemList = purchaseOrderItemList.stream()
+            .filter(item -> item.getType() == 0)
+            .collect(Collectors.toList());
+    List<ErpPurchaseOrderItemDO> comboItemList = purchaseOrderItemList.stream()
+            .filter(item -> item.getType() == 1)
+            .collect(Collectors.toList());
+
+    // 1.2 单品信息
+    Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
+            convertSet(singleItemList, ErpPurchaseOrderItemDO::getProductId));
+
+    // 1.3 组品信息
+    Map<Long, ErpComboRespVO> comboMap = comboProductService.getComboVOMap(
+            convertSet(comboItemList, ErpPurchaseOrderItemDO::getComboProductId));
+
+    // 1.4 供应商信息
+    Map<Long, ErpSupplierDO> supplierMap = supplierService.getSupplierMap(
+            convertSet(pageResult.getList(), ErpPurchaseOrderDO::getSupplierId));
+
+    // 1.5 管理员信息
+    Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(
+            convertSet(pageResult.getList(), purchaseOrder -> Long.parseLong(purchaseOrder.getCreator())));
+
+    // 2. 开始拼接
+    return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class, purchaseOrder -> {
+        purchaseOrder.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
+            if (item.getType() == 0) {
+                // 单品
+                MapUtils.findAndThen(productMap, item.getProductId(), product ->
+                        item.setOriginalProductName(product.getName()));
+            } else {
+                // 组品
+                MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
+                        item.setOriginalProductName(combo.getName()));
+            }
+        }));
+        purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getOriginalProductName));
+        MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
+        MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
+    });
+}
 
 }

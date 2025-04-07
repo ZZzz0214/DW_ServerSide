@@ -106,10 +106,10 @@ public class ErpSaleOrderController {
                 convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         return success(BeanUtils.toBean(saleOrder, ErpSaleOrderRespVO.class, saleOrderVO ->
                 saleOrderVO.setItems(BeanUtils.toBean(saleOrderItemList, ErpSaleOrderRespVO.Item.class, item -> {
-                    BigDecimal stockCount = stockService.getStockCount(item.getProductId());
-                    item.setStockCount(stockCount != null ? stockCount : BigDecimal.ZERO);
-                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName())
-                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
+//                    BigDecimal stockCount = stockService.getStockCount(item.getProductId());
+//                    item.setStockCount(stockCount != null ? stockCount : BigDecimal.ZERO);
+                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
+//                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
                 }))));
     }
 
@@ -154,10 +154,11 @@ public class ErpSaleOrderController {
         return BeanUtils.toBean(pageResult, ErpSaleOrderRespVO.class, saleOrder -> {
             saleOrder.setItems(BeanUtils.toBean(saleOrderItemMap.get(saleOrder.getId()), ErpSaleOrderRespVO.Item.class,
                     item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName())
-                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
-            saleOrder.setProductNames(CollUtil.join(saleOrder.getItems(), "，", ErpSaleOrderRespVO.Item::getProductName));
+        //                    .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
+                    )));
+            //saleOrder.setProductNames(CollUtil.join(saleOrder.getItems(), "，", ErpSaleOrderRespVO.Item::getProductName));
             MapUtils.findAndThen(customerMap, saleOrder.getCustomerId(), supplier -> saleOrder.setCustomerName(supplier.getName()));
-            MapUtils.findAndThen(userMap, Long.parseLong(saleOrder.getCreator()), user -> saleOrder.setCreatorName(user.getNickname()));
+            //MapUtils.findAndThen(userMap, Long.parseLong(saleOrder.getCreator()), user -> saleOrder.setCreatorName(user.getNickname()));
         });
     }
 
