@@ -22,9 +22,11 @@ public class ErpSalePriceSaveReqVO {
     private String customerName;
 
     @Schema(description = "代发单价（单位：元）", example = "100.00")
+    @NotNull(message = "代发单价不能为空")
     private BigDecimal distributionPrice;
 
     @Schema(description = "批发单价（单位：元）", example = "80.00")
+    @NotNull(message = "批发单价不能为空")
     private BigDecimal wholesalePrice;
 
     @Schema(description = "备注信息", example = "备注内容")
