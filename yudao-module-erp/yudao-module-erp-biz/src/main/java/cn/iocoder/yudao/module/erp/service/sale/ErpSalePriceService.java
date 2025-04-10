@@ -105,4 +105,19 @@ public interface ErpSalePriceService {
      * @return 销售价格 VO 列表
      */
     List<ErpSalePriceRespVO> getSalePriceVOListByCustomerName(String customerName);
+    
+    /**
+     * 获取销售价格 VO 列表（按状态筛选）
+     *
+     * @param status 状态
+     * @return 销售价格 VO 列表
+     */
+    List<ErpSalePriceRespVO> getSalePriceVOListByStatus(Integer status);
+
+    /**
+     * 获取销售价格列表（通过组合品状态筛选）
+     *
+     * @return 销售价格列表
+     */
+    List<ErpSalePriceRespVO> getSalePriceVOListByComboStatus();
 }

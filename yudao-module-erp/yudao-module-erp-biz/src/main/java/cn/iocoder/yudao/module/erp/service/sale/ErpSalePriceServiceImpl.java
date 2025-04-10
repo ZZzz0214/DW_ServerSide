@@ -1,13 +1,16 @@
 package cn.iocoder.yudao.module.erp.service.sale;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,9 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 
     @Resource
     private ErpComboProductService erpComboProductService;
+
+    @Resource
+    private ErpComboMapper erpComboMapper;
     @Override
     public Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO) {
         // 根据groupProductId获取组品信息
@@ -171,5 +177,27 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
 //        List<ErpSalePriceDO> list = erpSalePriceMapper.selectListByCustomerName(customerName);
 //        return BeanUtils.toBean(list, ErpSalePriceRespVO.class);
         return  null;
+    }
+
+    @Override
+    public List<ErpSalePriceRespVO> getSalePriceVOListByStatus(Integer status) {
+//        List<ErpSalePriceDO> list = erpSalePriceMapper.selectListByStatus(status);
+//        return BeanUtils.toBean(list, ErpSalePriceRespVO.class);
+        return null;
+    }
+
+    @Override
+    public List<ErpSalePriceRespVO> getSalePriceVOListByComboStatus() {
+        // 1. 查询所有销售价格记录
+        List<ErpSalePriceDO> salePrices = erpSalePriceMapper.selectList();
+
+        // 2. 过滤出组合品状态符合条件的记录
+        return salePrices.stream()
+                .filter(salePrice -> {
+                    ErpComboProductDO comboProduct = erpComboMapper.selectById(salePrice.getGroupProductId());
+                    return comboProduct != null && comboProduct.getStatus().equals(CommonStatusEnum.ENABLE.getStatus());
+                })
+                .map(salePrice -> BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class))
+                .collect(Collectors.toList());
     }
 }

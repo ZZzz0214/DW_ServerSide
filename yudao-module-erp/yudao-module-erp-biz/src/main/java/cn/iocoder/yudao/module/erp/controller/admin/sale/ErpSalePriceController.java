@@ -90,12 +90,11 @@ public class ErpSalePriceController {
 //        return CommonResult.success(salePriceService.getSalePriceVOListByCustomerName(customerName));
 //    }
     @GetMapping("/simple-list")
-    @Operation(summary = "获取销售价格精简列表", description = "只包含被开启的销售价格，主要用于前端的下拉选项")
+    @Operation(summary = "获取销售价格精简列表", description = "通过组合品状态筛选销售价格，主要用于前端的下拉选项")
     @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
     public CommonResult<List<ErpSalePriceRespVO>> getSalePriceSimpleList() {
-        // 假设有一个方法 getSalePriceVOListByStatus 来获取特定状态的销售价格列表
-        //return CommonResult.success(salePriceService.getSalePriceVOListByStatus(CommonStatusEnum.ENABLE.getStatus()));
-        return null;
+        List<ErpSalePriceRespVO> list = salePriceService.getSalePriceVOListByComboStatus();
+        return success(list);
     }
 
     @GetMapping("/export-excel")
