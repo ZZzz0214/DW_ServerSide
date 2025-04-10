@@ -146,6 +146,10 @@ public class ErpSaleOrderItemDO extends BaseDO {
      */
     private Integer originalQuantity;
     /**
+     * 发货编码
+     */
+    private String shippingCode;
+    /**
      * 产品数量
      */
     private Integer productQuantity;
