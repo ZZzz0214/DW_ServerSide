@@ -5,14 +5,17 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -39,6 +42,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 
     @Resource
     private ErpComboMapper erpComboMapper;
+
     @Override
     public Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO) {
         // 根据groupProductId获取组品信息
@@ -199,5 +203,51 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 })
                 .map(salePrice -> BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ErpSalePriceRespVO> searchProducts(ErpSalePriceSearchReqVO searchReqVO) {
+        // 构造查询条件
+        ErpSalePriceDO salePriceDO = new ErpSalePriceDO();
+        if (searchReqVO.getGroupProductId() != null) {
+            salePriceDO.setGroupProductId(searchReqVO.getGroupProductId());
+        }
+        if (searchReqVO.getProductName() != null) {
+            salePriceDO.setProductName(searchReqVO.getProductName());
+        }
+        if (searchReqVO.getProductShortName() != null) {
+            salePriceDO.setProductShortName(searchReqVO.getProductShortName());
+        }
+        if (searchReqVO.getCreateTime() != null) {
+            salePriceDO.setCreateTime(searchReqVO.getCreateTime());
+        }
+
+
+        // 执行查询
+        List<ErpSalePriceDO> comboProductDOList = erpSalePriceMapper.selectList(new LambdaQueryWrapper<ErpSalePriceDO>()
+                .eq(salePriceDO.getGroupProductId() != null, ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId())
+                .like(salePriceDO.getProductName() != null, ErpSalePriceDO::getProductName, searchReqVO.getProductName())
+                .like(salePriceDO.getProductShortName() != null, ErpSalePriceDO::getProductShortName, searchReqVO.getProductShortName())
+                .eq(salePriceDO.getCreateTime() != null, ErpSalePriceDO::getCreateTime, searchReqVO.getCreateTime()));
+
+
+
+        // 转换为响应对象
+        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);
+
+        // 如果有组品ID，查询组品数据并填充到 comboList
+        if (searchReqVO.getGroupProductId() != null) {
+            // 获取组品数据
+            List<ErpComboRespVO> comboList = erpComboProductService.getComboVOList(
+                    comboProductDOList.stream().map(ErpSalePriceDO::getGroupProductId).distinct().collect(Collectors.toList())
+            );
+
+            // 将组品数据填充到每个响应对象的 comboList 字段
+            respVOList.forEach(respVO -> {
+                respVO.setComboList(comboList);
+            });
+        }
+        // 转换为响应对象
+        return respVOList;
     }
 }
