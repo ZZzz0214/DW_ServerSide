@@ -41,17 +41,17 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         if (groupProductId != null) {
             comboInfo = erpComboProductService.getComboWithItems(groupProductId);
         }
-        
+
         // 保存销售价格信息
         ErpSalePriceDO salePriceDO = BeanUtils.toBean(createReqVO, ErpSalePriceDO.class);
-        
+
         // 设置从组品获取的信息
         if (comboInfo != null) {
             salePriceDO.setProductName(comboInfo.getName());
             salePriceDO.setProductShortName(comboInfo.getShortName());
             salePriceDO.setProductImage(comboInfo.getImage());
         }
-        
+
         erpSalePriceMapper.insert(salePriceDO);
         return salePriceDO.getId();
     }
@@ -59,23 +59,23 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Override
     public void updateSalePrice(@Valid ErpSalePriceSaveReqVO updateReqVO) {
         validateSalePriceExists(updateReqVO.getId());
-        
+
         // 根据groupProductId获取组品信息
         Long groupProductId = updateReqVO.getGroupProductId();
         ErpComboRespVO comboInfo = null;
         if (groupProductId != null) {
             comboInfo = erpComboProductService.getComboWithItems(groupProductId);
         }
-        
+
         ErpSalePriceDO updateObj = BeanUtils.toBean(updateReqVO, ErpSalePriceDO.class);
-        
+
         // 设置从组品获取的信息
         if (comboInfo != null) {
             updateObj.setProductName(comboInfo.getName());
             updateObj.setProductShortName(comboInfo.getShortName());
             updateObj.setProductImage(comboInfo.getImage());
         }
-        
+
         erpSalePriceMapper.updateById(updateObj);
     }
 
