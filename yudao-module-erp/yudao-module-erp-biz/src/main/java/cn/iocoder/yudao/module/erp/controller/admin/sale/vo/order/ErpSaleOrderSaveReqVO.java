@@ -132,6 +132,9 @@ public class ErpSaleOrderSaveReqVO {
         @Schema(description = "原表数量", example = "10")
         private Integer originalQuantity;
 
+        @Schema(description = "发货编码", example = "SH202503250001")
+        private String shippingCode;
+
         @Schema(description = "产品数量", example = "10")
         private Integer productQuantity;
 
