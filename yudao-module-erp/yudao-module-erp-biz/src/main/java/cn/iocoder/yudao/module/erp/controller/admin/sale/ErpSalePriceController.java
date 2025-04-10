@@ -5,9 +5,12 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -105,5 +108,13 @@ public class ErpSalePriceController {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpSalePriceRespVO> pageResult = salePriceService.getSalePriceVOPage(pageReqVO);
         ExcelUtils.write(response, "销售价格.xls", "数据", ErpSalePriceRespVO.class, pageResult.getList());
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "搜索销售价格表")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
+    public CommonResult<List<ErpSalePriceRespVO>> searchErpSalePrice(@Valid ErpSalePriceSearchReqVO searchReqVO) {
+        List<ErpSalePriceRespVO> erpSalePrices = salePriceService.searchProducts(searchReqVO);
+        return success(erpSalePrices);
     }
 }

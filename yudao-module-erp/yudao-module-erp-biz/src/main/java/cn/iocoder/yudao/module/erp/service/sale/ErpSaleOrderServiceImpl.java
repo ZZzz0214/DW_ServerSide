@@ -169,7 +169,7 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
         // 2. 转化为 ErpSaleOrderItemDO 列表
         return convertList(list, o -> BeanUtils.toBean(o, ErpSaleOrderItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
+//            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
             item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
             if (item.getTotalPrice() == null) {
                 return;
@@ -303,5 +303,7 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         }
         return saleOrderItemMapper.selectListByOrderIds(orderIds);
     }
+
+
 
 }

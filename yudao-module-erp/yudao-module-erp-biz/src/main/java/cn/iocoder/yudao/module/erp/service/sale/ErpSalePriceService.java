@@ -1,9 +1,12 @@
 package cn.iocoder.yudao.module.erp.service.sale;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductSearchReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 
 import javax.validation.Valid;
@@ -120,4 +123,11 @@ public interface ErpSalePriceService {
      * @return 销售价格列表
      */
     List<ErpSalePriceRespVO> getSalePriceVOListByComboStatus();
+    /**
+     * 搜索产品
+     *
+     * @param searchReqVO 搜索请求参数
+     * @return 搜索到的产品列表
+     */
+    List<ErpSalePriceRespVO> searchProducts(ErpSalePriceSearchReqVO searchReqVO);
 }
