@@ -125,8 +125,25 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 
     @Override
     public PageResult<ErpSalePriceRespVO> getSalePriceVOPage(ErpSalePricePageReqVO pageReqVO) {
+        // 1. 查询销售价格分页数据
         PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
-        return new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpSalePriceRespVO.class), pageResult.getTotal());
+
+        // 2. 转换为VO列表并设置组合产品信息
+        List<ErpSalePriceRespVO> voList = pageResult.getList().stream()
+            .map(doObj -> {
+                ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
+                if (doObj.getGroupProductId() != null) {
+                    ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(doObj.getGroupProductId());
+                    if (comboRespVO != null) {
+                        vo.setComboList(Collections.singletonList(comboRespVO));
+                        vo.setGroupProductId(comboRespVO.getId());
+                    }
+                }
+                return vo;
+            })
+            .collect(Collectors.toList());
+
+        return new PageResult<>(voList, pageResult.getTotal());
     }
 
 //    @Override
@@ -149,13 +166,14 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
     // 查询销售价格基本信息
     ErpSalePriceDO salePrice = erpSalePriceMapper.selectById(id);
+    //System.out.println("销售价格表记录："+salePrice);
     if (salePrice == null) {
         return null;
     }
 
     // 组装响应对象
     ErpSalePriceRespVO respVO = BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class);
-
+    //System.out.println("销售价格表组装响应对象："+salePrice);
     // 根据 groupProductId 查询组合产品信息
     if (salePrice.getGroupProductId() != null) {
         // 调用组合产品服务层查询组合产品信息
@@ -163,9 +181,10 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
         if (comboRespVO != null) {
             // 将组合产品信息赋值给 comboList
             respVO.setComboList(Collections.singletonList(comboRespVO));
+            respVO.setGroupProductId(comboRespVO.getId());
         }
     }
-
+    //System.out.println("销售价格表组装将组合产品信息赋值给 comboList响应对象："+respVO);
     return respVO;
 }
 
