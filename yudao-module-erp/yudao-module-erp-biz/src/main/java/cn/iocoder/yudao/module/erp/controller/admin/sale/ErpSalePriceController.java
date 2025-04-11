@@ -74,6 +74,7 @@ public class ErpSalePriceController {
     @Operation(summary = "获取销售价格分页")
     @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
     public CommonResult<PageResult<ErpSalePriceRespVO>> getSalePricePage(@Valid ErpSalePricePageReqVO pageReqVO) {
+        System.out.println("page:"+salePriceService.getSalePriceVOPage(pageReqVO));
         return success(salePriceService.getSalePriceVOPage(pageReqVO));
     }
 

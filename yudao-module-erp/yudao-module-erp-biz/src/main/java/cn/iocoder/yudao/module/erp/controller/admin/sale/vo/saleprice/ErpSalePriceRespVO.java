@@ -1,11 +1,13 @@
 package cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice;
 
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,11 +21,13 @@ public class ErpSalePriceRespVO {
     @ExcelProperty("编号")
     private Long id;
 
-//    @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "12345")
-//    @ExcelProperty("组品编号")
-//    private Long groupProductId;
+    @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "12345")
+    @ExcelProperty("组品编号")
+    private Long groupProductId;
+
     @Schema(description = "关联的组品列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<ErpComboRespVO> comboList;
+
 
     @Schema(description = "产品图片", example = "https://example.com/image.jpg")
     @ExcelProperty("产品图片")
