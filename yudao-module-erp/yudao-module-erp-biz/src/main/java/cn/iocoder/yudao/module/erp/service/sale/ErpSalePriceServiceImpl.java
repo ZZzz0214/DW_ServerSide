@@ -252,20 +252,34 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
 
 
         // 转换为响应对象
-        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);
+//        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);
 
-        // 如果有组品ID，查询组品数据并填充到 comboList
-        if (searchReqVO.getGroupProductId() != null) {
-            // 获取组品数据
-            List<ErpComboRespVO> comboList = erpComboProductService.getComboVOList(
-                    comboProductDOList.stream().map(ErpSalePriceDO::getGroupProductId).distinct().collect(Collectors.toList())
-            );
-
-            // 将组品数据填充到每个响应对象的 comboList 字段
-            respVOList.forEach(respVO -> {
-                respVO.setComboList(comboList);
-            });
-        }
+//        // 如果有组品ID，查询组品数据并填充到 comboList
+//        if (searchReqVO.getGroupProductId() != null) {
+//            // 获取组品数据
+//            List<ErpComboRespVO> comboList = erpComboProductService.getComboVOList(
+//                    comboProductDOList.stream().map(ErpSalePriceDO::getGroupProductId).distinct().collect(Collectors.toList())
+//            );
+//
+//            // 将组品数据填充到每个响应对象的 comboList 字段
+//            respVOList.forEach(respVO -> {
+//                respVO.setComboList(comboList);
+//            });
+//        }
+        // 转换为VO列表并设置组合产品信息
+        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList.stream()
+                .map(doObj -> {
+                    ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
+                    if (doObj.getGroupProductId() != null) {
+                        ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(doObj.getGroupProductId());
+                        if (comboRespVO != null) {
+                            vo.setComboList(Collections.singletonList(comboRespVO));
+                            vo.setGroupProductId(comboRespVO.getId());
+                        }
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList()), ErpSalePriceRespVO.class);
         // 转换为响应对象
         return respVOList;
     }
