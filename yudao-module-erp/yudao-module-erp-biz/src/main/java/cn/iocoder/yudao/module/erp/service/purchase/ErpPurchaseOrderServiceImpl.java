@@ -81,7 +81,7 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         // 2.1 插入订单
         ErpPurchaseOrderDO purchaseOrder = BeanUtils.toBean(createReqVO, ErpPurchaseOrderDO.class, in -> in
                 .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus()));
-        //calculateTotalPrice(purchaseOrder, purchaseOrderItems);
+        calculateTotalPrice(purchaseOrder, purchaseOrderItems);
         purchaseOrderMapper.insert(purchaseOrder);
         // 2.2 插入订单项
         purchaseOrderItems.forEach(o -> o.setOrderId(purchaseOrder.getId()));
