@@ -100,6 +100,8 @@ public class ErpSaleOrderRespVO {
 
     @Schema(description = "创建人", example = "芋道")
     private String creator;
+    @Schema(description = "创建人名称", example = "芋道")
+    private String creatorName;
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
@@ -111,6 +113,11 @@ public class ErpSaleOrderRespVO {
 
     @Schema(description = "订单项列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<Item> items;
+
+    //新增个汇总名字字段
+    @Schema(description = "产品信息", requiredMode = Schema.RequiredMode.REQUIRED)
+    @ExcelProperty("产品信息")
+    private String productNames;
 
     @Data
     public static class Item {

@@ -152,13 +152,17 @@ public class ErpSaleOrderController {
                 convertSet(pageResult.getList(), saleOrder -> Long.parseLong(saleOrder.getCreator())));
         // 2. 开始拼接
         return BeanUtils.toBean(pageResult, ErpSaleOrderRespVO.class, saleOrder -> {
-            saleOrder.setItems(BeanUtils.toBean(saleOrderItemMap.get(saleOrder.getId()), ErpSaleOrderRespVO.Item.class,
-                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName())
-        //                    .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
-                    )));
-            //saleOrder.setProductNames(CollUtil.join(saleOrder.getItems(), "，", ErpSaleOrderRespVO.Item::getProductName));
+            // 获取当前订单的订单项
+            List<ErpSaleOrderItemDO> currentOrderItems = saleOrderItemMap.get(saleOrder.getId());
+
+            saleOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpSaleOrderRespVO.Item.class,
+                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()))));
+            // 只拼接当前订单的订单项名称
+            if (CollUtil.isNotEmpty(currentOrderItems)) {
+                saleOrder.setProductNames(CollUtil.join(currentOrderItems, "，", ErpSaleOrderItemDO::getProductName));
+            }
             MapUtils.findAndThen(customerMap, saleOrder.getCustomerId(), supplier -> saleOrder.setCustomerName(supplier.getName()));
-            //MapUtils.findAndThen(userMap, Long.parseLong(saleOrder.getCreator()), user -> saleOrder.setCreatorName(user.getNickname()));
+            MapUtils.findAndThen(userMap, Long.parseLong(saleOrder.getCreator()), user -> saleOrder.setCreatorName(user.getNickname()));
         });
     }
 
