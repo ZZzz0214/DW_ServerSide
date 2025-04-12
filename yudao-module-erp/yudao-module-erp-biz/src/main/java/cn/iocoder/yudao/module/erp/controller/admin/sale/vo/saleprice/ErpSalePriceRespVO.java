@@ -104,4 +104,11 @@ public class ErpSalePriceRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
+
+    //新增字段
+    @Schema(description = "原表数量", example = "100")
+    private Integer originalQuantity;
+
+    @Schema(description = "发货编码", example = "SH202503250001")
+    private String shippingCode;
 }
