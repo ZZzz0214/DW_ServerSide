@@ -120,13 +120,13 @@ public class ErpWholesaleSaleOrderServiceImpl implements ErpWholesaleSaleOrderSe
         order.setTotalCount(getSumValue(orderItems, ErpWholesaleSaleOrderItemDO::getCount, BigDecimal::add));
         order.setTotalProductPrice(getSumValue(orderItems, ErpWholesaleSaleOrderItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO));
         order.setTotalTaxPrice(getSumValue(orderItems, ErpWholesaleSaleOrderItemDO::getTaxPrice, BigDecimal::add, BigDecimal.ZERO));
-        order.setTotalPrice(order.getTotalProductPrice().add(order.getTotalTaxPrice()));
+//        order.setTotalPrice(order.getTotalProductPrice().add(order.getTotalTaxPrice()));
         // 计算优惠价格
         if (order.getDiscountPercent() == null) {
             order.setDiscountPercent(BigDecimal.ZERO);
         }
         order.setDiscountPrice(MoneyUtils.priceMultiplyPercent(order.getTotalPrice(), order.getDiscountPercent()));
-        order.setTotalPrice(order.getTotalPrice().subtract(order.getDiscountPrice()));
+//        order.setTotalPrice(order.getTotalPrice().subtract(order.getDiscountPrice()));
     }
 
     @Override
