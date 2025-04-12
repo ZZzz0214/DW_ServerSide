@@ -171,6 +171,8 @@ public class ErpWholesalePurchaseOrderController {
         List<ErpWholesalePurchaseOrderItemDO> wholesalePurchaseOrderItemList =
             wholesalePurchaseOrderService.getWholesalePurchaseOrderItemListByOrderIds(
                 convertSet(pageResult.getList(), ErpWholesalePurchaseOrderDO::getId));
+        Map<Long, List<ErpWholesalePurchaseOrderItemDO>> wholesalePurchaseOrderItemMap =
+            convertMultiMap(wholesalePurchaseOrderItemList, ErpWholesalePurchaseOrderItemDO::getOrderId);
 
         // 分离单品和组品
         List<ErpWholesalePurchaseOrderItemDO> singleItemList = wholesalePurchaseOrderItemList.stream()
@@ -198,7 +200,10 @@ public class ErpWholesalePurchaseOrderController {
 
         // 2. 开始拼接
         return BeanUtils.toBean(pageResult, ErpWholesalePurchaseOrderRespVO.class, wholesalePurchaseOrder -> {
-            wholesalePurchaseOrder.setItems(BeanUtils.toBean(wholesalePurchaseOrderItemList,
+            // 获取当前订单的订单项
+            List<ErpWholesalePurchaseOrderItemDO> currentOrderItems = wholesalePurchaseOrderItemMap.get(wholesalePurchaseOrder.getId());
+
+            wholesalePurchaseOrder.setItems(BeanUtils.toBean(currentOrderItems,
                 ErpWholesalePurchaseOrderRespVO.Item.class, item -> {
                     if (item.getType() == 0) {
                         // 单品
@@ -210,8 +215,11 @@ public class ErpWholesalePurchaseOrderController {
                                 item.setOriginalProductName(combo.getName()));
                     }
                 }));
-            wholesalePurchaseOrder.setProductNames(CollUtil.join(wholesalePurchaseOrder.getItems(), "，",
-                ErpWholesalePurchaseOrderRespVO.Item::getOriginalProductName));
+            // 只拼接当前订单的订单项名称
+            if (CollUtil.isNotEmpty(currentOrderItems)) {
+                wholesalePurchaseOrder.setProductNames(CollUtil.join(currentOrderItems, "，",
+                        ErpWholesalePurchaseOrderItemDO::getOriginalProductName));
+            }
             MapUtils.findAndThen(supplierMap, wholesalePurchaseOrder.getSupplierId(),
                 supplier -> wholesalePurchaseOrder.setSupplierName(supplier.getName()));
             MapUtils.findAndThen(userMap, Long.parseLong(wholesalePurchaseOrder.getCreator()),
