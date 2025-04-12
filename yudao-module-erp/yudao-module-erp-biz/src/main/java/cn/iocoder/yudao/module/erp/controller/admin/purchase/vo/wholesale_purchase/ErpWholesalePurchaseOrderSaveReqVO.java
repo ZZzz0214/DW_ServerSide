@@ -16,22 +16,18 @@ public class ErpWholesalePurchaseOrderSaveReqVO {
     private Long id;
 
     @Schema(description = "订单号", requiredMode = Schema.RequiredMode.REQUIRED, example = "WPO202503250001")
-    @NotNull(message = "订单号不能为空")
     private String no;
 
     @Schema(description = "采购状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "采购状态不能为空")
     private Integer status;
 
     @Schema(description = "供应商编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1724")
-    @NotNull(message = "供应商编号不能为空")
     private Long supplierId;
 
     @Schema(description = "结算账户编号", example = "31189")
     private Long accountId;
 
     @Schema(description = "采购时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "采购时间不能为空")
     private LocalDateTime orderTime;
 
     @Schema(description = "物流公司", example = "顺丰速运")
@@ -108,7 +104,6 @@ public class ErpWholesalePurchaseOrderSaveReqVO {
         private Integer type;
 
         @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
-        @NotNull(message = "产品编号不能为空")
         private Long productId;
 
         @Schema(description = "组品编号", example = "3114")
@@ -151,7 +146,6 @@ public class ErpWholesalePurchaseOrderSaveReqVO {
         private BigDecimal totalPrice;
 
         @Schema(description = "产品单位编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
-        @NotNull(message = "产品单位编号不能为空")
         private Long productUnitId;
 
         @Schema(description = "数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
