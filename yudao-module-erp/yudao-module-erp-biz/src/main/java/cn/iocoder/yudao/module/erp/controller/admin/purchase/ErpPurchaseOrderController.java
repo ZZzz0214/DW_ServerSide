@@ -203,6 +203,7 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
     // 1.1 订单项
     List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderIds(
             convertSet(pageResult.getList(), ErpPurchaseOrderDO::getId));
+    Map<Long, List<ErpPurchaseOrderItemDO>> purchaseOrderItemMap = convertMultiMap(purchaseOrderItemList, ErpPurchaseOrderItemDO::getOrderId);
 
     // 分离单品和组品
     List<ErpPurchaseOrderItemDO> singleItemList = purchaseOrderItemList.stream()
@@ -230,7 +231,10 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
 
     // 2. 开始拼接
     return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class, purchaseOrder -> {
-        purchaseOrder.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
+        // 获取当前订单的订单项
+        List<ErpPurchaseOrderItemDO> currentOrderItems = purchaseOrderItemMap.get(purchaseOrder.getId());
+
+        purchaseOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpPurchaseOrderRespVO.Item.class, item -> {
             if (item.getType() == 0) {
                 // 单品
                 MapUtils.findAndThen(productMap, item.getProductId(), product ->
@@ -241,7 +245,10 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
                         item.setOriginalProductName(combo.getName()));
             }
         }));
-        purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getOriginalProductName));
+        // 添加空值检查
+        if (CollUtil.isNotEmpty(currentOrderItems)) {
+            purchaseOrder.setProductNames(CollUtil.join(currentOrderItems, "，", ErpPurchaseOrderItemDO::getOriginalProductName));
+        }
         MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
         MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
     });
