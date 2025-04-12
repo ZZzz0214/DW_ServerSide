@@ -275,6 +275,12 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                         if (comboRespVO != null) {
                             vo.setComboList(Collections.singletonList(comboRespVO));
                             vo.setGroupProductId(comboRespVO.getId());
+                            vo.setProductName(comboRespVO.getName());
+                            vo.setProductShortName(comboRespVO.getShortName());
+                            vo.setOriginalQuantity(comboRespVO.getTotalQuantity());
+                            vo.setShippingCode(comboRespVO.getShippingCode());
+
+
                         }
                     }
                     return vo;
