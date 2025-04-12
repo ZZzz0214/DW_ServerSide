@@ -119,7 +119,7 @@ public class ErpProductDO extends BaseDO {
     /**
      * 现货数量
      */
-    private Integer availableStockQuantity;
+    private Integer totalQuantity;
 
     /**
      * 包材数量

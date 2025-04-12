@@ -93,7 +93,7 @@ public class ErpProductRespVO {
 
     @Schema(description = "现货数量")
     @ExcelProperty("现货数量")
-    private Integer availableStockQuantity;
+    private Integer totalQuantity;
 
     @Schema(description = "包材数量")
     @ExcelProperty("包材数量")
