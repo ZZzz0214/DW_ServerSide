@@ -71,7 +71,7 @@ public class ProductSaveReqVO {
     private String trademarkCode;
 
     @Schema(description = "现货数量")
-    private Integer availableStockQuantity;
+    private Integer totalQuantity;
 
     @Schema(description = "包材数量")
     private Integer packagingMaterialQuantity;
