@@ -152,12 +152,21 @@ public class ErpWholesaleSaleOrderController {
                 convertSet(pageResult.getList(), wholesaleSaleOrder -> Long.parseLong(wholesaleSaleOrder.getCreator())));
         // 2. 开始拼接
         return BeanUtils.toBean(pageResult, ErpWholesaleSaleOrderRespVO.class, wholesaleSaleOrder -> {
-            wholesaleSaleOrder.setItems(BeanUtils.toBean(wholesaleSaleOrderItemMap.get(wholesaleSaleOrder.getId()),
+            // 获取当前订单的订单项
+            List<ErpWholesaleSaleOrderItemDO> currentOrderItems = wholesaleSaleOrderItemMap.get(wholesaleSaleOrder.getId());
+
+            wholesaleSaleOrder.setItems(BeanUtils.toBean(currentOrderItems,
                     ErpWholesaleSaleOrderRespVO.Item.class,
                     item -> MapUtils.findAndThen(productMap, item.getProductId(),
                             product -> item.setProductName(product.getName()))));
+            // 只拼接当前订单的订单项名称
+            if (CollUtil.isNotEmpty(currentOrderItems)) {
+                wholesaleSaleOrder.setProductNames(CollUtil.join(currentOrderItems, "，", ErpWholesaleSaleOrderItemDO::getProductName));
+            }
             MapUtils.findAndThen(customerMap, wholesaleSaleOrder.getCustomerId(),
                     customer -> wholesaleSaleOrder.setCustomerName(customer.getName()));
+            MapUtils.findAndThen(userMap, Long.parseLong(wholesaleSaleOrder.getCreator()),
+                    user -> wholesaleSaleOrder.setCreatorName(user.getNickname()));
         });
     }
 }
