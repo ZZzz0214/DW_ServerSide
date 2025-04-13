@@ -159,7 +159,7 @@ public class ErpPurchaseOrderController {
     @Operation(summary = "获得未审核采购订单分页")
     @PreAuthorize("@ss.hasPermission('erp:purchase-order:query')")
     public CommonResult<PageResult<ErpPurchaseOrderRespVO>> getUnreviewedPurchaseOrderPage(@Valid ErpPurchaseOrderPageReqVO pageReqVO) {
-        pageReqVO.setStatus(100); // 设置状态为未审核
+        pageReqVO.setStatus(10); // 设置状态为未审核
         PageResult<ErpPurchaseOrderDO> pageResult = purchaseOrderService.getPurchaseOrderPage(pageReqVO);
         return success(buildPurchaseOrderVOPageResult(pageResult));
     }
@@ -168,7 +168,7 @@ public class ErpPurchaseOrderController {
     @Operation(summary = "获得已审核采购订单分页")
     @PreAuthorize("@ss.hasPermission('erp:purchase-order:query')")
     public CommonResult<PageResult<ErpPurchaseOrderRespVO>> getReviewedPurchaseOrderPage(@Valid ErpPurchaseOrderPageReqVO pageReqVO) {
-        pageReqVO.setStatus(200); // 设置状态为已审核
+        pageReqVO.setStatus(20); // 设置状态为已审核
         PageResult<ErpPurchaseOrderDO> pageResult = purchaseOrderService.getPurchaseOrderPage(pageReqVO);
         return success(buildPurchaseOrderVOPageResult(pageResult));
     }

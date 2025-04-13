@@ -125,7 +125,7 @@ public class ErpSaleOrderController {
     @Operation(summary = "获得未审核销售订单分页")
     @PreAuthorize("@ss.hasPermission('erp:sale-out:query')")
     public CommonResult<PageResult<ErpSaleOrderRespVO>> getUnreviewedSaleOrderPage(@Valid ErpSaleOrderPageReqVO pageReqVO) {
-        pageReqVO.setStatus(100); // 设置状态为未审核
+        pageReqVO.setStatus(10); // 设置状态为未审核
         PageResult<ErpSaleOrderDO> pageResult = saleOrderService.getSaleOrderPage(pageReqVO);
         return success(buildSaleOrderVOPageResult(pageResult));
     }
@@ -134,7 +134,7 @@ public class ErpSaleOrderController {
     @Operation(summary = "获得已审核销售订单分页")
     @PreAuthorize("@ss.hasPermission('erp:sale-out:query')")
     public CommonResult<PageResult<ErpSaleOrderRespVO>> getReviewedSaleOrderPage(@Valid ErpSaleOrderPageReqVO pageReqVO) {
-        pageReqVO.setStatus(200); // 设置状态为已审核
+        pageReqVO.setStatus(20); // 设置状态为已审核
         PageResult<ErpSaleOrderDO> pageResult = saleOrderService.getSaleOrderPage(pageReqVO);
         return success(buildSaleOrderVOPageResult(pageResult));
     }
