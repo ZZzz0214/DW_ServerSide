@@ -121,6 +121,24 @@ public class ErpSaleOrderController {
         return success(buildSaleOrderVOPageResult(pageResult));
     }
 
+    @GetMapping("/page2")
+    @Operation(summary = "获得未审核销售订单分页")
+    @PreAuthorize("@ss.hasPermission('erp:sale-out:query')")
+    public CommonResult<PageResult<ErpSaleOrderRespVO>> getUnreviewedSaleOrderPage(@Valid ErpSaleOrderPageReqVO pageReqVO) {
+        pageReqVO.setStatus(100); // 设置状态为未审核
+        PageResult<ErpSaleOrderDO> pageResult = saleOrderService.getSaleOrderPage(pageReqVO);
+        return success(buildSaleOrderVOPageResult(pageResult));
+    }
+
+    @GetMapping("/page3")
+    @Operation(summary = "获得已审核销售订单分页")
+    @PreAuthorize("@ss.hasPermission('erp:sale-out:query')")
+    public CommonResult<PageResult<ErpSaleOrderRespVO>> getReviewedSaleOrderPage(@Valid ErpSaleOrderPageReqVO pageReqVO) {
+        pageReqVO.setStatus(200); // 设置状态为已审核
+        PageResult<ErpSaleOrderDO> pageResult = saleOrderService.getSaleOrderPage(pageReqVO);
+        return success(buildSaleOrderVOPageResult(pageResult));
+    }
+
     @GetMapping("/export-excel")
     @Operation(summary = "导出销售订单 Excel")
     @PreAuthorize("@ss.hasPermission('erp:sale-out:export')")

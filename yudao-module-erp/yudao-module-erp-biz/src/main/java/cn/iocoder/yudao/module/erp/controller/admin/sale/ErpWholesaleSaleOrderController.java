@@ -119,6 +119,26 @@ public class ErpWholesaleSaleOrderController {
         return success(buildWholesaleSaleOrderVOPageResult(pageResult));
     }
 
+    @GetMapping("/page2")
+    @Operation(summary = "获得未审核批发销售订单分页")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale-sale-out:query')")
+    public CommonResult<PageResult<ErpWholesaleSaleOrderRespVO>> getUnreviewedWholesaleSaleOrderPage(
+            @Valid ErpWholesaleSaleOrderPageReqVO pageReqVO) {
+        pageReqVO.setStatus(100); // 设置状态为未审核
+        PageResult<ErpWholesaleSaleOrderDO> pageResult = wholesaleSaleOrderService.getWholesaleSaleOrderPage(pageReqVO);
+        return success(buildWholesaleSaleOrderVOPageResult(pageResult));
+    }
+
+    @GetMapping("/page3")
+    @Operation(summary = "获得已审核批发销售订单分页")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale-sale-out:query')")
+    public CommonResult<PageResult<ErpWholesaleSaleOrderRespVO>> getReviewedWholesaleSaleOrderPage(
+            @Valid ErpWholesaleSaleOrderPageReqVO pageReqVO) {
+        pageReqVO.setStatus(200); // 设置状态为已审核
+        PageResult<ErpWholesaleSaleOrderDO> pageResult = wholesaleSaleOrderService.getWholesaleSaleOrderPage(pageReqVO);
+        return success(buildWholesaleSaleOrderVOPageResult(pageResult));
+    }
+
     @GetMapping("/export-excel")
     @Operation(summary = "导出批发销售订单 Excel")
     @PreAuthorize("@ss.hasPermission('erp:wholesale-sale-out:export')")
