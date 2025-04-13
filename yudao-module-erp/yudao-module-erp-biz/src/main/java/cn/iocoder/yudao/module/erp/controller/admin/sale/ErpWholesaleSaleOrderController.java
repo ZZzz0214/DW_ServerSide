@@ -124,7 +124,7 @@ public class ErpWholesaleSaleOrderController {
     @PreAuthorize("@ss.hasPermission('erp:wholesale-sale-out:query')")
     public CommonResult<PageResult<ErpWholesaleSaleOrderRespVO>> getUnreviewedWholesaleSaleOrderPage(
             @Valid ErpWholesaleSaleOrderPageReqVO pageReqVO) {
-        pageReqVO.setStatus(100); // 设置状态为未审核
+        pageReqVO.setStatus(10); // 设置状态为未审核
         PageResult<ErpWholesaleSaleOrderDO> pageResult = wholesaleSaleOrderService.getWholesaleSaleOrderPage(pageReqVO);
         return success(buildWholesaleSaleOrderVOPageResult(pageResult));
     }
@@ -134,7 +134,7 @@ public class ErpWholesaleSaleOrderController {
     @PreAuthorize("@ss.hasPermission('erp:wholesale-sale-out:query')")
     public CommonResult<PageResult<ErpWholesaleSaleOrderRespVO>> getReviewedWholesaleSaleOrderPage(
             @Valid ErpWholesaleSaleOrderPageReqVO pageReqVO) {
-        pageReqVO.setStatus(200); // 设置状态为已审核
+        pageReqVO.setStatus(20); // 设置状态为已审核
         PageResult<ErpWholesaleSaleOrderDO> pageResult = wholesaleSaleOrderService.getWholesaleSaleOrderPage(pageReqVO);
         return success(buildWholesaleSaleOrderVOPageResult(pageResult));
     }
