@@ -54,10 +54,10 @@ public class ErpSalePriceController {
 
     @DeleteMapping("/delete")
     @Operation(summary = "删除销售价格")
-    @Parameter(name = "id", description = "编号", required = true)
+    @Parameter(name = "ids", description = "编号数组", required = true)
     @PreAuthorize("@ss.hasPermission('erp:sale-price:delete')")
-    public CommonResult<Boolean> deleteSalePrice(@RequestParam("id") Long id) {
-        salePriceService.deleteSalePrice(id);
+    public CommonResult<Boolean> deleteSalePrice(@RequestParam("ids") List<Long> ids) {
+        salePriceService.deleteSalePrice(ids);
         return success(true);
     }
 
