@@ -107,7 +107,7 @@ public class ErpSaleOrderController {
                 convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         return success(BeanUtils.toBean(saleOrder, ErpSaleOrderRespVO.class, saleOrderVO -> {
             saleOrderVO.setItems(BeanUtils.toBean(saleOrderItemList, ErpSaleOrderRespVO.Item.class, item -> {
-                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
+                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
             }));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(saleOrderVO.getItems())) {
@@ -179,7 +179,7 @@ public class ErpSaleOrderController {
             List<ErpSaleOrderItemDO> currentOrderItems = saleOrderItemMap.get(saleOrder.getId());
 
             saleOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpSaleOrderRespVO.Item.class,
-                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()))));
+                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()))));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
                 saleOrder.setProductNames(currentOrderItems.stream()
