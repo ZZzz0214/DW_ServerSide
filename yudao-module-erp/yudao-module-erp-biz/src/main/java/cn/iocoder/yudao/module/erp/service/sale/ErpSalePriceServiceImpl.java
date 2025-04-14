@@ -90,9 +90,14 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     }
 
     @Override
-    public void deleteSalePrice(Long id) {
-        validateSalePriceExists(id);
-        erpSalePriceMapper.deleteById(id);
+    public void deleteSalePrice(List<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+        for (Long id : ids) {
+            validateSalePriceExists(id);
+        }
+        erpSalePriceMapper.deleteBatchIds(ids);
     }
 
     @Override

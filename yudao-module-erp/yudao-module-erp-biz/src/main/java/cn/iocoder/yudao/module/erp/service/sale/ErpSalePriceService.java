@@ -39,9 +39,9 @@ public interface ErpSalePriceService {
     /**
      * 删除销售价格
      *
-     * @param id 编号
+     * @param ids 编号数组
      */
-    void deleteSalePrice(Long id);
+    void deleteSalePrice(List<Long> ids);
 
     /**
      * 校验销售价格的有效性
