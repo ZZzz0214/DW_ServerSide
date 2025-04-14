@@ -136,7 +136,13 @@ public class ErpWholesalePurchaseOrderController {
                                 item.setOriginalProductName(combo.getName()));
                     }
                 }));
-        }));
+        // 设置productNames字段
+        if (CollUtil.isNotEmpty(wholesalePurchaseOrderVO.getItems())) {
+            wholesalePurchaseOrderVO.setProductNames(wholesalePurchaseOrderVO.getItems().stream()
+                    .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                    .collect(Collectors.joining("+")));
+        }
+    }));
     }
 
     @GetMapping("/page")
@@ -236,10 +242,11 @@ public class ErpWholesalePurchaseOrderController {
                                 item.setOriginalProductName(combo.getName()));
                     }
                 }));
-            // 只拼接当前订单的订单项名称
+            // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
-                wholesalePurchaseOrder.setProductNames(CollUtil.join(currentOrderItems, "，",
-                        ErpWholesalePurchaseOrderItemDO::getOriginalProductName));
+                wholesalePurchaseOrder.setProductNames(currentOrderItems.stream()
+                        .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                        .collect(Collectors.joining("+")));
             }
             MapUtils.findAndThen(supplierMap, wholesalePurchaseOrder.getSupplierId(),
                 supplier -> wholesalePurchaseOrder.setSupplierName(supplier.getName()));

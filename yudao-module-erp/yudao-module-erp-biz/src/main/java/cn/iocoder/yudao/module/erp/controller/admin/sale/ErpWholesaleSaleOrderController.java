@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -105,10 +106,17 @@ public class ErpWholesaleSaleOrderController {
         List<ErpWholesaleSaleOrderItemDO> wholesaleSaleOrderItemList = wholesaleSaleOrderService.getWholesaleSaleOrderItemListByOrderId(id);
         Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
                 convertSet(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderItemDO::getProductId));
-        return success(BeanUtils.toBean(wholesaleSaleOrder, ErpWholesaleSaleOrderRespVO.class, wholesaleSaleOrderVO ->
-                wholesaleSaleOrderVO.setItems(BeanUtils.toBean(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderRespVO.Item.class, item -> {
-                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
-                }))));
+        return success(BeanUtils.toBean(wholesaleSaleOrder, ErpWholesaleSaleOrderRespVO.class, wholesaleSaleOrderVO -> {
+            wholesaleSaleOrderVO.setItems(BeanUtils.toBean(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderRespVO.Item.class, item -> {
+                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
+            }));
+            // 设置productNames字段
+            if (CollUtil.isNotEmpty(wholesaleSaleOrderVO.getItems())) {
+                wholesaleSaleOrderVO.setProductNames(wholesaleSaleOrderVO.getItems().stream()
+                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .collect(Collectors.joining("+")));
+            }
+        }));
     }
 
     @GetMapping("/page")
@@ -179,9 +187,11 @@ public class ErpWholesaleSaleOrderController {
                     ErpWholesaleSaleOrderRespVO.Item.class,
                     item -> MapUtils.findAndThen(productMap, item.getProductId(),
                             product -> item.setProductName(product.getName()))));
-            // 只拼接当前订单的订单项名称
+            // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
-                wholesaleSaleOrder.setProductNames(CollUtil.join(currentOrderItems, "，", ErpWholesaleSaleOrderItemDO::getProductName));
+                wholesaleSaleOrder.setProductNames(currentOrderItems.stream()
+                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .collect(Collectors.joining("+")));
             }
             MapUtils.findAndThen(customerMap, wholesaleSaleOrder.getCustomerId(),
                     customer -> wholesaleSaleOrder.setCustomerName(customer.getName()));

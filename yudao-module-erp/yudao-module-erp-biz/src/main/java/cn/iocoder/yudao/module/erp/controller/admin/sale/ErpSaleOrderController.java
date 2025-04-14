@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -104,13 +105,17 @@ public class ErpSaleOrderController {
         List<ErpSaleOrderItemDO> saleOrderItemList = saleOrderService.getSaleOrderItemListByOrderId(id);
         Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
                 convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
-        return success(BeanUtils.toBean(saleOrder, ErpSaleOrderRespVO.class, saleOrderVO ->
-                saleOrderVO.setItems(BeanUtils.toBean(saleOrderItemList, ErpSaleOrderRespVO.Item.class, item -> {
-//                    BigDecimal stockCount = stockService.getStockCount(item.getProductId());
-//                    item.setStockCount(stockCount != null ? stockCount : BigDecimal.ZERO);
-                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
-//                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
-                }))));
+        return success(BeanUtils.toBean(saleOrder, ErpSaleOrderRespVO.class, saleOrderVO -> {
+            saleOrderVO.setItems(BeanUtils.toBean(saleOrderItemList, ErpSaleOrderRespVO.Item.class, item -> {
+                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
+            }));
+            // 设置productNames字段
+            if (CollUtil.isNotEmpty(saleOrderVO.getItems())) {
+                saleOrderVO.setProductNames(saleOrderVO.getItems().stream()
+                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .collect(Collectors.joining("+")));
+            }
+        }));
     }
 
     @GetMapping("/page")
@@ -175,9 +180,11 @@ public class ErpSaleOrderController {
 
             saleOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpSaleOrderRespVO.Item.class,
                     item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()))));
-            // 只拼接当前订单的订单项名称
+            // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
-                saleOrder.setProductNames(CollUtil.join(currentOrderItems, "，", ErpSaleOrderItemDO::getProductName));
+                saleOrder.setProductNames(currentOrderItems.stream()
+                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .collect(Collectors.joining("+")));
             }
             MapUtils.findAndThen(customerMap, saleOrder.getCustomerId(), supplier -> saleOrder.setCustomerName(supplier.getName()));
             MapUtils.findAndThen(userMap, Long.parseLong(saleOrder.getCreator()), user -> saleOrder.setCreatorName(user.getNickname()));
