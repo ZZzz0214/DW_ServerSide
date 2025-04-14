@@ -108,12 +108,24 @@ public class ErpWholesaleSaleOrderController {
                 convertSet(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderItemDO::getProductId));
         return success(BeanUtils.toBean(wholesaleSaleOrder, ErpWholesaleSaleOrderRespVO.class, wholesaleSaleOrderVO -> {
             wholesaleSaleOrderVO.setItems(BeanUtils.toBean(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderRespVO.Item.class, item -> {
-                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
+                MapUtils.findAndThen(productMap, item.getProductId(), product ->
+                        item.setProductName(product.getName())
+                            .setShippingFeeType(product.getShippingFeeType())
+                            .setFixedShippingFee(product.getFixedShippingFee())
+                            .setFirstItemQuantity(product.getFirstItemQuantity())
+                            .setFirstItemPrice(product.getFirstItemPrice())
+                            .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                            .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                            .setFirstWeight(product.getFirstWeight())
+                            .setFirstWeightPrice(product.getFirstWeightPrice())
+                            .setAdditionalWeight(product.getAdditionalWeight())
+                            .setAdditionalWeightPrice(product.getAdditionalWeightPrice())
+                );
             }));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(wholesaleSaleOrderVO.getItems())) {
                 wholesaleSaleOrderVO.setProductNames(wholesaleSaleOrderVO.getItems().stream()
-                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .map(item -> item.getProductName() + "*" + item.getCount())
                         .collect(Collectors.joining("+")));
             }
         }));
@@ -183,14 +195,24 @@ public class ErpWholesaleSaleOrderController {
             // 获取当前订单的订单项
             List<ErpWholesaleSaleOrderItemDO> currentOrderItems = wholesaleSaleOrderItemMap.get(wholesaleSaleOrder.getId());
 
-            wholesaleSaleOrder.setItems(BeanUtils.toBean(currentOrderItems,
-                    ErpWholesaleSaleOrderRespVO.Item.class,
-                    item -> MapUtils.findAndThen(productMap, item.getProductId(),
-                            product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()))));
+            wholesaleSaleOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpWholesaleSaleOrderRespVO.Item.class,
+                item -> MapUtils.findAndThen(productMap, item.getProductId(), product ->
+                    item.setProductName(product.getName())
+                        .setShippingFeeType(product.getShippingFeeType())
+                        .setFixedShippingFee(product.getFixedShippingFee())
+                        .setFirstItemQuantity(product.getFirstItemQuantity())
+                        .setFirstItemPrice(product.getFirstItemPrice())
+                        .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                        .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                        .setFirstWeight(product.getFirstWeight())
+                        .setFirstWeightPrice(product.getFirstWeightPrice())
+                        .setAdditionalWeight(product.getAdditionalWeight())
+                        .setAdditionalWeightPrice(product.getAdditionalWeightPrice())
+            )));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
                 wholesaleSaleOrder.setProductNames(currentOrderItems.stream()
-                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .map(item -> item.getProductName() + "*" + item.getCount())
                         .collect(Collectors.joining("+")));
             }
             MapUtils.findAndThen(customerMap, wholesaleSaleOrder.getCustomerId(),

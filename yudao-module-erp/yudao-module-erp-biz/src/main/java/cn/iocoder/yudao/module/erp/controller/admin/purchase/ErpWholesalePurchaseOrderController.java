@@ -129,17 +129,39 @@ public class ErpWholesalePurchaseOrderController {
                     if (item.getType() == 0) {
                         // 单品
                         MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                                item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
+                                item.setOriginalProductName(product.getName())
+                                    .setShippingFeeType(product.getShippingFeeType())
+                                    .setFixedShippingFee(product.getFixedShippingFee())
+                                    .setFirstItemQuantity(product.getFirstItemQuantity())
+                                    .setFirstItemPrice(product.getFirstItemPrice())
+                                    .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                                    .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                                    .setFirstWeight(product.getFirstWeight())
+                                    .setFirstWeightPrice(product.getFirstWeightPrice())
+                                    .setAdditionalWeight(product.getAdditionalWeight())
+                                    .setAdditionalWeightPrice(product.getAdditionalWeightPrice())
+                        );
                     } else {
                         // 组品
                         MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                                item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType()));
+                                item.setOriginalProductName(combo.getName())
+                                    .setShippingFeeType(combo.getShippingFeeType())
+                                    .setFixedShippingFee(combo.getFixedShippingFee())
+                                    .setFirstItemQuantity(combo.getFirstItemQuantity())
+                                    .setFirstItemPrice(combo.getFirstItemPrice())
+                                    .setAdditionalItemQuantity(combo.getAdditionalItemQuantity())
+                                    .setAdditionalItemPrice(combo.getAdditionalItemPrice())
+                                    .setFirstWeight(combo.getFirstWeight())
+                                    .setFirstWeightPrice(combo.getFirstWeightPrice())
+                                    .setAdditionalWeight(combo.getAdditionalWeight())
+                                    .setAdditionalWeightPrice(combo.getAdditionalWeightPrice())
+                        );
                     }
                 }));
         // 设置productNames字段
         if (CollUtil.isNotEmpty(wholesalePurchaseOrderVO.getItems())) {
             wholesalePurchaseOrderVO.setProductNames(wholesalePurchaseOrderVO.getItems().stream()
-                    .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                    .map(item -> item.getOriginalProductName() + "*" + item.getCount())
                     .collect(Collectors.joining("+")));
         }
     }));
@@ -235,19 +257,41 @@ public class ErpWholesalePurchaseOrderController {
                     if (item.getType() == 0) {
                         // 单品
                         MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                                item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
-                    } else {
-                        // 组品
-                        MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                                item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType()));
-                    }
-                }));
-            // 设置productNames字段
-            if (CollUtil.isNotEmpty(currentOrderItems)) {
-                wholesalePurchaseOrder.setProductNames(currentOrderItems.stream()
-                        .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
-                        .collect(Collectors.joining("+")));
-            }
+                                item.setOriginalProductName(product.getName())
+                                    .setShippingFeeType(product.getShippingFeeType())
+                                    .setFixedShippingFee(product.getFixedShippingFee())
+                                    .setFirstItemQuantity(product.getFirstItemQuantity())
+                                    .setFirstItemPrice(product.getFirstItemPrice())
+                                    .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                                    .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                                    .setFirstWeight(product.getFirstWeight())
+                                    .setFirstWeightPrice(product.getFirstWeightPrice())
+                                    .setAdditionalWeight(product.getAdditionalWeight())
+                                    .setAdditionalWeightPrice(product.getAdditionalWeightPrice())
+            );
+        } else {
+            // 组品
+            MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
+                item.setOriginalProductName(combo.getName())
+                    .setShippingFeeType(combo.getShippingFeeType())
+                    .setFixedShippingFee(combo.getFixedShippingFee())
+                    .setFirstItemQuantity(combo.getFirstItemQuantity())
+                    .setFirstItemPrice(combo.getFirstItemPrice())
+                    .setAdditionalItemQuantity(combo.getAdditionalItemQuantity())
+                    .setAdditionalItemPrice(combo.getAdditionalItemPrice())
+                    .setFirstWeight(combo.getFirstWeight())
+                    .setFirstWeightPrice(combo.getFirstWeightPrice())
+                    .setAdditionalWeight(combo.getAdditionalWeight())
+                    .setAdditionalWeightPrice(combo.getAdditionalWeightPrice())
+            );
+        }
+    }));
+        // 设置productNames字段
+        if (CollUtil.isNotEmpty(currentOrderItems)) {
+            wholesalePurchaseOrder.setProductNames(currentOrderItems.stream()
+                    .map(item -> item.getOriginalProductName() + "*" + item.getCount())
+                    .collect(Collectors.joining("+")));
+        }
             MapUtils.findAndThen(supplierMap, wholesalePurchaseOrder.getSupplierId(),
                 supplier -> wholesalePurchaseOrder.setSupplierName(supplier.getName()));
             MapUtils.findAndThen(userMap, Long.parseLong(wholesalePurchaseOrder.getCreator()),
