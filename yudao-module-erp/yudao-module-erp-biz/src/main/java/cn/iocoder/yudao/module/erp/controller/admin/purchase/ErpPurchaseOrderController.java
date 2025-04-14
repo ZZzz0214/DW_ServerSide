@@ -126,14 +126,32 @@ public class ErpPurchaseOrderController {
                 if (item.getType() == 0) {
                     // 单品
                     MapUtils.findAndThen(productMap, item.getProductId(), product -> {
-                        BeanUtils.copyProperties(product, item); // 自动复制所有匹配的属性
-                        item.setOriginalProductName(product.getName()); // 特殊字段单独处理
+                        item.setOriginalProductName(product.getName())
+                            .setShippingFeeType(product.getShippingFeeType())
+                            .setFixedShippingFee(product.getFixedShippingFee())
+                            .setFirstItemQuantity(product.getFirstItemQuantity())
+                            .setFirstItemPrice(product.getFirstItemPrice())
+                            .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                            .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                            .setFirstWeight(product.getFirstWeight())
+                            .setFirstWeightPrice(product.getFirstWeightPrice())
+                            .setAdditionalWeight(product.getAdditionalWeight())
+                            .setAdditionalWeightPrice(product.getAdditionalWeightPrice());
                     });
                 } else {
                     // 组品
                     MapUtils.findAndThen(comboMap, item.getComboProductId(), combo -> {
-                        BeanUtils.copyProperties(combo, item); // 自动复制所有匹配的属性
-                        item.setOriginalProductName(combo.getName()); // 特殊字段单独处理
+                        item.setOriginalProductName(combo.getName())
+                            .setShippingFeeType(combo.getShippingFeeType())
+                            .setFixedShippingFee(combo.getFixedShippingFee())
+                            .setFirstItemQuantity(combo.getFirstItemQuantity())
+                            .setFirstItemPrice(combo.getFirstItemPrice())
+                            .setAdditionalItemQuantity(combo.getAdditionalItemQuantity())
+                            .setAdditionalItemPrice(combo.getAdditionalItemPrice())
+                            .setFirstWeight(combo.getFirstWeight())
+                            .setFirstWeightPrice(combo.getFirstWeightPrice())
+                            .setAdditionalWeight(combo.getAdditionalWeight())
+                            .setAdditionalWeightPrice(combo.getAdditionalWeightPrice());
                     });
                 }
             }));
@@ -229,14 +247,32 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
             if (item.getType() == 0) {
                 // 单品
                 MapUtils.findAndThen(productMap, item.getProductId(), product -> {
-                    BeanUtils.copyProperties(product, item); // 自动复制所有匹配的属性
-                    item.setOriginalProductName(product.getName()); // 特殊字段单独处理
+                    item.setOriginalProductName(product.getName())
+                        .setShippingFeeType(product.getShippingFeeType())
+                        .setFixedShippingFee(product.getFixedShippingFee())
+                        .setFirstItemQuantity(product.getFirstItemQuantity())
+                        .setFirstItemPrice(product.getFirstItemPrice())
+                        .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                        .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                        .setFirstWeight(product.getFirstWeight())
+                        .setFirstWeightPrice(product.getFirstWeightPrice())
+                        .setAdditionalWeight(product.getAdditionalWeight())
+                        .setAdditionalWeightPrice(product.getAdditionalWeightPrice());
                 });
             } else {
                 // 组品
                 MapUtils.findAndThen(comboMap, item.getComboProductId(), combo -> {
-                    BeanUtils.copyProperties(combo, item); // 自动复制所有匹配的属性
-                    item.setOriginalProductName(combo.getName()); // 特殊字段单独处理
+                    item.setOriginalProductName(combo.getName())
+                        .setShippingFeeType(combo.getShippingFeeType())
+                        .setFixedShippingFee(combo.getFixedShippingFee())
+                        .setFirstItemQuantity(combo.getFirstItemQuantity())
+                        .setFirstItemPrice(combo.getFirstItemPrice())
+                        .setAdditionalItemQuantity(combo.getAdditionalItemQuantity())
+                        .setAdditionalItemPrice(combo.getAdditionalItemPrice())
+                        .setFirstWeight(combo.getFirstWeight())
+                        .setFirstWeightPrice(combo.getFirstWeightPrice())
+                        .setAdditionalWeight(combo.getAdditionalWeight())
+                        .setAdditionalWeightPrice(combo.getAdditionalWeightPrice());
                 });
             }
         }));
