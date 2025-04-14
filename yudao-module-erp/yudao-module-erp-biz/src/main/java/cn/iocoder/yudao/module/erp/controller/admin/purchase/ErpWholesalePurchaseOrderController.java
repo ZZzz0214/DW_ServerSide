@@ -129,11 +129,11 @@ public class ErpWholesalePurchaseOrderController {
                     if (item.getType() == 0) {
                         // 单品
                         MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                                item.setOriginalProductName(product.getName()));
+                                item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
                     } else {
                         // 组品
                         MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                                item.setOriginalProductName(combo.getName()));
+                                item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType()));
                     }
                 }));
         // 设置productNames字段
@@ -235,11 +235,11 @@ public class ErpWholesalePurchaseOrderController {
                     if (item.getType() == 0) {
                         // 单品
                         MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                                item.setOriginalProductName(product.getName()));
+                                item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
                     } else {
                         // 组品
                         MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                                item.setOriginalProductName(combo.getName()));
+                                item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType()));
                     }
                 }));
             // 设置productNames字段

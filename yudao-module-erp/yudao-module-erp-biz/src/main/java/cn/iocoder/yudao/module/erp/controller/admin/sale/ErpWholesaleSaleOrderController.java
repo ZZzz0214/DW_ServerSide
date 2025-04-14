@@ -108,7 +108,7 @@ public class ErpWholesaleSaleOrderController {
                 convertSet(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderItemDO::getProductId));
         return success(BeanUtils.toBean(wholesaleSaleOrder, ErpWholesaleSaleOrderRespVO.class, wholesaleSaleOrderVO -> {
             wholesaleSaleOrderVO.setItems(BeanUtils.toBean(wholesaleSaleOrderItemList, ErpWholesaleSaleOrderRespVO.Item.class, item -> {
-                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()));
+                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
             }));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(wholesaleSaleOrderVO.getItems())) {
@@ -186,7 +186,7 @@ public class ErpWholesaleSaleOrderController {
             wholesaleSaleOrder.setItems(BeanUtils.toBean(currentOrderItems,
                     ErpWholesaleSaleOrderRespVO.Item.class,
                     item -> MapUtils.findAndThen(productMap, item.getProductId(),
-                            product -> item.setProductName(product.getName()))));
+                            product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()))));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
                 wholesaleSaleOrder.setProductNames(currentOrderItems.stream()
