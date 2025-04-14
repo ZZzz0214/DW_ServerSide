@@ -120,17 +120,20 @@ public class ErpPurchaseOrderController {
         // 获取组品信息
         Map<Long, ErpComboRespVO> comboMap = comboProductService.getComboVOMap(
                 convertSet(comboItemList, ErpPurchaseOrderItemDO::getComboProductId));
-    
+
         return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO -> {
             purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
                 if (item.getType() == 0) {
                     // 单品
                     MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                            item.setOriginalProductName(product.getName()));
+                            item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType())
+                    );
+
                 } else {
                     // 组品
                     MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                            item.setOriginalProductName(combo.getName()));
+                            item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType())
+                    );
                 }
             }));
             // 设置productNames字段
