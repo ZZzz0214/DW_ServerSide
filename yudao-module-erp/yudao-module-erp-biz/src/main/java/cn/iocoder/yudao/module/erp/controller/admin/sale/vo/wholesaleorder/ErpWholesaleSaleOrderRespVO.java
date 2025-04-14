@@ -173,5 +173,9 @@ public class ErpWholesaleSaleOrderRespVO {
         private BigDecimal returnCount;
         @Schema(description = "货拉拉费用", example = "10.00")
         private BigDecimal hulalaFee;
+            //新增的字段
+        @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
+        @ExcelProperty("运费类型")
+        private Integer shippingFeeType;
     }
 }

@@ -176,5 +176,9 @@ public class ErpSaleOrderRespVO {
         private String creator;
         @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
         private LocalDateTime createTime;
+            //新增的字段
+        @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
+        @ExcelProperty("运费类型")
+        private Integer shippingFeeType;
     }
 }

@@ -215,5 +215,9 @@ public class ErpWholesalePurchaseOrderRespVO {
 
         @Schema(description = "采购退货数量", example = "0.00")
         private BigDecimal returnCount;
+            //新增的字段
+        @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
+        @ExcelProperty("运费类型")
+        private Integer shippingFeeType;
     }
 }
