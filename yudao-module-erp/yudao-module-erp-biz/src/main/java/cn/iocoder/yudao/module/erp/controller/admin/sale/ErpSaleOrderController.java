@@ -107,12 +107,24 @@ public class ErpSaleOrderController {
                 convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         return success(BeanUtils.toBean(saleOrder, ErpSaleOrderRespVO.class, saleOrderVO -> {
             saleOrderVO.setItems(BeanUtils.toBean(saleOrderItemList, ErpSaleOrderRespVO.Item.class, item -> {
-                MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
+                MapUtils.findAndThen(productMap, item.getProductId(), product ->
+                        item.setProductName(product.getName())
+                            .setShippingFeeType(product.getShippingFeeType())
+                            .setFixedShippingFee(product.getFixedShippingFee())
+                            .setFirstItemQuantity(product.getFirstItemQuantity())
+                            .setFirstItemPrice(product.getFirstItemPrice())
+                            .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                            .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                            .setFirstWeight(product.getFirstWeight())
+                            .setFirstWeightPrice(product.getFirstWeightPrice())
+                            .setAdditionalWeight(product.getAdditionalWeight())
+                            .setAdditionalWeightPrice(product.getAdditionalWeightPrice())
+                );
             }));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(saleOrderVO.getItems())) {
                 saleOrderVO.setProductNames(saleOrderVO.getItems().stream()
-                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .map(item -> item.getProductName() + "*" + item.getCount())
                         .collect(Collectors.joining("+")));
             }
         }));
@@ -179,11 +191,23 @@ public class ErpSaleOrderController {
             List<ErpSaleOrderItemDO> currentOrderItems = saleOrderItemMap.get(saleOrder.getId());
 
             saleOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpSaleOrderRespVO.Item.class,
-                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()))));
+                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product ->
+                        item.setProductName(product.getName())
+                            .setShippingFeeType(product.getShippingFeeType())
+                            .setFixedShippingFee(product.getFixedShippingFee())
+                            .setFirstItemQuantity(product.getFirstItemQuantity())
+                            .setFirstItemPrice(product.getFirstItemPrice())
+                            .setAdditionalItemQuantity(product.getAdditionalItemQuantity())
+                            .setAdditionalItemPrice(product.getAdditionalItemPrice())
+                            .setFirstWeight(product.getFirstWeight())
+                            .setFirstWeightPrice(product.getFirstWeightPrice())
+                            .setAdditionalWeight(product.getAdditionalWeight())
+                            .setAdditionalWeightPrice(product.getAdditionalWeightPrice())
+                    )));
             // 设置productNames字段
             if (CollUtil.isNotEmpty(currentOrderItems)) {
                 saleOrder.setProductNames(currentOrderItems.stream()
-                        .map(item -> item.getProductName() + "*" + item.getProductQuantity())
+                        .map(item -> item.getProductName() + "*" + item.getCount())
                         .collect(Collectors.joining("+")));
             }
             MapUtils.findAndThen(customerMap, saleOrder.getCustomerId(), supplier -> saleOrder.setCustomerName(supplier.getName()));

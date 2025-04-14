@@ -158,7 +158,7 @@ public class ErpPurchaseOrderController {
             // 设置productNames字段
             if (CollUtil.isNotEmpty(purchaseOrderVO.getItems())) {
                 purchaseOrderVO.setProductNames(purchaseOrderVO.getItems().stream()
-                        .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                        .map(item -> item.getOriginalProductName() + "*" + item.getCount())
                         .collect(Collectors.joining("+")));
             }
         }));
@@ -279,7 +279,7 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
         // 添加空值检查
         if (CollUtil.isNotEmpty(currentOrderItems)) {
             purchaseOrder.setProductNames(currentOrderItems.stream()
-                    .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                    .map(item -> item.getOriginalProductName() + "*" + item.getCount())
                     .collect(Collectors.joining("+")));
         }
         MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
