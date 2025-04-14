@@ -107,7 +107,7 @@ public class ErpPurchaseOrderController {
             return success(null);
         }
         List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderId(id);
-       // 分离单品和组品
+        // 分离单品和组品
         List<ErpPurchaseOrderItemDO> singleItemList = purchaseOrderItemList.stream()
                 .filter(item -> item.getType() == 0)
                 .collect(Collectors.toList());
@@ -120,7 +120,7 @@ public class ErpPurchaseOrderController {
         // 获取组品信息
         Map<Long, ErpComboRespVO> comboMap = comboProductService.getComboVOMap(
                 convertSet(comboItemList, ErpPurchaseOrderItemDO::getComboProductId));
-
+    
         return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO -> {
             purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
                 if (item.getType() == 0) {
@@ -133,17 +133,13 @@ public class ErpPurchaseOrderController {
                             item.setOriginalProductName(combo.getName()));
                 }
             }));
+            // 设置productNames字段
+            if (CollUtil.isNotEmpty(purchaseOrderVO.getItems())) {
+                purchaseOrderVO.setProductNames(purchaseOrderVO.getItems().stream()
+                        .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                        .collect(Collectors.joining("+")));
+            }
         }));
-
-//        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
-//                convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
-//        return success(BeanUtils.toBean(purchaseOrder, ErpPurchaseOrderRespVO.class, purchaseOrderVO ->
-//                purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
-////                    BigDecimal purchaseCount = stockService.getStockCount(item.getProductId());
-////                    item.setStockCount(purchaseCount != null ? purchaseCount : BigDecimal.ZERO);
-//                    MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()));
-////                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()));
-//                }))));
     }
 
     @GetMapping("/page")
@@ -267,7 +263,9 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
         }));
         // 添加空值检查
         if (CollUtil.isNotEmpty(currentOrderItems)) {
-            purchaseOrder.setProductNames(CollUtil.join(currentOrderItems, "，", ErpPurchaseOrderItemDO::getOriginalProductName));
+            purchaseOrder.setProductNames(currentOrderItems.stream()
+                    .map(item -> item.getOriginalProductName() + "*" + item.getProductQuantity())
+                    .collect(Collectors.joining("+")));
         }
         MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
         MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
