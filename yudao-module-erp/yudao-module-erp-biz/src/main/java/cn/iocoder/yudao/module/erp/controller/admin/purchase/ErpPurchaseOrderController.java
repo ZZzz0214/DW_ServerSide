@@ -125,15 +125,16 @@ public class ErpPurchaseOrderController {
             purchaseOrderVO.setItems(BeanUtils.toBean(purchaseOrderItemList, ErpPurchaseOrderRespVO.Item.class, item -> {
                 if (item.getType() == 0) {
                     // 单品
-                    MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                            item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType())
-                    );
-
+                    MapUtils.findAndThen(productMap, item.getProductId(), product -> {
+                        BeanUtils.copyProperties(product, item); // 自动复制所有匹配的属性
+                        item.setOriginalProductName(product.getName()); // 特殊字段单独处理
+                    });
                 } else {
                     // 组品
-                    MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                            item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType())
-                    );
+                    MapUtils.findAndThen(comboMap, item.getComboProductId(), combo -> {
+                        BeanUtils.copyProperties(combo, item); // 自动复制所有匹配的属性
+                        item.setOriginalProductName(combo.getName()); // 特殊字段单独处理
+                    });
                 }
             }));
             // 设置productNames字段
@@ -185,35 +186,6 @@ public class ErpPurchaseOrderController {
         ExcelUtils.write(response, "采购订单.xls", "数据", ErpPurchaseOrderRespVO.class, list);
     }
 
-//    private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageResult<ErpPurchaseOrderDO> pageResult) {
-//        if (CollUtil.isEmpty(pageResult.getList())) {
-//            return PageResult.empty(pageResult.getTotal());
-//        }
-//        // 1.1 订单项
-//        List<ErpPurchaseOrderItemDO> purchaseOrderItemList = purchaseOrderService.getPurchaseOrderItemListByOrderIds(
-//                convertSet(pageResult.getList(), ErpPurchaseOrderDO::getId));
-//        Map<Long, List<ErpPurchaseOrderItemDO>> purchaseOrderItemMap = convertMultiMap(purchaseOrderItemList, ErpPurchaseOrderItemDO::getOrderId);
-//        // 1.2 产品信息
-//        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
-//                convertSet(purchaseOrderItemList, ErpPurchaseOrderItemDO::getProductId));
-//        // 1.3 供应商信息
-//        Map<Long, ErpSupplierDO> supplierMap = supplierService.getSupplierMap(
-//                convertSet(pageResult.getList(), ErpPurchaseOrderDO::getSupplierId));
-//        // 1.4 管理员信息
-//        Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(
-//                convertSet(pageResult.getList(), purchaseOrder -> Long.parseLong(purchaseOrder.getCreator())));
-//        // 2. 开始拼接
-//        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class, purchaseOrder -> {
-//            purchaseOrder.setItems(BeanUtils.toBean(purchaseOrderItemMap.get(purchaseOrder.getId()), ErpPurchaseOrderRespVO.Item.class,
-//                    item -> MapUtils.findAndThen(productMap, item.getProductId(), product -> item.setOriginalProductName(product.getName()))));
-////                            .setProductBarCode(product.getBarCode()).setProductUnitName(product.getUnitName()))));
-//            //purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getProductName));
-//            purchaseOrder.setProductNames(CollUtil.join(purchaseOrder.getItems(), "，", ErpPurchaseOrderRespVO.Item::getOriginalProductName));
-//            MapUtils.findAndThen(supplierMap, purchaseOrder.getSupplierId(), supplier -> purchaseOrder.setSupplierName(supplier.getName()));
-//            MapUtils.findAndThen(userMap, Long.parseLong(purchaseOrder.getCreator()), user -> purchaseOrder.setCreatorName(user.getNickname()));
-//        });
-////        return BeanUtils.toBean(pageResult, ErpPurchaseOrderRespVO.class);
-//    }
 private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageResult<ErpPurchaseOrderDO> pageResult) {
     if (CollUtil.isEmpty(pageResult.getList())) {
         return PageResult.empty(pageResult.getTotal());
@@ -256,12 +228,16 @@ private PageResult<ErpPurchaseOrderRespVO> buildPurchaseOrderVOPageResult(PageRe
         purchaseOrder.setItems(BeanUtils.toBean(currentOrderItems, ErpPurchaseOrderRespVO.Item.class, item -> {
             if (item.getType() == 0) {
                 // 单品
-                MapUtils.findAndThen(productMap, item.getProductId(), product ->
-                        item.setOriginalProductName(product.getName()).setShippingFeeType(product.getShippingFeeType()));
+                MapUtils.findAndThen(productMap, item.getProductId(), product -> {
+                    BeanUtils.copyProperties(product, item); // 自动复制所有匹配的属性
+                    item.setOriginalProductName(product.getName()); // 特殊字段单独处理
+                });
             } else {
                 // 组品
-                MapUtils.findAndThen(comboMap, item.getComboProductId(), combo ->
-                        item.setOriginalProductName(combo.getName()).setShippingFeeType(combo.getShippingFeeType()));
+                MapUtils.findAndThen(comboMap, item.getComboProductId(), combo -> {
+                    BeanUtils.copyProperties(combo, item); // 自动复制所有匹配的属性
+                    item.setOriginalProductName(combo.getName()); // 特殊字段单独处理
+                });
             }
         }));
         // 添加空值检查

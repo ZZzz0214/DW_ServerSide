@@ -205,11 +205,46 @@ public class ErpPurchaseOrderRespVO {
 
         @Schema(description = "租户编号", example = "1")
         private Long tenantId;
-        
+
         //新增的字段
         @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
         @ExcelProperty("运费类型")
         private Integer shippingFeeType;
+        @Schema(description = "固定运费（单位：元）")
+        @ExcelProperty("固定运费（单位：元）")
+        private BigDecimal fixedShippingFee;
+
+        @Schema(description = "首件数量")
+        @ExcelProperty("首件数量")
+        private Integer firstItemQuantity;
+
+        @Schema(description = "首件价格（单位：元）")
+        @ExcelProperty("首件价格（单位：元）")
+        private BigDecimal firstItemPrice;
+
+        @Schema(description = "续件数量")
+        @ExcelProperty("续件数量")
+        private Integer additionalItemQuantity;
+
+        @Schema(description = "续件价格（单位：元）")
+        @ExcelProperty("续件价格（单位：元）")
+        private BigDecimal additionalItemPrice;
+
+        @Schema(description = "首重重量（单位：kg）")
+        @ExcelProperty("首重重量（单位：kg）")
+        private BigDecimal firstWeight;
+
+        @Schema(description = "首重价格（单位：元）")
+        @ExcelProperty("首重价格（单位：元）")
+        private BigDecimal firstWeightPrice;
+
+        @Schema(description = "续重重量（单位：kg）")
+        @ExcelProperty("续重重量（单位：kg）")
+        private BigDecimal additionalWeight;
+
+        @Schema(description = "续重价格（单位：元）")
+        @ExcelProperty("续重价格（单位：元）")
+        private BigDecimal additionalWeightPrice;
 
     }
 
