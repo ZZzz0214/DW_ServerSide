@@ -1,0 +1,179 @@
+package cn.iocoder.yudao.module.erp.service.distribution;
+
+
+
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPurchaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionPurchaseMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionSaleMapper;
+import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+
+import javax.annotation.Resource;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
+
+@Service
+@Validated
+public class ErpDistributionServiceImpl implements ErpDistributionService {
+
+    @Resource
+    private ErpDistributionMapper distributionMapper;
+
+    @Resource
+    private ErpDistributionPurchaseMapper purchaseMapper;
+
+    @Resource
+    private ErpDistributionSaleMapper saleMapper;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createDistribution(ErpDistributionSaveReqVO createReqVO) {
+        // 1. 校验数据
+        validateDistributionForCreateOrUpdate(null, createReqVO);
+
+        // 2. 插入代发记录
+        ErpDistributionBaseDO distribution = BeanUtils.toBean(createReqVO, ErpDistributionBaseDO.class)
+                .setStatus(ErpAuditStatus.PROCESS.getStatus());
+        distributionMapper.insert(distribution);
+
+        // 3. 插入采购信息
+        if (createReqVO.getComboProductId() != null) {
+            ErpDistributionPurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpDistributionPurchaseDO.class)
+                    .setBaseId(distribution.getId());
+            purchaseMapper.insert(purchase);
+        }
+
+        // 4. 插入销售信息
+        if (createReqVO.getSalePriceId() != null) {
+            ErpDistributionSaleDO sale = BeanUtils.toBean(createReqVO, ErpDistributionSaleDO.class)
+                    .setBaseId(distribution.getId());
+            saleMapper.insert(sale);
+        }
+
+        return distribution.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateDistribution(ErpDistributionSaveReqVO updateReqVO) {
+        // 1.1 校验存在
+        ErpDistributionBaseDO distribution = validateDistribution(updateReqVO.getId());
+        if (ErpAuditStatus.APPROVE.getStatus().equals(distribution.getStatus())) {
+            throw exception(DISTRIBUTION_UPDATE_FAIL_APPROVE, distribution.getNo());
+        }
+        // 1.2 校验数据
+        validateDistributionForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
+
+        // 2. 更新代发记录
+        ErpDistributionBaseDO updateObj = BeanUtils.toBean(updateReqVO, ErpDistributionBaseDO.class);
+        distributionMapper.updateById(updateObj);
+
+        // 3. 更新采购信息
+        if (updateReqVO.getComboProductId() != null) {
+            ErpDistributionPurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
+                    .setBaseId(updateReqVO.getId());
+            purchaseMapper.updateById(purchase);
+        }
+
+        // 4. 更新销售信息
+        if (updateReqVO.getSalePriceId() !=null) {
+            ErpDistributionSaleDO sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
+                    .setBaseId(updateReqVO.getId());
+            saleMapper.updateById(sale);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteDistribution(List<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+        // 1. 校验存在
+        List<ErpDistributionBaseDO> distributions = distributionMapper.selectBatchIds(ids);
+        if (CollUtil.isEmpty(distributions)) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
+        // 2. 删除代发记录
+        distributionMapper.deleteBatchIds(ids);
+
+        // 3. 删除采购信息
+        purchaseMapper.deleteByBaseIds(ids);
+
+        // 4. 删除销售信息
+        saleMapper.deleteByBaseIds(ids);
+    }
+
+    @Override
+    public ErpDistributionBaseDO getDistribution(Long id) {
+        return distributionMapper.selectById(id);
+    }
+
+    @Override
+    public ErpDistributionBaseDO validateDistribution(Long id) {
+        ErpDistributionBaseDO distribution = distributionMapper.selectById(id);
+        if (distribution == null) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
+        if (ObjectUtil.notEqual(distribution.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
+            throw exception(DISTRIBUTION_NOT_APPROVE);
+        }
+        return distribution;
+    }
+
+    @Override
+    public PageResult<ErpDistributionRespVO> getDistributionVOPage(ErpDistributionPageReqVO pageReqVO) {
+        return distributionMapper.selectPage(pageReqVO);
+    }
+
+    @Override
+    public List<ErpDistributionRespVO> getDistributionVOList(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        List<ErpDistributionBaseDO> list = distributionMapper.selectBatchIds(ids);
+        return BeanUtils.toBean(list, ErpDistributionRespVO.class);
+    }
+
+    @Override
+    public Map<Long, ErpDistributionRespVO> getDistributionVOMap(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyMap();
+        }
+        return convertMap(getDistributionVOList(ids), ErpDistributionRespVO::getId);
+    }
+
+    @Override
+    public List<ErpDistributionBaseDO> getDistributionList(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        return distributionMapper.selectBatchIds(ids);
+    }
+
+    private void validateDistributionForCreateOrUpdate(Long id, ErpDistributionSaveReqVO reqVO) {
+        // 1. 校验订单号唯一
+        ErpDistributionBaseDO distribution = distributionMapper.selectByNo(reqVO.getNo());
+        if (distribution != null && !distribution.getId().equals(id)) {
+            throw exception(DISTRIBUTION_NO_EXISTS);
+        }
+    }
+}

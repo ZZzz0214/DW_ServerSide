@@ -176,4 +176,18 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode FINANCE_RECEIPT_NO_EXISTS = new ErrorCode(1_030_602_004, "生成收款单号失败，请重新提交");
     ErrorCode FINANCE_RECEIPT_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_602_005, "收款单({})已审核，无法修改");
 
+    // ========== ERP 代发（1-030-104-000） ==========
+    ErrorCode DISTRIBUTION_NOT_EXISTS = new ErrorCode(1_030_104_000, "代发记录不存在");
+    ErrorCode DISTRIBUTION_NO_EXISTS = new ErrorCode(1_030_104_001, "代发订单号已存在");
+    ErrorCode DISTRIBUTION_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_104_002, "代发记录({})已审核，无法修改");
+    ErrorCode DISTRIBUTION_DELETE_FAIL_APPROVE = new ErrorCode(1_030_104_003, "代发记录({})已审核，无法删除");
+    ErrorCode DISTRIBUTION_NOT_APPROVE = new ErrorCode(1_030_104_004, "代发记录未审核，无法操作");
+
+    // ... existing code ...
+
+    // ========== ERP 批发（1-030-105-000） ==========
+    ErrorCode WHOLESALE_NOT_EXISTS = new ErrorCode(1_030_105_000, "批发记录不存在");
+    ErrorCode WHOLESALE_NO_EXISTS = new ErrorCode(1_030_105_001, "批发订单号已存在");
+    ErrorCode WHOLESALE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_105_002, "批发记录({})已审核，无法修改");
+    ErrorCode WHOLESALE_NOT_APPROVE = new ErrorCode(1_030_105_003, "批发记录未审核，无法操作");
 }
