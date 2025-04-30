@@ -15,6 +15,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSa
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionPurchaseMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionSaleMapper;
+import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,25 +49,24 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     public Long createDistribution(ErpDistributionSaveReqVO createReqVO) {
         // 1. 校验数据
         validateDistributionForCreateOrUpdate(null, createReqVO);
-
+        System.out.println(createReqVO);
         // 2. 插入代发记录
         ErpDistributionBaseDO distribution = BeanUtils.toBean(createReqVO, ErpDistributionBaseDO.class)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus());
         distributionMapper.insert(distribution);
-
         // 3. 插入采购信息
-        if (createReqVO.getComboProductId() != null) {
+//        if (createReqVO.getComboProductId() != null) {
             ErpDistributionPurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpDistributionPurchaseDO.class)
                     .setBaseId(distribution.getId());
             purchaseMapper.insert(purchase);
-        }
+//        }
 
         // 4. 插入销售信息
-        if (createReqVO.getSalePriceId() != null) {
+//        if (createReqVO.getSalePriceId() != null) {
             ErpDistributionSaleDO sale = BeanUtils.toBean(createReqVO, ErpDistributionSaleDO.class)
                     .setBaseId(distribution.getId());
             saleMapper.insert(sale);
-        }
+//        }
 
         return distribution.getId();
     }
@@ -87,18 +87,18 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         distributionMapper.updateById(updateObj);
 
         // 3. 更新采购信息
-        if (updateReqVO.getComboProductId() != null) {
+//        if (updateReqVO.getComboProductId() != null) {
             ErpDistributionPurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
                     .setBaseId(updateReqVO.getId());
             purchaseMapper.updateById(purchase);
-        }
+//        }
 
         // 4. 更新销售信息
-        if (updateReqVO.getSalePriceId() !=null) {
+//        if (updateReqVO.getSalePriceId() !=null) {
             ErpDistributionSaleDO sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
                     .setBaseId(updateReqVO.getId());
             saleMapper.updateById(sale);
-        }
+//        }
     }
 
     @Override
@@ -141,6 +141,10 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     public PageResult<ErpDistributionRespVO> getDistributionVOPage(ErpDistributionPageReqVO pageReqVO) {
+        System.out.println("倒数第二层");
+
+        System.out.println(distributionMapper.selectPage(pageReqVO));
+        System.out.println("倒数第二层结束");
         return distributionMapper.selectPage(pageReqVO);
     }
 

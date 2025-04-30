@@ -21,7 +21,15 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .likeIfPresent(ErpDistributionBaseDO::getTrackingNumber, reqVO.getTrackingNumber())
                 .likeIfPresent(ErpDistributionBaseDO::getReceiverName, reqVO.getReceiverName())
                 .betweenIfPresent(ErpDistributionBaseDO::getCreateTime, reqVO.getCreateTime())
-                .orderByDesc(ErpDistributionBaseDO::getId);
+                .orderByDesc(ErpDistributionBaseDO::getId)
+                // 添加基础表字段映射
+                .selectAs(ErpDistributionBaseDO::getId, ErpDistributionRespVO::getId)
+                .selectAs(ErpDistributionBaseDO::getNo, ErpDistributionRespVO::getNo)
+                .selectAs(ErpDistributionBaseDO::getLogisticsCompany, ErpDistributionRespVO::getLogisticsCompany)
+                .selectAs(ErpDistributionBaseDO::getTrackingNumber, ErpDistributionRespVO::getTrackingNumber)
+                .selectAs(ErpDistributionBaseDO::getReceiverName, ErpDistributionRespVO::getReceiverName)
+                .selectAs(ErpDistributionBaseDO::getReceiverPhone, ErpDistributionRespVO::getReceiverPhone)
+                .selectAs(ErpDistributionBaseDO::getCreateTime, ErpDistributionRespVO::getCreateTime);
 
         // 联表查询采购信息
         query.leftJoin(ErpDistributionPurchaseDO.class, ErpDistributionPurchaseDO::getBaseId, ErpDistributionBaseDO::getId)
@@ -41,6 +49,8 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .selectAs(ErpDistributionSaleDO::getOtherFees, ErpDistributionRespVO::getSaleOtherFees)
                 .selectAs(ErpDistributionSaleDO::getTotalSaleAmount, ErpDistributionRespVO::getTotalSaleAmount);
 
+                PageResult<ErpDistributionRespVO> result = selectJoinPage(reqVO, ErpDistributionRespVO.class, query);
+                System.out.println("Query result: " + result);
         return selectJoinPage(reqVO, ErpDistributionRespVO.class, query);
     }
 
