@@ -18,6 +18,7 @@ import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 
 import javax.annotation.Resource;
 import java.util.Collection;
@@ -41,6 +42,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     @Resource
     private ErpWholesaleSaleMapper saleMapper;
+    @Resource
+    private ErpNoRedisDAO noRedisDAO;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -48,24 +51,27 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         // 1. 校验数据
         validateWholesaleForCreateOrUpdate(null, createReqVO);
 
-        // 2. 插入批发记录
+        // 2. 生成批发单号，并校验唯一性
+        String no = noRedisDAO.generate(ErpNoRedisDAO.WHOLESALE_NO_PREFIX);
+        if (wholesaleMapper.selectByNo(no) != null) {
+            throw exception(WHOLESALE_NO_EXISTS);
+        }
+
+        // 3. 插入批发记录
         ErpWholesaleBaseDO wholesale = BeanUtils.toBean(createReqVO, ErpWholesaleBaseDO.class)
+                .setNo(no)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus());
         wholesaleMapper.insert(wholesale);
 
-        // 3. 插入采购信息
-        if (createReqVO.getComboProductId() != null) {
-            ErpWholesalePurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpWholesalePurchaseDO.class)
-                    .setBaseId(wholesale.getId());
-            purchaseMapper.insert(purchase);
-        }
+        // 4. 插入采购信息
+        ErpWholesalePurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpWholesalePurchaseDO.class)
+                .setBaseId(wholesale.getId());
+        purchaseMapper.insert(purchase);
 
-        // 4. 插入销售信息
-        if (createReqVO.getSalePriceId() != null) {
-            ErpWholesaleSaleDO sale = BeanUtils.toBean(createReqVO, ErpWholesaleSaleDO.class)
-                    .setBaseId(wholesale.getId());
-            saleMapper.insert(sale);
-        }
+        // 5. 插入销售信息
+        ErpWholesaleSaleDO sale = BeanUtils.toBean(createReqVO, ErpWholesaleSaleDO.class)
+                .setBaseId(wholesale.getId());
+        saleMapper.insert(sale);
 
         return wholesale.getId();
     }
@@ -86,18 +92,18 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         wholesaleMapper.updateById(updateObj);
 
         // 3. 更新采购信息
-        if (updateReqVO.getComboProductId() != null) {
+
             ErpWholesalePurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpWholesalePurchaseDO.class)
                     .setBaseId(updateReqVO.getId());
             purchaseMapper.updateById(purchase);
-        }
+
 
         // 4. 更新销售信息
-        if (updateReqVO.getSalePriceId() != null) {
+
             ErpWholesaleSaleDO sale = BeanUtils.toBean(updateReqVO, ErpWholesaleSaleDO.class)
                     .setBaseId(updateReqVO.getId());
             saleMapper.updateById(sale);
-        }
+
     }
 
     @Override

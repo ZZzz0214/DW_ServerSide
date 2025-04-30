@@ -29,7 +29,9 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .selectAs(ErpDistributionBaseDO::getTrackingNumber, ErpDistributionRespVO::getTrackingNumber)
                 .selectAs(ErpDistributionBaseDO::getReceiverName, ErpDistributionRespVO::getReceiverName)
                 .selectAs(ErpDistributionBaseDO::getReceiverPhone, ErpDistributionRespVO::getReceiverPhone)
-                .selectAs(ErpDistributionBaseDO::getCreateTime, ErpDistributionRespVO::getCreateTime);
+                .selectAs(ErpDistributionBaseDO::getCreateTime, ErpDistributionRespVO::getCreateTime)
+                .selectAs(ErpDistributionBaseDO::getProductQuantity, ErpDistributionRespVO::getProductQuantity)
+                .selectAs(ErpDistributionBaseDO::getProductName, ErpDistributionRespVO::getProductName);
 
         // 联表查询采购信息
         query.leftJoin(ErpDistributionPurchaseDO.class, ErpDistributionPurchaseDO::getBaseId, ErpDistributionBaseDO::getId)

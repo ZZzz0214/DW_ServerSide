@@ -43,8 +43,8 @@ public class ErpWholesaleRespVO {
     private Integer productQuantity;
 
     // 来自 ErpWholesalePurchaseDO
-    @Schema(description = "组品编号", example = "1")
-    private Long comboProductId;
+//    @Schema(description = "组品编号", example = "1")
+//    private Long comboProductId;
 
     @Schema(description = "采购人员", example = "采购员A")
     private String purchaser;
@@ -68,8 +68,8 @@ public class ErpWholesaleRespVO {
     private BigDecimal totalPurchaseAmount;
 
     // 来自 ErpWholesaleSaleDO
-    @Schema(description = "关联销售价格表", example = "1")
-    private Long salePriceId;
+//    @Schema(description = "关联销售价格表", example = "1")
+//    private Long salePriceId;
 
     @Schema(description = "销售人员", example = "销售员A")
     private String salesperson;

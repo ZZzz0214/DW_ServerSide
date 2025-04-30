@@ -80,22 +80,17 @@ public class ErpDistributionController {
 
         // 3. 获取并合并采购信息
         ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
-        System.out.println("get后返回的采购数据："+purchase);
         if (purchase != null) {
             BeanUtils.copyProperties(purchase, respVO,"id");
         }
 
         // 4. 获取并合并销售信息
         ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
-        System.out.println("get后返回的销售数据："+sale);
         if (sale != null) {
             BeanUtils.copyProperties(sale, respVO,"id");
             respVO.setSaleShippingFee(sale.getShippingFee());
             respVO.setSaleOtherFees(sale.getOtherFees());
         }
-        //respVO.setId(id);
-        System.out.println("get后返回的数据：");
-        System.out.println(respVO);
         return success(respVO);
     }
 
@@ -104,6 +99,8 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
     public CommonResult<PageResult<ErpDistributionRespVO>> getDistributionPage(@Valid ErpDistributionPageReqVO pageReqVO) {
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        System.out.println("----------------------------");
+        System.out.println(pageResult);
         return success(pageResult);
     }
 

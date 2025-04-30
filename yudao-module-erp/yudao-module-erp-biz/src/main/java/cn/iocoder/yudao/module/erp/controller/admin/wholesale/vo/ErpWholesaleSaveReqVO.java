@@ -15,7 +15,6 @@ public class ErpWholesaleSaveReqVO {
     private Long id;
 
     @Schema(description = "订单号", requiredMode = Schema.RequiredMode.REQUIRED, example = "WS202403250001")
-    @NotNull(message = "订单号不能为空")
     private String no;
 
     @Schema(description = "收件人姓名", example = "张三")
@@ -44,8 +43,8 @@ public class ErpWholesaleSaveReqVO {
     private Integer productQuantity;
 
     // 采购信息
-    @Schema(description = "组品编号", example = "1")
-    private Long comboProductId;
+//    @Schema(description = "组品编号", example = "1")
+//    private Long comboProductId;
 
     @Schema(description = "采购人员", example = "采购员A")
     private String purchaser;
@@ -69,8 +68,8 @@ public class ErpWholesaleSaveReqVO {
     private BigDecimal totalPurchaseAmount;
 
     // 销售信息
-    @Schema(description = "关联销售价格表", example = "1")
-    private Long salePriceId;
+//    @Schema(description = "关联销售价格表", example = "1")
+//    private Long salePriceId;
 
     @Schema(description = "销售人员", example = "销售员A")
     private String salesperson;
