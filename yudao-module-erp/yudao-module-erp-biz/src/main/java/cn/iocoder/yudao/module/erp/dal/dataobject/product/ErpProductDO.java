@@ -256,15 +256,15 @@ public class ErpProductDO extends BaseDO {
      */
     private BigDecimal fixedShippingFee;
 
-    /**
-     * 首件数量
-     */
-    private Integer firstItemQuantity;
-
-    /**
-     * 首件价格（单位：元）
-     */
-    private BigDecimal firstItemPrice;
+//    /**
+//     * 首件数量
+//     */
+//    private Integer firstItemQuantity;
+//
+//    /**
+//     * 首件价格（单位：元）
+//     */
+//    private BigDecimal firstItemPrice;
 
     /**
      * 续件数量
