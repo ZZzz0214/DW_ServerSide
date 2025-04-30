@@ -66,4 +66,11 @@ public class BeanUtils {
         BeanUtil.copyProperties(source, target, false);
     }
 
+    // 新增方法：支持排除字段
+    public static void copyProperties(Object source, Object target, String... ignoreProperties) {
+        if (source == null || target == null) {
+            return;
+        }
+        BeanUtil.copyProperties(source, target, ignoreProperties);
+    }
 }

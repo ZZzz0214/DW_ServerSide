@@ -44,29 +44,39 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     @Resource
     private ErpDistributionSaleMapper saleMapper;
 
+    @Resource
+    private ErpNoRedisDAO noRedisDAO;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createDistribution(ErpDistributionSaveReqVO createReqVO) {
         // 1. 校验数据
         validateDistributionForCreateOrUpdate(null, createReqVO);
         System.out.println(createReqVO);
-        // 2. 插入代发记录
+
+        // 2. 生成代发单号，并校验唯一性
+        String no = noRedisDAO.generate(ErpNoRedisDAO.DISTRIBUTION_NO_PREFIX);
+        if (distributionMapper.selectByNo(no) != null) {
+            throw exception(DISTRIBUTION_NO_EXISTS);
+        }
+
+        // 3. 插入代发记录
         ErpDistributionBaseDO distribution = BeanUtils.toBean(createReqVO, ErpDistributionBaseDO.class)
+                .setNo(no)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus());
         distributionMapper.insert(distribution);
-        // 3. 插入采购信息
-//        if (createReqVO.getComboProductId() != null) {
-            ErpDistributionPurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpDistributionPurchaseDO.class)
-                    .setBaseId(distribution.getId());
-            purchaseMapper.insert(purchase);
-//        }
 
-        // 4. 插入销售信息
-//        if (createReqVO.getSalePriceId() != null) {
-            ErpDistributionSaleDO sale = BeanUtils.toBean(createReqVO, ErpDistributionSaleDO.class)
-                    .setBaseId(distribution.getId());
-            saleMapper.insert(sale);
-//        }
+        // 4. 插入采购信息
+        ErpDistributionPurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpDistributionPurchaseDO.class)
+                .setBaseId(distribution.getId());
+        System.out.println("插入的采购数据"+purchase);
+        purchaseMapper.insert(purchase);
+
+        // 5. 插入销售信息
+        ErpDistributionSaleDO sale = BeanUtils.toBean(createReqVO, ErpDistributionSaleDO.class)
+                .setBaseId(distribution.getId());
+        System.out.println("插入的销售数据"+sale);
+        saleMapper.insert(sale);
 
         return distribution.getId();
     }
@@ -141,10 +151,6 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     public PageResult<ErpDistributionRespVO> getDistributionVOPage(ErpDistributionPageReqVO pageReqVO) {
-        System.out.println("倒数第二层");
-
-        System.out.println(distributionMapper.selectPage(pageReqVO));
-        System.out.println("倒数第二层结束");
         return distributionMapper.selectPage(pageReqVO);
     }
 
