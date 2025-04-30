@@ -5,6 +5,10 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPurchaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionPurchaseMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionSaleMapper;
 import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,6 +32,10 @@ public class ErpDistributionController {
 
     @Resource
     private ErpDistributionService distributionService;
+    @Resource
+    private ErpDistributionPurchaseMapper purchaseMapper;
+    @Resource
+    private ErpDistributionSaleMapper saleMapper;
 
     @PostMapping("/create")
     @Operation(summary = "创建代发")
@@ -58,8 +66,27 @@ public class ErpDistributionController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
     public CommonResult<ErpDistributionRespVO> getDistribution(@RequestParam("id") Long id) {
+        // 1. 获取基础信息
         ErpDistributionBaseDO distribution = distributionService.getDistribution(id);
-        return success(BeanUtils.toBean(distribution, ErpDistributionRespVO.class));
+        if (distribution == null) {
+            return success(null);
+        }
+
+        // 2. 转换为RespVO
+        ErpDistributionRespVO respVO = BeanUtils.toBean(distribution, ErpDistributionRespVO.class);
+
+        // 3. 获取并转换采购信息
+        ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+        if (purchase != null) {
+            respVO = BeanUtils.toBean(purchase, ErpDistributionRespVO.class);
+        }
+
+        // 4. 获取并转换销售信息
+        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
+        if (sale != null) {
+            respVO = BeanUtils.toBean(sale, ErpDistributionRespVO.class);
+        }
+        return success(respVO);
     }
 
     @GetMapping("/page")
