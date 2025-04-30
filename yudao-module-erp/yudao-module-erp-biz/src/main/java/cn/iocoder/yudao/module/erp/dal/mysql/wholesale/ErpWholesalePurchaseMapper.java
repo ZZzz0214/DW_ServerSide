@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.dal.mysql.wholesale;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesalePurchaseDO;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 
@@ -15,8 +16,12 @@ public interface ErpWholesalePurchaseMapper extends BaseMapperX<ErpWholesalePurc
         return selectOne(ErpWholesalePurchaseDO::getBaseId, baseId);
     }
 
+//    default void deleteByBaseIds(Collection<Long> baseIds) {
+//        delete(new MPJLambdaWrapperX<ErpWholesalePurchaseDO>()
+//                .in(ErpWholesalePurchaseDO::getBaseId, baseIds));
+//    }
     default void deleteByBaseIds(Collection<Long> baseIds) {
-        delete(new MPJLambdaWrapperX<ErpWholesalePurchaseDO>()
-                .in(ErpWholesalePurchaseDO::getBaseId, baseIds));
+        delete(new QueryWrapper<ErpWholesalePurchaseDO>()
+                .in("base_id", baseIds));
     }
 }

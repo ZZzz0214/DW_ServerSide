@@ -4,9 +4,10 @@ package cn.iocoder.yudao.module.erp.dal.mysql.wholesale;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
-
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesalePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesaleRespVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesalePurchaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleSaleDO;
@@ -20,7 +21,15 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 .likeIfPresent(ErpWholesaleBaseDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpWholesaleBaseDO::getReceiverName, reqVO.getReceiverName())
                 .betweenIfPresent(ErpWholesaleBaseDO::getCreateTime, reqVO.getCreateTime())
-                .orderByDesc(ErpWholesaleBaseDO::getId);
+                .orderByDesc(ErpWholesaleBaseDO::getId)
+                // 添加基础表字段映射
+                .selectAs(ErpWholesaleBaseDO::getId, ErpWholesaleRespVO::getId)
+                .selectAs(ErpWholesaleBaseDO::getNo, ErpWholesaleRespVO::getNo)
+                .selectAs(ErpWholesaleBaseDO::getReceiverName, ErpWholesaleRespVO::getReceiverName)
+                .selectAs(ErpWholesaleBaseDO::getReceiverPhone, ErpWholesaleRespVO::getReceiverPhone)
+                .selectAs(ErpWholesaleBaseDO::getProductQuantity, ErpWholesaleRespVO::getProductQuantity)
+                .selectAs(ErpWholesaleBaseDO::getProductName, ErpWholesaleRespVO::getProductName)
+                .selectAs(ErpWholesaleBaseDO::getCreateTime, ErpWholesaleRespVO::getCreateTime);
 
         // 联表查询采购信息
         query.leftJoin(ErpWholesalePurchaseDO.class, ErpWholesalePurchaseDO::getBaseId, ErpWholesaleBaseDO::getId)
