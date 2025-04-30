@@ -203,20 +203,20 @@ public class ErpProductRespVO {
     @ExcelProperty("固定运费（单位：元）")
     private BigDecimal fixedShippingFee;
 
-    @Schema(description = "首件数量")
-    @ExcelProperty("首件数量")
-    private Integer firstItemQuantity;
+//    @Schema(description = "首件数量")
+//    @ExcelProperty("首件数量")
+//    private Integer firstItemQuantity;
+//
+//    @Schema(description = "首件价格（单位：元）")
+//    @ExcelProperty("首件价格（单位：元）")
+//    private BigDecimal firstItemPrice;
 
-    @Schema(description = "首件价格（单位：元）")
-    @ExcelProperty("首件价格（单位：元）")
-    private BigDecimal firstItemPrice;
-
-    @Schema(description = "续件数量")
-    @ExcelProperty("续件数量")
+    @Schema(description = "按件数量")
+    @ExcelProperty("按件数量")
     private Integer additionalItemQuantity;
 
-    @Schema(description = "续件价格（单位：元）")
-    @ExcelProperty("续件价格（单位：元）")
+    @Schema(description = "按件价格（单位：元）")
+    @ExcelProperty("按件价格（单位：元）")
     private BigDecimal additionalItemPrice;
 
     @Schema(description = "首重重量（单位：kg）")
