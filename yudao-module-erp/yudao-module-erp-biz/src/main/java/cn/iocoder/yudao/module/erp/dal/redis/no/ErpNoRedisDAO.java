@@ -55,6 +55,7 @@ public class ErpNoRedisDAO {
      * 采购订单 {@link cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO}
      */
     public static final String PURCHASE_ORDER_NO_PREFIX = "CGDD";
+    public static final String DISTRIBUTION_NO_PREFIX = "DFJL";
     /**
      * 采购入库 {@link cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInDO}
      */

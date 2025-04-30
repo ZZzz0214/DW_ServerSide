@@ -41,6 +41,8 @@ public class ErpDistributionController {
     @Operation(summary = "创建代发")
     @PreAuthorize("@ss.hasPermission('erp:distribution:create')")
     public CommonResult<Long> createDistribution(@Valid @RequestBody ErpDistributionSaveReqVO createReqVO) {
+
+        System.out.println("前端传递的数据"+createReqVO);
         return success(distributionService.createDistribution(createReqVO));
     }
 
@@ -66,6 +68,7 @@ public class ErpDistributionController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
     public CommonResult<ErpDistributionRespVO> getDistribution(@RequestParam("id") Long id) {
+        System.out.println(id);
         // 1. 获取基础信息
         ErpDistributionBaseDO distribution = distributionService.getDistribution(id);
         if (distribution == null) {
@@ -75,17 +78,26 @@ public class ErpDistributionController {
         // 2. 转换为RespVO
         ErpDistributionRespVO respVO = BeanUtils.toBean(distribution, ErpDistributionRespVO.class);
 
-        // 3. 获取并转换采购信息
+        // 3. 获取并合并采购信息
         ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+        System.out.println("get后返回的采购数据："+purchase);
         if (purchase != null) {
-            respVO = BeanUtils.toBean(purchase, ErpDistributionRespVO.class);
+            BeanUtils.copyProperties(purchase, respVO,"id");
+            respVO.setPurchaseShippingFee(purchase.getShippingFee());
+            respVO.setPurchaseOtherFees(purchase.getOtherFees());
         }
 
-        // 4. 获取并转换销售信息
+        // 4. 获取并合并销售信息
         ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
+        System.out.println("get后返回的销售数据："+sale);
         if (sale != null) {
-            respVO = BeanUtils.toBean(sale, ErpDistributionRespVO.class);
+            BeanUtils.copyProperties(sale, respVO,"id");
+            respVO.setSaleShippingFee(sale.getShippingFee());
+            respVO.setSaleOtherFees(sale.getOtherFees());
         }
+        //respVO.setId(id);
+        System.out.println("get后返回的数据：");
+        System.out.println(respVO);
         return success(respVO);
     }
 
