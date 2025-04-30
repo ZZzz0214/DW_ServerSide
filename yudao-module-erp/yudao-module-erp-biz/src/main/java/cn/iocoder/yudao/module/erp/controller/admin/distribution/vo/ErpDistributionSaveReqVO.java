@@ -66,6 +66,15 @@ public class ErpDistributionSaveReqVO {
     @Schema(description = "采购总额", example = "10000.00")
     private BigDecimal totalPurchaseAmount;
 
+    @Schema(description = "发货编码", example = "10000.00")
+    private String shippingCode;
+
+
+    @Schema(description = "备注信息", example = "10000.00")
+    private String remark;
+
+    @Schema(description = "售后状况", example = "10000.00")
+    private Integer afterSalesStatus;
 //    @Schema(description = "关联组品表", example = "1")
 //    private Long comboProductId;
 

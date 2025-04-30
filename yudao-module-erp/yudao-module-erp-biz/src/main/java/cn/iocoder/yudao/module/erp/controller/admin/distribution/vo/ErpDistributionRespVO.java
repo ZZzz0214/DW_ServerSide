@@ -71,10 +71,10 @@ public class ErpDistributionRespVO {
     private BigDecimal purchasePrice;
 
     @Schema(description = "采购运费", example = "50.00")
-    private BigDecimal purchaseShippingFee;
+    private BigDecimal shippingFee;
 
     @Schema(description = "采购其他费用", example = "20.00")
-    private BigDecimal purchaseOtherFees;
+    private BigDecimal otherFees;
 
     @Schema(description = "采购总额", example = "10000.00")
     private BigDecimal totalPurchaseAmount;

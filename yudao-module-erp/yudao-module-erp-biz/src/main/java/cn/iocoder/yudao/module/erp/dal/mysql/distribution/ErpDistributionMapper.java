@@ -36,8 +36,8 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .selectAs(ErpDistributionPurchaseDO::getPurchaser, ErpDistributionRespVO::getPurchaser)
                 .selectAs(ErpDistributionPurchaseDO::getSupplier, ErpDistributionRespVO::getSupplier)
                 .selectAs(ErpDistributionPurchaseDO::getPurchasePrice, ErpDistributionRespVO::getPurchasePrice)
-                .selectAs(ErpDistributionPurchaseDO::getShippingFee, ErpDistributionRespVO::getPurchaseShippingFee)
-                .selectAs(ErpDistributionPurchaseDO::getOtherFees, ErpDistributionRespVO::getPurchaseOtherFees)
+                .selectAs(ErpDistributionPurchaseDO::getShippingFee, ErpDistributionRespVO::getShippingFee)
+                .selectAs(ErpDistributionPurchaseDO::getOtherFees, ErpDistributionRespVO::getOtherFees)
                 .selectAs(ErpDistributionPurchaseDO::getTotalPurchaseAmount, ErpDistributionRespVO::getTotalPurchaseAmount);
 
         // 联表查询销售信息

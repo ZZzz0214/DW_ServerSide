@@ -83,8 +83,6 @@ public class ErpDistributionController {
         System.out.println("get后返回的采购数据："+purchase);
         if (purchase != null) {
             BeanUtils.copyProperties(purchase, respVO,"id");
-            respVO.setPurchaseShippingFee(purchase.getShippingFee());
-            respVO.setPurchaseOtherFees(purchase.getOtherFees());
         }
 
         // 4. 获取并合并销售信息
