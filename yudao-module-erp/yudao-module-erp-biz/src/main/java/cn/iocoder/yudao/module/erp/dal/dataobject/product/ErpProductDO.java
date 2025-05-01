@@ -134,17 +134,17 @@ public class ErpProductDO extends BaseDO {
     /**
      * 产品长宽高
      */
-    private String productDimensions;
+//    private String productDimensions;
 
     /**
      * 产品箱规
      */
-    private String cartonSpecifications;
+//    private String cartonSpecifications;
 
     /**
      * 箱长宽高
      */
-    private String cartonDimensions;
+//    private String cartonDimensions;
 
     /**
      * 箱规重量
@@ -187,29 +187,79 @@ public class ErpProductDO extends BaseDO {
     private String afterSalesScript;
 
     /**
+     * 返单时效单位
+     */
+    private String orderReplenishmentLeadTimeUnit;
+
+    /**
+     * 品长
+     */
+    private String productLength;
+
+    /**
+     * 品宽
+     */
+    private String productWidth;
+
+    /**
+     * 品高
+     */
+    private String productHeight;
+
+    /**
+     * 品长宽高单位
+     */
+    private String productDimensionsUnit;
+
+    /**
+     * 箱长
+     */
+    private String cartonLength;
+
+    /**
+     * 箱宽
+     */
+    private String cartonWidth;
+
+    /**
+     * 箱高
+     */
+    private String cartonHeight;
+
+    /**
+     * 箱长宽高单位
+     */
+    private String cartonDimensionsUnit;
+
+    /**
+     * 箱规重量单位
+     */
+    private String cartonWeightUnit;
+
+    /**
      * 公域活动最低价
      */
-    private BigDecimal publicDomainEventMinimumPrice;
+    private String publicDomainEventMinimumPrice;
 
     /**
      * 直播活动最低价
      */
-    private BigDecimal liveStreamingEventMinimunPrice;
+    private String liveStreamingEventMinimunPrice;
 
     /**
      * 拼多多活动最低价
      */
-    private BigDecimal pinduoduoEventMinimumPrice;
+    private String pinduoduoEventMinimumPrice;
 
     /**
      * 阿里巴巴活动最低价
      */
-    private BigDecimal alibabaEventMinimunPrice;
+    private String alibabaEventMinimunPrice;
 
     /**
      * 团购活动最低价
      */
-    private BigDecimal groupBuyEventMinimunPrice;
+    private String groupBuyEventMinimunPrice;
 
     /**
      * 采购人员
@@ -295,4 +345,19 @@ public class ErpProductDO extends BaseDO {
      * 续重价格（单位：元）
      */
     private BigDecimal additionalWeightPrice;
+
+    /**
+     * 保质日期单位
+     */
+    private String expiryUnit;
+
+    /**
+     * 产品重量单位
+     */
+    private String weightUnit;
+
+      /**
+     * 租户编号
+     */
+    private Long tenantId;
 }

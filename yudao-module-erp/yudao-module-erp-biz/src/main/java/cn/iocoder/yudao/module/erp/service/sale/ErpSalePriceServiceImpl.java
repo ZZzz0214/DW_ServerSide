@@ -245,16 +245,18 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
         if (searchReqVO.getCreateTime() != null) {
             salePriceDO.setCreateTime(searchReqVO.getCreateTime());
         }
-
-
+        if (searchReqVO.getName() != null) {
+            salePriceDO.setCustomerName(searchReqVO.getName());
+        }
+    
         // 执行查询
         List<ErpSalePriceDO> comboProductDOList = erpSalePriceMapper.selectList(new LambdaQueryWrapper<ErpSalePriceDO>()
                 .eq(salePriceDO.getGroupProductId() != null, ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId())
                 .like(salePriceDO.getProductName() != null, ErpSalePriceDO::getProductName, searchReqVO.getProductName())
                 .like(salePriceDO.getProductShortName() != null, ErpSalePriceDO::getProductShortName, searchReqVO.getProductShortName())
-                .eq(salePriceDO.getCreateTime() != null, ErpSalePriceDO::getCreateTime, searchReqVO.getCreateTime()));
-
-
+                .eq(salePriceDO.getCreateTime() != null, ErpSalePriceDO::getCreateTime, searchReqVO.getCreateTime())
+                .like(salePriceDO.getCustomerName() != null, ErpSalePriceDO::getCustomerName, searchReqVO.getName()));
+    
 
         // 转换为响应对象
 //        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);

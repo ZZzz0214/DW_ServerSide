@@ -147,25 +147,73 @@ public class ErpProductRespVO {
     @ExcelProperty("售后话术")
     private String afterSalesScript;
 
+    @Schema(description = "返单时效单位")
+    @ExcelProperty("返单时效单位")
+    private String orderReplenishmentLeadTimeUnit;
+
+    @Schema(description = "品长")
+    @ExcelProperty("品长")
+    private String productLength;
+
+    @Schema(description = "品宽")
+    @ExcelProperty("品宽")
+    private String productWidth;
+
+    @Schema(description = "品高")
+    @ExcelProperty("品高")
+    private String productHeight;
+
+    @Schema(description = "品长宽高单位")
+    @ExcelProperty("品长宽高单位")
+    private String productDimensionsUnit;
+
+    @Schema(description = "箱长")
+    @ExcelProperty("箱长")
+    private String cartonLength;
+
+    @Schema(description = "箱宽")
+    @ExcelProperty("箱宽")
+    private String cartonWidth;
+
+    @Schema(description = "箱高")
+    @ExcelProperty("箱高")
+    private String cartonHeight;
+
+    @Schema(description = "箱长宽高单位")
+    @ExcelProperty("箱长宽高单位")
+    private String cartonDimensionsUnit;
+
+    @Schema(description = "箱规重量单位")
+    @ExcelProperty("箱规重量单位")
+    private String cartonWeightUnit;
+
     @Schema(description = "公域活动最低价")
     @ExcelProperty("公域活动最低价")
-    private BigDecimal publicDomainEventMinimumPrice;
+    private String publicDomainEventMinimumPrice;
 
     @Schema(description = "直播活动最低价")
     @ExcelProperty("直播活动最低价")
-    private BigDecimal liveStreamingEventMinimunPrice;
+    private String liveStreamingEventMinimunPrice;
 
     @Schema(description = "拼多多活动最低价")
     @ExcelProperty("拼多多活动最低价")
-    private BigDecimal pinduoduoEventMinimumPrice;
+    private String pinduoduoEventMinimumPrice;
 
     @Schema(description = "阿里巴巴活动最低价")
     @ExcelProperty("阿里巴巴活动最低价")
-    private BigDecimal alibabaEventMinimunPrice;
+    private String alibabaEventMinimunPrice;
 
     @Schema(description = "团购活动最低价")
     @ExcelProperty("团购活动最低价")
-    private BigDecimal groupBuyEventMinimunPrice;
+    private String groupBuyEventMinimunPrice;
+
+    @Schema(description = "保质日期单位")
+    @ExcelProperty("保质日期单位")
+    private String expiryUnit;
+
+    @Schema(description = "产品重量单位")
+    @ExcelProperty("产品重量单位")
+    private String weightUnit;
 
     @Schema(description = "采购人员")
     @ExcelProperty("采购人员")

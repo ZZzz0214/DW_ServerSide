@@ -20,4 +20,7 @@ public class ErpSalePriceSearchReqVO {
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "客户名称", example = "张三")
+    private String name;
 }
