@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpCustomerMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 import javax.annotation.Resource;
 import java.util.Collection;
@@ -94,4 +95,15 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
         return customerMapper.selectListByStatus(status);
     }
 
+    @Override
+    public List<ErpCustomerSaveReqVO> searchCustomers(ErpCustomerPageReqVO searchReqVO) {
+        // 直接使用searchReqVO作为查询条件
+        List<ErpCustomerDO> customerDOList = customerMapper.selectList(new LambdaQueryWrapper<ErpCustomerDO>()
+                .like(searchReqVO.getName() != null, ErpCustomerDO::getName, searchReqVO.getName())
+                .eq(searchReqVO.getMobile() != null, ErpCustomerDO::getMobile, searchReqVO.getMobile())
+                .eq(searchReqVO.getTelephone() != null, ErpCustomerDO::getTelephone, searchReqVO.getTelephone()));
+
+        // 转换为响应对象
+        return BeanUtils.toBean(customerDOList, ErpCustomerSaveReqVO.class);
+    }
 }

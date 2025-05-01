@@ -91,4 +91,12 @@ public interface ErpCustomerService {
      */
     List<ErpCustomerDO> getCustomerListByStatus(Integer status);
 
+    /**
+     * 搜索客户
+     *
+     * @param searchReqVO 搜索条件
+     * @return 客户列表
+     */
+    List<ErpCustomerSaveReqVO> searchCustomers(ErpCustomerPageReqVO searchReqVO);
+
 }

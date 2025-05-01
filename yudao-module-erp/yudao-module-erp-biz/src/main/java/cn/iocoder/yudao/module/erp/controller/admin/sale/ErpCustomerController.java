@@ -99,4 +99,12 @@ public class ErpCustomerController {
                         BeanUtils.toBean(list, ErpCustomerRespVO.class));
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "搜索客户")
+    @PreAuthorize("@ss.hasPermission('erp:customer:query')")
+    public CommonResult<List<ErpCustomerSaveReqVO>> searchCustomers(@Valid ErpCustomerPageReqVO searchReqVO) {
+        List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(searchReqVO);
+        return success(customers);
+    }
+
 }
