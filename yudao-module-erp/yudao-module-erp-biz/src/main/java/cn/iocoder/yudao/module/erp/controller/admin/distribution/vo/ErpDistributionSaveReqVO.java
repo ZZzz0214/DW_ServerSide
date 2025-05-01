@@ -102,4 +102,10 @@ public class ErpDistributionSaveReqVO {
 
     @Schema(description = "租户编号", example = "1")
     private Long tenantId;
+
+    @Schema(description = "产品规格", example = "规格B")
+    private String productSpecification;
+
+    @Schema(description = "订单号", example = "ORD202403250001")
+    private String orderNumber;
 }

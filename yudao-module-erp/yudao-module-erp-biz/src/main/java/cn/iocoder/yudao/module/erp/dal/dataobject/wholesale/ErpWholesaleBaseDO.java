@@ -66,4 +66,10 @@ public class ErpWholesaleBaseDO extends BaseDO {
      * 枚举
      */
     private Integer status;
+
+    /** 产品规格 */
+    private String productSpecification;
+
+    /** 订单号 */
+    private String orderNumber;
 }

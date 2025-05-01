@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 22/04/2025 23:32:31
+ Date: 01/05/2025 18:18:03
 */
 
 SET NAMES utf8mb4;
@@ -22,7 +22,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `erp_wholesale_purchase`;
 CREATE TABLE `erp_wholesale_purchase`  (
-  `id` bigint(20) NOT NULL COMMENT '主键',
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
   `base_id` bigint(20) NOT NULL COMMENT '关联批发基础表',
   `combo_product_id` bigint(20) NULL DEFAULT NULL COMMENT '关联组品表',
   `purchaser` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '采购人员（->组品编号）',
@@ -41,10 +41,11 @@ CREATE TABLE `erp_wholesale_purchase`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `combo_product_id`(`combo_product_id` ASC) USING BTREE,
   CONSTRAINT `erp_wholesale_purchase_ibfk_1` FOREIGN KEY (`combo_product_id`) REFERENCES `erp_combo_product` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发采购表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发采购表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_purchase
 -- ----------------------------
+INSERT INTO `erp_wholesale_purchase` VALUES (6, 6, NULL, '123', '123', 11.00, 1.00, 1.00, 1.00, 25.00, 1, b'0', '1', '2025-04-30 22:19:34', '1', '2025-04-30 22:19:34');
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 22/04/2025 23:31:45
+ Date: 01/05/2025 17:55:15
 */
 
 SET NAMES utf8mb4;
@@ -22,8 +22,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `erp_distribution_base`;
 CREATE TABLE `erp_distribution_base`  (
-  `id` bigint(20) NOT NULL COMMENT '订单编号',
-  `no` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '订单号',
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '代发主键',
+  `no` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '订单编号',
   `logistics_company` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '物流公司',
   `tracking_number` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '物流单号',
   `receiver_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '收件姓名',
@@ -45,11 +45,16 @@ CREATE TABLE `erp_distribution_base`  (
   `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `status` tinyint(4) NULL DEFAULT NULL COMMENT '代发状态',
+  `order_number` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '订单号',
+  `product_specification` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '产品规格',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发基础表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发基础表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_distribution_base
 -- ----------------------------
+INSERT INTO `erp_distribution_base` VALUES (17, 'DFJL20250430000004', '物流公司1', '物流单号', '收件姓名', '联系电话', '收件地址', '原表山坡', '原表规格', 1, 123, '备注信息', NULL, '称王*1 + 笔记本*1', '123', 8, 1, b'0', '1', '2025-04-30 20:12:52', '1', '2025-04-30 20:12:52', 10, NULL, NULL);
+INSERT INTO `erp_distribution_base` VALUES (18, 'DFJL20250430000005', '物流公司1', '物流单号', '收件姓名', '联系电话', '收件地址', '原表山坡', '原表规格', 1, 123, '123', NULL, '称王*1 + 笔记本*1', '123', 2, 1, b'0', '1', '2025-04-30 23:13:24', '1', '2025-04-30 23:13:24', 10, NULL, NULL);
+INSERT INTO `erp_distribution_base` VALUES (19, 'DFJL20250430000006', '', '123', '123', '123', '123', '123', '123', 1, 123, '123', NULL, '123123*5 + 一加Ace2Pro*3', '123', 1, 1, b'0', '1', '2025-04-30 23:17:48', '1', '2025-04-30 23:17:48', 10, NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

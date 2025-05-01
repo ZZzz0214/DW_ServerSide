@@ -101,4 +101,10 @@ public class ErpWholesaleRespVO {
 
     @Schema(description = "是否删除", example = "false")
     private Boolean deleted;
+
+    @Schema(description = "产品规格", example = "规格B")
+    private String productSpecification;
+
+    @Schema(description = "订单号", example = "ORD202403250001")
+    private String orderNumber;
 }
