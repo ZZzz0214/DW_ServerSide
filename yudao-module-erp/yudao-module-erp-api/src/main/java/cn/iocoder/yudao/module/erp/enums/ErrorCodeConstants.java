@@ -183,11 +183,20 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode DISTRIBUTION_DELETE_FAIL_APPROVE = new ErrorCode(1_030_104_003, "代发记录({})已审核，无法删除");
     ErrorCode DISTRIBUTION_NOT_APPROVE = new ErrorCode(1_030_104_004, "代发记录未审核，无法操作");
 
-    // ... existing code ...
-
     // ========== ERP 批发（1-030-105-000） ==========
     ErrorCode WHOLESALE_NOT_EXISTS = new ErrorCode(1_030_105_000, "批发记录不存在");
     ErrorCode WHOLESALE_NO_EXISTS = new ErrorCode(1_030_105_001, "批发订单号已存在");
     ErrorCode WHOLESALE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_105_002, "批发记录({})已审核，无法修改");
     ErrorCode WHOLESALE_NOT_APPROVE = new ErrorCode(1_030_105_003, "批发记录未审核，无法操作");
+    // ========== ERP 采购人员（1-030-106-000） ==========
+    ErrorCode PURCHASER_NOT_EXISTS = new ErrorCode(1_030_106_000, "采购人员不存在");
+    ErrorCode PURCHASER_NAME_DUPLICATE = new ErrorCode(1_030_106_001, "采购人员姓名已存在");
+    ErrorCode PURCHASER_PHONE_DUPLICATE = new ErrorCode(1_030_106_002, "采购人员联系电话已存在");
+    ErrorCode PURCHASER_NOT_ENABLE = new ErrorCode(1_030_106_003, "采购人员({})未启用");
+
+    // ========== ERP 销售人员（1-030-107-000） ==========
+    ErrorCode SALESPERSON_NOT_EXISTS = new ErrorCode(1_030_107_000, "销售人员不存在");
+    ErrorCode SALESPERSON_NAME_DUPLICATE = new ErrorCode(1_030_107_001, "销售人员姓名已存在");
+    ErrorCode SALESPERSON_PHONE_DUPLICATE = new ErrorCode(1_030_107_002, "销售人员联系电话已存在");
+    ErrorCode SALESPERSON_NOT_ENABLE = new ErrorCode(1_030_107_003, "销售人员({})未启用");
 }
