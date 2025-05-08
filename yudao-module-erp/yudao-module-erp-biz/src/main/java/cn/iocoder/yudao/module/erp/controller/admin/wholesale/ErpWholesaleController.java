@@ -69,7 +69,6 @@ public class ErpWholesaleController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
     public CommonResult<ErpWholesaleRespVO> getWholesale(@RequestParam("id") Long id) {
-       System.out.println("拿到批发id"+id);
         // 1. 获取基础信息
         ErpWholesaleBaseDO wholesale = wholesaleService.getWholesale(id);
         if (wholesale == null) {

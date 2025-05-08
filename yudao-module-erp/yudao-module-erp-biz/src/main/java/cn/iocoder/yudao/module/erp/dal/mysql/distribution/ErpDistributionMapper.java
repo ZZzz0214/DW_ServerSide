@@ -67,7 +67,6 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 "ELSE 0 END",
                 ErpDistributionRespVO::getShippingFee
         );
-        System.out.println("生成的SQL1: " + query.getSqlSegment());
 
         // 计算采购总额 = 采购单价*数量 + 运费 + 其他费用
         query.selectAs(
@@ -88,52 +87,52 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 ErpDistributionRespVO::getTotalPurchaseAmount
         );
 
-        // 联表查询销售信息
+//        // 联表查询销售信息
         query.leftJoin(ErpDistributionSaleDO.class, ErpDistributionSaleDO::getBaseId, ErpDistributionBaseDO::getId)
                 .selectAs(ErpDistributionSaleDO::getSalesperson, ErpDistributionRespVO::getSalesperson)
                 .selectAs(ErpDistributionSaleDO::getCustomerName, ErpDistributionRespVO::getCustomerName)
-                .selectAs(ErpDistributionSaleDO::getSalePrice, ErpDistributionRespVO::getSalePrice)
+                //.selectAs(ErpDistributionSaleDO::getSalePrice, ErpDistributionRespVO::getSalePrice)
                 //.selectAs(ErpDistributionSaleDO::getShippingFee, ErpDistributionRespVO::getSaleShippingFee)
                 .selectAs(ErpDistributionSaleDO::getOtherFees, ErpDistributionRespVO::getSaleOtherFees);
                 //.selectAs(ErpDistributionSaleDO::getTotalSaleAmount, ErpDistributionRespVO::getTotalSaleAmount);
-        // 联表查询销售价格信息
+//        // 联表查询销售价格信息
         query.leftJoin(ErpSalePriceDO.class,
-                ErpSalePriceDO::getGroupProductId, ErpComboProductDO::getId)
-                // 使用apply方法添加字符集转换条件
-                .apply("t4.customer_name COLLATE utf8mb4_unicode_ci = t3.customer_name COLLATE utf8mb4_unicode_ci")
+                ErpSalePriceDO::getGroupProductId, ErpDistributionPurchaseDO::getComboProductId)
+                .eq(ErpSalePriceDO::getCustomerName, ErpDistributionSaleDO::getCustomerName)
                 .selectAs(ErpSalePriceDO::getDistributionPrice, ErpDistributionRespVO::getSalePrice);
-
-        // 计算销售运费
+//
+//        // 计算销售运费
+        // 计算销售运费 - 使用组品表(t2)中的weight字段
         query.selectAs(
                 "CASE " +
                 "WHEN t4.shipping_fee_type = 0 THEN t4.fixed_shipping_fee " +
                 "WHEN t4.shipping_fee_type = 1 THEN " +
                 "  CASE WHEN t4.additional_item_quantity > 0 " +
-                "    THEN t4.additional_item_price * CEIL(t0.product_quantity / t4.additional_item_quantity) " +
+                "    THEN t4.additional_item_price * CEIL(t.product_quantity / t4.additional_item_quantity) " +
                 "    ELSE 0 END " +
                 "WHEN t4.shipping_fee_type = 2 THEN " +
-                "  CASE WHEN t4.weight * t0.product_quantity <= t4.first_weight " +
+                "  CASE WHEN t2.weight * t.product_quantity <= t4.first_weight " +
                 "    THEN t4.first_weight_price " +
                 "    ELSE t4.first_weight_price + t4.additional_weight_price * " +
-                "      CEIL((t4.weight * t0.product_quantity - t4.first_weight) / t4.additional_weight) END " +
+                "      CEIL((t2.weight * t.product_quantity - t4.first_weight) / t4.additional_weight) END " +
                 "ELSE 0 END",
                 ErpDistributionRespVO::getSaleShippingFee
         );
-
-        // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
+//
+//        // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
         query.selectAs(
-                "t4.distribution_price * t0.product_quantity + " +
+                "t4.distribution_price * t.product_quantity + " +
                 "CASE " +
                 "WHEN t4.shipping_fee_type = 0 THEN t4.fixed_shipping_fee " +
                 "WHEN t4.shipping_fee_type = 1 THEN " +
                 "  CASE WHEN t4.additional_item_quantity > 0 " +
-                "    THEN t4.additional_item_price * CEIL(t0.product_quantity / t4.additional_item_quantity) " +
+                "    THEN t4.additional_item_price * CEIL(t.product_quantity / t4.additional_item_quantity) " +
                 "    ELSE 0 END " +
                 "WHEN t4.shipping_fee_type = 2 THEN " +
-                "  CASE WHEN t4.weight * t0.product_quantity <= t4.first_weight " +
+                "  CASE WHEN t2.weight * t.product_quantity <= t4.first_weight " +
                 "    THEN t4.first_weight_price " +
                 "    ELSE t4.first_weight_price + t4.additional_weight_price * " +
-                "      CEIL((t4.weight * t0.product_quantity - t4.first_weight) / t4.additional_weight) END " +
+                "      CEIL((t2.weight * t.product_quantity - t4.first_weight) / t4.additional_weight) END " +
                 "ELSE 0 END + " +
                 "COALESCE(t3.other_fees, 0)",
                 ErpDistributionRespVO::getTotalSaleAmount

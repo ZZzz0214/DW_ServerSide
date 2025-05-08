@@ -43,7 +43,6 @@ public class ErpProductController {
     @Operation(summary = "创建产品")
     @PreAuthorize("@ss.hasPermission('erp:product:create')")
     public CommonResult<Long> createProduct(@Valid @RequestBody ProductSaveReqVO createReqVO) {
-        System.out.println("Vo: "+createReqVO);
         return success(productService.createProduct(createReqVO));
     }
 

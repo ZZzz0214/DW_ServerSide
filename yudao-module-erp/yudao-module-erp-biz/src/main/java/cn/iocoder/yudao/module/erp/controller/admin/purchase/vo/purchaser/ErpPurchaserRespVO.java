@@ -49,4 +49,8 @@ public class ErpPurchaserRespVO {
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
+    @Schema(description = "备注信息", example = "备注信息")
+    @ExcelProperty("备注信息")
+    private String remark;
+
 }
