@@ -35,4 +35,7 @@ public class ErpDistributionPageReqVO extends PageParam {
 
     @Schema(description = "租户编号", example = "1")
     private Long tenantId;
+
+    @Schema(description = "销售状态", example = "2")
+    private Integer status;
 }

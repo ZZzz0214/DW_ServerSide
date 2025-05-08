@@ -184,4 +184,23 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             throw exception(DISTRIBUTION_NO_EXISTS);
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateDistributionStatus(Long id, Integer status) {
+        boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
+        // 1.1 校验存在
+        ErpDistributionBaseDO distribution = validateDistribution(id);
+        // 1.2 校验状态
+        if (distribution.getStatus().equals(status)) {
+            throw exception(approve ? DISTRIBUTION_APPROVE_FAIL : DISTRIBUTION_PROCESS_FAIL);
+        }
+
+        // 2. 更新状态
+        int updateCount = distributionMapper.updateByIdAndStatus(id, distribution.getStatus(),
+                new ErpDistributionBaseDO().setStatus(status));
+        if (updateCount == 0) {
+            throw exception(approve ? DISTRIBUTION_APPROVE_FAIL : DISTRIBUTION_PROCESS_FAIL);
+        }
+    }
 }

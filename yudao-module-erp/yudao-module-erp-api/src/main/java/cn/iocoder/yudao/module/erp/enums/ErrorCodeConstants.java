@@ -205,4 +205,8 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode INVENTORY_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_108_002, "库存记录({})已审核，无法修改");
     ErrorCode INVENTORY_DELETE_FAIL_APPROVE = new ErrorCode(1_030_108_003, "库存记录({})已审核，无法删除");
     ErrorCode INVENTORY_NOT_APPROVE = new ErrorCode(1_030_108_004, "库存记录未审核，无法操作");
+        // ========== ERP 代发（1-030-104-000） ==========
+    // ... existing error codes ...
+    ErrorCode DISTRIBUTION_APPROVE_FAIL = new ErrorCode(1_030_104_005, "审核失败，只有未审核的代发记录才能审核");
+    ErrorCode DISTRIBUTION_PROCESS_FAIL = new ErrorCode(1_030_104_006, "反审核失败，只有已审核的代发记录才能反审核");
 }

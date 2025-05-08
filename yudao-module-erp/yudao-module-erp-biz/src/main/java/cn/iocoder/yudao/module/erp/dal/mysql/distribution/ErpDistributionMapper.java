@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPu
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -145,5 +146,11 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
 
     default ErpDistributionBaseDO selectByNo(String no) {
         return selectOne(ErpDistributionBaseDO::getNo, no);
+    }
+
+    default int updateByIdAndStatus(Long id, Integer status, ErpDistributionBaseDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpDistributionBaseDO>()
+                .eq(ErpDistributionBaseDO::getId, id)
+                .eq(ErpDistributionBaseDO::getStatus, status));
     }
 }
