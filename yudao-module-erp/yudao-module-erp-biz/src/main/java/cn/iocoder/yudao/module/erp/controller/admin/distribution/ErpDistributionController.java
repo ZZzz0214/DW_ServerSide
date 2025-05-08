@@ -117,15 +117,27 @@ public class ErpDistributionController {
                             }
                             break;
                         case 2: // 按重计费
-                            BigDecimal totalWeight = comboProduct.getWeight().multiply(new BigDecimal(distribution.getProductQuantity()));
+                            quantity = distribution.getProductQuantity();
+                            BigDecimal productWeight = comboProduct.getWeight(); // 使用组品重量
+                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
+
+                            System.out.println(String.format("采购按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
+                                productWeight, quantity, totalWeight));
+                            System.out.println(String.format("采购首重: %s, 首重价格: %s, 续重单位: %s, 续重价格: %s",
+                                comboProduct.getFirstWeight(), comboProduct.getFirstWeightPrice(),
+                                comboProduct.getAdditionalWeight(), comboProduct.getAdditionalWeightPrice()));
+
                             if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
                                 shippingFee = comboProduct.getFirstWeightPrice();
+                                System.out.println("采购总重量<=首重，运费=" + shippingFee);
                             } else {
                                 BigDecimal additionalWeight = totalWeight.subtract(comboProduct.getFirstWeight());
                                 BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
                                 shippingFee = comboProduct.getFirstWeightPrice().add(
                                     comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
+                                System.out.println(String.format("采购总重量>首重 - 超出重量: %s, 续重单位数: %s, 运费: %s",
+                                    additionalWeight, additionalUnits, shippingFee));
                             }
                             break;
                     }
@@ -159,6 +171,7 @@ public class ErpDistributionController {
                     switch (salePrice.getShippingFeeType()) {
                         case 0: // 固定运费
                             saleShippingFee = salePrice.getFixedShippingFee();
+                            System.out.println("固定运费: " + saleShippingFee);
                             break;
                         case 1: // 按件计费
                             int quantity = distribution.getProductQuantity();
@@ -168,22 +181,38 @@ public class ErpDistributionController {
                             if (additionalQuantity > 0) {
                                 int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
                                 saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+                                System.out.println(String.format("按件计费 - 数量: %d, 附加件数量: %d, 附加件价格: %s, 运费: %s",
+                                    quantity, additionalQuantity, additionalPrice, saleShippingFee));
                             }
                             break;
                         case 2: // 按重计费
-                            BigDecimal totalWeight = salePrice.getFirstWeight().multiply(new BigDecimal(distribution.getProductQuantity()));
+                            int quantity2 = distribution.getProductQuantity();
+                            ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+                            BigDecimal productWeight = comboProduct.getWeight(); // 使用组品重量
+                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity2));
+
+                            System.out.println(String.format("按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
+                                productWeight, quantity2, totalWeight));
+                            System.out.println(String.format("首重: %s, 首重价格: %s, 续重单位: %s, 续重价格: %s",
+                                salePrice.getFirstWeight(), salePrice.getFirstWeightPrice(),
+                                salePrice.getAdditionalWeight(), salePrice.getAdditionalWeightPrice()));
+
                             if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
                                 saleShippingFee = salePrice.getFirstWeightPrice();
+                                System.out.println("总重量<=首重，运费=" + saleShippingFee);
                             } else {
                                 BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
                                 BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
                                 saleShippingFee = salePrice.getFirstWeightPrice().add(
                                     salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
+                                System.out.println(String.format("总重量>首重 - 超出重量: %s, 续重单位数: %s, 运费: %s",
+                                    additionalWeight, additionalUnits, saleShippingFee));
                             }
                             break;
                     }
                     respVO.setSaleShippingFee(saleShippingFee);
+                    System.out.println("最终销售运费：" + saleShippingFee);
 
                     // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
                     BigDecimal totalSaleAmount = salePrice.getDistributionPrice()

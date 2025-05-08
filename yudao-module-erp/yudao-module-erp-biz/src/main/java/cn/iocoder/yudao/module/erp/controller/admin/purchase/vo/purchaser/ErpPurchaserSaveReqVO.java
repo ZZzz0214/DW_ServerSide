@@ -39,7 +39,7 @@ public class ErpPurchaserSaveReqVO {
 
     @Schema(description = "银行账号", example = "6225880137700000")
     private String bankAccount;
-    
+
     @Schema(description = "备注信息", example = "备注信息")
     @ExcelProperty("备注信息")
     private String remark;
