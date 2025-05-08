@@ -28,6 +28,12 @@ public class ErpComboProductDO extends BaseDO {
      */
     @TableId
     private Long id;
+
+    /**
+     * 组合产品编号(业务编号)
+     */
+    private String no;
+
     /**
      * 组合产品名称
      */

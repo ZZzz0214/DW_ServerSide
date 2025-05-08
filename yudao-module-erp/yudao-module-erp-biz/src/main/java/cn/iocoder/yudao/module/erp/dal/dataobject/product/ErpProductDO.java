@@ -31,6 +31,11 @@ public class ErpProductDO extends BaseDO {
     private Long id;
 
     /**
+     * 产品编号(业务编号)
+     */
+    private String no;
+
+    /**
      * 产品名称
      */
     private String name;
@@ -131,20 +136,6 @@ public class ErpProductDO extends BaseDO {
      */
     private LocalDateTime orderReplenishmentLeadTime;
 
-    /**
-     * 产品长宽高
-     */
-//    private String productDimensions;
-
-    /**
-     * 产品箱规
-     */
-//    private String cartonSpecifications;
-
-    /**
-     * 箱长宽高
-     */
-//    private String cartonDimensions;
 
     /**
      * 箱规重量
@@ -237,6 +228,16 @@ public class ErpProductDO extends BaseDO {
     private String cartonWeightUnit;
 
     /**
+     * 产品箱规
+     */
+    private String productCartonSpec;
+
+    /**
+     * 产品箱规单位
+     */
+    private String productCartonSpecUnit;
+
+    /**
      * 公域活动最低价
      */
     private String publicDomainEventMinimumPrice;
@@ -306,15 +307,7 @@ public class ErpProductDO extends BaseDO {
      */
     private BigDecimal fixedShippingFee;
 
-//    /**
-//     * 首件数量
-//     */
-//    private Integer firstItemQuantity;
-//
-//    /**
-//     * 首件价格（单位：元）
-//     */
-//    private BigDecimal firstItemPrice;
+
 
     /**
      * 续件数量

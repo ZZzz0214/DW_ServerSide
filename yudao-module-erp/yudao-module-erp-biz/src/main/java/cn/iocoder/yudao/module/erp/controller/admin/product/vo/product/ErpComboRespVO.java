@@ -18,6 +18,10 @@ public class ErpComboRespVO {
     @ExcelProperty("组品编号")
     private Long id;
 
+    @Schema(description = "组合产品编号(业务编号)", example = "CPK20231101000001")
+    @ExcelProperty("组合产品编号(业务编号)")
+    private String no;
+
     @Schema(description = "组合产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "李四")
     @ExcelProperty("组合产品名称")
     private String name;

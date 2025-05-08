@@ -36,4 +36,8 @@ public interface ErpComboMapper extends BaseMapperX<ErpComboProductDO> {
     default List<ErpComboProductDO> selectListByStatus(Integer status) {
         return selectList(ErpComboProductDO::getStatus, status);
     }
+
+    default ErpComboProductDO selectByNo(String no) {
+        return selectOne(ErpComboProductDO::getNo, no);
+    }
 }

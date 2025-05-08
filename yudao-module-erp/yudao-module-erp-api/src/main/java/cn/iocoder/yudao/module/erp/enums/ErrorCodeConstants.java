@@ -199,4 +199,10 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode SALESPERSON_NAME_DUPLICATE = new ErrorCode(1_030_107_001, "销售人员姓名已存在");
     ErrorCode SALESPERSON_PHONE_DUPLICATE = new ErrorCode(1_030_107_002, "销售人员联系电话已存在");
     ErrorCode SALESPERSON_NOT_ENABLE = new ErrorCode(1_030_107_003, "销售人员({})未启用");
+    // ========== ERP 库存（1-030-108-000） ==========
+    ErrorCode INVENTORY_NOT_EXISTS = new ErrorCode(1_030_108_000, "库存记录不存在");
+    ErrorCode INVENTORY_NO_EXISTS = new ErrorCode(1_030_108_001, "库存编号已存在");
+    ErrorCode INVENTORY_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_108_002, "库存记录({})已审核，无法修改");
+    ErrorCode INVENTORY_DELETE_FAIL_APPROVE = new ErrorCode(1_030_108_003, "库存记录({})已审核，无法删除");
+    ErrorCode INVENTORY_NOT_APPROVE = new ErrorCode(1_030_108_004, "库存记录未审核，无法操作");
 }
