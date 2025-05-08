@@ -17,6 +17,10 @@ public class ErpProductRespVO {
     @ExcelProperty("产品编号")
     private Long id;
 
+    @Schema(description = "产品编号(业务编号)", example = "P123456")
+    @ExcelProperty("产品编号(业务编号)")
+    private String no;
+
     @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "李四")
     @ExcelProperty("产品名称")
     private String name;
@@ -186,6 +190,14 @@ public class ErpProductRespVO {
     @Schema(description = "箱规重量单位")
     @ExcelProperty("箱规重量单位")
     private String cartonWeightUnit;
+
+    @Schema(description = "产品箱规")
+    @ExcelProperty("产品箱规")
+    private String productCartonSpec;
+
+    @Schema(description = "产品箱规单位")
+    @ExcelProperty("产品箱规单位")
+    private String productCartonSpecUnit;
 
     @Schema(description = "公域活动最低价")
     @ExcelProperty("公域活动最低价")

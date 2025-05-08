@@ -17,6 +17,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 
 import javax.annotation.Resource;
 import java.util.Collection;
@@ -27,8 +28,7 @@ import java.util.Map;
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertSet;
-import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PRODUCT_NOT_ENABLE;
-import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PRODUCT_NOT_EXISTS;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 
 /**
  * ERP 产品 Service 实现类
@@ -47,12 +47,21 @@ public class ErpProductServiceImpl implements ErpProductService {
     @Resource
     private ErpProductUnitService productUnitService;
 
+    @Resource
+    private ErpNoRedisDAO noRedisDAO;
+
     @Override
     public Long createProduct(ProductSaveReqVO createReqVO) {
         // TODO 芋艿：校验分类
+        // 生成产品编号
+        String no = noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX);
+        if (productMapper.selectByNo(no) != null) {
+            throw exception(PRODUCT_NOT_EXISTS);
+        }
+
         // 插入
-        ErpProductDO product = BeanUtils.toBean(createReqVO, ErpProductDO.class);
-        System.out.println(product);
+        ErpProductDO product = BeanUtils.toBean(createReqVO, ErpProductDO.class)
+                .setNo(no);
         productMapper.insert(product);
         // 返回
         return product.getId();

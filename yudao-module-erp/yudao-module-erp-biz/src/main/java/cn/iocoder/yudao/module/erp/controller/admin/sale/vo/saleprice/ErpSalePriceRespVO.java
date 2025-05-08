@@ -21,6 +21,10 @@ public class ErpSalePriceRespVO {
     @ExcelProperty("编号")
     private Long id;
 
+    @Schema(description = "销售价格表业务编号", example = "XSJGBH20230001")
+    @ExcelProperty("业务编号")
+    private String no;
+
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "12345")
     @ExcelProperty("组品编号")
     private Long groupProductId;

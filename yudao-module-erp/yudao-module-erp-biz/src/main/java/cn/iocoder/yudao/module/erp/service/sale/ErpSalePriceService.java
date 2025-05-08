@@ -130,4 +130,13 @@ public interface ErpSalePriceService {
      * @return 搜索到的产品列表
      */
     List<ErpSalePriceRespVO> searchProducts(ErpSalePriceSearchReqVO searchReqVO);
+    
+    /**
+     * 根据组品编号和客户名称获取销售价格
+     *
+     * @param groupProductId 组品编号
+     * @param customerName 客户名称
+     * @return 销售价格信息
+     */
+    ErpSalePriceRespVO getSalePriceByGroupProductIdAndCustomerName(Long groupProductId, String customerName);
 }

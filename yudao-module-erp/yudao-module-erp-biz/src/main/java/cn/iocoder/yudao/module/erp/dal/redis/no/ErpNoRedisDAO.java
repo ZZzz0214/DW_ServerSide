@@ -67,6 +67,16 @@ public class ErpNoRedisDAO {
     public static final String PURCHASE_RETURN_NO_PREFIX = "CGTH";
 
     /**
+     * 产品编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO}
+     */
+    public static final String PRODUCT_NO_PREFIX = "CPK";
+
+    /**
+     * 组合产品编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO}
+     */
+    public static final String COMBO_PRODUCT_NO_PREFIX = "ZPK";
+
+    /**
      * 付款单 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentDO}
      */
     public static final String FINANCE_PAYMENT_NO_PREFIX = "FKD";
@@ -74,6 +84,10 @@ public class ErpNoRedisDAO {
      * 收款单 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptDO}
      */
     public static final String FINANCE_RECEIPT_NO_PREFIX = "SKD";
+
+    public static final String SALE_PRICE_NO_PREFIX = "XSJG";
+
+    public static final String INVENTORY_NO_PREFIX = "CKJL";
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -85,9 +99,18 @@ public class ErpNoRedisDAO {
      * @param prefix 前缀
      * @return 序号
      */
+//    public String generate(String prefix) {
+//        // 递增序号
+//        String noPrefix = prefix + DateUtil.format(LocalDateTime.now(), DatePattern.PURE_DATE_PATTERN);
+//        String key = RedisKeyConstants.NO + noPrefix;
+//        Long no = stringRedisTemplate.opsForValue().increment(key);
+//        // 设置过期时间
+//        stringRedisTemplate.expire(key, Duration.ofDays(1L));
+//        return noPrefix + String.format("%06d", no);
+//    }
     public String generate(String prefix) {
         // 递增序号
-        String noPrefix = prefix + DateUtil.format(LocalDateTime.now(), DatePattern.PURE_DATE_PATTERN);
+        String noPrefix = prefix + DateUtil.format(LocalDateTime.now(), "yyyyMMddHHmmss");
         String key = RedisKeyConstants.NO + noPrefix;
         Long no = stringRedisTemplate.opsForValue().increment(key);
         // 设置过期时间

@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import org.apache.ibatis.annotations.Mapper;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 
 import java.math.BigDecimal;
 
@@ -47,5 +48,20 @@ public interface ErpSalePriceMapper extends BaseMapperX<ErpSalePriceDO> {
             return null;
         }
         return selectOne(ErpSalePriceDO::getId, id);
+    }
+
+    default ErpSalePriceDO selectByNo(String no) {
+        if (no == null) {
+            return null;
+        }
+        return selectOne(ErpSalePriceDO::getNo, no);
+    }
+
+    default ErpSalePriceRespVO selectByGroupProductIdAndCustomerName(Long groupProductId, String customerName) {
+        MPJLambdaWrapperX<ErpSalePriceDO> query = new MPJLambdaWrapperX<ErpSalePriceDO>()
+                .eq(ErpSalePriceDO::getGroupProductId, groupProductId)
+                .eqIfPresent(ErpSalePriceDO::getCustomerName, customerName);
+
+        return selectJoinOne(ErpSalePriceRespVO.class, query);
     }
 }

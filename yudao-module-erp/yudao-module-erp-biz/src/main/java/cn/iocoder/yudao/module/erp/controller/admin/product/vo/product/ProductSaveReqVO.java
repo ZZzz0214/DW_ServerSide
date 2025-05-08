@@ -142,6 +142,12 @@ public class ProductSaveReqVO {
     @Schema(description = "箱规重量单位")
     private String cartonWeightUnit;
 
+    @Schema(description = "产品箱规")
+    private String productCartonSpec;
+
+    @Schema(description = "产品箱规单位") 
+    private String productCartonSpecUnit;
+
     @Schema(description = "公域活动最低价")
     private String publicDomainEventMinimumPrice;
 

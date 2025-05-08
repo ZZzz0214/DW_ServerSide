@@ -14,6 +14,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
+import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.SALE_PRICE_NOT_EXISTS;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 
 @Service
 @Validated
@@ -43,17 +44,27 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Resource
     private ErpComboMapper erpComboMapper;
 
+    @Resource
+    private ErpNoRedisDAO noRedisDAO;
+
     @Override
     public Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO) {
-        // 根据groupProductId获取组品信息
+        // 1. 生成销售价格表编号
+        String no = noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX);
+        if (erpSalePriceMapper.selectByNo(no) != null) {
+            throw exception(SALE_PRICE_NOT_EXISTS);
+        }
+
+        // 2. 根据groupProductId获取组品信息
         Long groupProductId = createReqVO.getGroupProductId();
         ErpComboRespVO comboInfo = null;
         if (groupProductId != null) {
             comboInfo = erpComboProductService.getComboWithItems(groupProductId);
         }
 
-        // 保存销售价格信息
-        ErpSalePriceDO salePriceDO = BeanUtils.toBean(createReqVO, ErpSalePriceDO.class);
+        // 3. 保存销售价格信息
+        ErpSalePriceDO salePriceDO = BeanUtils.toBean(createReqVO, ErpSalePriceDO.class)
+                .setNo(no);
 
         // 设置从组品获取的信息
         if (comboInfo != null) {
@@ -248,7 +259,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
         if (searchReqVO.getName() != null) {
             salePriceDO.setCustomerName(searchReqVO.getName());
         }
-    
+
         // 执行查询
         List<ErpSalePriceDO> comboProductDOList = erpSalePriceMapper.selectList(new LambdaQueryWrapper<ErpSalePriceDO>()
                 .eq(salePriceDO.getGroupProductId() != null, ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId())
@@ -256,7 +267,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 .like(salePriceDO.getProductShortName() != null, ErpSalePriceDO::getProductShortName, searchReqVO.getProductShortName())
                 .eq(salePriceDO.getCreateTime() != null, ErpSalePriceDO::getCreateTime, searchReqVO.getCreateTime())
                 .like(salePriceDO.getCustomerName() != null, ErpSalePriceDO::getCustomerName, searchReqVO.getName()));
-    
+
 
         // 转换为响应对象
 //        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);
@@ -286,8 +297,6 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                             vo.setProductShortName(comboRespVO.getShortName());
                             vo.setOriginalQuantity(comboRespVO.getTotalQuantity());
                             vo.setShippingCode(comboRespVO.getShippingCode());
-
-
                         }
                     }
                     return vo;
@@ -295,5 +304,28 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 .collect(Collectors.toList()), ErpSalePriceRespVO.class);
         // 转换为响应对象
         return respVOList;
+    }
+    @Override
+    public ErpSalePriceRespVO getSalePriceByGroupProductIdAndCustomerName(Long groupProductId, String customerName) {
+        // 1. 查询销售价格基本信息
+        ErpSalePriceRespVO respVO = erpSalePriceMapper.selectByGroupProductIdAndCustomerName(groupProductId, customerName);
+        if (respVO == null) {
+            return null;
+        }
+
+        // 2. 设置组合产品信息
+        if (groupProductId != null) {
+            ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(groupProductId);
+            if (comboRespVO != null) {
+                respVO.setComboList(Collections.singletonList(comboRespVO));
+                respVO.setGroupProductId(comboRespVO.getId());
+                respVO.setProductName(comboRespVO.getName());
+                respVO.setProductShortName(comboRespVO.getShortName());
+                respVO.setOriginalQuantity(comboRespVO.getTotalQuantity());
+                respVO.setShippingCode(comboRespVO.getShippingCode());
+            }
+        }
+
+        return respVO;
     }
 }

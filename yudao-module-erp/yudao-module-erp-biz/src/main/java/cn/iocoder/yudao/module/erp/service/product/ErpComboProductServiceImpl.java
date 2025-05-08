@@ -18,9 +18,11 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -43,10 +45,20 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     @Resource
     private ErpProductMapper erpProductMapper;
 
+    @Resource
+    private ErpNoRedisDAO noRedisDAO;
+
     @Override
     public Long createCombo(@Valid ErpComboSaveReqVO createReqVO) {
+        // 生成组合产品编号
+        String no = noRedisDAO.generate(ErpNoRedisDAO.COMBO_PRODUCT_NO_PREFIX);
+        if (erpComboMapper.selectByNo(no) != null) {
+            throw exception(COMBO_PRODUCT_NOT_EXISTS);
+        }
+
         // 保存组品信息
-        ErpComboProductDO comboProductDO = BeanUtils.toBean(createReqVO, ErpComboProductDO.class);
+        ErpComboProductDO comboProductDO = BeanUtils.toBean(createReqVO, ErpComboProductDO.class)
+                .setNo(no);
         erpComboMapper.insert(comboProductDO);
 
         // 如果有单品关联信息，保存关联关系
@@ -139,10 +151,52 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         return BeanUtils.toBean(list, ErpComboRespVO.class);
     }
 
+//    @Override
+//    public PageResult<ErpComboRespVO> getComboVOPage(ErpComboPageReqVO pageReqVO) {
+//        PageResult<ErpComboProductDO> pageResult = erpComboMapper.selectPage(pageReqVO);
+//        return new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpComboRespVO.class), pageResult.getTotal());
+//    }
     @Override
     public PageResult<ErpComboRespVO> getComboVOPage(ErpComboPageReqVO pageReqVO) {
         PageResult<ErpComboProductDO> pageResult = erpComboMapper.selectPage(pageReqVO);
-        return new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpComboRespVO.class), pageResult.getTotal());
+
+        // 转换结果并设置组合产品名称和重量
+        List<ErpComboRespVO> voList = pageResult.getList().stream().map(combo -> {
+            // 查询组合产品关联的单品
+            List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(combo.getId());
+            List<Long> productIds = comboItems.stream()
+                    .map(ErpComboProductItemDO::getItemProductId)
+                    .collect(Collectors.toList());
+            List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
+
+            // 构建名称字符串
+            StringBuilder nameBuilder = new StringBuilder();
+            // 计算总重量
+            BigDecimal totalWeight = BigDecimal.ZERO;
+            for (int i = 0; i < products.size(); i++) {
+                if (i > 0) {
+                    nameBuilder.append("+");
+                }
+                nameBuilder.append(products.get(i).getName())
+                        .append("*")
+                        .append(comboItems.get(i).getItemQuantity());
+                
+                // 计算重量
+                BigDecimal itemWeight = products.get(i).getWeight();
+                if (itemWeight != null) {
+                    BigDecimal quantity = new BigDecimal(comboItems.get(i).getItemQuantity());
+                    totalWeight = totalWeight.add(itemWeight.multiply(quantity));
+                }
+            }
+
+            // 转换VO并设置名称和重量
+            ErpComboRespVO vo = BeanUtils.toBean(combo, ErpComboRespVO.class);
+            vo.setName(nameBuilder.toString());
+            vo.setWeight(totalWeight);
+            return vo;
+        }).collect(Collectors.toList());
+
+        return new PageResult<>(voList, pageResult.getTotal());
     }
 
     @Override
@@ -187,9 +241,29 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         // 查询单品详细信息
         List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
 
-
+        // 组装单品名称字符串 (单品A*数量+单品B*数量)
+        StringBuilder nameBuilder = new StringBuilder();
+        for (int i = 0; i < products.size(); i++) {
+            if (i > 0) {
+                nameBuilder.append("+");
+            }
+            nameBuilder.append(products.get(i).getName())
+                      .append("*")
+                      .append(comboItems.get(i).getItemQuantity());
+        }
+        // 计算总重量 (单品weight*数量)
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        for (int i = 0; i < products.size(); i++) {
+            BigDecimal itemWeight = products.get(i).getWeight();
+            if (itemWeight != null) {
+                BigDecimal quantity = new BigDecimal(comboItems.get(i).getItemQuantity());
+                totalWeight = totalWeight.add(itemWeight.multiply(quantity));
+            }
+        }
         // 组装响应对象
         ErpComboRespVO comboRespVO = BeanUtils.toBean(comboProduct, ErpComboRespVO.class);
+        comboRespVO.setName(nameBuilder.toString());
+        comboRespVO.setWeight(totalWeight);
 
         // 组装单品列表
         List<ErpProductRespVO> productVOs = products.stream()

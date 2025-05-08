@@ -35,6 +35,11 @@ public class ErpSalePriceDO extends BaseDO {
     private Long id;
 
     /**
+     * 销售价格表业务编号
+     */
+    private String no;
+
+    /**
      * 组品编号
      */
     private Long groupProductId;

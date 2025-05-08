@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 02/05/2025 05:49:48
+ Date: 04/05/2025 18:31:02
 */
 
 SET NAMES utf8mb4;
@@ -22,7 +22,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `erp_product`;
 CREATE TABLE `erp_product`  (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '产品编号（主键，自增）',
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '产品id（主键，自增）',
+  `no` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '产品编号',
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '产品名称',
   `image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '产品图片',
   `product_short_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '产品简称',
@@ -89,13 +90,19 @@ CREATE TABLE `erp_product`  (
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NULL DEFAULT b'0' COMMENT '是否删除（0：未删除，1：已删除）',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
+  `product_carton_spec` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '产品箱规',
+  `product_carton_spec_unit` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '产品箱规单位',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 产品表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 产品表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_product
 -- ----------------------------
-INSERT INTO `erp_product` VALUES (10, '123', 'http://test.yudao.iocoder.cn/38d814c02acd0c31042156be3649a1a37644475ee2a354b74a0a1932757bb41c.png', '123', '123', NULL, '123', 1.000000, '2025-05-01 00:00:00', 1, '123', 87, 0, '123', '123', '123', '123', '123', 1, 1, '1970-01-01 08:00:00.123', '天', '1', '2', '3', 'cm', '1', '2', '3', 'm', 1, 'g', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', 1.000000, 1.000000, '123', NULL, 1.000000, 1, NULL, 123, 123.00, NULL, NULL, NULL, NULL, '年', 'kg', '1', '2025-05-02 05:42:36', '1', '2025-05-02 05:42:36', b'0', 1);
-INSERT INTO `erp_product` VALUES (11, '产品名称', 'http://test.yudao.iocoder.cn/38d814c02acd0c31042156be3649a1a37644475ee2a354b74a0a1932757bb41c.png', '产品简称', '发货编码', NULL, '产品规格', 1.000000, '2025-05-01 00:00:00', 1, '品牌名称', 87, 0, '产品卖点', '条形编号', '备案编号', '执行编号', '商标编号', 1, 1, '1970-01-01 08:00:00.001', '天', '1', '2', '3', 'cm', '1', '2', '3', 'm', 1, 'g', '发货地址', '退货地址', '快递公司', '不发货区', '加邮地区', '售后标准', '售后话术', '公域活动最低价', '直播活动最低价', '多多活动最低价', '阿里活动最低价', '团购活动最低价', '123', '供应商名', 1.000000, 1.000000, '123', NULL, 1.000000, 1, NULL, 250, 600.00, NULL, NULL, NULL, NULL, '年', 'kg', '1', '2025-05-02 05:44:47', '1', '2025-05-02 05:44:47', b'0', 1);
+INSERT INTO `erp_product` VALUES (10, NULL, '123', 'http://test.yudao.iocoder.cn/38d814c02acd0c31042156be3649a1a37644475ee2a354b74a0a1932757bb41c.png', '123', '123', NULL, '123', 1.000000, '2025-05-01 00:00:00', 1, '123', 87, 0, '123', '123', '123', '123', '123', 1, 1, '1970-01-01 08:00:00.123', '天', '1', '2', '3', 'cm', '1', '2', '3', 'm', 1, 'g', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', '123', 1.000000, 1.000000, '123', NULL, 1.000000, 1, NULL, 123, 123.00, NULL, NULL, NULL, NULL, '年', 'kg', '1', '2025-05-02 05:42:36', '1', '2025-05-04 17:44:36', b'1', 1, NULL, NULL);
+INSERT INTO `erp_product` VALUES (11, NULL, '产品名称', 'http://test.yudao.iocoder.cn/38d814c02acd0c31042156be3649a1a37644475ee2a354b74a0a1932757bb41c.png', '产品简称', '发货编码', NULL, '产品规格', 1.000000, '2025-05-01 00:00:00', 1, '品牌名称', 87, 0, '产品卖点', '条形编号', '备案编号', '执行编号', '商标编号', 1, 1, '1970-01-01 08:00:00.001', '天', '1', '2', '3', 'cm', '1', '2', '3', 'm', 1, 'g', '发货地址', '退货地址', '快递公司', '不发货区', '加邮地区', '售后标准', '售后话术', '公域活动最低价', '直播活动最低价', '多多活动最低价', '阿里活动最低价', '团购活动最低价', '123', '供应商名', 1.000000, 1.000000, '123', NULL, 1.000000, 1, NULL, 250, 600.00, NULL, NULL, NULL, NULL, '年', 'kg', '1', '2025-05-02 05:44:47', '1', '2025-05-04 17:44:34', b'1', 1, NULL, NULL);
+INSERT INTO `erp_product` VALUES (12, NULL, '产品名称', 'http://test.yudao.iocoder.cn/38d814c02acd0c31042156be3649a1a37644475ee2a354b74a0a1932757bb41c.png', '产品简称', '发货编码', NULL, '产品规格', 1.000000, '2025-05-01 00:00:00', 1, '品牌名称', 87, 0, '产品卖点', '条形编号', '备案编号', '执行编号', '商标编号', 1, 1, '1970-01-01 08:00:00.123', '天', '1', '2', '3', 'm', '1', '2', '3', 'cm', 1, 'g', '发货地址', '退货地址', '快递公司', '不发货区', '加邮地区', '售后标准', '售后话术', '公域活动最低价', '直播活动最低价', '多多活动最低价', '阿里活动最低价', '团购活动最低价', '123', '123', 1.000000, 1.000000, '123', NULL, 1.000000, 1, NULL, 123, 123.00, NULL, NULL, NULL, NULL, '年', 'kg', '1', '2025-05-02 05:56:30', '1', '2025-05-04 17:44:32', b'1', 1, NULL, NULL);
+INSERT INTO `erp_product` VALUES (13, NULL, '123', 'http://test.yudao.iocoder.cn/38d814c02acd0c31042156be3649a1a37644475ee2a354b74a0a1932757bb41c.png', '123', '123', NULL, '123', 1.000000, '2025-05-03 00:00:00', 1, '123', 87, 0, '123', '1', '2', '3', '4', 1, 1, '1970-01-01 08:00:00.123', '天', '1', '2', '3', 'mm', '1', '2', '3', 'm', 1, 'kg', '发货地址', '退货地址', '快递公司', '不发货区', '加邮地区', '1', '123', '123', '123', '123', '123', '123', '123', '123', 1.000000, 1.000000, '123', 1.000000, 1.000000, 1, NULL, 1, 2.00, NULL, NULL, NULL, NULL, '年', 'kg', '1', '2025-05-02 06:03:18', '1', '2025-05-04 17:44:30', b'1', 1, NULL, NULL);
+INSERT INTO `erp_product` VALUES (14, NULL, '产品A ', 'http://test.yudao.iocoder.cn/ccdb035403fb2791bd2b068aa365c43cbcda54cbc4af4bf2f5eb4fe7394f1ad9.jpg', '化妆品A', '123', NULL, '123', 1.000000, '2025-05-01 00:00:00', 1, '123', 87, 0, '产品卖点', '1', '2', '3', '4', 1, 1, '1970-01-01 08:00:00.001', '天', '1', '2', '3', 'mm', '1', '2', '3', 'cm', 1, 'kg', '发货地址', '退货地址', '快递公司', '不发货区', '加邮地区', '售后标准', '售后话术', '公域活动最低价', '直播活动最低价', '多多活动最低价', '阿里活动最低价', '团购活动最低价', '采购人员A ', '供应商A', 5.000000, 10.000000, '备注信息', 0.000000, 2.000000, 1, NULL, 10, 5.00, NULL, NULL, NULL, NULL, '天', 'kg', '1', '2025-05-04 17:47:50', '1', '2025-05-04 17:47:50', b'0', 1, NULL, NULL);
+INSERT INTO `erp_product` VALUES (15, 'CPK20250504181631000001', '产品B ', 'http://test.yudao.iocoder.cn/ccdb035403fb2791bd2b068aa365c43cbcda54cbc4af4bf2f5eb4fe7394f1ad9.jpg', '123', '123', NULL, '123', 1.000000, '2025-05-01 00:00:00', 1, '123', 87, 0, '123', '123', '123', '123', '123', 1, 1, '1970-01-01 08:00:00.001', '天', '1', '2', '3', 'mm', '12', '3', '3', 'cm', 1, 'kg', '发货地址', '退货地址', '快递公司', '不发货区', '加邮地区', '1', '123', '123', '123', '123', '123', '123', '123', '123', 1.000000, 1.000000, '123', 1.000000, 1.000000, 2, NULL, NULL, NULL, 123.00, 123.00, 123.00, 123.00, '天', 'kg', '1', '2025-05-04 18:16:32', '1', '2025-05-04 18:16:32', b'0', 1, NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
