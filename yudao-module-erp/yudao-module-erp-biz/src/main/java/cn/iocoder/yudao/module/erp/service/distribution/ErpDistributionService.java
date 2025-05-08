@@ -41,4 +41,12 @@ public interface ErpDistributionService {
 
     // 获取 VO 分页
     PageResult<ErpDistributionRespVO> getDistributionVOPage(ErpDistributionPageReqVO pageReqVO);
+
+    /**
+     * 更新代发单的状态
+     *
+     * @param id 编号
+     * @param status 状态
+     */
+    void updateDistributionStatus(Long id, Integer status);
 }
