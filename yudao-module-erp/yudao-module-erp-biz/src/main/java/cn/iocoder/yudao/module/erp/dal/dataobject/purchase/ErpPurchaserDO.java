@@ -14,7 +14,7 @@ import java.util.Date;
  * @author 芋道源码
  */
 @TableName("erp_purchaser")
-@KeySequence("erp_purchaser_seq") 
+@KeySequence("erp_purchaser_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -56,5 +56,9 @@ public class ErpPurchaserDO extends BaseDO {
      * 银行账号
      */
     private String bankAccount;
+    /**
+     * 备注信息
+     */
+    private String remark;
 
 }

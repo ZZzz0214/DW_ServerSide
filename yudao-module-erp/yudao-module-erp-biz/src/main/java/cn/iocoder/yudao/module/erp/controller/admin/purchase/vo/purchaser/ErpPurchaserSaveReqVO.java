@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser;
 
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -38,5 +39,9 @@ public class ErpPurchaserSaveReqVO {
 
     @Schema(description = "银行账号", example = "6225880137700000")
     private String bankAccount;
+    
+    @Schema(description = "备注信息", example = "备注信息")
+    @ExcelProperty("备注信息")
+    private String remark;
 
 }
