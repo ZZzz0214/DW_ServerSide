@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -195,7 +196,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateDistributionStatus(Long id, Integer status) {
+    public void updateDistributionStatus(Long id, Integer status, BigDecimal otherFees) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         // 1.1 校验存在
         ErpDistributionBaseDO distribution = validateDistribution(id);
@@ -207,6 +208,16 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 2. 更新状态
         int updateCount = distributionMapper.updateByIdAndStatus(id, distribution.getStatus(),
                 new ErpDistributionBaseDO().setStatus(status));
+
+        // 3. 更新采购信息的其他费用
+        if (otherFees != null) {
+            ErpDistributionPurchaseDO purchase = new ErpDistributionPurchaseDO()
+                    .setBaseId(id)
+                    .setOtherFees(otherFees);
+            purchaseMapper.update(purchase, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+                    .eq(ErpDistributionPurchaseDO::getBaseId, id));
+        }
+
         if (updateCount == 0) {
             throw exception(approve ? DISTRIBUTION_APPROVE_FAIL : DISTRIBUTION_PROCESS_FAIL);
         }
