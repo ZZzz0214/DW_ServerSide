@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBa
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPurchaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
@@ -20,6 +21,7 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
     default PageResult<ErpDistributionRespVO> selectPage(ErpDistributionPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpDistributionBaseDO> query = new MPJLambdaWrapperX<ErpDistributionBaseDO>()
                 .likeIfPresent(ErpDistributionBaseDO::getNo, reqVO.getNo())
+                .eqIfPresent(ErpDistributionBaseDO::getStatus, reqVO.getStatus())
                 .likeIfPresent(ErpDistributionBaseDO::getLogisticsCompany, reqVO.getLogisticsCompany())
                 .likeIfPresent(ErpDistributionBaseDO::getTrackingNumber, reqVO.getTrackingNumber())
                 .likeIfPresent(ErpDistributionBaseDO::getReceiverName, reqVO.getReceiverName())
@@ -28,17 +30,30 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 // 添加基础表字段映射
                 .selectAs(ErpDistributionBaseDO::getId, ErpDistributionRespVO::getId)
                 .selectAs(ErpDistributionBaseDO::getNo, ErpDistributionRespVO::getNo)
+                .selectAs(ErpDistributionBaseDO::getOrderNumber, ErpDistributionRespVO::getOrderNumber)
                 .selectAs(ErpDistributionBaseDO::getLogisticsCompany, ErpDistributionRespVO::getLogisticsCompany)
                 .selectAs(ErpDistributionBaseDO::getTrackingNumber, ErpDistributionRespVO::getTrackingNumber)
                 .selectAs(ErpDistributionBaseDO::getReceiverName, ErpDistributionRespVO::getReceiverName)
                 .selectAs(ErpDistributionBaseDO::getReceiverPhone, ErpDistributionRespVO::getReceiverPhone)
                 .selectAs(ErpDistributionBaseDO::getCreateTime, ErpDistributionRespVO::getCreateTime)
-                .selectAs(ErpDistributionBaseDO::getProductQuantity, ErpDistributionRespVO::getProductQuantity);
+                .selectAs(ErpDistributionBaseDO::getReceiverAddress, ErpDistributionRespVO::getReceiverAddress)
+                .selectAs(ErpDistributionBaseDO::getOriginalProductName, ErpDistributionRespVO::getOriginalProductName)
+                .selectAs(ErpDistributionBaseDO::getOriginalStandard, ErpDistributionRespVO::getOriginalStandard)
+                .selectAs(ErpDistributionBaseDO::getOriginalQuantity, ErpDistributionRespVO::getOriginalQuantity)
+                .selectAs(ErpDistributionBaseDO::getRemark, ErpDistributionRespVO::getRemark)
+                .selectAs(ErpDistributionBaseDO::getProductQuantity, ErpDistributionRespVO::getProductQuantity)
+                .selectAs(ErpDistributionBaseDO::getProductSpecification, ErpDistributionRespVO::getProductSpecification)
+                .selectAs(ErpDistributionBaseDO::getStatus, ErpDistributionRespVO::getStatus);
 
         // 联表查询采购信息
         query.leftJoin(ErpDistributionPurchaseDO.class, ErpDistributionPurchaseDO::getBaseId, ErpDistributionBaseDO::getId)
                 //.selectAs(ErpDistributionPurchaseDO::getShippingFee, ErpDistributionRespVO::getShippingFee)
-                .selectAs(ErpDistributionPurchaseDO::getOtherFees, ErpDistributionRespVO::getOtherFees);
+                .selectAs(ErpDistributionPurchaseDO::getOtherFees, ErpDistributionRespVO::getOtherFees)
+                .selectAs(ErpDistributionPurchaseDO::getComboProductId, ErpDistributionRespVO::getComboProductId)
+                .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesStatus, ErpDistributionRespVO::getPurchaseAfterSalesStatus)
+                .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesSituation, ErpDistributionRespVO::getPurchaseAfterSalesSituation)
+                .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesAmount, ErpDistributionRespVO::getPurchaseAfterSalesAmount);
+    ;
                 // 移除原有的totalPurchaseAmount映射
                 // .selectAs(ErpDistributionPurchaseDO::getTotalPurchaseAmount, ErpDistributionRespVO::getTotalPurchaseAmount);
 

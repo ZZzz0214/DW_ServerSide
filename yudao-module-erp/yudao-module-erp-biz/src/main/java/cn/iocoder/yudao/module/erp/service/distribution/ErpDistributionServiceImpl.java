@@ -5,7 +5,9 @@ package cn.iocoder.yudao.module.erp.service.distribution;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPurchaseAfterSalesUpdateReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
@@ -17,11 +19,17 @@ import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionPurchas
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionSaleMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -141,9 +149,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (distribution == null) {
             throw exception(DISTRIBUTION_NOT_EXISTS);
         }
-        if (ObjectUtil.notEqual(distribution.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
-            throw exception(DISTRIBUTION_NOT_APPROVE);
-        }
+//        if (ObjectUtil.notEqual(distribution.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
+//            throw exception(DISTRIBUTION_NOT_APPROVE);
+//        }
         return distribution;
     }
 
@@ -201,6 +209,50 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 new ErpDistributionBaseDO().setStatus(status));
         if (updateCount == 0) {
             throw exception(approve ? DISTRIBUTION_APPROVE_FAIL : DISTRIBUTION_PROCESS_FAIL);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePurchaseAfterSales(ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
+        // 1. 校验存在
+        ErpDistributionBaseDO distribution = validateDistribution(reqVO.getId());
+
+        // 2. 解析时间，兼容多种格式
+        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
+
+        // 3. 更新采购售后信息
+        ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
+                .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
+                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
+                .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
+                .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
+        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+                .eq(ErpDistributionPurchaseDO::getBaseId, reqVO.getId()));
+    }
+
+    private LocalDateTime parseDateTime(String dateTimeStr) {
+        try {
+            // 尝试解析第一种格式：yyyy-MM-dd'T'HH:mm
+            return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+        } catch (DateTimeParseException e1) {
+            try {
+                // 尝试解析第二种格式：yyyy-MM-dd'T'HH:mm:ss
+                return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            } catch (DateTimeParseException e2) {
+                try {
+                    // 尝试解析第三种格式：yyyy-MM-dd HH:mm:ss
+                    return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND));
+                } catch (DateTimeParseException e3) {
+                    try {
+                        // 尝试解析第四种格式：带时区的ISO 8601格式（如2025-05-21T05:52:26.000Z）
+                        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(); // 转换为本地时间
+                    } catch (DateTimeParseException e4) {
+                        throw new IllegalArgumentException("无法解析时间格式: " + dateTimeStr);
+                    }
+                }
+            }
         }
     }
 }

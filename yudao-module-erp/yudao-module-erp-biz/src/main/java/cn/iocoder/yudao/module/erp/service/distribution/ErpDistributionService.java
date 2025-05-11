@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistribut
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 
 import javax.validation.Valid;
 import java.util.Collection;
@@ -49,4 +50,11 @@ public interface ErpDistributionService {
      * @param status 状态
      */
     void updateDistributionStatus(Long id, Integer status);
+      /**
+     * 更新采购售后信息
+     *
+     * @param reqVO 更新信息
+     */
+    void updatePurchaseAfterSales(@Valid ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO);
+
 }
