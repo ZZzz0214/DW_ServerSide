@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistribut
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
-
+import java.math.BigDecimal;
 import javax.validation.Valid;
 import java.util.Collection;
 import java.util.List;
@@ -49,7 +49,7 @@ public interface ErpDistributionService {
      * @param id 编号
      * @param status 状态
      */
-    void updateDistributionStatus(Long id, Integer status);
+    void updateDistributionStatus(Long id, Integer status, BigDecimal otherFees);
       /**
      * 更新采购售后信息
      *

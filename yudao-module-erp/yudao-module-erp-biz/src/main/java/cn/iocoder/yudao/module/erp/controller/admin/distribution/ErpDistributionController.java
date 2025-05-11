@@ -67,10 +67,12 @@ public class ErpDistributionController {
     @Operation(summary = "更新代发状态")
     @PreAuthorize("@ss.hasPermission('erp:distribution:update-status')")
     public CommonResult<Boolean> updateDistributionStatus(@RequestParam("id") Long id,
-                                                          @RequestParam("status") Integer status) {
+                                                          @RequestParam("status") Integer status,
+                                                          @RequestParam("otherFees") BigDecimal otherFees) {
         System.out.println("更改的订单id为 "+id);
         System.out.println("更改的订单id为 "+status);
-        distributionService.updateDistributionStatus(id, status);
+        System.out.println("其他费用为 "+otherFees);
+        distributionService.updateDistributionStatus(id, status, otherFees);
         return success(true);
     }
 
@@ -153,6 +155,7 @@ public class ErpDistributionController {
                             break;
                     }
                     respVO.setShippingFee(shippingFee);
+                    System.out.println("成功设置采购运费问："+respVO.getShippingFee());
 
                     // 计算采购总额 = 采购单价*数量 + 运费 + 其他费用
                     BigDecimal totalAmount = comboProduct.getPurchasePrice()
@@ -167,7 +170,8 @@ public class ErpDistributionController {
         // 4. 获取并合并销售信息
         ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
         if (sale != null) {
-            BeanUtils.copyProperties(sale, respVO, "id");
+            BeanUtils.copyProperties(sale, respVO, "id","shippingFee","otherFees");
+            System.out.println("查看一下是不是销售价格覆盖了"+respVO);
             respVO.setSaleOtherFees(sale.getOtherFees());
 
             // 根据客户名称和组品ID查询销售价格
@@ -234,7 +238,8 @@ public class ErpDistributionController {
                 }
             }
         }
-
+        System.out.println("------------------123");
+        System.out.println(respVO);
         return success(respVO);
     }
 
