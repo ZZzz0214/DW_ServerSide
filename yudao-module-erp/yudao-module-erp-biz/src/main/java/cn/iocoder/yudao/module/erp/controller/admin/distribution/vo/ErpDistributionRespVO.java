@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo;
 
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -79,6 +80,15 @@ public class ErpDistributionRespVO {
     @Schema(description = "采购总额", example = "10000.00")
     private BigDecimal totalPurchaseAmount;
 
+    @Schema(description = "采购售后状态", example = "1")
+    private Integer purchaseAfterSalesStatus;
+
+    @Schema(description = "采购售后情况", example = "售后情况说明")
+    private String purchaseAfterSalesSituation;
+
+    @Schema(description = "采购售后金额", example = "100.00")
+    private BigDecimal purchaseAfterSalesAmount;
+
     // 来自 ErpDistributionSaleDO
     @Schema(description = "销售人员", example = "销售员A")
     private String salesperson;
@@ -113,4 +123,8 @@ public class ErpDistributionRespVO {
 
     @Schema(description = "订单号", example = "ORD202403250001")
     private String orderNumber;
+
+    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
+    @ExcelProperty("订单状态")
+    private Integer status;
 }

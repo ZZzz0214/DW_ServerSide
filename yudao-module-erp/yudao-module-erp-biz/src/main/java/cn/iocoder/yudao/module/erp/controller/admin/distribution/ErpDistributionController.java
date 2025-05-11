@@ -1,4 +1,5 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution;
+import cn.iocoder.yudao.framework.common.pojo.PageResultWithSummary;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
@@ -67,6 +68,8 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distribution:update-status')")
     public CommonResult<Boolean> updateDistributionStatus(@RequestParam("id") Long id,
                                                           @RequestParam("status") Integer status) {
+        System.out.println("更改的订单id为 "+id);
+        System.out.println("更改的订单id为 "+status);
         distributionService.updateDistributionStatus(id, status);
         return success(true);
     }
@@ -265,15 +268,47 @@ public class ErpDistributionController {
     @GetMapping("/purchase/unreviewed-page")
     @Operation(summary = "获得未审核代发采购分页")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
-    public CommonResult<PageResult<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
-        pageReqVO.setStatus(10); // 设置状态为未审核
+    public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
+        // 获取分页数据
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为ErpDistributionPurchaseAuditVO列表
         List<ErpDistributionPurchaseAuditVO> list = pageResult.getList().stream().map(item -> {
             ErpDistributionPurchaseAuditVO vo = new ErpDistributionPurchaseAuditVO();
             BeanUtils.copyProperties(item, vo);
             return vo;
         }).collect(Collectors.toList());
-        return success(new PageResult<>(list, pageResult.getTotal()));
+
+        // 计算合计值
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalShippingFee = BigDecimal.ZERO;
+        BigDecimal totalOtherFees = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionPurchaseAuditVO vo : list) {
+            if (vo.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(vo.getPurchasePrice());
+            }
+            if (vo.getShippingFee() != null) {
+                totalShippingFee = totalShippingFee.add(vo.getShippingFee());
+            }
+            if (vo.getOtherFees() != null) {
+                totalOtherFees = totalOtherFees.add(vo.getOtherFees());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
+            }
+        }
+
+        // 创建返回结果
+        PageResultWithSummary<ErpDistributionPurchaseAuditVO> result = new PageResultWithSummary<>();
+        result.setPageResult(new PageResult<>(list, pageResult.getTotal()));
+        result.setTotalPurchasePrice(totalPurchasePrice);
+        result.setTotalShippingFee(totalShippingFee);
+        result.setTotalOtherFees(totalOtherFees);
+        result.setTotalPurchaseAmount(totalPurchaseAmount);
+
+        return success(result);
     }
 
     // 已审核代发采购分页
@@ -320,4 +355,90 @@ public class ErpDistributionController {
         }).collect(Collectors.toList());
         return success(new PageResult<>(list, pageResult.getTotal()));
     }
+
+    @GetMapping("/purchase/get")
+    @Operation(summary = "获得代发采购订单详情")
+    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    public CommonResult<ErpDistributionPurchaseAuditVO> getDistributionPurchase(@RequestParam("id") Long id) {
+        System.out.println("获得代发采购订单详情"+id);
+        // 1. 获取基础信息
+        ErpDistributionBaseDO distribution = distributionService.getDistribution(id);
+        if (distribution == null) {
+            return success(null);
+        }
+
+        // 2. 转换为VO对象
+        ErpDistributionPurchaseAuditVO respVO = BeanUtils.toBean(distribution, ErpDistributionPurchaseAuditVO.class);
+
+        // 3. 获取并合并采购信息
+        ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+        if (purchase != null) {
+            BeanUtils.copyProperties(purchase, respVO, "id");
+
+            // 通过组品ID获取组品信息并设置相关字段
+            if (purchase.getComboProductId() != null) {
+                ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+                if (comboProduct != null) {
+                    respVO.setProductName(comboProduct.getName());
+                    respVO.setShippingCode(comboProduct.getShippingCode());
+                    respVO.setPurchaser(comboProduct.getPurchaser());
+                    respVO.setSupplier(comboProduct.getSupplier());
+                    respVO.setPurchasePrice(comboProduct.getPurchasePrice());
+
+                    // 计算采购运费
+                    BigDecimal shippingFee = BigDecimal.ZERO;
+                    switch (comboProduct.getShippingFeeType()) {
+                        case 0: // 固定运费
+                            shippingFee = comboProduct.getFixedShippingFee();
+                            break;
+                        case 1: // 按件计费
+                            int quantity = distribution.getProductQuantity();
+                            int additionalQuantity = comboProduct.getAdditionalItemQuantity();
+                            BigDecimal additionalPrice = comboProduct.getAdditionalItemPrice();
+
+                            if (additionalQuantity > 0) {
+                                int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
+                                shippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+                            }
+                            break;
+                        case 2: // 按重计费
+                            quantity = distribution.getProductQuantity();
+                            BigDecimal productWeight = comboProduct.getWeight();
+                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
+
+                            if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
+                                shippingFee = comboProduct.getFirstWeightPrice();
+                            } else {
+                                BigDecimal additionalWeight = totalWeight.subtract(comboProduct.getFirstWeight());
+                                BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
+                                shippingFee = comboProduct.getFirstWeightPrice().add(
+                                        comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
+                                );
+                            }
+                            break;
+                    }
+                    respVO.setShippingFee(shippingFee);
+
+                    // 计算采购总额 = 采购单价*数量 + 运费 + 其他费用
+                    BigDecimal totalAmount = comboProduct.getPurchasePrice()
+                            .multiply(new BigDecimal(distribution.getProductQuantity()))
+                            .add(shippingFee)
+                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
+                    respVO.setTotalPurchaseAmount(totalAmount);
+                }
+            }
+        }
+
+        return success(respVO);
+    }
+
+    @PutMapping("/update-purchase-after-sales")
+        @Operation(summary = "更新采购售后信息")
+        @PreAuthorize("@ss.hasPermission('erp:distribution:update')")
+        public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
+            System.out.println("售后信息"+reqVO);
+            distributionService.updatePurchaseAfterSales(reqVO);
+            return success(true);
+        }
 }

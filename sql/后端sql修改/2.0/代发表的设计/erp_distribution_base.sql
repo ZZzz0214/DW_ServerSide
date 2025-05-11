@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 08/05/2025 19:31:41
+ Date: 10/05/2025 14:00:56
 */
 
 SET NAMES utf8mb4;
@@ -32,7 +32,7 @@ CREATE TABLE `erp_distribution_base`  (
   `original_product_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原表商品',
   `original_standard` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原表规格',
   `original_quantity` int(11) NULL DEFAULT NULL COMMENT '原表数量',
-  `after_sales_status` int(11) NULL DEFAULT NULL COMMENT '售后状况',
+  `after_sales_status` int(11) NULL DEFAULT NULL COMMENT '售后状态',
   `remark` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注信息',
   `combo_product_id` bigint(20) NULL DEFAULT NULL COMMENT '组品编号',
   `product_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '产品名称（->组品编号）',
@@ -53,6 +53,6 @@ CREATE TABLE `erp_distribution_base`  (
 -- ----------------------------
 -- Records of erp_distribution_base
 -- ----------------------------
-INSERT INTO `erp_distribution_base` VALUES (13, 'DFJL20250504000001', '123', '123', '123', '123', '123', '123', '123', 1, 123, '123', NULL, '一加Ace2Pro*1 + 图书馆*1 + 张5*1 + 李6*1 + 笔记本*1 + 称王*1 + 123123*1', '123', 2, 1, b'0', '1', '2025-05-04 15:09:12', '1', '2025-05-04 15:09:12', 10, '123', '123');
+INSERT INTO `erp_distribution_base` VALUES (13, 'DFJL20250504000001', '123', '123', '123', '123', '123', '123', '123', 1, 123, '123', NULL, '一加Ace2Pro*1 + 图书馆*1 + 张5*1 + 李6*1 + 笔记本*1 + 称王*1 + 123123*1', '123', 2, 1, b'0', '1', '2025-05-04 15:09:12', '1', '2025-05-10 13:16:59', 10, '123', '123');
 
 SET FOREIGN_KEY_CHECKS = 1;
