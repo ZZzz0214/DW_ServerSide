@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * ERP 代发销售 DO
@@ -80,4 +81,29 @@ public class ErpDistributionSaleDO extends BaseDO {
      * 是否删除
      */
     private Boolean deleted;
+
+    /**
+     * 销售售后状态
+     */
+    private Integer saleAfterSalesStatus;
+
+    /**
+     * 销售售后情况
+     */
+    private String saleAfterSalesSituation;
+
+    /**
+     * 销售售后金额
+     */
+    private BigDecimal saleAfterSalesAmount;
+
+    /**
+     * 销售售后时间
+     */
+    private LocalDateTime saleAfterSalesTime;
+
+    /**
+     * 销售审核状态
+     */
+    private Integer saleAuditStatus;
 }

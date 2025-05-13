@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 01/05/2025 17:49:55
+ Date: 12/05/2025 00:43:17
 */
 
 SET NAMES utf8mb4;
@@ -37,15 +37,18 @@ CREATE TABLE `erp_distribution_sale`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `sale_after_sales_status` int(11) NULL DEFAULT NULL COMMENT '销售售后状态',
+  `sale_after_sales_situation` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '销售售后情况',
+  `sale_after_sales_amount` decimal(20, 2) NULL DEFAULT NULL COMMENT '销售售后金额',
+  `sale_after_sales_time` datetime NULL DEFAULT NULL COMMENT '销售售后时间',
+  `sale_audit_status` int(11) NULL DEFAULT NULL COMMENT '销售审核状态',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `sale_price_id`(`sale_price_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发销售表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '代发销售表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_distribution_sale
 -- ----------------------------
-INSERT INTO `erp_distribution_sale` VALUES (10, 17, NULL, '123', '123', 1.00, 20.00, 12.00, 39.00, 1, b'0', '1', '2025-04-30 20:12:52', '1', '2025-04-30 20:12:52');
-INSERT INTO `erp_distribution_sale` VALUES (11, 18, NULL, '123', '123', 1.00, 10.00, 4.00, 14.00, 1, b'0', '1', '2025-04-30 23:13:24', '1', '2025-04-30 23:13:24');
-INSERT INTO `erp_distribution_sale` VALUES (12, 19, NULL, '0', '123', 1.00, 0.00, 1.00, 12.00, 1, b'0', '1', '2025-04-30 23:17:48', '1', '2025-04-30 23:17:48');
+INSERT INTO `erp_distribution_sale` VALUES (10, 13, NULL, '123', '123123', 1.00, 20.00, 12.00, 39.00, 1, b'0', '1', '2025-04-30 20:12:52', '1', '2025-05-08 14:34:09', NULL, NULL, NULL, NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 10/05/2025 18:43:18
+ Date: 12/05/2025 00:43:10
 */
 
 SET NAMES utf8mb4;
@@ -42,6 +42,7 @@ CREATE TABLE `erp_distribution_purchase`  (
   `purchase_after_sales_amount` decimal(20, 2) NULL DEFAULT NULL COMMENT '采购售后金额',
   `purchase_approval_time` datetime NULL DEFAULT NULL COMMENT '采购审批时间',
   `purchase_after_sales_time` datetime NULL DEFAULT NULL COMMENT '采购售后时间',
+  `purchase_audit_status` int(11) NULL DEFAULT NULL COMMENT '采购审核状态',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `combo_product_id`(`combo_product_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发采购表' ROW_FORMAT = DYNAMIC;
@@ -49,6 +50,6 @@ CREATE TABLE `erp_distribution_purchase`  (
 -- ----------------------------
 -- Records of erp_distribution_purchase
 -- ----------------------------
-INSERT INTO `erp_distribution_purchase` VALUES (13, 13, 35, '123', '123', 9.00, 20.00, 10.00, 104.00, 1, b'0', '1', '2025-04-30 20:12:52', '1', '2025-05-10 17:33:41', 30, '有点毛', 10.00, NULL, NULL);
+INSERT INTO `erp_distribution_purchase` VALUES (13, 13, 35, '123', '123', 9.00, 20.00, 15.00, 104.00, 1, b'0', '1', '2025-04-30 20:12:52', '1', '2025-05-11 23:04:41', 30, '售后', 15.00, NULL, '2025-05-11 22:44:02', NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

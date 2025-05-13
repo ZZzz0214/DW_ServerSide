@@ -94,4 +94,6 @@ public class ErpDistributionPurchaseAuditVO {
 
     @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
     private String purchaseAfterSalesTime;
+    @Schema(description = "采购审核状态", example = "1")
+    private Integer purchaseAuditStatus;
 }

@@ -5,9 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesalePageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesaleRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesaleSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesalePurchaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleSaleDO;
@@ -15,10 +13,13 @@ import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesaleMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesalePurchaseMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesaleSaleMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import java.math.BigDecimal;
+
 
 import javax.annotation.Resource;
 import java.util.Collection;
@@ -180,5 +181,86 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (wholesale != null && !wholesale.getId().equals(id)) {
             throw exception(WHOLESALE_NO_EXISTS);
         }
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees) {
+        // 1. 校验存在
+        ErpWholesaleBaseDO wholesale = validateWholesale(id);
+
+        // 2. 获取当前采购审核状态
+        ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+        if (purchase == null) {
+            throw exception(WHOLESALE_NOT_EXISTS);
+        }
+
+        // 3. 校验状态是否重复
+        if (purchase.getPurchaseAuditStatus() != null && purchase.getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+            throw exception(WHOLESALE_PROCESS_FAIL);
+        }
+
+        // 4. 更新采购审核状态
+        ErpWholesalePurchaseDO updateObj = new ErpWholesalePurchaseDO()
+                .setPurchaseAuditStatus(purchaseAuditStatus)
+                .setOtherFees(otherFees);
+        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
+                .eq(ErpWholesalePurchaseDO::getBaseId, id));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
+        // 1. 校验存在
+        ErpWholesaleBaseDO wholesale = validateWholesale(id);
+
+        // 2. 获取当前销售审核状态
+        ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
+        if (sale == null) {
+            throw exception(WHOLESALE_NOT_EXISTS);
+        }
+
+        // 3. 校验状态是否重复
+        if (sale.getSaleAuditStatus() != null && sale.getSaleAuditStatus().equals(saleAuditStatus)) {
+            throw exception(WHOLESALE_PROCESS_FAIL);
+        }
+
+        // 4. 更新销售审核状态
+        ErpWholesaleSaleDO updateObj = new ErpWholesaleSaleDO()
+                .setSaleAuditStatus(saleAuditStatus)
+                .setOtherFees(otherFees);
+        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
+                .eq(ErpWholesaleSaleDO::getBaseId, id));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePurchaseAfterSales(ErpWholesalePurchaseAfterSalesUpdateReqVO reqVO) {
+        // 1. 校验存在
+        ErpWholesaleBaseDO wholesale = validateWholesale(reqVO.getId());
+
+        // 2. 更新采购售后信息
+        ErpWholesalePurchaseDO updateObj = new ErpWholesalePurchaseDO()
+                .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
+                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
+                .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
+                .setPurchaseAfterSalesTime(reqVO.getPurchaseAfterSalesTime());
+        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
+                .eq(ErpWholesalePurchaseDO::getBaseId, reqVO.getId()));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSaleAfterSales(ErpWholesaleSaleAfterSalesUpdateReqVO reqVO) {
+        // 1. 校验存在
+        ErpWholesaleBaseDO wholesale = validateWholesale(reqVO.getId());
+
+        // 2. 更新销售售后信息
+        ErpWholesaleSaleDO updateObj = new ErpWholesaleSaleDO()
+                .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
+                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
+                .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
+                .setSaleAfterSalesTime(reqVO.getSaleAfterSalesTime());
+        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
+                .eq(ErpWholesaleSaleDO::getBaseId, reqVO.getId()));
     }
 }

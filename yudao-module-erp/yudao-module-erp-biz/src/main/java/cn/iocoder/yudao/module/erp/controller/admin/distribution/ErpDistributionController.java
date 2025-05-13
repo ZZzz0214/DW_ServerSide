@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution;
 import cn.iocoder.yudao.framework.common.pojo.PageResultWithSummary;
+import cn.iocoder.yudao.framework.common.pojo.SalesSummaryPageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
@@ -276,6 +277,7 @@ public class ErpDistributionController {
     public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
         // 获取分页数据
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        System.out.println("查看采购前面返回的数据"+pageResult);
 
         // 转换为ErpDistributionPurchaseAuditVO列表
         List<ErpDistributionPurchaseAuditVO> list = pageResult.getList().stream().map(item -> {
@@ -320,45 +322,140 @@ public class ErpDistributionController {
     @GetMapping("/purchase/reviewed-page")
     @Operation(summary = "获得已审核代发采购分页")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
-    public CommonResult<PageResult<ErpDistributionPurchaseAuditVO>> getReviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
-        pageReqVO.setStatus(20); // 设置状态为已审核
+    public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getReviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
+//        pageReqVO.setStatus(20); // 设置状态为已审核
+        pageReqVO.setPurchaseAuditStatus(20);
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为ErpDistributionPurchaseAuditVO列表
         List<ErpDistributionPurchaseAuditVO> list = pageResult.getList().stream().map(item -> {
             ErpDistributionPurchaseAuditVO vo = new ErpDistributionPurchaseAuditVO();
             BeanUtils.copyProperties(item, vo);
             return vo;
         }).collect(Collectors.toList());
-        return success(new PageResult<>(list, pageResult.getTotal()));
+
+        // 计算采购合计值
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalShippingFee = BigDecimal.ZERO;
+        BigDecimal totalOtherFees = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionPurchaseAuditVO vo : list) {
+            if (vo.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(vo.getPurchasePrice());
+            }
+            if (vo.getShippingFee() != null) {
+                totalShippingFee = totalShippingFee.add(vo.getShippingFee());
+            }
+            if (vo.getOtherFees() != null) {
+                totalOtherFees = totalOtherFees.add(vo.getOtherFees());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
+            }
+        }
+
+        // 创建返回结果
+        PageResultWithSummary<ErpDistributionPurchaseAuditVO> result = new PageResultWithSummary<>();
+        result.setPageResult(new PageResult<>(list, pageResult.getTotal()));
+        result.setTotalPurchasePrice(totalPurchasePrice);
+        result.setTotalShippingFee(totalShippingFee);
+        result.setTotalOtherFees(totalOtherFees);
+        result.setTotalPurchaseAmount(totalPurchaseAmount);
+
+        return success(result);
     }
 
     // 未审核代发销售分页
     @GetMapping("/sale/unreviewed-page")
     @Operation(summary = "获得未审核代发销售分页")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
-    public CommonResult<PageResult<ErpDistributionSaleAuditVO>> getUnreviewedSalePage(@Valid ErpDistributionPageReqVO pageReqVO) {
-        pageReqVO.setStatus(10); // 设置状态为未审核
+    public CommonResult<SalesSummaryPageResult<ErpDistributionSaleAuditVO>> getUnreviewedSalePage(@Valid ErpDistributionPageReqVO pageReqVO) {
+       // pageReqVO.setStatus(10); // 设置状态为未审核
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为ErpDistributionSaleAuditVO列表
         List<ErpDistributionSaleAuditVO> list = pageResult.getList().stream().map(item -> {
             ErpDistributionSaleAuditVO vo = new ErpDistributionSaleAuditVO();
             BeanUtils.copyProperties(item, vo);
             return vo;
         }).collect(Collectors.toList());
-        return success(new PageResult<>(list, pageResult.getTotal()));
+
+        // 计算销售合计值
+        BigDecimal totalSalePrice = BigDecimal.ZERO;
+        BigDecimal totalSaleShippingFee = BigDecimal.ZERO;
+        BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
+        BigDecimal totalSaleAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionSaleAuditVO vo : list) {
+            if (vo.getSalePrice() != null) {
+                totalSalePrice = totalSalePrice.add(vo.getSalePrice());
+            }
+            if (vo.getSaleShippingFee() != null) {
+                totalSaleShippingFee = totalSaleShippingFee.add(vo.getSaleShippingFee());
+            }
+            if (vo.getSaleOtherFees() != null) {
+                totalSaleOtherFees = totalSaleOtherFees.add(vo.getSaleOtherFees());
+            }
+            if (vo.getTotalSaleAmount() != null) {
+                totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
+            }
+        }
+
+        // 创建返回结果
+        SalesSummaryPageResult<ErpDistributionSaleAuditVO> result = new SalesSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, pageResult.getTotal()));
+        result.setTotalSalePrice(totalSalePrice);
+        result.setTotalSaleShippingFee(totalSaleShippingFee);
+        result.setTotalSaleOtherFees(totalSaleOtherFees);
+        result.setTotalSaleAmount(totalSaleAmount);
+        return success(result);
     }
 
-    // 已审核代发销售分页
     @GetMapping("/sale/reviewed-page")
     @Operation(summary = "获得已审核代发销售分页")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
-    public CommonResult<PageResult<ErpDistributionSaleAuditVO>> getReviewedSalePage(@Valid ErpDistributionPageReqVO pageReqVO) {
-        pageReqVO.setStatus(20); // 设置状态为已审核
+    public CommonResult<SalesSummaryPageResult<ErpDistributionSaleAuditVO>> getReviewedSalePage(@Valid ErpDistributionPageReqVO pageReqVO) {
+        pageReqVO.setSaleAuditStatus(20); // 设置状态为已审核
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为ErpDistributionSaleAuditVO列表
         List<ErpDistributionSaleAuditVO> list = pageResult.getList().stream().map(item -> {
             ErpDistributionSaleAuditVO vo = new ErpDistributionSaleAuditVO();
             BeanUtils.copyProperties(item, vo);
             return vo;
         }).collect(Collectors.toList());
-        return success(new PageResult<>(list, pageResult.getTotal()));
+
+        // 计算销售合计值
+        BigDecimal totalSalePrice = BigDecimal.ZERO;
+        BigDecimal totalSaleShippingFee = BigDecimal.ZERO;
+        BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
+        BigDecimal totalSaleAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionSaleAuditVO vo : list) {
+            if (vo.getSalePrice() != null) {
+                totalSalePrice = totalSalePrice.add(vo.getSalePrice());
+            }
+            if (vo.getSaleShippingFee() != null) {
+                totalSaleShippingFee = totalSaleShippingFee.add(vo.getSaleShippingFee());
+            }
+            if (vo.getSaleOtherFees() != null) {
+                totalSaleOtherFees = totalSaleOtherFees.add(vo.getSaleOtherFees());
+            }
+            if (vo.getTotalSaleAmount() != null) {
+                totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
+            }
+        }
+
+        // 创建返回结果
+        SalesSummaryPageResult<ErpDistributionSaleAuditVO> result = new SalesSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, pageResult.getTotal()));
+        result.setTotalSalePrice(totalSalePrice);
+        result.setTotalSaleShippingFee(totalSaleShippingFee);
+        result.setTotalSaleOtherFees(totalSaleOtherFees);
+        result.setTotalSaleAmount(totalSaleAmount);
+
+        return success(result);
     }
 
     @GetMapping("/purchase/get")
@@ -437,13 +534,127 @@ public class ErpDistributionController {
 
         return success(respVO);
     }
+    @GetMapping("/sale/get")
+    @Operation(summary = "获得代发销售审核详情")
+    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    public CommonResult<ErpDistributionSaleAuditVO> getDistributionSale(@RequestParam("id") Long id) {
+        // 1. 获取基础信息
+        ErpDistributionBaseDO distribution = distributionService.getDistribution(id);
+        if (distribution == null) {
+            return success(null);
+        }
+
+        // 2. 转换为VO对象
+        ErpDistributionSaleAuditVO respVO = BeanUtils.toBean(distribution, ErpDistributionSaleAuditVO.class);
+
+        // 3. 获取并合并销售信息
+        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
+        if (sale != null) {
+            BeanUtils.copyProperties(sale, respVO, "id");
+            respVO.setSaleOtherFees(sale.getOtherFees());
+
+            // 根据客户名称和组品ID查询销售价格
+            ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+            if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
+                ErpSalePriceRespVO salePrice = salePriceService.getSalePriceByGroupProductIdAndCustomerName(
+                        purchase.getComboProductId(), sale.getCustomerName());
+                if (salePrice != null) {
+                    respVO.setSalePrice(salePrice.getDistributionPrice());
+
+                    // 计算销售运费
+                    BigDecimal saleShippingFee = BigDecimal.ZERO;
+                    switch (salePrice.getShippingFeeType()) {
+                        case 0: // 固定运费
+                            saleShippingFee = salePrice.getFixedShippingFee();
+                            break;
+                        case 1: // 按件计费
+                            int quantity = distribution.getProductQuantity();
+                            int additionalQuantity = salePrice.getAdditionalItemQuantity();
+                            BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
+
+                            if (additionalQuantity > 0) {
+                                int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
+                                saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+                            }
+                            break;
+                        case 2: // 按重计费
+                            quantity = distribution.getProductQuantity();
+                            ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+                            BigDecimal productWeight = comboProduct.getWeight();
+                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
+
+                            if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
+                                saleShippingFee = salePrice.getFirstWeightPrice();
+                            } else {
+                                BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
+                                BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
+                                saleShippingFee = salePrice.getFirstWeightPrice().add(
+                                        salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
+                                );
+                            }
+                            break;
+                    }
+                    respVO.setSaleShippingFee(saleShippingFee);
+
+                    // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
+                    BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
+                            .multiply(new BigDecimal(distribution.getProductQuantity()))
+                            .add(saleShippingFee)
+                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+                    respVO.setTotalSaleAmount(totalSaleAmount);
+                }
+            }
+        }
+
+        return success(respVO);
+    }
 
     @PutMapping("/update-purchase-after-sales")
-        @Operation(summary = "更新采购售后信息")
-        @PreAuthorize("@ss.hasPermission('erp:distribution:update')")
-        public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
-            System.out.println("售后信息"+reqVO);
-            distributionService.updatePurchaseAfterSales(reqVO);
-            return success(true);
-        }
+    @Operation(summary = "更新采购售后信息")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update')")
+    public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
+        System.out.println("售后信息"+reqVO);
+        distributionService.updatePurchaseAfterSales(reqVO);
+        return success(true);
+    }
+
+    @PutMapping("/update-sale-after-sales")
+    @Operation(summary = "更新销售售后信息")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update')")
+    public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpDistributionSaleAfterSalesUpdateReqVO reqVO) {
+        System.out.println("销售售后信息：" + reqVO);
+        distributionService.updateSaleAfterSales(reqVO);
+        return success(true);
+    }
+
+    @PutMapping("/update-purchase-audit-status")
+    @Operation(summary = "更新采购审核状态")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status')")
+    public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
+                                                      @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
+                                                      @RequestParam("otherFees") BigDecimal otherFees) {
+        System.out.println("更改的订单id为 " + id);
+        System.out.println("更改的采购审核状态为 " + purchaseAuditStatus);
+        System.out.println("其他费用为 " + otherFees);
+        distributionService.updatePurchaseAuditStatus(id, purchaseAuditStatus, otherFees);
+        return success(true);
+    }
+
+    @PutMapping("/update-sale-audit-status")
+    @Operation(summary = "更新销售审核状态")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status')")
+    public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
+                                                    @RequestParam("saleAuditStatus") Integer saleAuditStatus,
+                                                    @RequestParam("otherFees") BigDecimal otherFees) {
+        System.out.println("更改的订单id为 " + id);
+        System.out.println("更改的销售审核状态为 " + saleAuditStatus);
+        System.out.println("其他费用为 " + otherFees);
+        distributionService.updateSaleAuditStatus(id, saleAuditStatus, otherFees);
+        return success(true);
+    }
+
+
+
+
 }

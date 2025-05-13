@@ -88,6 +88,8 @@ public class ErpDistributionRespVO {
 
     @Schema(description = "采购售后金额", example = "100.00")
     private BigDecimal purchaseAfterSalesAmount;
+    @Schema(description = "采购审核状态", example = "1")
+    private Integer purchaseAuditStatus;
 
     // 来自 ErpDistributionSaleDO
     @Schema(description = "销售人员", example = "销售员A")
@@ -107,6 +109,21 @@ public class ErpDistributionRespVO {
 
     @Schema(description = "出货总额", example = "12000.00")
     private BigDecimal totalSaleAmount;
+
+    @Schema(description = "销售售后状态", example = "1")
+    private Integer saleAfterSalesStatus;
+
+    @Schema(description = "销售售后情况", example = "售后情况描述")
+    private String saleAfterSalesSituation;
+
+    @Schema(description = "销售售后金额", example = "100.00")
+    private BigDecimal saleAfterSalesAmount;
+
+    @Schema(description = "销售售后时间", example = "2023-01-01 00:00:00")
+    private LocalDateTime saleAfterSalesTime;
+
+    @Schema(description = "销售审核状态", example = "1")
+    private Integer saleAuditStatus;
 
     // 公共字段
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

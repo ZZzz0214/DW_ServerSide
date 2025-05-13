@@ -105,4 +105,9 @@ public class ErpDistributionPurchaseDO extends BaseDO {
      * 采购售后时间
      */
     private LocalDateTime purchaseAfterSalesTime;
+
+    /**
+     * 采购审核状态
+     */
+    private Integer purchaseAuditStatus;
 }

@@ -29,4 +29,7 @@ public class ErpWholesalePageReqVO extends PageParam {
 
     @Schema(description = "租户编号", example = "1")
     private Long tenantId;
+
+    @Schema(description = "采购审核状态", example = "1")
+    private Integer purchaseAuditStatus;
 }

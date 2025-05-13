@@ -75,8 +75,8 @@ public class ErpDistributionSaveReqVO {
 
     @Schema(description = "售后状况", example = "10000.00")
     private Integer afterSalesStatus;
-//    @Schema(description = "关联组品表", example = "1")
-//    private Long comboProductId;
+    @Schema(description = "关联组品表", example = "1")
+    private Long comboProductId;
 
     // 销售信息
     @Schema(description = "销售人员", example = "销售员A")
