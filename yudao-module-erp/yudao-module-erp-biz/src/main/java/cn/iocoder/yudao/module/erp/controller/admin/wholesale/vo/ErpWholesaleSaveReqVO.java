@@ -43,8 +43,8 @@ public class ErpWholesaleSaveReqVO {
     private Integer productQuantity;
 
     // 采购信息
-//    @Schema(description = "组品编号", example = "1")
-//    private Long comboProductId;
+    @Schema(description = "组品编号", example = "1")
+    private Long comboProductId;
 
     @Schema(description = "采购人员", example = "采购员A")
     private String purchaser;

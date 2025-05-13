@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 代发销售审核 VO")
 @Data
@@ -78,4 +79,22 @@ public class ErpDistributionSaleAuditVO {
 
     @Schema(description = "出货总额", example = "12000.00")
     private BigDecimal totalSaleAmount;
+
+    @Schema(description = "销售售后状态", example = "1")
+    private Integer saleAfterSalesStatus;
+
+    @Schema(description = "销售售后情况", example = "售后情况描述")
+    private String saleAfterSalesSituation;
+
+    @Schema(description = "销售售后金额", example = "100.00")
+    private BigDecimal saleAfterSalesAmount;
+
+    @Schema(description = "销售售后时间", example = "2023-01-01 00:00:00")
+    private String saleAfterSalesTime;
+
+    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
+    private Integer status;
+
+    @Schema(description = "销售审核状态", example = "1")
+    private Integer saleAuditStatus;
 }

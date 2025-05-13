@@ -41,6 +41,8 @@ public class ErpWholesaleRespVO {
 
     @Schema(description = "产品数量", example = "100")
     private Integer productQuantity;
+    @Schema(description = "物流单号", example = "LOG202403250001")
+    private String logisticsNumber;
 
     // 来自 ErpWholesalePurchaseDO
 //    @Schema(description = "组品编号", example = "1")

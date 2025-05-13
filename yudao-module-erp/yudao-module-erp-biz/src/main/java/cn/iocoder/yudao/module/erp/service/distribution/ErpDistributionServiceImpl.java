@@ -7,10 +7,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPurchaseAfterSalesUpdateReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPurchaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
@@ -240,6 +237,72 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
         purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
                 .eq(ErpDistributionPurchaseDO::getBaseId, reqVO.getId()));
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSaleAfterSales(ErpDistributionSaleAfterSalesUpdateReqVO reqVO) {
+        // 1. 校验存在
+        ErpDistributionBaseDO distribution = validateDistribution(reqVO.getId());
+
+        // 2. 解析时间，兼容多种格式
+        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
+        // 2. 更新销售售后信息
+        ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
+                .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
+                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
+                .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
+                .setSaleAfterSalesTime(purchaseAfterSalesTime);
+        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+                .eq(ErpDistributionSaleDO::getBaseId, reqVO.getId()));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees) {
+        // 1. 校验存在
+        ErpDistributionBaseDO distribution = validateDistribution(id);
+
+        // 2. 获取当前采购审核状态
+        ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+        if (purchase == null) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
+
+        // 3. 校验状态是否重复
+        if (purchase.getPurchaseAuditStatus() != null && purchase.getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+            throw exception(DISTRIBUTION_PROCESS_FAIL);
+        }
+
+        // 4. 更新采购审核状态
+        ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
+                .setPurchaseAuditStatus(purchaseAuditStatus)
+                .setOtherFees(otherFees);
+        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+                .eq(ErpDistributionPurchaseDO::getBaseId, id));
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
+        // 1. 校验存在
+        ErpDistributionBaseDO distribution = validateDistribution(id);
+
+        // 2. 获取当前销售审核状态
+        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
+        if (sale == null) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
+
+        // 3. 校验状态是否重复
+        if (sale.getSaleAuditStatus() != null && sale.getSaleAuditStatus().equals(saleAuditStatus)) {
+            throw exception(DISTRIBUTION_PROCESS_FAIL);
+        }
+
+        // 4. 更新销售审核状态
+        ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
+                .setSaleAuditStatus(saleAuditStatus)
+                .setOtherFees(otherFees);
+        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+                .eq(ErpDistributionSaleDO::getBaseId, id));
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {

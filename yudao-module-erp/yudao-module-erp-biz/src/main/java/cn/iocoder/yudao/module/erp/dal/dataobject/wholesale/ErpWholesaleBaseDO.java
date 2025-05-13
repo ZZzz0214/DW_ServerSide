@@ -72,4 +72,7 @@ public class ErpWholesaleBaseDO extends BaseDO {
 
     /** 订单号 */
     private String orderNumber;
+
+    /** 物流单号 */
+    private String logisticsNumber;
 }

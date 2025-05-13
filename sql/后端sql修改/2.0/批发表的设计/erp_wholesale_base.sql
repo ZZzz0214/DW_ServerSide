@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 01/05/2025 18:19:31
+ Date: 12/05/2025 22:46:08
 */
 
 SET NAMES utf8mb4;
@@ -42,12 +42,13 @@ CREATE TABLE `erp_wholesale_base`  (
   `status` tinyint(4) NULL DEFAULT NULL COMMENT '批发状态',
   `order_number` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '订单号',
   `product_specification` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '产品规格',
+  `logistics_number` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '物流单号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发基础表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发基础表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_base
 -- ----------------------------
-INSERT INTO `erp_wholesale_base` VALUES (6, 'PFJL20250430000002', '收件姓名', '123', '123', 232323, '232323', NULL, '称王*1 + 笔记本*1', '', 2, 1, b'0', '1', '2025-04-30 22:19:34', '1', '2025-04-30 22:19:34', 10, NULL, NULL);
+INSERT INTO `erp_wholesale_base` VALUES (6, 'PFJL20250430000002', '收件姓名', '123', '123', 232323, '232323', NULL, '称王*1 + 笔记本*1', '', 2, 1, b'0', '1', '2025-04-30 22:19:34', '1', '2025-04-30 22:19:34', 10, NULL, NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

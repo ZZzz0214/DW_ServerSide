@@ -57,4 +57,28 @@ public interface ErpDistributionService {
      */
     void updatePurchaseAfterSales(@Valid ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO);
 
+    /**
+     * 更新采购审核状态
+     *
+     * @param id 编号
+     * @param purchaseAuditStatus 采购审核状态
+     * @param otherFees 其他费用
+     */
+    void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees);
+
+    /**
+     * 更新销售售后信息
+     *
+     * @param reqVO 更新信息
+     */
+    void updateSaleAfterSales(@Valid ErpDistributionSaleAfterSalesUpdateReqVO reqVO);
+
+    /**
+     * 更新销售审核状态
+     *
+     * @param id 编号
+     * @param saleAuditStatus 销售审核状态
+     * @param otherFees 其他费用
+     */
+    void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees);
 }

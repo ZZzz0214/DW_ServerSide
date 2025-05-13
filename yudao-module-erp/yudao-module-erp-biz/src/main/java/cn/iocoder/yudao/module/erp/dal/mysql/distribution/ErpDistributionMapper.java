@@ -48,11 +48,13 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
         // 联表查询采购信息
         query.leftJoin(ErpDistributionPurchaseDO.class, ErpDistributionPurchaseDO::getBaseId, ErpDistributionBaseDO::getId)
                 //.selectAs(ErpDistributionPurchaseDO::getShippingFee, ErpDistributionRespVO::getShippingFee)
+                .eq(reqVO.getPurchaseAuditStatus() != null, ErpDistributionPurchaseDO::getPurchaseAuditStatus, reqVO.getPurchaseAuditStatus()) // 修改为eq方法
                 .selectAs(ErpDistributionPurchaseDO::getOtherFees, ErpDistributionRespVO::getOtherFees)
                 .selectAs(ErpDistributionPurchaseDO::getComboProductId, ErpDistributionRespVO::getComboProductId)
                 .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesStatus, ErpDistributionRespVO::getPurchaseAfterSalesStatus)
                 .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesSituation, ErpDistributionRespVO::getPurchaseAfterSalesSituation)
-                .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesAmount, ErpDistributionRespVO::getPurchaseAfterSalesAmount);
+                .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesAmount, ErpDistributionRespVO::getPurchaseAfterSalesAmount)
+                .selectAs(ErpDistributionPurchaseDO::getPurchaseAuditStatus, ErpDistributionRespVO::getPurchaseAuditStatus);
     ;
                 // 移除原有的totalPurchaseAmount映射
                 // .selectAs(ErpDistributionPurchaseDO::getTotalPurchaseAmount, ErpDistributionRespVO::getTotalPurchaseAmount);
@@ -103,21 +105,28 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 ErpDistributionRespVO::getTotalPurchaseAmount
         );
 
-//        // 联表查询销售信息
+        // 联表查询销售信息
         query.leftJoin(ErpDistributionSaleDO.class, ErpDistributionSaleDO::getBaseId, ErpDistributionBaseDO::getId)
+                .eq(reqVO.getSaleAuditStatus() != null, ErpDistributionSaleDO::getSaleAuditStatus, reqVO.getSaleAuditStatus())
                 .selectAs(ErpDistributionSaleDO::getSalesperson, ErpDistributionRespVO::getSalesperson)
                 .selectAs(ErpDistributionSaleDO::getCustomerName, ErpDistributionRespVO::getCustomerName)
+                .selectAs(ErpDistributionSaleDO::getOtherFees, ErpDistributionRespVO::getSaleOtherFees)
+                // 添加销售售后字段映射
+                .selectAs(ErpDistributionSaleDO::getSaleAfterSalesStatus, ErpDistributionRespVO::getSaleAfterSalesStatus)
+                .selectAs(ErpDistributionSaleDO::getSaleAfterSalesSituation, ErpDistributionRespVO::getSaleAfterSalesSituation)
+                .selectAs(ErpDistributionSaleDO::getSaleAfterSalesAmount, ErpDistributionRespVO::getSaleAfterSalesAmount)
+                .selectAs(ErpDistributionSaleDO::getSaleAfterSalesTime, ErpDistributionRespVO::getSaleAfterSalesTime)
+                .selectAs(ErpDistributionSaleDO::getSaleAuditStatus, ErpDistributionRespVO::getSaleAuditStatus);
                 //.selectAs(ErpDistributionSaleDO::getSalePrice, ErpDistributionRespVO::getSalePrice)
                 //.selectAs(ErpDistributionSaleDO::getShippingFee, ErpDistributionRespVO::getSaleShippingFee)
-                .selectAs(ErpDistributionSaleDO::getOtherFees, ErpDistributionRespVO::getSaleOtherFees);
                 //.selectAs(ErpDistributionSaleDO::getTotalSaleAmount, ErpDistributionRespVO::getTotalSaleAmount);
-//        // 联表查询销售价格信息
+        // 联表查询销售价格信息
         query.leftJoin(ErpSalePriceDO.class,
                 ErpSalePriceDO::getGroupProductId, ErpDistributionPurchaseDO::getComboProductId)
                 .eq(ErpSalePriceDO::getCustomerName, ErpDistributionSaleDO::getCustomerName)
                 .selectAs(ErpSalePriceDO::getDistributionPrice, ErpDistributionRespVO::getSalePrice);
-//
-//        // 计算销售运费
+
+        // 计算销售运费
         // 计算销售运费 - 使用组品表(t2)中的weight字段
         query.selectAs(
                 "CASE " +
@@ -134,7 +143,7 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 "ELSE 0 END",
                 ErpDistributionRespVO::getSaleShippingFee
         );
-//
+
 //        // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
         query.selectAs(
                 "t4.distribution_price * t.product_quantity + " +

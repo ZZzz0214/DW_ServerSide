@@ -184,10 +184,13 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode DISTRIBUTION_NOT_APPROVE = new ErrorCode(1_030_104_004, "代发记录未审核，无法操作");
 
     // ========== ERP 批发（1-030-105-000） ==========
+    // ========== ERP 批发（1-030-105-000） ==========
     ErrorCode WHOLESALE_NOT_EXISTS = new ErrorCode(1_030_105_000, "批发记录不存在");
     ErrorCode WHOLESALE_NO_EXISTS = new ErrorCode(1_030_105_001, "批发订单号已存在");
     ErrorCode WHOLESALE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_105_002, "批发记录({})已审核，无法修改");
     ErrorCode WHOLESALE_NOT_APPROVE = new ErrorCode(1_030_105_003, "批发记录未审核，无法操作");
+    ErrorCode WHOLESALE_PROCESS_FAIL = new ErrorCode(1_030_105_004, "反审核失败，只有已审核的批发记录才能反审核");
+    ErrorCode WHOLESALE_APPROVE_FAIL = new ErrorCode(1_030_105_005, "审核失败，只有未审核的批发记录才能审核");
     // ========== ERP 采购人员（1-030-106-000） ==========
     ErrorCode PURCHASER_NOT_EXISTS = new ErrorCode(1_030_106_000, "采购人员不存在");
     ErrorCode PURCHASER_NAME_DUPLICATE = new ErrorCode(1_030_106_001, "采购人员姓名已存在");
