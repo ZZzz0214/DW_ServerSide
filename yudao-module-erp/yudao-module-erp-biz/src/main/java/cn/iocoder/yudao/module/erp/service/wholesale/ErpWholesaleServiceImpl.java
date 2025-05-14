@@ -4,6 +4,7 @@ package cn.iocoder.yudao.module.erp.service.wholesale;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
@@ -22,6 +23,11 @@ import java.math.BigDecimal;
 
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -66,12 +72,17 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         // 4. 插入采购信息
         ErpWholesalePurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpWholesalePurchaseDO.class)
-                .setBaseId(wholesale.getId());
+                .setBaseId(wholesale.getId())
+                .setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setPurchaseAfterSalesStatus(30)
+                ;
         purchaseMapper.insert(purchase);
 
         // 5. 插入销售信息
         ErpWholesaleSaleDO sale = BeanUtils.toBean(createReqVO, ErpWholesaleSaleDO.class)
-                .setBaseId(wholesale.getId());
+                .setBaseId(wholesale.getId())
+                .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setSaleAfterSalesStatus(30);
         saleMapper.insert(sale);
 
         return wholesale.getId();
@@ -138,9 +149,6 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         ErpWholesaleBaseDO wholesale = wholesaleMapper.selectById(id);
         if (wholesale == null) {
             throw exception(WHOLESALE_NOT_EXISTS);
-        }
-        if (ObjectUtil.notEqual(wholesale.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
-            throw exception(WHOLESALE_NOT_APPROVE);
         }
         return wholesale;
     }
@@ -237,13 +245,13 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     public void updatePurchaseAfterSales(ErpWholesalePurchaseAfterSalesUpdateReqVO reqVO) {
         // 1. 校验存在
         ErpWholesaleBaseDO wholesale = validateWholesale(reqVO.getId());
-
+        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
         // 2. 更新采购售后信息
         ErpWholesalePurchaseDO updateObj = new ErpWholesalePurchaseDO()
                 .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
                 .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
                 .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
-                .setPurchaseAfterSalesTime(reqVO.getPurchaseAfterSalesTime());
+                .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
         purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
                 .eq(ErpWholesalePurchaseDO::getBaseId, reqVO.getId()));
     }
@@ -253,14 +261,39 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     public void updateSaleAfterSales(ErpWholesaleSaleAfterSalesUpdateReqVO reqVO) {
         // 1. 校验存在
         ErpWholesaleBaseDO wholesale = validateWholesale(reqVO.getId());
-
+        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
         // 2. 更新销售售后信息
         ErpWholesaleSaleDO updateObj = new ErpWholesaleSaleDO()
                 .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
                 .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
                 .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
-                .setSaleAfterSalesTime(reqVO.getSaleAfterSalesTime());
+                .setSaleAfterSalesTime(purchaseAfterSalesTime);
         saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
                 .eq(ErpWholesaleSaleDO::getBaseId, reqVO.getId()));
+    }
+
+    private LocalDateTime parseDateTime(String dateTimeStr) {
+        try {
+            // 尝试解析第一种格式：yyyy-MM-dd'T'HH:mm
+            return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+        } catch (DateTimeParseException e1) {
+            try {
+                // 尝试解析第二种格式：yyyy-MM-dd'T'HH:mm:ss
+                return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+            } catch (DateTimeParseException e2) {
+                try {
+                    // 尝试解析第三种格式：yyyy-MM-dd HH:mm:ss
+                    return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND));
+                } catch (DateTimeParseException e3) {
+                    try {
+                        // 尝试解析第四种格式：带时区的ISO 8601格式（如2025-05-21T05:52:26.000Z）
+                        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(); // 转换为本地时间
+                    } catch (DateTimeParseException e4) {
+                        throw new IllegalArgumentException("无法解析时间格式: " + dateTimeStr);
+                    }
+                }
+            }
+        }
     }
 }

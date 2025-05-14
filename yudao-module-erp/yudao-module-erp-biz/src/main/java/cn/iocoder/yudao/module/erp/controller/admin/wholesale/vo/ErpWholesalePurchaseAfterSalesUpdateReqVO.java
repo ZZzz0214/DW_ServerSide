@@ -28,6 +28,5 @@ public class ErpWholesalePurchaseAfterSalesUpdateReqVO {
     private BigDecimal purchaseAfterSalesAmount;
 
     @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime purchaseAfterSalesTime;
+    private String purchaseAfterSalesTime;
 }

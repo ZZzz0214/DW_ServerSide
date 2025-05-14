@@ -8,6 +8,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistribut
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesalePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesaleRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPurchaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
@@ -28,17 +30,25 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 .selectAs(ErpWholesaleBaseDO::getId, ErpWholesaleRespVO::getId)
                 .selectAs(ErpWholesaleBaseDO::getNo, ErpWholesaleRespVO::getNo)
                 .selectAs(ErpWholesaleBaseDO::getOrderNumber, ErpWholesaleRespVO::getOrderNumber)
+                .selectAs(ErpWholesaleBaseDO::getLogisticsNumber, ErpWholesaleRespVO::getLogisticsNumber)
                 .selectAs(ErpWholesaleBaseDO::getReceiverName, ErpWholesaleRespVO::getReceiverName)
                 .selectAs(ErpWholesaleBaseDO::getReceiverPhone, ErpWholesaleRespVO::getReceiverPhone)
                 .selectAs(ErpWholesaleBaseDO::getReceiverAddress, ErpWholesaleRespVO::getReceiverAddress)
                 .selectAs(ErpWholesaleBaseDO::getProductQuantity, ErpWholesaleRespVO::getProductQuantity)
                 .selectAs(ErpWholesaleBaseDO::getProductSpecification, ErpWholesaleRespVO::getProductSpecification)
+                .selectAs(ErpWholesaleBaseDO::getRemark, ErpWholesaleRespVO::getRemark)
                 .selectAs(ErpWholesaleBaseDO::getCreateTime, ErpWholesaleRespVO::getCreateTime);
 
         // 联表查询采购信息
         query.leftJoin(ErpWholesalePurchaseDO.class, ErpWholesalePurchaseDO::getBaseId, ErpWholesaleBaseDO::getId)
+                .eq(reqVO.getPurchaseAuditStatus() != null, ErpWholesalePurchaseDO::getPurchaseAuditStatus, reqVO.getPurchaseAuditStatus()) // 修改为eq方法
                 .selectAs(ErpWholesalePurchaseDO::getTruckFee, ErpWholesaleRespVO::getTruckFee)
-                .selectAs(ErpWholesalePurchaseDO::getOtherFees, ErpWholesaleRespVO::getOtherFees);
+                .selectAs(ErpWholesalePurchaseDO::getComboProductId, ErpWholesaleRespVO::getComboProductId)
+                .selectAs(ErpWholesalePurchaseDO::getOtherFees, ErpWholesaleRespVO::getOtherFees)
+                .selectAs(ErpWholesalePurchaseDO::getPurchaseAfterSalesStatus, ErpWholesaleRespVO::getPurchaseAfterSalesStatus)
+                .selectAs(ErpWholesalePurchaseDO::getPurchaseAfterSalesSituation, ErpWholesaleRespVO::getPurchaseAfterSalesSituation)
+                .selectAs(ErpWholesalePurchaseDO::getPurchaseAfterSalesAmount, ErpWholesaleRespVO::getPurchaseAfterSalesAmount)
+                .selectAs(ErpWholesalePurchaseDO::getPurchaseAuditStatus, ErpWholesaleRespVO::getPurchaseAuditStatus);
 
         // 联表查询组品信息
         query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpWholesalePurchaseDO::getComboProductId)
@@ -91,17 +101,21 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
 
         // 联表查询销售信息
         query.leftJoin(ErpWholesaleSaleDO.class, ErpWholesaleSaleDO::getBaseId, ErpWholesaleBaseDO::getId)
+                .eq(reqVO.getSaleAuditStatus() != null, ErpWholesaleSaleDO::getSaleAuditStatus, reqVO.getSaleAuditStatus())
                 .selectAs(ErpWholesaleSaleDO::getSalesperson, ErpWholesaleRespVO::getSalesperson)
                 .selectAs(ErpWholesaleSaleDO::getCustomerName, ErpWholesaleRespVO::getCustomerName)
-                .selectAs(ErpWholesaleSaleDO::getTruckFee, ErpWholesaleRespVO::getTruckFee)
-                .selectAs(ErpWholesaleSaleDO::getOtherFees, ErpWholesaleRespVO::getOtherFees);
+                .selectAs(ErpWholesaleSaleDO::getTruckFee, ErpWholesaleRespVO::getSaleTruckFee)
+                .selectAs(ErpWholesaleSaleDO::getOtherFees, ErpWholesaleRespVO::getSaleOtherFees)
+                .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesStatus, ErpWholesaleRespVO::getSaleAfterSalesStatus)
+                .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesSituation, ErpWholesaleRespVO::getSaleAfterSalesSituation)
+                .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesAmount, ErpWholesaleRespVO::getSaleAfterSalesAmount)
+                .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesTime, ErpWholesaleRespVO::getSaleAfterSalesTime)
+                .selectAs(ErpWholesaleSaleDO::getSaleAuditStatus, ErpWholesaleRespVO::getSaleAuditStatus);
         // 联表查询销售价格信息
         query.leftJoin(ErpSalePriceDO.class,
                 ErpSalePriceDO::getGroupProductId, ErpWholesalePurchaseDO::getComboProductId)
                 .eq(ErpSalePriceDO::getCustomerName, ErpWholesaleSaleDO::getCustomerName)
                 .selectAs(ErpSalePriceDO::getWholesalePrice, ErpWholesaleRespVO::getSalePrice);
-// ... 已有代码 ...
-
             // 计算销售物流费用
             query.selectAs(
                 "CASE " +
@@ -122,6 +136,7 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
             // 计算销售总额 = 销售单价*数量 + 销售物流费用 + 销售其他费用
             query.selectAs(
                 "t4.wholesale_price * t.product_quantity + " +
+                "COALESCE(t3.truck_fee, 0) + " +
                 "CASE " +
                 "WHEN t4.shipping_fee_type = 0 THEN t4.fixed_shipping_fee " +
                 "WHEN t4.shipping_fee_type = 1 THEN " +
@@ -138,7 +153,6 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 ErpWholesaleRespVO::getTotalSaleAmount
             );
 
-// ... 已有代码 ...
             PageResult<ErpDistributionRespVO> result = selectJoinPage(reqVO, ErpDistributionRespVO.class, query);
             System.out.println("Query result: " + result);
 

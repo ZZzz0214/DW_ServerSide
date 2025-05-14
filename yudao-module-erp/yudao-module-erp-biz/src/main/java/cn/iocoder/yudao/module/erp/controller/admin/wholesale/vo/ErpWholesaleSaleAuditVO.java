@@ -66,4 +66,19 @@ public class ErpWholesaleSaleAuditVO {
 
     @Schema(description = "出货总额", example = "12000.00")
     private BigDecimal totalSaleAmount;
+
+    @Schema(description = "销售售后状态", example = "1")
+    private Integer saleAfterSalesStatus;
+
+    @Schema(description = "销售售后情况", example = "售后情况说明")
+    private String saleAfterSalesSituation;
+
+    @Schema(description = "销售售后金额", example = "100.00")
+    private BigDecimal saleAfterSalesAmount;
+
+    @Schema(description = "销售售后时间", example = "2023-01-01 12:00:00")
+    private String saleAfterSalesTime;
+    @Schema(description = "销售审核状态", example = "1")
+    private Integer saleAuditStatus;
+
 }

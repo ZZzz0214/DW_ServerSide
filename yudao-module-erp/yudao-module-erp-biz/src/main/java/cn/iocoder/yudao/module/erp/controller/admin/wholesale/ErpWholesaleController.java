@@ -374,6 +374,7 @@ public class ErpWholesaleController {
         result.setTotalSaleLogisticsFee(totalSaleLogisticsFee);
         result.setTotalSaleOtherFees(totalSaleOtherFees);
         result.setTotalSaleAmount(totalSaleAmount);
+        System.out.println("批发销售的返回"+result);
 
         return success(result);
     }
@@ -383,7 +384,7 @@ public class ErpWholesaleController {
     @Operation(summary = "获得已审核批发销售分页")
     @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
     public CommonResult<WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO>> getReviewedSalePage(@Valid ErpWholesalePageReqVO pageReqVO) {
-        //pageReqVO.setSaleAuditStatus(20); // 设置状态为已审核
+        pageReqVO.setSaleAuditStatus(20); // 设置状态为已审核
         PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
 
         // 转换为ErpWholesaleSaleAuditVO列表
@@ -480,27 +481,35 @@ public class ErpWholesaleController {
                             quantity = wholesale.getProductQuantity();
                             BigDecimal productWeight = comboProduct.getWeight();
                             BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
+                            System.out.println(String.format("采购按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
+                                    productWeight, quantity, totalWeight));
+                            System.out.println(String.format("采购首重: %s, 首重价格: %s, 续重单位: %s, 续重价格: %s",
+                                    comboProduct.getFirstWeight(), comboProduct.getFirstWeightPrice(),
+                                    comboProduct.getAdditionalWeight(), comboProduct.getAdditionalWeightPrice()));
 
                             if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
                                 shippingFee = comboProduct.getFirstWeightPrice();
+                                System.out.println("采购总重量<=首重，运费=" + shippingFee);
                             } else {
                                 BigDecimal additionalWeight = totalWeight.subtract(comboProduct.getFirstWeight());
                                 BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
                                 shippingFee = comboProduct.getFirstWeightPrice().add(
                                         comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
+                                System.out.println(String.format("采购总重量>首重 - 超出重量: %s, 续重单位数: %s, 运费: %s",
+                                        additionalWeight, additionalUnits, shippingFee));
                             }
                             break;
                     }
                     vo.setLogisticsFee(shippingFee);
-
                     // 计算采购总额
                     BigDecimal totalAmount = comboProduct.getWholesalePrice()
                             .multiply(new BigDecimal(wholesale.getProductQuantity()))
                             .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
+                            .add(vo.getLogisticsFee() != null ? vo.getLogisticsFee() : BigDecimal.ZERO)
                             .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
                     vo.setTotalPurchaseAmount(totalAmount);
+                    System.out.println("成功设置采购总额："+vo.getTotalPurchaseAmount());
                 }
             }
         }
@@ -528,6 +537,8 @@ public class ErpWholesaleController {
         ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
         if (sale != null) {
             BeanUtils.copyProperties(sale, vo, "id");
+            vo.setSaleTruckFee(sale.getTruckFee());
+            vo.setSaleOtherFees(sale.getOtherFees());
 
             // 根据客户名称和组品ID查询销售价格
             ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
@@ -576,7 +587,7 @@ public class ErpWholesaleController {
                     BigDecimal totalAmount = salePrice.getWholesalePrice()
                             .multiply(new BigDecimal(wholesale.getProductQuantity()))
                             .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
-                            .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
+                            .add(vo.getSaleLogisticsFee() != null ? vo.getSaleLogisticsFee()  : BigDecimal.ZERO)
                             .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
                     vo.setTotalSaleAmount(totalAmount);
                 }
@@ -628,6 +639,7 @@ public class ErpWholesaleController {
     @Operation(summary = "更新销售售后信息")
     @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
     public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpWholesaleSaleAfterSalesUpdateReqVO reqVO) {
+        System.out.println("销售售后前端传递的vo"+reqVO);
         wholesaleService.updateSaleAfterSales(reqVO);
         return success(true);
     }
