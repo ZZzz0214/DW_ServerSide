@@ -66,6 +66,19 @@ public class ErpWholesalePurchaseAuditVO {
 
     @Schema(description = "采购总额", example = "10000.00")
     private BigDecimal totalPurchaseAmount;
+
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
+
+    @Schema(description = "采购售后状态", example = "1")
+    private Integer purchaseAfterSalesStatus;
+
+    @Schema(description = "采购售后情况", example = "售后情况说明")
+    private String purchaseAfterSalesSituation;
+
+    @Schema(description = "采购售后金额", example = "100.00")
+    private BigDecimal purchaseAfterSalesAmount;
+
+    @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
+    private String purchaseAfterSalesTime;
 }

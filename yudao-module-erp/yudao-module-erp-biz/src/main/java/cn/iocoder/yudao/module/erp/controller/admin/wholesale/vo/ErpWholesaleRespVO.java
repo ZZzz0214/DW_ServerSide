@@ -45,8 +45,8 @@ public class ErpWholesaleRespVO {
     private String logisticsNumber;
 
     // 来自 ErpWholesalePurchaseDO
-//    @Schema(description = "组品编号", example = "1")
-//    private Long comboProductId;
+    @Schema(description = "组品编号", example = "1")
+    private Long comboProductId;
 
     @Schema(description = "采购人员", example = "采购员A")
     private String purchaser;
@@ -68,6 +68,21 @@ public class ErpWholesaleRespVO {
 
     @Schema(description = "采购总额", example = "10000.00")
     private BigDecimal totalPurchaseAmount;
+
+    @Schema(description = "采购售后状态", example = "1")
+    private Integer purchaseAfterSalesStatus;
+
+    @Schema(description = "采购售后情况", example = "售后情况说明")
+    private String purchaseAfterSalesSituation;
+
+    @Schema(description = "采购售后金额", example = "100.00")
+    private BigDecimal purchaseAfterSalesAmount;
+
+    @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
+    private String purchaseAfterSalesTime;
+
+    @Schema(description = "采购审核状态", example = "1")
+    private Integer purchaseAuditStatus;
 
     // 来自 ErpWholesaleSaleDO
 //    @Schema(description = "关联销售价格表", example = "1")
@@ -93,6 +108,21 @@ public class ErpWholesaleRespVO {
 
     @Schema(description = "出货总额", example = "12000.00")
     private BigDecimal totalSaleAmount;
+
+    @Schema(description = "销售售后状态", example = "1")
+    private Integer saleAfterSalesStatus;
+
+    @Schema(description = "销售售后情况", example = "售后情况说明")
+    private String saleAfterSalesSituation;
+
+    @Schema(description = "销售售后金额", example = "100.00")
+    private BigDecimal saleAfterSalesAmount;
+
+    @Schema(description = "销售售后时间", example = "2023-01-01 12:00:00")
+    private String saleAfterSalesTime;
+
+    @Schema(description = "销售审核状态", example = "1")
+    private Integer saleAuditStatus;
 
     // 公共字段
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

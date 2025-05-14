@@ -32,4 +32,6 @@ public class ErpWholesalePageReqVO extends PageParam {
 
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
+    @Schema(description = "销售审核状态", example = "1")
+    private Integer saleAuditStatus;
 }

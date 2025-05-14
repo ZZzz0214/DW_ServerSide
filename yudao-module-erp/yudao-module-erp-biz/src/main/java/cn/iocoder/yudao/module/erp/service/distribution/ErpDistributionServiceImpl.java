@@ -74,12 +74,17 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 4. 插入采购信息
         ErpDistributionPurchaseDO purchase = BeanUtils.toBean(createReqVO, ErpDistributionPurchaseDO.class)
-                .setBaseId(distribution.getId());
+                .setBaseId(distribution.getId())
+                .setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setPurchaseAfterSalesStatus(30);
+
         purchaseMapper.insert(purchase);
 
         // 5. 插入销售信息
         ErpDistributionSaleDO sale = BeanUtils.toBean(createReqVO, ErpDistributionSaleDO.class)
-                .setBaseId(distribution.getId());
+                .setBaseId(distribution.getId())
+                .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setSaleAfterSalesStatus(30);
         saleMapper.insert(sale);
 
         return distribution.getId();
