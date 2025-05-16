@@ -89,6 +89,21 @@ public class ErpNoRedisDAO {
 
     public static final String INVENTORY_NO_PREFIX = "CKJL";
 
+    /**
+     * 记事本编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.notebook.ErpNotebookDO}
+     */
+    public static final String NOTEBOOK_NO_PREFIX = "JSB";
+
+     /**
+     * 样品编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.sample.ErpSampleDO}
+     */
+    public static final String SAMPLE_NO_PREFIX = "YPB";
+
+    /**
+     * 团购货盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.groupbuying.ErpGroupBuyingDO}
+     */
+    public static final String GROUP_BUYING_NO_PREFIX = "TGHP";
+
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
