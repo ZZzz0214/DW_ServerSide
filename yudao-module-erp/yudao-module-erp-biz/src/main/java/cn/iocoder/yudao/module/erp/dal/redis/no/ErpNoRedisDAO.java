@@ -104,6 +104,30 @@ public class ErpNoRedisDAO {
      */
     public static final String GROUP_BUYING_NO_PREFIX = "TGHP";
 
+    /**
+     * 团购复盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.groupbuying.ErpGroupBuyingReviewDO}
+     */
+    public static final String GROUP_BUYING_REVIEW_NO_PREFIX = "TGFP";
+
+     /**
+     * 团购信息编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.groupbuyinginfo.ErpGroupBuyingInfoDO}
+     */
+    public static final String GROUP_BUYING_INFO_NO_PREFIX = "TGXX";
+
+    /**
+     * 私播货盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcasting.ErpPrivateBroadcastingDO}
+     */
+    public static final String PRIVATE_BROADCASTING_NO_PREFIX = "SBHP";
+
+    /**
+     * 私播复盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastingreview.ErpPrivateBroadcastingReviewDO}
+     */
+    public static final String PRIVATE_BROADCASTING_REVIEW_NO_PREFIX = "SBFB";
+
+    /**
+     * 私播信息编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastinginfo.ErpPrivateBroadcastingInfoDO}
+     */
+    public static final String PRIVATE_BROADCASTING_INFO_NO_PREFIX = "SBXX";
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
