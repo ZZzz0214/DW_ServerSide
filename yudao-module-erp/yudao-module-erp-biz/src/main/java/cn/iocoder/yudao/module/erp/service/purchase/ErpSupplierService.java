@@ -91,4 +91,11 @@ public interface ErpSupplierService {
      */
     List<ErpSupplierDO> getSupplierListByStatus(Integer status);
 
+    /**
+     * 搜索供应商
+     *
+     * @param searchReqVO 搜索条件
+     * @return 供应商列表
+     */
+    List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO);
 }

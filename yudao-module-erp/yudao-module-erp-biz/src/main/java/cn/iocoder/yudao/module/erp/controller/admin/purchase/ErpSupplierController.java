@@ -99,5 +99,12 @@ public class ErpSupplierController {
         ExcelUtils.write(response, "供应商.xls", "数据", ErpSupplierRespVO.class,
                         BeanUtils.toBean(list, ErpSupplierRespVO.class));
     }
+    @GetMapping("/search")
+    @Operation(summary = "搜索供应商")
+    @PreAuthorize("@ss.hasPermission('erp:supplier:query')")
+    public CommonResult<List<ErpSupplierRespVO>> searchSuppliers(@Valid ErpSupplierPageReqVO searchReqVO) {
+        List<ErpSupplierDO> list = supplierService.searchSuppliers(searchReqVO);
+        return success(BeanUtils.toBean(list, ErpSupplierRespVO.class));
+    }
 
 }

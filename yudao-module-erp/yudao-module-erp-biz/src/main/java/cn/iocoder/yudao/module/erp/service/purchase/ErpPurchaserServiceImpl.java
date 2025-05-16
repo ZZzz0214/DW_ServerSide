@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPur
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaserDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaserMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -117,5 +118,18 @@ public class ErpPurchaserServiceImpl implements ErpPurchaserService {
         if (purchaser == null) {
             throw exception(PURCHASER_NOT_EXISTS);
         }
+    }
+
+    @Override
+    public List<ErpPurchaserRespVO> searchPurchasers(ErpPurchaserPageReqVO searchReqVO) {
+        // 执行查询
+        List<ErpPurchaserDO> list = purchaserMapper.selectList(new LambdaQueryWrapper<ErpPurchaserDO>()
+                .like(searchReqVO.getPurchaserName() != null, ErpPurchaserDO::getPurchaserName, searchReqVO.getPurchaserName())
+                .like(searchReqVO.getContactPhone() != null, ErpPurchaserDO::getContactPhone, searchReqVO.getContactPhone())
+                .between(searchReqVO.getCreateTime() != null, ErpPurchaserDO::getCreateTime,
+                        searchReqVO.getCreateTime()[0], searchReqVO.getCreateTime()[1]));
+
+        // 转换为VO列表
+        return BeanUtils.toBean(list, ErpPurchaserRespVO.class);
     }
 }

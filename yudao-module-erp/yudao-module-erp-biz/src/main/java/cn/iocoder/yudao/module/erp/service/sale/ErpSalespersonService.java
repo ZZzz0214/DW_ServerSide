@@ -88,4 +88,11 @@ public interface ErpSalespersonService {
      */
     PageResult<ErpSalespersonRespVO> getSalespersonVOPage(ErpSalespersonPageReqVO pageReqVO);
 
+    /**
+     * 搜索销售人员
+     *
+     * @param searchReqVO 搜索条件
+     * @return 销售人员列表
+     */
+    List<ErpSalespersonRespVO> searchSalespersons(ErpSalespersonPageReqVO searchReqVO);
 }
