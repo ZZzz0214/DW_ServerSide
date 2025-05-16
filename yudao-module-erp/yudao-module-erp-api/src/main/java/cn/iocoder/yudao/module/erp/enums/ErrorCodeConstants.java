@@ -226,4 +226,49 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode GROUP_BUYING_NOT_APPROVE = new ErrorCode(1_030_111_004, "团购货盘未审核，无法操作");
     ErrorCode GROUP_BUYING_APPROVE_FAIL = new ErrorCode(1_030_111_005, "审核失败，只有未审核的团购货盘才能审核");
     ErrorCode GROUP_BUYING_PROCESS_FAIL = new ErrorCode(1_030_111_006, "反审核失败，只有已审核的团购货盘才能反审核");
+
+    // ========== ERP 团购复盘（1-030-112-000） ==========
+    ErrorCode GROUP_BUYING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_112_000, "团购复盘不存在");
+    ErrorCode GROUP_BUYING_REVIEW_NO_EXISTS = new ErrorCode(1_030_112_001, "团购复盘编号已存在");
+    ErrorCode GROUP_BUYING_REVIEW_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_112_002, "团购复盘({})已审核，无法修改");
+    ErrorCode GROUP_BUYING_REVIEW_DELETE_FAIL_APPROVE = new ErrorCode(1_030_112_003, "团购复盘({})已审核，无法删除");
+    ErrorCode GROUP_BUYING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_112_004, "团购复盘未审核，无法操作");
+    ErrorCode GROUP_BUYING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_112_005, "审核失败，只有未审核的团购复盘才能审核");
+    ErrorCode GROUP_BUYING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_112_006, "反审核失败，只有已审核的团购复盘才能反审核");
+
+    // ========== ERP 团购信息（1-030-113-000） ==========
+    ErrorCode GROUP_BUYING_INFO_NOT_EXISTS = new ErrorCode(1_030_113_000, "团购信息不存在");
+    ErrorCode GROUP_BUYING_INFO_NO_EXISTS = new ErrorCode(1_030_113_001, "团购信息编号已存在");
+    ErrorCode GROUP_BUYING_INFO_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_113_002, "团购信息({})已审核，无法修改");
+    ErrorCode GROUP_BUYING_INFO_DELETE_FAIL_APPROVE = new ErrorCode(1_030_113_003, "团购信息({})已审核，无法删除");
+    ErrorCode GROUP_BUYING_INFO_NOT_APPROVE = new ErrorCode(1_030_113_004, "团购信息未审核，无法操作");
+    ErrorCode GROUP_BUYING_INFO_APPROVE_FAIL = new ErrorCode(1_030_113_005, "审核失败，只有未审核的团购信息才能审核");
+    ErrorCode GROUP_BUYING_INFO_PROCESS_FAIL = new ErrorCode(1_030_113_006, "反审核失败，只有已审核的团购信息才能反审核");
+
+    // ========== ERP 私播货盘（1-030-114-000） ==========
+    ErrorCode PRIVATE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_114_000, "私播货盘不存在");
+    ErrorCode PRIVATE_BROADCASTING_NO_EXISTS = new ErrorCode(1_030_114_001, "私播货盘编号已存在");
+    ErrorCode PRIVATE_BROADCASTING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_114_002, "私播货盘({})已审核，无法修改");
+    ErrorCode PRIVATE_BROADCASTING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_114_003, "私播货盘({})已审核，无法删除");
+    ErrorCode PRIVATE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_114_004, "私播货盘未审核，无法操作");
+    ErrorCode PRIVATE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_114_005, "审核失败，只有未审核的私播货盘才能审核");
+    ErrorCode PRIVATE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_114_006, "反审核失败，只有已审核的私播货盘才能反审核");
+
+
+    // ========== ERP 私播复盘（1-030-115-000） ==========
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_115_000, "私播复盘不存在");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_NO_EXISTS = new ErrorCode(1_030_115_001, "私播复盘编号已存在");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_115_002, "私播复盘({})已审核，无法修改");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_DELETE_FAIL_APPROVE = new ErrorCode(1_030_115_003, "私播复盘({})已审核，无法删除");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_115_004, "私播复盘未审核，无法操作");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_115_005, "审核失败，只有未审核的私播复盘才能审核");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_115_006, "反审核失败，只有已审核的私播复盘才能反审核");
+    // ========== ERP 私播信息（1-030-116-000） ==========
+    ErrorCode PRIVATE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_116_000, "私播信息不存在");
+    ErrorCode PRIVATE_BROADCASTING_INFO_NO_EXISTS = new ErrorCode(1_030_116_001, "私播信息编号已存在");
+    ErrorCode PRIVATE_BROADCASTING_INFO_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_116_002, "私播信息({})已审核，无法修改");
+    ErrorCode PRIVATE_BROADCASTING_INFO_DELETE_FAIL_APPROVE = new ErrorCode(1_030_116_003, "私播信息({})已审核，无法删除");
+    ErrorCode PRIVATE_BROADCASTING_INFO_NOT_APPROVE = new ErrorCode(1_030_116_004, "私播信息未审核，无法操作");
+    ErrorCode PRIVATE_BROADCASTING_INFO_APPROVE_FAIL = new ErrorCode(1_030_116_005, "审核失败，只有未审核的私播信息才能审核");
+    ErrorCode PRIVATE_BROADCASTING_INFO_PROCESS_FAIL = new ErrorCode(1_030_116_006, "反审核失败，只有已审核的私播信息才能反审核");
 }
