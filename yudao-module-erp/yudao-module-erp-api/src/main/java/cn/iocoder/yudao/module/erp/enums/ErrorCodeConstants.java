@@ -212,4 +212,18 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     // ... existing error codes ...
     ErrorCode DISTRIBUTION_APPROVE_FAIL = new ErrorCode(1_030_104_005, "审核失败，只有未审核的代发记录才能审核");
     ErrorCode DISTRIBUTION_PROCESS_FAIL = new ErrorCode(1_030_104_006, "反审核失败，只有已审核的代发记录才能反审核");
+// ========== ERP 记事本（1-030-109-000） ==========
+    ErrorCode NOTEBOOK_NOT_EXISTS = new ErrorCode(1_030_109_000, "记事本不存在");
+    ErrorCode NOTEBOOK_NO_EXISTS = new ErrorCode(1_030_109_001, "记事本编号已存在");
+    // ========== ERP 样品（1-030-110-000） ==========
+    ErrorCode SAMPLE_NOT_EXISTS = new ErrorCode(1_030_110_000, "样品不存在");
+    ErrorCode SAMPLE_NO_EXISTS = new ErrorCode(1_030_110_001, "样品编号已存在");
+    // ========== ERP 团购货盘（1-030-111-000） ==========
+    ErrorCode GROUP_BUYING_NOT_EXISTS = new ErrorCode(1_030_111_000, "团购货盘不存在");
+    ErrorCode GROUP_BUYING_NO_EXISTS = new ErrorCode(1_030_111_001, "团购货盘编号已存在");
+    ErrorCode GROUP_BUYING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_111_002, "团购货盘({})已审核，无法修改");
+    ErrorCode GROUP_BUYING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_111_003, "团购货盘({})已审核，无法删除");
+    ErrorCode GROUP_BUYING_NOT_APPROVE = new ErrorCode(1_030_111_004, "团购货盘未审核，无法操作");
+    ErrorCode GROUP_BUYING_APPROVE_FAIL = new ErrorCode(1_030_111_005, "审核失败，只有未审核的团购货盘才能审核");
+    ErrorCode GROUP_BUYING_PROCESS_FAIL = new ErrorCode(1_030_111_006, "反审核失败，只有已审核的团购货盘才能反审核");
 }
