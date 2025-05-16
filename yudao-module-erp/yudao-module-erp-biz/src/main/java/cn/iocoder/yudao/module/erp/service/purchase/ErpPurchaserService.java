@@ -88,4 +88,11 @@ public interface ErpPurchaserService {
      */
     PageResult<ErpPurchaserRespVO> getPurchaserVOPage(ErpPurchaserPageReqVO pageReqVO);
 
+    /**
+     * 搜索采购人员
+     *
+     * @param searchReqVO 搜索条件
+     * @return 采购人员列表
+     */
+    List<ErpPurchaserRespVO> searchPurchasers(ErpPurchaserPageReqVO searchReqVO);
 }

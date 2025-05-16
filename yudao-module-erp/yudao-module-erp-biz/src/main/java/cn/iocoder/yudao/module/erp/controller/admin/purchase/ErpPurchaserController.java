@@ -80,4 +80,11 @@ public class ErpPurchaserController {
         List<ErpPurchaserRespVO> list = purchaserService.getPurchaserVOList(ids);
         return success(list);
     }
+    @GetMapping("/search")
+    @Operation(summary = "搜索采购人员")
+    @PreAuthorize("@ss.hasPermission('erp:purchaser:query')")
+    public CommonResult<List<ErpPurchaserRespVO>> searchPurchasers(@Valid ErpPurchaserPageReqVO searchReqVO) {
+    List<ErpPurchaserRespVO> list = purchaserService.searchPurchasers(searchReqVO);
+    return success(list);
+    }
 }

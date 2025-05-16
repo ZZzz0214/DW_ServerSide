@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSales
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalespersonDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalespersonMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -107,6 +108,19 @@ public class ErpSalespersonServiceImpl implements ErpSalespersonService {
             return Collections.emptyMap();
         }
         return convertMap(getSalespersonVOList(ids), ErpSalespersonRespVO::getId);
+    }
+
+    @Override
+    public List<ErpSalespersonRespVO> searchSalespersons(ErpSalespersonPageReqVO searchReqVO) {
+        // 执行查询
+        List<ErpSalespersonDO> list = salespersonMapper.selectList(new LambdaQueryWrapper<ErpSalespersonDO>()
+                .like(searchReqVO.getSalespersonName() != null, ErpSalespersonDO::getSalespersonName, searchReqVO.getSalespersonName())
+                .like(searchReqVO.getContactPhone() != null, ErpSalespersonDO::getContactPhone, searchReqVO.getContactPhone())
+                .between(searchReqVO.getCreateTime() != null, ErpSalespersonDO::getCreateTime,
+                        searchReqVO.getCreateTime()[0], searchReqVO.getCreateTime()[1]));
+
+        // 转换为VO列表
+        return BeanUtils.toBean(list, ErpSalespersonRespVO.class);
     }
 
     private void validateSalespersonExists(Long id) {

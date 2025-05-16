@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupp
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpSupplierMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -90,6 +91,13 @@ public class ErpSupplierServiceImpl implements ErpSupplierService {
     @Override
     public List<ErpSupplierDO> getSupplierListByStatus(Integer status) {
         return supplierMapper.selectListByStatus(status);
+    }
+    @Override
+    public List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
+        return supplierMapper.selectList(new LambdaQueryWrapper<ErpSupplierDO>()
+                .like(searchReqVO.getName() != null, ErpSupplierDO::getName, searchReqVO.getName())
+                .like(searchReqVO.getMobile() != null, ErpSupplierDO::getMobile, searchReqVO.getMobile())
+                .like(searchReqVO.getTelephone() != null, ErpSupplierDO::getTelephone, searchReqVO.getTelephone()));
     }
 
 }

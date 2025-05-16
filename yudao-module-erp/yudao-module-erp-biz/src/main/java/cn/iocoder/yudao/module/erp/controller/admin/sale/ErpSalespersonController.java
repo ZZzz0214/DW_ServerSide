@@ -80,4 +80,11 @@ public class ErpSalespersonController {
         List<ErpSalespersonRespVO> list = salespersonService.getSalespersonVOList(ids);
         return success(list);
     }
+    @GetMapping("/search")
+    @Operation(summary = "搜索销售人员")
+    @PreAuthorize("@ss.hasPermission('erp:salesperson:query')")
+    public CommonResult<List<ErpSalespersonRespVO>> searchSalespersons(@Valid ErpSalespersonPageReqVO searchReqVO) {
+        List<ErpSalespersonRespVO> list = salespersonService.searchSalespersons(searchReqVO);
+        return success(list);
+    }
 }
