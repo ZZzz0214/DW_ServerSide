@@ -128,6 +128,21 @@ public class ErpNoRedisDAO {
      * 私播信息编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastinginfo.ErpPrivateBroadcastingInfoDO}
      */
     public static final String PRIVATE_BROADCASTING_INFO_NO_PREFIX = "SBXX";
+    /**
+     * 直播货盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcasting.ErpLiveBroadcastingDO}
+     */
+    public static final String LIVE_BROADCASTING_NO_PREFIX = "ZBHP";
+
+        /**
+     * 直播复盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastingreview.ErpLiveBroadcastingReviewDO}
+     */
+    public static final String LIVE_BROADCASTING_REVIEW_NO_PREFIX = "ZBFP";
+    /**
+     * 直播信息编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastinginfo.ErpLiveBroadcastingInfoDO}
+     */
+    public static final String LIVE_BROADCASTING_INFO_NO_PREFIX = "ZBXX";
+   
+    
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
