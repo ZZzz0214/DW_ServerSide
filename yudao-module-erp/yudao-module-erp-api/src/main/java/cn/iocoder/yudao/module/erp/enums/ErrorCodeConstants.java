@@ -271,4 +271,31 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode PRIVATE_BROADCASTING_INFO_NOT_APPROVE = new ErrorCode(1_030_116_004, "私播信息未审核，无法操作");
     ErrorCode PRIVATE_BROADCASTING_INFO_APPROVE_FAIL = new ErrorCode(1_030_116_005, "审核失败，只有未审核的私播信息才能审核");
     ErrorCode PRIVATE_BROADCASTING_INFO_PROCESS_FAIL = new ErrorCode(1_030_116_006, "反审核失败，只有已审核的私播信息才能反审核");
+
+
+    // ========== ERP 直播货盘（1-030-117-000） ==========
+    ErrorCode LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_117_000, "直播货盘不存在");
+    ErrorCode LIVE_BROADCASTING_NO_EXISTS = new ErrorCode(1_030_117_001, "直播货盘编号已存在");
+    ErrorCode LIVE_BROADCASTING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_117_002, "直播货盘({})已审核，无法修改");
+    ErrorCode LIVE_BROADCASTING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_117_003, "直播货盘({})已审核，无法删除");
+    ErrorCode LIVE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_117_004, "直播货盘未审核，无法操作");
+    ErrorCode LIVE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_117_005, "审核失败，只有未审核的直播货盘才能审核");
+    ErrorCode LIVE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_117_006, "反审核失败，只有已审核的直播货盘才能反审核");
+    // ========== ERP 直播复盘（1-030-118-000） ==========
+    ErrorCode LIVE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_118_000, "直播复盘不存在");
+    ErrorCode LIVE_BROADCASTING_REVIEW_NO_EXISTS = new ErrorCode(1_030_118_001, "直播复盘编号已存在");
+    ErrorCode LIVE_BROADCASTING_REVIEW_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_118_002, "直播复盘({})已审核，无法修改");
+    ErrorCode LIVE_BROADCASTING_REVIEW_DELETE_FAIL_APPROVE = new ErrorCode(1_030_118_003, "直播复盘({})已审核，无法删除");
+    ErrorCode LIVE_BROADCASTING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_118_004, "直播复盘未审核，无法操作");
+    ErrorCode LIVE_BROADCASTING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_118_005, "审核失败，只有未审核的直播复盘才能审核");
+    ErrorCode LIVE_BROADCASTING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_118_006, "反审核失败，只有已审核的直播复盘才能反审核");
+
+    // ========== ERP 直播信息（1-030-119-000） ==========
+    ErrorCode LIVE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_119_000, "直播信息不存在");
+    ErrorCode LIVE_BROADCASTING_INFO_NO_EXISTS = new ErrorCode(1_030_119_001, "直播信息编号已存在");
+    ErrorCode LIVE_BROADCASTING_INFO_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_119_002, "直播信息({})已审核，无法修改");
+    ErrorCode LIVE_BROADCASTING_INFO_DELETE_FAIL_APPROVE = new ErrorCode(1_030_119_003, "直播信息({})已审核，无法删除");
+    ErrorCode LIVE_BROADCASTING_INFO_NOT_APPROVE = new ErrorCode(1_030_119_004, "直播信息未审核，无法操作");
+    ErrorCode LIVE_BROADCASTING_INFO_APPROVE_FAIL = new ErrorCode(1_030_119_005, "审核失败，只有未审核的直播信息才能审核");
+    ErrorCode LIVE_BROADCASTING_INFO_PROCESS_FAIL = new ErrorCode(1_030_119_006, "反审核失败，只有已审核的直播信息才能反审核");
 }
