@@ -113,12 +113,18 @@ public class ErpSalespersonServiceImpl implements ErpSalespersonService {
     @Override
     public List<ErpSalespersonRespVO> searchSalespersons(ErpSalespersonPageReqVO searchReqVO) {
         // 执行查询
-        List<ErpSalespersonDO> list = salespersonMapper.selectList(new LambdaQueryWrapper<ErpSalespersonDO>()
+        LambdaQueryWrapper<ErpSalespersonDO> queryWrapper = new LambdaQueryWrapper<ErpSalespersonDO>()
                 .like(searchReqVO.getSalespersonName() != null, ErpSalespersonDO::getSalespersonName, searchReqVO.getSalespersonName())
-                .like(searchReqVO.getContactPhone() != null, ErpSalespersonDO::getContactPhone, searchReqVO.getContactPhone())
-                .between(searchReqVO.getCreateTime() != null, ErpSalespersonDO::getCreateTime,
-                        searchReqVO.getCreateTime()[0], searchReqVO.getCreateTime()[1]));
+                .like(searchReqVO.getContactPhone() != null, ErpSalespersonDO::getContactPhone, searchReqVO.getContactPhone());
+    // 添加创建时间范围查询条件
+    if (searchReqVO.getCreateTime() != null && searchReqVO.getCreateTime().length == 2 
+            && searchReqVO.getCreateTime()[0] != null && searchReqVO.getCreateTime()[1] != null) {
+        queryWrapper.between(ErpSalespersonDO::getCreateTime,
+                searchReqVO.getCreateTime()[0], searchReqVO.getCreateTime()[1]);
+    }
 
+        List<ErpSalespersonDO> list = salespersonMapper.selectList(queryWrapper);
+    
         // 转换为VO列表
         return BeanUtils.toBean(list, ErpSalespersonRespVO.class);
     }

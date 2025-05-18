@@ -85,6 +85,7 @@ public class ErpSalespersonController {
     @PreAuthorize("@ss.hasPermission('erp:salesperson:query')")
     public CommonResult<List<ErpSalespersonRespVO>> searchSalespersons(@Valid ErpSalespersonPageReqVO searchReqVO) {
         List<ErpSalespersonRespVO> list = salespersonService.searchSalespersons(searchReqVO);
+        System.out.println("销售人员："+list);
         return success(list);
     }
 }

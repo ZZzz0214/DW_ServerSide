@@ -85,6 +85,7 @@ public class ErpPurchaserController {
     @PreAuthorize("@ss.hasPermission('erp:purchaser:query')")
     public CommonResult<List<ErpPurchaserRespVO>> searchPurchasers(@Valid ErpPurchaserPageReqVO searchReqVO) {
     List<ErpPurchaserRespVO> list = purchaserService.searchPurchasers(searchReqVO);
+
     return success(list);
     }
 }
