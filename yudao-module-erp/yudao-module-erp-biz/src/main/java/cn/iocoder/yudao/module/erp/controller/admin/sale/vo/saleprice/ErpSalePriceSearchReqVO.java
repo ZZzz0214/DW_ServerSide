@@ -12,15 +12,6 @@ public class ErpSalePriceSearchReqVO {
     @Schema(description = "组品编号", example = "15672")
     private Long groupProductId;
 
-    @Schema(description = "组合名称", example = "示例组合产品")
-    private String productName;
-
-    @Schema(description = "组合简称", example = "示例组合产品")
-    private String productShortName;
-
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
     @Schema(description = "客户名称", example = "张三")
-    private String name;
+    private String customerName;
 }

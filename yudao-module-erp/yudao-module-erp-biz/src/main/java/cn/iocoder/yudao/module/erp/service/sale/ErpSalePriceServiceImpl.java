@@ -240,52 +240,80 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 .collect(Collectors.toList());
     }
 
+//    @Override
+//    public List<ErpSalePriceRespVO> searchProducts(ErpSalePriceSearchReqVO searchReqVO) {
+//        // 构造查询条件
+//        ErpSalePriceDO salePriceDO = new ErpSalePriceDO();
+//        if (searchReqVO.getGroupProductId() != null) {
+//            salePriceDO.setGroupProductId(searchReqVO.getGroupProductId());
+//        }
+//        if (searchReqVO.getProductName() != null) {
+//            salePriceDO.setProductName(searchReqVO.getProductName());
+//        }
+//        if (searchReqVO.getProductShortName() != null) {
+//            salePriceDO.setProductShortName(searchReqVO.getProductShortName());
+//        }
+//        if (searchReqVO.getCreateTime() != null) {
+//            salePriceDO.setCreateTime(searchReqVO.getCreateTime());
+//        }
+//        if (searchReqVO.getName() != null) {
+//            salePriceDO.setCustomerName(searchReqVO.getName());
+//        }
+//
+//        // 执行查询
+//        List<ErpSalePriceDO> comboProductDOList = erpSalePriceMapper.selectList(new LambdaQueryWrapper<ErpSalePriceDO>()
+//                .eq(salePriceDO.getGroupProductId() != null, ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId())
+//                .like(salePriceDO.getProductName() != null, ErpSalePriceDO::getProductName, searchReqVO.getProductName())
+//                .like(salePriceDO.getProductShortName() != null, ErpSalePriceDO::getProductShortName, searchReqVO.getProductShortName())
+//                .eq(salePriceDO.getCreateTime() != null, ErpSalePriceDO::getCreateTime, searchReqVO.getCreateTime())
+//                .like(salePriceDO.getCustomerName() != null, ErpSalePriceDO::getCustomerName, searchReqVO.getName()));
+//
+//
+//        // 转换为响应对象
+////        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);
+//
+////        // 如果有组品ID，查询组品数据并填充到 comboList
+////        if (searchReqVO.getGroupProductId() != null) {
+////            // 获取组品数据
+////            List<ErpComboRespVO> comboList = erpComboProductService.getComboVOList(
+////                    comboProductDOList.stream().map(ErpSalePriceDO::getGroupProductId).distinct().collect(Collectors.toList())
+////            );
+////
+////            // 将组品数据填充到每个响应对象的 comboList 字段
+////            respVOList.forEach(respVO -> {
+////                respVO.setComboList(comboList);
+////            });
+////        }
+//        // 转换为VO列表并设置组合产品信息
+//        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList.stream()
+//                .map(doObj -> {
+//                    ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
+//                    if (doObj.getGroupProductId() != null) {
+//                        ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(doObj.getGroupProductId());
+//                        if (comboRespVO != null) {
+//                            vo.setComboList(Collections.singletonList(comboRespVO));
+//                            vo.setGroupProductId(comboRespVO.getId());
+//                            vo.setProductName(comboRespVO.getName());
+//                            vo.setProductShortName(comboRespVO.getShortName());
+//                            vo.setOriginalQuantity(comboRespVO.getTotalQuantity());
+//                            vo.setShippingCode(comboRespVO.getShippingCode());
+//                        }
+//                    }
+//                    return vo;
+//                })
+//                .collect(Collectors.toList()), ErpSalePriceRespVO.class);
+//        // 转换为响应对象
+//        return respVOList;
+//    }
     @Override
     public List<ErpSalePriceRespVO> searchProducts(ErpSalePriceSearchReqVO searchReqVO) {
-        // 构造查询条件
-        ErpSalePriceDO salePriceDO = new ErpSalePriceDO();
-        if (searchReqVO.getGroupProductId() != null) {
-            salePriceDO.setGroupProductId(searchReqVO.getGroupProductId());
-        }
-        if (searchReqVO.getProductName() != null) {
-            salePriceDO.setProductName(searchReqVO.getProductName());
-        }
-        if (searchReqVO.getProductShortName() != null) {
-            salePriceDO.setProductShortName(searchReqVO.getProductShortName());
-        }
-        if (searchReqVO.getCreateTime() != null) {
-            salePriceDO.setCreateTime(searchReqVO.getCreateTime());
-        }
-        if (searchReqVO.getName() != null) {
-            salePriceDO.setCustomerName(searchReqVO.getName());
-        }
+        // 1. 使用Mapper层方法查询
+        List<ErpSalePriceDO> list = erpSalePriceMapper.selectList(new LambdaQueryWrapper<ErpSalePriceDO>()
+                .eq(searchReqVO.getGroupProductId() != null, ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId())
+                .eq(searchReqVO.getCustomerName() != null, ErpSalePriceDO::getCustomerName, searchReqVO.getCustomerName()));
 
-        // 执行查询
-        List<ErpSalePriceDO> comboProductDOList = erpSalePriceMapper.selectList(new LambdaQueryWrapper<ErpSalePriceDO>()
-                .eq(salePriceDO.getGroupProductId() != null, ErpSalePriceDO::getGroupProductId, searchReqVO.getGroupProductId())
-                .like(salePriceDO.getProductName() != null, ErpSalePriceDO::getProductName, searchReqVO.getProductName())
-                .like(salePriceDO.getProductShortName() != null, ErpSalePriceDO::getProductShortName, searchReqVO.getProductShortName())
-                .eq(salePriceDO.getCreateTime() != null, ErpSalePriceDO::getCreateTime, searchReqVO.getCreateTime())
-                .like(salePriceDO.getCustomerName() != null, ErpSalePriceDO::getCustomerName, searchReqVO.getName()));
-
-
-        // 转换为响应对象
-//        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList, ErpSalePriceRespVO.class);
-
-//        // 如果有组品ID，查询组品数据并填充到 comboList
-//        if (searchReqVO.getGroupProductId() != null) {
-//            // 获取组品数据
-//            List<ErpComboRespVO> comboList = erpComboProductService.getComboVOList(
-//                    comboProductDOList.stream().map(ErpSalePriceDO::getGroupProductId).distinct().collect(Collectors.toList())
-//            );
-//
-//            // 将组品数据填充到每个响应对象的 comboList 字段
-//            respVOList.forEach(respVO -> {
-//                respVO.setComboList(comboList);
-//            });
-//        }
-        // 转换为VO列表并设置组合产品信息
-        List<ErpSalePriceRespVO> respVOList = BeanUtils.toBean(comboProductDOList.stream()
+        // 2. 转换为VO列表并设置组合产品信息
+        return list.stream()
                 .map(doObj -> {
                     ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
                     if (doObj.getGroupProductId() != null) {
@@ -301,9 +329,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     }
                     return vo;
                 })
-                .collect(Collectors.toList()), ErpSalePriceRespVO.class);
-        // 转换为响应对象
-        return respVOList;
+                .collect(Collectors.toList());
     }
     @Override
     public ErpSalePriceRespVO getSalePriceByGroupProductIdAndCustomerName(Long groupProductId, String customerName) {

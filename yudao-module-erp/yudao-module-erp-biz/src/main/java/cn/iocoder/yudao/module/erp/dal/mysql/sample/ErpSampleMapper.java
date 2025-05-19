@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSamplePageReqVO
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sample.ErpSampleDO;
 import org.apache.ibatis.annotations.Mapper;
-
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 @Mapper
 public interface ErpSampleMapper extends BaseMapperX<ErpSampleDO> {
 
@@ -34,7 +34,9 @@ public interface ErpSampleMapper extends BaseMapperX<ErpSampleDO> {
                 .selectAs(ErpSampleDO::getSampleStatus, ErpSampleRespVO::getSampleStatus)
                 .selectAs(ErpSampleDO::getReference, ErpSampleRespVO::getReference)
                 .selectAs(ErpSampleDO::getCreateTime, ErpSampleRespVO::getCreateTime);
-
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId,ErpSampleDO::getComboProductId) // 左连接组合产品表
+                .selectAs(ErpComboProductDO::getShippingCode, ErpSampleRespVO::getShippingCode) // 选择组合产品表的发货编码字段
+                .selectAs(ErpComboProductDO::getName, ErpSampleRespVO::getComboProductName); // 选择组合产品表的名称字段作为组合产品名称字段的映射值。
         return selectJoinPage(reqVO, ErpSampleRespVO.class, query);
     }
 
