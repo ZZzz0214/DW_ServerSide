@@ -44,6 +44,15 @@ public class ErpSampleRespVO {
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "CP001")
     @ExcelProperty("组品编号")
     private String comboProductId;
+//
+    @Schema(description = "发货编码", example = "FH001")
+    @ExcelProperty("发货编码")
+    private String shippingCode;
+
+    @Schema(description = "组合产品名称", example = "组合产品A")
+    @ExcelProperty("组合产品名称")
+    private String comboProductName;
+
 
     @Schema(description = "产品规格", requiredMode = Schema.RequiredMode.REQUIRED, example = "标准规格")
     @ExcelProperty("产品规格")
