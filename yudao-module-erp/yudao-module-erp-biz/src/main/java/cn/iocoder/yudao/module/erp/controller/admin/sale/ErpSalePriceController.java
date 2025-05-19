@@ -118,4 +118,11 @@ public class ErpSalePriceController {
         List<ErpSalePriceRespVO> erpSalePrices = salePriceService.searchProducts(searchReqVO);
         return success(erpSalePrices);
     }
+    
+    @GetMapping("/missing-prices")
+    @Operation(summary = "获取缺失价格的销售记录")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
+    public CommonResult<List<ErpSalePriceRespVO>> getMissingPrices() {
+        return success(salePriceService.getMissingPrices());
+    }
 }

@@ -354,4 +354,8 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
 
         return respVO;
     }
+    @Override
+    public List<ErpSalePriceRespVO> getMissingPrices() {
+        return erpSalePriceMapper.selectMissingPrices();
+    }
 }
