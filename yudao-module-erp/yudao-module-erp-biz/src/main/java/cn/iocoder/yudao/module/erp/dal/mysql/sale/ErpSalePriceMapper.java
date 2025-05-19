@@ -4,11 +4,26 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionPurchaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionSaleDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesalePurchaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleSaleDO;
+import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.github.yulichang.interfaces.MPJBaseJoin;
+import com.github.yulichang.toolkit.Constant;
 import org.apache.ibatis.annotations.Mapper;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
+import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ERP 销售价格 Mapper
@@ -18,6 +33,8 @@ import java.math.BigDecimal;
 @Mapper
 public interface ErpSalePriceMapper extends BaseMapperX<ErpSalePriceDO> {
 
+    <DTO, W> List<DTO> selectJoinList(@Param(Constant.CLAZZ) Class<DTO> clazz,
+                                    @Param(Constants.WRAPPER) W wrapper);
     default PageResult<ErpSalePriceDO> selectPage(ErpSalePricePageReqVO reqVO) {
         MPJLambdaWrapperX<ErpSalePriceDO> query = new MPJLambdaWrapperX<ErpSalePriceDO>()
                 .likeIfPresent(ErpSalePriceDO::getCustomerName, reqVO.getCustomerName())
@@ -64,4 +81,47 @@ public interface ErpSalePriceMapper extends BaseMapperX<ErpSalePriceDO> {
 
         return selectJoinOne(ErpSalePriceRespVO.class, query);
     }
+    default List<ErpSalePriceRespVO> selectMissingPrices() {
+        // 1. 查询代发表中客户名称不为空但代发单价为空的数据
+        MPJLambdaWrapperX<ErpDistributionBaseDO> distributionQuery = new MPJLambdaWrapperX<ErpDistributionBaseDO>();
+        distributionQuery.leftJoin(ErpDistributionSaleDO.class, ErpDistributionSaleDO::getBaseId, ErpDistributionBaseDO::getId)
+                .leftJoin(ErpDistributionPurchaseDO.class, ErpDistributionPurchaseDO::getBaseId, ErpDistributionBaseDO::getId)
+                .leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDistributionPurchaseDO::getComboProductId)
+                .isNotNull(ErpDistributionSaleDO::getCustomerName)
+                .isNull(ErpDistributionSaleDO::getSalePrice)
+                .selectAs(ErpComboProductDO::getId, ErpSalePriceRespVO::getGroupProductId)
+                .selectAs(ErpDistributionSaleDO::getCustomerName, ErpSalePriceRespVO::getCustomerName)
+                .selectAs(ErpComboProductDO::getName, ErpSalePriceRespVO::getProductName)
+                .selectAs(ErpComboProductDO::getShortName, ErpSalePriceRespVO::getProductShortName)
+                .selectAs(ErpComboProductDO::getImage, ErpSalePriceRespVO::getProductImage);
+        List<ErpSalePriceRespVO> distributionList = selectJoinList(ErpSalePriceRespVO.class, distributionQuery);
+
+        // 2. 查询批发表中客户名称不为空但批发单价为空的数据
+        MPJLambdaWrapperX<ErpWholesaleBaseDO> wholesaleQuery = new MPJLambdaWrapperX<ErpWholesaleBaseDO>();
+        wholesaleQuery.leftJoin(ErpWholesaleSaleDO.class, ErpWholesaleSaleDO::getBaseId, ErpWholesaleBaseDO::getId)
+                .leftJoin(ErpWholesalePurchaseDO.class, ErpWholesalePurchaseDO::getBaseId, ErpWholesaleBaseDO::getId)
+                .leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpWholesalePurchaseDO::getComboProductId)
+                .isNotNull(ErpWholesaleSaleDO::getCustomerName)
+                .isNull(ErpWholesaleSaleDO::getSalePrice)
+                .selectAs(ErpComboProductDO::getId, ErpSalePriceRespVO::getGroupProductId)
+                .selectAs(ErpWholesaleSaleDO::getCustomerName, ErpSalePriceRespVO::getCustomerName)
+                .selectAs(ErpComboProductDO::getName, ErpSalePriceRespVO::getProductName)
+                .selectAs(ErpComboProductDO::getShortName, ErpSalePriceRespVO::getProductShortName)
+                .selectAs(ErpComboProductDO::getImage, ErpSalePriceRespVO::getProductImage);
+        List<ErpSalePriceRespVO> wholesaleList = selectJoinList(ErpSalePriceRespVO.class, wholesaleQuery);
+
+        // 3. 合并结果并去重
+        Map<String, ErpSalePriceRespVO> resultMap = new LinkedHashMap<>();
+        distributionList.forEach(item -> {
+            String key = item.getGroupProductId() + "_" + item.getCustomerName();
+            resultMap.putIfAbsent(key, item);
+        });
+        wholesaleList.forEach(item -> {
+            String key = item.getGroupProductId() + "_" + item.getCustomerName();
+            resultMap.putIfAbsent(key, item);
+        });
+
+        return new ArrayList<>(resultMap.values());
+    }
+
 }

@@ -139,4 +139,9 @@ public interface ErpSalePriceService {
      * @return 销售价格信息
      */
     ErpSalePriceRespVO getSalePriceByGroupProductIdAndCustomerName(Long groupProductId, String customerName);
+
+    /**
+     * 获取缺失价格的销售记录
+     */
+    List<ErpSalePriceRespVO> getMissingPrices();
 }

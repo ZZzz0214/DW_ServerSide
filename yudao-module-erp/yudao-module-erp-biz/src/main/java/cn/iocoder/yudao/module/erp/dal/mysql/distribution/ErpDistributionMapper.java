@@ -177,4 +177,5 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .eq(ErpDistributionBaseDO::getId, id)
                 .eq(ErpDistributionBaseDO::getStatus, status));
     }
+
 }
