@@ -112,9 +112,14 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesTime, ErpWholesaleRespVO::getSaleAfterSalesTime)
                 .selectAs(ErpWholesaleSaleDO::getSaleAuditStatus, ErpWholesaleRespVO::getSaleAuditStatus);
         // 联表查询销售价格信息
+//        query.leftJoin(ErpSalePriceDO.class,
+//                ErpSalePriceDO::getGroupProductId, ErpWholesalePurchaseDO::getComboProductId)
+//                .eq(ErpSalePriceDO::getCustomerName, ErpWholesaleSaleDO::getCustomerName)
+//                .selectAs(ErpSalePriceDO::getWholesalePrice, ErpWholesaleRespVO::getSalePrice);
         query.leftJoin(ErpSalePriceDO.class,
-                ErpSalePriceDO::getGroupProductId, ErpWholesalePurchaseDO::getComboProductId)
-                .eq(ErpSalePriceDO::getCustomerName, ErpWholesaleSaleDO::getCustomerName)
+                        wrapper -> wrapper
+                                .eq(ErpSalePriceDO::getGroupProductId, ErpWholesalePurchaseDO::getComboProductId)
+                                .eq(ErpSalePriceDO::getCustomerName, ErpWholesaleSaleDO::getCustomerName))
                 .selectAs(ErpSalePriceDO::getWholesalePrice, ErpWholesaleRespVO::getSalePrice);
             // 计算销售物流费用
             query.selectAs(

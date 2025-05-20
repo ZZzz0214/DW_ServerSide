@@ -121,11 +121,21 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 //.selectAs(ErpDistributionSaleDO::getShippingFee, ErpDistributionRespVO::getSaleShippingFee)
                 //.selectAs(ErpDistributionSaleDO::getTotalSaleAmount, ErpDistributionRespVO::getTotalSaleAmount);
         // 联表查询销售价格信息
+//        query.leftJoin(ErpSalePriceDO.class,
+//                ErpSalePriceDO::getGroupProductId, ErpDistributionPurchaseDO::getComboProductId)
+//                .eq(ErpSalePriceDO::getCustomerName, ErpDistributionSaleDO::getCustomerName)
+//                .selectAs(ErpSalePriceDO::getDistributionPrice, ErpDistributionRespVO::getSalePrice);
+// 联表查询销售价格信息
+//        query.leftJoin(ErpSalePriceDO.class,
+//                        ErpSalePriceDO::getGroupProductId, ErpDistributionPurchaseDO::getComboProductId)
+//                .leftJoin(ErpSalePriceDO.class,
+//                        ErpSalePriceDO::getCustomerName, ErpDistributionSaleDO::getCustomerName)
+//                .selectAs(ErpSalePriceDO::getDistributionPrice, ErpDistributionRespVO::getSalePrice);
         query.leftJoin(ErpSalePriceDO.class,
-                ErpSalePriceDO::getGroupProductId, ErpDistributionPurchaseDO::getComboProductId)
-                .eq(ErpSalePriceDO::getCustomerName, ErpDistributionSaleDO::getCustomerName)
+                        wrapper -> wrapper
+                                .eq(ErpSalePriceDO::getGroupProductId, ErpDistributionPurchaseDO::getComboProductId)
+                                .eq(ErpSalePriceDO::getCustomerName, ErpDistributionSaleDO::getCustomerName))
                 .selectAs(ErpSalePriceDO::getDistributionPrice, ErpDistributionRespVO::getSalePrice);
-
         // 计算销售运费
         // 计算销售运费 - 使用组品表(t2)中的weight字段
         query.selectAs(
