@@ -53,11 +53,11 @@ public class ErpLiveBroadcastingReviewRespVO {
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
-    private LocalDate sampleSendDate;
+    private LocalDateTime sampleSendDate;
 
     @Schema(description = "开播日期", example = "2023-01-05")
     @ExcelProperty("开播日期")
-    private LocalDate liveStartDate;
+    private LocalDateTime liveStartDate;
 
     @Schema(description = "开播销量", example = "100")
     @ExcelProperty("开播销量")
@@ -65,7 +65,7 @@ public class ErpLiveBroadcastingReviewRespVO {
 
     @Schema(description = "复播日期", example = "2023-01-10")
     @ExcelProperty("复播日期")
-    private LocalDate repeatLiveDate;
+    private LocalDateTime repeatLiveDate;
 
     @Schema(description = "复播销量", example = "50")
     @ExcelProperty("复播销量")
@@ -74,4 +74,32 @@ public class ErpLiveBroadcastingReviewRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "产品图片", example = "https://example.com/image.jpg")
+    @ExcelProperty("产品图片")
+    private String productImage;
+
+    @Schema(description = "品牌名称", example = "品牌A")
+    @ExcelProperty("品牌名称")
+    private String brandName;
+
+    @Schema(description = "产品名称", example = "产品A")
+    @ExcelProperty("产品名称")
+    private String productName;
+
+    @Schema(description = "产品规格", example = "标准规格")
+    @ExcelProperty("产品规格")
+    private String productSpec;
+
+    @Schema(description = "产品SKU", example = "SKU001")
+    @ExcelProperty("产品SKU")
+    private String productSku;
+
+    @Schema(description = "直播价格", example = "100.00")
+    @ExcelProperty("直播价格")
+    private BigDecimal livePrice;
+    @Schema(description = "客户名称", example = "客户A")
+    @ExcelProperty("客户名称")
+    private String customerName;
+
 }

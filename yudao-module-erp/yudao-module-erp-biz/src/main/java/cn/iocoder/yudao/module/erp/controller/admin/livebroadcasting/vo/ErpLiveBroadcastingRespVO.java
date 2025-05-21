@@ -49,7 +49,7 @@ public class ErpLiveBroadcastingRespVO {
 
     @Schema(description = "保质日期", example = "2023-12-31")
     @ExcelProperty("保质日期")
-    private LocalDate shelfLife;
+    private LocalDateTime shelfLife;
 
     @Schema(description = "产品库存", example = "100")
     @ExcelProperty("产品库存")
