@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 /**
  * ERP 批发基础 DO
  *
@@ -39,6 +41,11 @@ public class ErpWholesaleBaseDO extends BaseDO {
 
     /** 售后状况 */
     private Integer afterSalesStatus;
+
+    /**
+     * 售后时间
+     */
+    private LocalDateTime afterSalesTime;
 
     /** 备注信息 */
     private String remark;

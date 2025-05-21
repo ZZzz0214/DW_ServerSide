@@ -62,6 +62,11 @@ public class ErpWholesaleSaleDO extends BaseDO {
     private Boolean deleted;
 
     /**
+     * 出货备注信息
+     */
+    private String saleRemark;
+
+    /**
      * 销售售后状态
      */
     private Integer saleAfterSalesStatus;

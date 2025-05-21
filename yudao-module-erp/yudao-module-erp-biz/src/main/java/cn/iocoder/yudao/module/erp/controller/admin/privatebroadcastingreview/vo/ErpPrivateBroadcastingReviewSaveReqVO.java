@@ -17,7 +17,7 @@ public class ErpPrivateBroadcastingReviewSaveReqVO {
     private String no;
 
     @Schema(description = "私播货盘表ID", example = "1")
-    @NotNull(message = "私播货盘表ID不能为空")
+
     private Long privateBroadcastingId;
 
     @Schema(description = "客户ID", example = "1")

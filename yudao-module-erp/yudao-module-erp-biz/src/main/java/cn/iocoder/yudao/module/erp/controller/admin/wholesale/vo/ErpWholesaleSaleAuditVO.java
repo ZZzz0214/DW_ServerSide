@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 批发销售审核 VO")
 @Data
@@ -39,6 +40,15 @@ public class ErpWholesaleSaleAuditVO {
 
     @Schema(description = "产品名称", example = "商品A")
     private String productName;
+
+    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
+    private LocalDateTime afterSalesTime;
+
+    @Schema(description = "采购备注信息", example = "采购备注示例")
+    private String purchaseRemark;
+
+    @Schema(description = "出货备注信息", example = "出货备注示例")
+    private String saleRemark;
 
     @Schema(description = "产品规格", example = "规格B")
     private String productSpecification;

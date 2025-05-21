@@ -6,6 +6,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 批发新增/修改 Request VO")
 @Data
@@ -66,6 +67,15 @@ public class ErpWholesaleSaveReqVO {
 
     @Schema(description = "采购总额", example = "10000.00")
     private BigDecimal totalPurchaseAmount;
+
+    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
+    private LocalDateTime afterSalesTime;
+
+    @Schema(description = "采购备注信息", example = "采购备注示例")
+    private String purchaseRemark;
+
+    @Schema(description = "出货备注信息", example = "出货备注示例")
+    private String saleRemark;
 
     // 销售信息
 //    @Schema(description = "关联销售价格表", example = "1")
