@@ -159,7 +159,7 @@ public class ErpWholesaleController {
         // 4. 获取并合并销售信息
         ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
         if (sale != null) {
-            BeanUtils.copyProperties(sale, respVO, "id","otherFees");
+            BeanUtils.copyProperties(sale, respVO, "id","otherFees","truckFee");
             respVO.setSaleTruckFee(sale.getTruckFee());
             respVO.setSaleLogisticsFee(sale.getLogisticsFee());
             respVO.setSaleOtherFees(sale.getOtherFees());
