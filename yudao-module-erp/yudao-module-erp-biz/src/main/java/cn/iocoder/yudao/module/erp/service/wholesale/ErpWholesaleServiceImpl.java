@@ -109,7 +109,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
             ErpWholesalePurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpWholesalePurchaseDO.class)
                     .setBaseId(updateReqVO.getId());
-            purchaseMapper.update(purchase, 
+            purchaseMapper.update(purchase,
                     new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
                         .eq(ErpWholesalePurchaseDO::getBaseId, updateReqVO.getId()));
 
@@ -117,7 +117,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
             ErpWholesaleSaleDO sale = BeanUtils.toBean(updateReqVO, ErpWholesaleSaleDO.class)
                     .setBaseId(updateReqVO.getId())
-                    .setOtherFees(updateReqVO.getSaleOtherFees());
+                    .setOtherFees(updateReqVO.getSaleOtherFees())
+                    .setTruckFee(updateReqVO.getSaleTruckFee());
             saleMapper.update(sale,
             new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
                 .eq(ErpWholesaleSaleDO::getBaseId, updateReqVO.getId()));
