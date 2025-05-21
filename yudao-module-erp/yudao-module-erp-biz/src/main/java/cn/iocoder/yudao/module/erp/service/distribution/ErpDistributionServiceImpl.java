@@ -84,7 +84,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionSaleDO sale = BeanUtils.toBean(createReqVO, ErpDistributionSaleDO.class)
                 .setBaseId(distribution.getId())
                 .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setSaleAfterSalesStatus(30);
+                .setSaleAfterSalesStatus(30)
+                .setOtherFees(createReqVO.getSaleOtherFees());
         saleMapper.insert(sale);
 
         return distribution.getId();
