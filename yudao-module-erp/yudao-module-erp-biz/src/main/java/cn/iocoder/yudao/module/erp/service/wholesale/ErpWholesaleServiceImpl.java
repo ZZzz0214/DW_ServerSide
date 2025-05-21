@@ -75,14 +75,16 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .setBaseId(wholesale.getId())
                 .setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setPurchaseAfterSalesStatus(30)
-                ;
+                .setOtherFees(createReqVO.getOtherFees());
         purchaseMapper.insert(purchase);
 
         // 5. 插入销售信息
         ErpWholesaleSaleDO sale = BeanUtils.toBean(createReqVO, ErpWholesaleSaleDO.class)
                 .setBaseId(wholesale.getId())
                 .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setSaleAfterSalesStatus(30);
+                .setSaleAfterSalesStatus(30)
+                .setTruckFee(createReqVO.getSaleTruckFee())
+                .setOtherFees(createReqVO.getSaleOtherFees());
         saleMapper.insert(sale);
 
         return wholesale.getId();
