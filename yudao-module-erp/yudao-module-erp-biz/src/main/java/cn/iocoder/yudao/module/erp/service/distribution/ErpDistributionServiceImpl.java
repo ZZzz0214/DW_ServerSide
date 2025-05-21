@@ -110,7 +110,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 //        if (updateReqVO.getComboProductId() != null) {
             ErpDistributionPurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
                     .setBaseId(updateReqVO.getId());
-            purchaseMapper.updateById(purchase);
+                    purchaseMapper.update(purchase, 
+                    new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+                        .eq(ErpDistributionPurchaseDO::getBaseId, updateReqVO.getId()));
 //        }
 
         // 4. 更新销售信息
@@ -118,7 +120,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             ErpDistributionSaleDO sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
                     .setBaseId(updateReqVO.getId())
                     .setOtherFees(updateReqVO.getSaleOtherFees());
-            saleMapper.updateById(sale);
+                    saleMapper.update(sale,
+                    new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+                        .eq(ErpDistributionSaleDO::getBaseId, updateReqVO.getId()));
 //        }
     }
 
