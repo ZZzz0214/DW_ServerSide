@@ -96,6 +96,7 @@ public class ErpWholesaleController {
             if (purchase.getComboProductId() != null) {
                 ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
                 if (comboProduct != null) {
+                    System.out.println("组品信息: " + comboProduct);
                     respVO.setProductName(comboProduct.getName());
                     respVO.setShippingCode(comboProduct.getShippingCode());
                     respVO.setPurchaser(comboProduct.getPurchaser());
@@ -104,6 +105,7 @@ public class ErpWholesaleController {
 
                     // 计算采购运费
                     BigDecimal shippingFee = BigDecimal.ZERO;
+                    System.out.println("运费计算类型: " + comboProduct.getShippingFeeType());
                     switch (comboProduct.getShippingFeeType()) {
                         case 0: // 固定运费
                             shippingFee = comboProduct.getFixedShippingFee();
@@ -112,25 +114,31 @@ public class ErpWholesaleController {
                             int quantity = wholesale.getProductQuantity();
                             int additionalQuantity = comboProduct.getAdditionalItemQuantity();
                             BigDecimal additionalPrice = comboProduct.getAdditionalItemPrice();
-
+                            System.out.println(String.format("按件计费 - 数量: %d, 附加数量: %d, 附加价格: %s", 
+                            quantity, additionalQuantity, additionalPrice));
                             if (additionalQuantity > 0) {
                                 int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
                                 shippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+                                System.out.println("按件计费结果 - 附加单位: " + additionalUnits + ", 运费: " + shippingFee);
                             }
                             break;
                         case 2: // 按重计费
                             quantity = wholesale.getProductQuantity();
                             BigDecimal productWeight = comboProduct.getWeight();
                             BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
-
+                            System.out.println(String.format("按重计费 - 产品重量: %s, 数量: %d, 总重量: %s", 
+                                    productWeight, quantity, totalWeight));
                             if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
                                 shippingFee = comboProduct.getFirstWeightPrice();
+                                System.out.println("按重计费结果 - 运费: " + shippingFee);
                             } else {
                                 BigDecimal additionalWeight = totalWeight.subtract(comboProduct.getFirstWeight());
                                 BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
                                 shippingFee = comboProduct.getFirstWeightPrice().add(
                                         comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
+                                System.out.println(String.format("按重计费结果 - 超出重量: %s, 续重单位数: %s, 运费: %s", 
+                                additionalWeight, additionalUnits, shippingFee));
                             }
                             break;
                     }
@@ -140,8 +148,9 @@ public class ErpWholesaleController {
                     BigDecimal totalAmount = comboProduct.getWholesalePrice()
                             .multiply(new BigDecimal(wholesale.getProductQuantity()))
                             .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
+                            .add(respVO.getLogisticsFee() != null ? respVO.getLogisticsFee() : BigDecimal.ZERO)
                             .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
+                            System.out.println("采购总额计算结果: " + totalAmount);
                     respVO.setTotalPurchaseAmount(totalAmount);
                 }
             }
@@ -161,9 +170,12 @@ public class ErpWholesaleController {
                         purchase.getComboProductId(), sale.getCustomerName());
                 if (salePrice != null) {
                     respVO.setSalePrice(salePrice.getWholesalePrice());
+                    System.out.println("销售价格信息: " + salePrice);
+                    respVO.setSalePrice(salePrice.getWholesalePrice());
 
                     // 计算销售运费
                     BigDecimal saleShippingFee = BigDecimal.ZERO;
+                    System.out.println("销售运费计算类型: " + salePrice.getShippingFeeType());
                     switch (salePrice.getShippingFeeType()) {
                         case 0: // 固定运费
                             saleShippingFee = salePrice.getFixedShippingFee();
@@ -172,10 +184,12 @@ public class ErpWholesaleController {
                             int quantity = wholesale.getProductQuantity();
                             int additionalQuantity = salePrice.getAdditionalItemQuantity();
                             BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
-
+                            System.out.println(String.format("销售按件计费 - 数量: %d, 附加数量: %d, 附加价格: %s", 
+                                    quantity, additionalQuantity, additionalPrice));
                             if (additionalQuantity > 0) {
                                 int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
                                 saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+                                System.out.println("销售按件计费结果 - 附加单位: " + additionalUnits + ", 运费: " + saleShippingFee);
                             }
                             break;
                         case 2: // 按重计费
@@ -183,15 +197,20 @@ public class ErpWholesaleController {
                             ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
                             BigDecimal productWeight = comboProduct.getWeight();
                             BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
+                            System.out.println(String.format("销售按重计费 - 产品重量: %s, 数量: %d, 总重量: %s", 
+                                    productWeight, quantity, totalWeight));
 
                             if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
                                 saleShippingFee = salePrice.getFirstWeightPrice();
+                                System.out.println("销售按重计费结果 - 运费: " + saleShippingFee);
                             } else {
                                 BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
                                 BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
                                 saleShippingFee = salePrice.getFirstWeightPrice().add(
                                         salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
+                                System.out.println(String.format("销售按重计费结果 - 超出重量: %s, 续重单位数: %s, 运费: %s", 
+                                additionalWeight, additionalUnits, saleShippingFee));
                             }
                             break;
                     }
@@ -200,10 +219,11 @@ public class ErpWholesaleController {
                     // 计算采购总额 = 出货单价（即组品表的`wholesalePrice`） * 产品数量 + 出货货拉拉费 + 出货物流费用 + 出货杂费
                     BigDecimal totalAmount = salePrice.getWholesalePrice()
                             .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                            .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
-                    respVO.setTotalPurchaseAmount(totalAmount);
+                            .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
+                            .add(respVO.getSaleLogisticsFee() != null ? respVO.getSaleLogisticsFee() : BigDecimal.ZERO)
+                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+                            System.out.println("销售总额计算结果: " + totalAmount);
+                    respVO.setTotalSaleAmount(totalAmount);
                 }
             }
         }
