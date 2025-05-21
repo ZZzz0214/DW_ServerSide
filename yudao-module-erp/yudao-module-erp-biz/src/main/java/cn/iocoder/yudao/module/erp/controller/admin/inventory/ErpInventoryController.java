@@ -51,6 +51,7 @@ public class ErpInventoryController {
     @Parameter(name = "ids", description = "编号列表", required = true)
     @PreAuthorize("@ss.hasPermission('erp:inventory:delete')")
     public CommonResult<Boolean> deleteInventory(@RequestParam("ids") List<Long> ids) {
+
         inventoryService.deleteInventory(ids);
         return success(true);
     }

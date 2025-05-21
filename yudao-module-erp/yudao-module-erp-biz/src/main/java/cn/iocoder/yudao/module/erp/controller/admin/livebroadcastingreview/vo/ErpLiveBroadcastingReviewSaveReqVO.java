@@ -7,6 +7,7 @@ import lombok.Data;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 直播复盘新增/修改 Request VO")
 @Data
@@ -41,16 +42,16 @@ public class ErpLiveBroadcastingReviewSaveReqVO {
     private BigDecimal rebateCommission;
 
     @Schema(description = "寄样日期", example = "2023-01-01")
-    private LocalDate sampleSendDate;
+    private LocalDateTime sampleSendDate;
 
     @Schema(description = "开播日期", example = "2023-01-05")
-    private LocalDate liveStartDate;
+    private LocalDateTime liveStartDate;
 
     @Schema(description = "开播销量", example = "100")
     private Integer liveSales;
 
     @Schema(description = "复播日期", example = "2023-01-10")
-    private LocalDate repeatLiveDate;
+    private LocalDateTime repeatLiveDate;
 
     @Schema(description = "复播销量", example = "50")
     private Integer repeatLiveSales;
