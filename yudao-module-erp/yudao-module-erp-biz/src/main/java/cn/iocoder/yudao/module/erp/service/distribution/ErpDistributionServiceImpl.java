@@ -116,7 +116,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 4. 更新销售信息
 //        if (updateReqVO.getSalePriceId() !=null) {
             ErpDistributionSaleDO sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
-                    .setBaseId(updateReqVO.getId());
+                    .setBaseId(updateReqVO.getId())
+                    .setOtherFees(updateReqVO.getSaleOtherFees());
             saleMapper.updateById(sale);
 //        }
     }

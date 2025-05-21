@@ -115,7 +115,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         // 4. 更新销售信息
 
             ErpWholesaleSaleDO sale = BeanUtils.toBean(updateReqVO, ErpWholesaleSaleDO.class)
-                    .setBaseId(updateReqVO.getId());
+                    .setBaseId(updateReqVO.getId())
+                    .setOtherFees(updateReqVO.getSaleOtherFees());
             saleMapper.updateById(sale);
 
     }
