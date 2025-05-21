@@ -69,4 +69,24 @@ public class ErpPrivateBroadcastingReviewRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "产品名称", example = "产品A")
+    @ExcelProperty("产品名称")
+    private String productName;
+    
+    @Schema(description = "品牌名称", example = "品牌A") 
+    @ExcelProperty("品牌名称")
+    private String brandName;
+    
+    @Schema(description = "产品规格", example = "标准规格")
+    @ExcelProperty("产品规格")
+    private String productSpec;
+    
+    @Schema(description = "产品SKU", example = "SKU001")
+    @ExcelProperty("产品SKU") 
+    private String productSku;
+    
+    @Schema(description = "直播价格", example = "100.00")
+    @ExcelProperty("直播价格")
+    private BigDecimal livePrice;
 }
