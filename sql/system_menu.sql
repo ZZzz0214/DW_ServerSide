@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 20/05/2025 01:09:56
+ Date: 20/05/2025 22:24:14
 */
 
 SET NAMES utf8mb4;
@@ -606,5 +606,20 @@ INSERT INTO `system_menu` VALUES (3007, '样品表新增', 'erp:sample:create', 
 INSERT INTO `system_menu` VALUES (3008, '样品表删除', 'erp:sample:delete', 3, 2, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-19 01:07:17', '1', '2025-05-19 01:11:34', b'0');
 INSERT INTO `system_menu` VALUES (3009, '样品表更改', 'erp:sample:update', 3, 3, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-19 01:07:36', '1', '2025-05-19 01:11:44', b'0');
 INSERT INTO `system_menu` VALUES (3010, '样品表查询', 'erp:sample:query', 3, 4, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-19 01:07:53', '1', '2025-05-19 01:11:51', b'0');
+INSERT INTO `system_menu` VALUES (3011, '团购货盘表', '', 2, 1, 2995, 'erp/groupbuying/index', 'ep:add-location', 'erp/groupbuying/index', 'ErpGroupBuying', 0, b'1', b'1', b'1', '1', '2025-05-20 16:50:26', '1', '2025-05-20 16:50:26', b'0');
+INSERT INTO `system_menu` VALUES (3012, '团购货盘表新增', 'erp:groupbuying:create', 3, 1, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:51:28', '1', '2025-05-20 16:51:28', b'0');
+INSERT INTO `system_menu` VALUES (3013, '团购货盘表删除', 'erp:groupbuying:delete', 3, 2, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:51:53', '1', '2025-05-20 16:51:53', b'0');
+INSERT INTO `system_menu` VALUES (3014, '团购货盘表更新', 'erp:groupbuying:update', 3, 3, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:52:19', '1', '2025-05-20 16:52:19', b'0');
+INSERT INTO `system_menu` VALUES (3015, '团购货盘表查询', 'erp:groupbuying:query', 3, 4, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:52:43', '1', '2025-05-20 16:52:43', b'0');
+INSERT INTO `system_menu` VALUES (3016, '团购复盘表', '', 2, 1, 2995, 'erp/groupbuyingreview/index', 'ep:add-location', 'erp/groupbuyingreview/index', 'ErpGroupBuyingReview', 0, b'1', b'1', b'1', '1', '2025-05-20 18:44:57', '1', '2025-05-20 18:44:57', b'0');
+INSERT INTO `system_menu` VALUES (3017, '团购复盘表新增', 'erp:groupbuyingreview:create', 3, 1, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:45:54', '1', '2025-05-20 18:48:42', b'0');
+INSERT INTO `system_menu` VALUES (3018, '团购复盘表删除', 'erp:groupbuyingreview:delete', 3, 2, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:46:30', '1', '2025-05-20 18:48:53', b'0');
+INSERT INTO `system_menu` VALUES (3019, '团购复盘表更改', 'erp:groupbuyingreview:update', 3, 3, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:46:55', '1', '2025-05-20 18:48:57', b'0');
+INSERT INTO `system_menu` VALUES (3020, '团购复盘表查询', 'erp:groupbuyingreview:query', 3, 4, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:47:21', '1', '2025-05-20 18:49:02', b'0');
+INSERT INTO `system_menu` VALUES (3021, '团购信息表', '', 2, 1, 2995, 'erp/groupbuyinginfo/index', 'ep:add-location', 'erp/groupbuyinginfo/index', 'ErpGroupBuyingInfo', 0, b'1', b'1', b'1', '1', '2025-05-20 20:09:28', '1', '2025-05-20 20:09:28', b'0');
+INSERT INTO `system_menu` VALUES (3022, '团购信息表新增', 'erp:groupbuyinginfo:create', 3, 1, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:10:05', '1', '2025-05-20 20:10:05', b'0');
+INSERT INTO `system_menu` VALUES (3023, '团购信息表删除', 'erp:groupbuyinginfo:delete', 3, 2, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:10:24', '1', '2025-05-20 20:10:24', b'0');
+INSERT INTO `system_menu` VALUES (3024, '团购信息表更改', 'erp:groupbuyinginfo:update', 3, 3, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:10:53', '1', '2025-05-20 20:10:53', b'0');
+INSERT INTO `system_menu` VALUES (3025, '团购信息表查询', 'erp:groupbuyinginfo:query', 3, 4, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:11:12', '1', '2025-05-20 20:11:12', b'0');
 
 SET FOREIGN_KEY_CHECKS = 1;

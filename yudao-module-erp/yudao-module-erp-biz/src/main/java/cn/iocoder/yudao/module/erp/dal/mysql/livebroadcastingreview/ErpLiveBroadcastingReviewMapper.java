@@ -6,7 +6,9 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewRespVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcasting.ErpLiveBroadcastingDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastingreview.ErpLiveBroadcastingReviewDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -36,7 +38,15 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveDate, ErpLiveBroadcastingReviewRespVO::getRepeatLiveDate)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveSales, ErpLiveBroadcastingReviewRespVO::getRepeatLiveSales)
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreateTime, ErpLiveBroadcastingReviewRespVO::getCreateTime);
-
+                query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId)
+                .selectAs(ErpLiveBroadcastingDO::getBrandId, ErpLiveBroadcastingReviewRespVO::getBrandName)
+                .selectAs(ErpLiveBroadcastingDO::getProductName, ErpLiveBroadcastingReviewRespVO::getProductName)
+                .selectAs(ErpLiveBroadcastingDO::getProductSpec, ErpLiveBroadcastingReviewRespVO::getProductSpec)
+                .selectAs(ErpLiveBroadcastingDO::getProductSku, ErpLiveBroadcastingReviewRespVO::getProductSku)
+                .selectAs(ErpLiveBroadcastingDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice);
+                // 联表查询客户信息
+                query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingReviewDO::getCustomerId)
+                .selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
         return selectJoinPage(reqVO, ErpLiveBroadcastingReviewRespVO.class, query);
     }
 

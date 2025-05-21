@@ -8,6 +8,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 直播货盘新增/修改 Request VO")
 @Data
@@ -17,18 +18,15 @@ public class ErpLiveBroadcastingSaveReqVO {
     private Long id;
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "ZBHP001")
-    @NotEmpty(message = "编号不能为空")
     private String no;
 
     @Schema(description = "产品图片", example = "https://example.com/image.jpg")
     private String productImage;
 
     @Schema(description = "品牌ID", example = "1")
-    @NotNull(message = "品牌ID不能为空")
     private Long brandId;
 
     @Schema(description = "产品名称", example = "产品A")
-    @NotEmpty(message = "产品名称不能为空")
     private String productName;
 
     @Schema(description = "产品规格", example = "500g/瓶")
@@ -42,7 +40,7 @@ public class ErpLiveBroadcastingSaveReqVO {
     private BigDecimal marketPrice;
 
     @Schema(description = "保质日期", example = "2023-12-31")
-    private LocalDate shelfLife;
+    private LocalDateTime shelfLife;
 
     @Schema(description = "产品库存", example = "100")
     @NotNull(message = "产品库存不能为空")
