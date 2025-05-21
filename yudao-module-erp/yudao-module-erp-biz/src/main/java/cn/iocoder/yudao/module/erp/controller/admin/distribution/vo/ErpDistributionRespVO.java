@@ -91,6 +91,15 @@ public class ErpDistributionRespVO {
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
 
+    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
+    private LocalDateTime afterSalesTime;
+
+    @Schema(description = "采购备注信息", example = "采购备注示例")
+    private String purchaseRemark;
+
+    @Schema(description = "出货备注信息", example = "出货备注示例")
+    private String saleRemark;
+
     // 来自 ErpDistributionSaleDO
     @Schema(description = "销售人员", example = "销售员A")
     private String salesperson;

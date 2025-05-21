@@ -82,6 +82,11 @@ public class ErpDistributionPurchaseDO extends BaseDO {
     private Boolean deleted;
 
     /**
+     * 采购备注信息
+     */
+    private String purchaseRemark;
+
+    /**
      * 采购售后状态
      */
     private Integer purchaseAfterSalesStatus;

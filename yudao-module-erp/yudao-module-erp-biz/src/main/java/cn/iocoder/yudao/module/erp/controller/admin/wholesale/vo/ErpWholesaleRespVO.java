@@ -44,6 +44,15 @@ public class ErpWholesaleRespVO {
     @Schema(description = "物流单号", example = "LOG202403250001")
     private String logisticsNumber;
 
+    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
+    private LocalDateTime afterSalesTime;
+
+    @Schema(description = "采购备注信息", example = "采购备注示例")
+    private String purchaseRemark;
+
+    @Schema(description = "出货备注信息", example = "出货备注示例")
+    private String saleRemark;
+
     // 来自 ErpWholesalePurchaseDO
     @Schema(description = "组品编号", example = "1")
     private Long comboProductId;
