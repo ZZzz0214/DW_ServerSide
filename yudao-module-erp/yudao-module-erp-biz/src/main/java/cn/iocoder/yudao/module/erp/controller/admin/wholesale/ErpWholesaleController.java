@@ -114,7 +114,7 @@ public class ErpWholesaleController {
                             int quantity = wholesale.getProductQuantity();
                             int additionalQuantity = comboProduct.getAdditionalItemQuantity();
                             BigDecimal additionalPrice = comboProduct.getAdditionalItemPrice();
-                            System.out.println(String.format("按件计费 - 数量: %d, 附加数量: %d, 附加价格: %s", 
+                            System.out.println(String.format("按件计费 - 数量: %d, 附加数量: %d, 附加价格: %s",
                             quantity, additionalQuantity, additionalPrice));
                             if (additionalQuantity > 0) {
                                 int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
@@ -126,7 +126,7 @@ public class ErpWholesaleController {
                             quantity = wholesale.getProductQuantity();
                             BigDecimal productWeight = comboProduct.getWeight();
                             BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
-                            System.out.println(String.format("按重计费 - 产品重量: %s, 数量: %d, 总重量: %s", 
+                            System.out.println(String.format("按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
                                     productWeight, quantity, totalWeight));
                             if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
                                 shippingFee = comboProduct.getFirstWeightPrice();
@@ -137,7 +137,7 @@ public class ErpWholesaleController {
                                 shippingFee = comboProduct.getFirstWeightPrice().add(
                                         comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
-                                System.out.println(String.format("按重计费结果 - 超出重量: %s, 续重单位数: %s, 运费: %s", 
+                                System.out.println(String.format("按重计费结果 - 超出重量: %s, 续重单位数: %s, 运费: %s",
                                 additionalWeight, additionalUnits, shippingFee));
                             }
                             break;
@@ -159,7 +159,7 @@ public class ErpWholesaleController {
         // 4. 获取并合并销售信息
         ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
         if (sale != null) {
-            BeanUtils.copyProperties(sale, respVO, "id");
+            BeanUtils.copyProperties(sale, respVO, "id","otherFees");
             respVO.setSaleTruckFee(sale.getTruckFee());
             respVO.setSaleLogisticsFee(sale.getLogisticsFee());
             respVO.setSaleOtherFees(sale.getOtherFees());
@@ -184,7 +184,7 @@ public class ErpWholesaleController {
                             int quantity = wholesale.getProductQuantity();
                             int additionalQuantity = salePrice.getAdditionalItemQuantity();
                             BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
-                            System.out.println(String.format("销售按件计费 - 数量: %d, 附加数量: %d, 附加价格: %s", 
+                            System.out.println(String.format("销售按件计费 - 数量: %d, 附加数量: %d, 附加价格: %s",
                                     quantity, additionalQuantity, additionalPrice));
                             if (additionalQuantity > 0) {
                                 int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
@@ -197,7 +197,7 @@ public class ErpWholesaleController {
                             ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
                             BigDecimal productWeight = comboProduct.getWeight();
                             BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
-                            System.out.println(String.format("销售按重计费 - 产品重量: %s, 数量: %d, 总重量: %s", 
+                            System.out.println(String.format("销售按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
                                     productWeight, quantity, totalWeight));
 
                             if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
@@ -209,7 +209,7 @@ public class ErpWholesaleController {
                                 saleShippingFee = salePrice.getFirstWeightPrice().add(
                                         salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
                                 );
-                                System.out.println(String.format("销售按重计费结果 - 超出重量: %s, 续重单位数: %s, 运费: %s", 
+                                System.out.println(String.format("销售按重计费结果 - 超出重量: %s, 续重单位数: %s, 运费: %s",
                                 additionalWeight, additionalUnits, saleShippingFee));
                             }
                             break;
