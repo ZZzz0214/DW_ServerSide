@@ -105,24 +105,31 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         ErpWholesaleBaseDO updateObj = BeanUtils.toBean(updateReqVO, ErpWholesaleBaseDO.class);
         wholesaleMapper.updateById(updateObj);
 
-        // 3. 更新采购信息
-
-            ErpWholesalePurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpWholesalePurchaseDO.class)
-                    .setBaseId(updateReqVO.getId());
-            purchaseMapper.update(purchase,
+        // 3. 更新采购信息（独立检查审核状态）
+        ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(updateReqVO.getId());
+        if (purchase != null) {
+            if (!ErpAuditStatus.APPROVE.getStatus().equals(purchase.getPurchaseAuditStatus())) {
+                purchase = BeanUtils.toBean(updateReqVO, ErpWholesalePurchaseDO.class)
+                        .setBaseId(updateReqVO.getId());
+                purchaseMapper.update(purchase,
                     new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
                         .eq(ErpWholesalePurchaseDO::getBaseId, updateReqVO.getId()));
+            }
+        }
 
-        // 4. 更新销售信息
-
-            ErpWholesaleSaleDO sale = BeanUtils.toBean(updateReqVO, ErpWholesaleSaleDO.class)
-                    .setBaseId(updateReqVO.getId())
-                    .setOtherFees(updateReqVO.getSaleOtherFees())
-                    .setTruckFee(updateReqVO.getSaleTruckFee());
-            saleMapper.update(sale,
-            new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
-                .eq(ErpWholesaleSaleDO::getBaseId, updateReqVO.getId()));
-
+        // 4. 更新销售信息（独立检查审核状态）
+        ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(updateReqVO.getId());
+        if (sale != null) {
+            if (!ErpAuditStatus.APPROVE.getStatus().equals(sale.getSaleAuditStatus())) {
+                sale = BeanUtils.toBean(updateReqVO, ErpWholesaleSaleDO.class)
+                        .setBaseId(updateReqVO.getId())
+                        .setOtherFees(updateReqVO.getSaleOtherFees())
+                        .setTruckFee(updateReqVO.getSaleTruckFee());
+                saleMapper.update(sale,
+                    new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
+                        .eq(ErpWholesaleSaleDO::getBaseId, updateReqVO.getId()));
+            }
+        }
     }
 
     @Override

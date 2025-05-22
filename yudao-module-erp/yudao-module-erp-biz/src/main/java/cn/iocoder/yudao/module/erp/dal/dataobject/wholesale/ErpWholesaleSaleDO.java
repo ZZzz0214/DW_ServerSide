@@ -90,4 +90,8 @@ public class ErpWholesaleSaleDO extends BaseDO {
      * 销售审核状态
      */
     private Integer saleAuditStatus;
+        /**
+     * 中转人员
+     */
+    private String transferPerson;
 }

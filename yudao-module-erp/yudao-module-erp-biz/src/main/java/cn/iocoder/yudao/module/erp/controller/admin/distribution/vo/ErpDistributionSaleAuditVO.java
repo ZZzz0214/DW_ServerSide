@@ -71,8 +71,6 @@ public class ErpDistributionSaleAuditVO {
     @Schema(description = "出货单价", example = "120.00")
     private BigDecimal salePrice;
 
-    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
-    private LocalDateTime afterSalesTime;
 
     @Schema(description = "采购备注信息", example = "采购备注示例")
     private String purchaseRemark;
@@ -106,4 +104,13 @@ public class ErpDistributionSaleAuditVO {
 
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
+
+
+    @Schema(description = "采购售后情况", example = "售后情况说明")
+    private String afterSalesStatus;
+
+    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
+    private LocalDateTime afterSalesTime;
+    @Schema(description = "中转人员", example = "中转员A")
+    private String transferPerson;
 }

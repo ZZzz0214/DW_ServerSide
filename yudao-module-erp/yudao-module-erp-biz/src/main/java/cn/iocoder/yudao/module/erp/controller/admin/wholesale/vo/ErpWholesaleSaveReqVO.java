@@ -17,6 +17,8 @@ public class ErpWholesaleSaveReqVO {
 
     @Schema(description = "订单号", requiredMode = Schema.RequiredMode.REQUIRED, example = "WS202403250001")
     private String no;
+    @Schema(description = "物流单号", example = "LOG202403250001")
+    private String logisticsNumber;
 
     @Schema(description = "收件人姓名", example = "张三")
     private String receiverName;
@@ -110,4 +112,8 @@ public class ErpWholesaleSaveReqVO {
 
     @Schema(description = "订单号", example = "ORD202403250001")
     private String orderNumber;
+
+    @Schema(description = "中转人员", example = "中转员A")
+    private String transferPerson;
+
 }

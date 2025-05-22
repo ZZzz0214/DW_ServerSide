@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 12/05/2025 23:35:45
+ Date: 22/05/2025 23:12:53
 */
 
 SET NAMES utf8mb4;
@@ -26,7 +26,7 @@ CREATE TABLE `erp_wholesale_sale`  (
   `base_id` bigint(20) NOT NULL COMMENT '关联批发基础表',
   `sale_price_id` bigint(20) NULL DEFAULT NULL COMMENT '关联销售价格表',
   `salesperson` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '销售人员',
-  `customer_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '客户名称',
+  `customer_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   `sale_price` decimal(20, 2) NULL DEFAULT NULL COMMENT '出货单价',
   `truck_fee` decimal(20, 2) NULL DEFAULT NULL COMMENT '货拉拉费',
   `logistics_fee` decimal(20, 2) NULL DEFAULT NULL COMMENT '物流费用',
@@ -43,14 +43,18 @@ CREATE TABLE `erp_wholesale_sale`  (
   `sale_after_sales_amount` decimal(20, 2) NULL DEFAULT NULL COMMENT '销售售后金额',
   `sale_after_sales_time` datetime NULL DEFAULT NULL COMMENT '销售售后时间',
   `sale_audit_status` int(11) NULL DEFAULT NULL COMMENT '销售审核状态',
+  `sale_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '出货备注信息',
+  `transfer_person` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '中转人员',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `sale_price_id`(`sale_price_id` ASC) USING BTREE,
   CONSTRAINT `erp_wholesale_sale_ibfk_1` FOREIGN KEY (`sale_price_id`) REFERENCES `erp_sale_price` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发销售表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发销售表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_sale
 -- ----------------------------
-INSERT INTO `erp_wholesale_sale` VALUES (5, 6, NULL, '123', '123', 2.00, 1.00, 1.00, 1.00, 7.00, 1, b'0', '1', '2025-04-30 22:19:34', '1', '2025-04-30 22:19:34', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (17, 18, NULL, '帅哥', '帅哥', 1.00, 1.00, 15.00, 3.00, 15.00, 1, b'0', '1', '2025-05-22 00:53:28', '1', '2025-05-22 00:53:28', 30, NULL, NULL, NULL, 10, NULL, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (18, 19, NULL, '帅哥', '天才', 2.00, 1.00, 15.00, 1.00, 14.00, 1, b'0', '1', '2025-05-22 22:47:03', '1', '2025-05-22 22:47:03', 30, NULL, NULL, NULL, 10, NULL, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (19, 20, NULL, '帅哥', '天才', 2.00, 1.00, 45.00, 1.00, 18.00, 1, b'0', '1', '2025-05-22 23:06:31', '1', '2025-05-22 23:06:40', 30, NULL, NULL, NULL, 10, NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

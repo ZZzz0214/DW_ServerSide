@@ -75,10 +75,10 @@ public class ErpDistributionSaveReqVO {
     private String remark;
 
     @Schema(description = "售后状况", example = "10000.00")
-    private Integer afterSalesStatus;
+    private String afterSalesStatus;
 
     @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
-    private LocalDateTime afterSalesTime;
+    private String afterSalesTime;
 
     @Schema(description = "采购备注信息", example = "采购备注示例")
     private String purchaseRemark;
@@ -119,4 +119,7 @@ public class ErpDistributionSaveReqVO {
 
     @Schema(description = "订单号", example = "ORD202403250001")
     private String orderNumber;
+
+    @Schema(description = "中转人员", example = "中转员A")
+    private String transferPerson;
 }

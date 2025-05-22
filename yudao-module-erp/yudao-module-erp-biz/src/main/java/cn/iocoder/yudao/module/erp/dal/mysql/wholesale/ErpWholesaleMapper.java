@@ -110,6 +110,7 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesSituation, ErpWholesaleRespVO::getSaleAfterSalesSituation)
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesAmount, ErpWholesaleRespVO::getSaleAfterSalesAmount)
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesTime, ErpWholesaleRespVO::getSaleAfterSalesTime)
+                .selectAs(ErpWholesaleSaleDO::getTransferPerson, ErpWholesaleRespVO::getTransferPerson)
                 .selectAs(ErpWholesaleSaleDO::getSaleAuditStatus, ErpWholesaleRespVO::getSaleAuditStatus);
         // 联表查询销售价格信息
 //        query.leftJoin(ErpSalePriceDO.class,

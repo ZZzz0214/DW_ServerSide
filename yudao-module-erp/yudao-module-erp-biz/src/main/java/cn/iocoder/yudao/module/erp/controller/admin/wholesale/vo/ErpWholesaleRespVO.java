@@ -133,6 +133,10 @@ public class ErpWholesaleRespVO {
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
 
+    @Schema(description = "中转人员", example = "中转员A")
+    private String transferPerson;
+
+
     // 公共字段
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime createTime;
