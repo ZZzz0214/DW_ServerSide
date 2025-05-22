@@ -44,7 +44,7 @@ public class ErpDistributionRespVO {
     private Integer originalQuantity;
 
     @Schema(description = "售后状况", example = "0")
-    private Integer afterSalesStatus;
+    private String afterSalesStatus;
 
     @Schema(description = "备注信息", example = "备注")
     private String remark;
@@ -133,6 +133,10 @@ public class ErpDistributionRespVO {
 
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
+
+    
+    @Schema(description = "中转人员", example = "中转员A")
+    private String transferPerson;
 
     // 公共字段
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

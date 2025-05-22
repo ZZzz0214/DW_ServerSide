@@ -78,7 +78,7 @@ public class ErpDistributionBaseDO extends BaseDO {
     /**
      * 售后状况
      */
-    private Integer afterSalesStatus;
+    private String afterSalesStatus;
 
     /**
      * 售后时间

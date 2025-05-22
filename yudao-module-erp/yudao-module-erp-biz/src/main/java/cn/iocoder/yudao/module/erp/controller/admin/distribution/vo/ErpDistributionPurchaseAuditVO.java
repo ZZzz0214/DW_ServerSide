@@ -48,8 +48,7 @@ public class ErpDistributionPurchaseAuditVO {
     @Schema(description = "备注信息", example = "备注")
     private String remark;
 
-    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
-    private LocalDateTime afterSalesTime;
+
 
     @Schema(description = "采购备注信息", example = "采购备注示例")
     private String purchaseRemark;
@@ -96,14 +95,25 @@ public class ErpDistributionPurchaseAuditVO {
     @Schema(description = "采购售后状态", example = "1")
     private Integer purchaseAfterSalesStatus;
 
+//    @Schema(description = "采购售后情况", example = "售后情况说明")
+//    private String purchaseAfterSalesSituation;
+
     @Schema(description = "采购售后情况", example = "售后情况说明")
-    private String purchaseAfterSalesSituation;
+    private String afterSalesStatus;
+
+    @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
+    private LocalDateTime afterSalesTime;
+
+    //售后审核需要的字段
+
+    @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
+    private String purchaseAfterSalesTime;
+
 
     @Schema(description = "采购售后金额", example = "100.00")
     private BigDecimal purchaseAfterSalesAmount;
 
-    @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
-    private String purchaseAfterSalesTime;
+
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
 }

@@ -90,5 +90,7 @@ public class ErpWholesaleSaleAuditVO {
     private String saleAfterSalesTime;
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
+    @Schema(description = "中转人员", example = "中转员A")
+    private String transferPerson;
 
 }

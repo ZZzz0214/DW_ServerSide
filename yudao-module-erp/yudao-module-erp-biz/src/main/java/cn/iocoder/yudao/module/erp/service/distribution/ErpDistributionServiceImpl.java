@@ -23,6 +23,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -65,11 +66,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (distributionMapper.selectByNo(no) != null) {
             throw exception(DISTRIBUTION_NO_EXISTS);
         }
+        LocalDateTime AfterSalesTime = parseDateTime(createReqVO.getAfterSalesTime());
 
         // 3. 插入代发记录
         ErpDistributionBaseDO distribution = BeanUtils.toBean(createReqVO, ErpDistributionBaseDO.class)
                 .setNo(no)
-                .setStatus(ErpAuditStatus.PROCESS.getStatus());
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setAfterSalesTime(AfterSalesTime);
         distributionMapper.insert(distribution);
 
         // 4. 插入采购信息
@@ -91,6 +94,43 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         return distribution.getId();
     }
 
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public void updateDistribution(ErpDistributionSaveReqVO updateReqVO) {
+//        // 1.1 校验存在
+//        ErpDistributionBaseDO distribution = validateDistribution(updateReqVO.getId());
+//        if (ErpAuditStatus.APPROVE.getStatus().equals(distribution.getStatus())) {
+//            throw exception(DISTRIBUTION_UPDATE_FAIL_APPROVE, distribution.getNo());
+//        }
+//        // 1.2 校验数据
+//        validateDistributionForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
+//
+//        // 2. 更新代发记录
+//        ErpDistributionBaseDO updateObj = BeanUtils.toBean(updateReqVO, ErpDistributionBaseDO.class);
+//        distributionMapper.updateById(updateObj);
+//
+//        // 3. 更新采购信息
+////        if (updateReqVO.getComboProductId() != null) {
+//            ErpDistributionPurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
+//                    .setBaseId(updateReqVO.getId());
+//                    purchaseMapper.update(purchase,
+//                    new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+//                        .eq(ErpDistributionPurchaseDO::getBaseId, updateReqVO.getId()));
+////        }
+//
+//        // 4. 更新销售信息
+////        if (updateReqVO.getSalePriceId() !=null) {
+//            ErpDistributionSaleDO sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
+//                    .setBaseId(updateReqVO.getId())
+//                    .setOtherFees(updateReqVO.getSaleOtherFees());
+//                    saleMapper.update(sale,
+//                    new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+//                        .eq(ErpDistributionSaleDO::getBaseId, updateReqVO.getId()));
+////        }
+//    }
+
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateDistribution(ErpDistributionSaveReqVO updateReqVO) {
@@ -106,25 +146,32 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionBaseDO updateObj = BeanUtils.toBean(updateReqVO, ErpDistributionBaseDO.class);
         distributionMapper.updateById(updateObj);
 
-        // 3. 更新采购信息
-//        if (updateReqVO.getComboProductId() != null) {
-            ErpDistributionPurchaseDO purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
-                    .setBaseId(updateReqVO.getId());
-                    purchaseMapper.update(purchase, 
+        // 3. 更新采购信息（独立检查审核状态）
+        ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(updateReqVO.getId());
+        if (purchase != null) {
+            if (!ErpAuditStatus.APPROVE.getStatus().equals(purchase.getPurchaseAuditStatus())) {
+                purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
+                        .setBaseId(updateReqVO.getId());
+                purchaseMapper.update(purchase,
                     new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
                         .eq(ErpDistributionPurchaseDO::getBaseId, updateReqVO.getId()));
-//        }
+            }
+        }
 
-        // 4. 更新销售信息
-//        if (updateReqVO.getSalePriceId() !=null) {
-            ErpDistributionSaleDO sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
-                    .setBaseId(updateReqVO.getId())
-                    .setOtherFees(updateReqVO.getSaleOtherFees());
-                    saleMapper.update(sale,
+        // 4. 更新销售信息（独立检查审核状态）
+        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(updateReqVO.getId());
+        if (sale != null) {
+            if (!ErpAuditStatus.APPROVE.getStatus().equals(sale.getSaleAuditStatus())) {
+                sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
+                        .setBaseId(updateReqVO.getId())
+                        .setOtherFees(updateReqVO.getSaleOtherFees());
+                saleMapper.update(sale,
                     new LambdaUpdateWrapper<ErpDistributionSaleDO>()
                         .eq(ErpDistributionSaleDO::getBaseId, updateReqVO.getId()));
-//        }
+            }
+        }
     }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -239,11 +286,18 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 2. 解析时间，兼容多种格式
         LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
+        LocalDateTime AfterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
 
-        // 3. 更新采购售后信息
+
+            // 3. 更新基础表的售后信息
+            distributionMapper.updateById(new ErpDistributionBaseDO()
+            .setId(reqVO.getId())
+            .setAfterSalesStatus(reqVO.getAfterSalesStatus())
+            .setAfterSalesTime(AfterSalesTime));
+        // 4. 更新采购售后信息
         ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
                 .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
-                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
+//                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
                 .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
                 .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
         purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
@@ -257,10 +311,18 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 2. 解析时间，兼容多种格式
         LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
-        // 2. 更新销售售后信息
+        LocalDateTime AfterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+
+        // 3. 更新基础表的售后信息
+        distributionMapper.updateById(new ErpDistributionBaseDO()
+                .setId(reqVO.getId())
+                .setAfterSalesStatus(reqVO.getAfterSalesStatus())
+                .setAfterSalesTime(AfterSalesTime));
+
+        // 4. 更新销售售后信息
         ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
                 .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
-                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
+//                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
                 .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
                 .setSaleAfterSalesTime(purchaseAfterSalesTime);
         saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
@@ -316,7 +378,50 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .eq(ErpDistributionSaleDO::getBaseId, id));
     }
 
+//    private LocalDateTime parseDateTime(String dateTimeStr) {
+//        try {
+//            // 尝试解析第一种格式：yyyy-MM-dd'T'HH:mm
+//            return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+//        } catch (DateTimeParseException e1) {
+//            try {
+//                // 尝试解析第二种格式：yyyy-MM-dd'T'HH:mm:ss
+//                return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+//            } catch (DateTimeParseException e2) {
+//                try {
+//                    // 尝试解析第三种格式：yyyy-MM-dd HH:mm:ss
+//                    return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND));
+//                } catch (DateTimeParseException e3) {
+//                    try {
+//                        // 尝试解析第四种格式：带时区的ISO 8601格式（如2025-05-21T05:52:26.000Z）
+//                        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+//                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(); // 转换为本地时间
+//                    } catch (DateTimeParseException e4) {
+//                        throw new IllegalArgumentException("无法解析时间格式: " + dateTimeStr);
+//                    }
+//                }
+//            }
+//        }
+//    }
+
     private LocalDateTime parseDateTime(String dateTimeStr) {
+        // 先检查是否为null或空
+        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
+            return null;
+        }
+
+        // 尝试解析为时间戳格式
+        try {
+            long timestamp = Long.parseLong(dateTimeStr);
+            // 判断是秒级还是毫秒级时间戳
+            if (dateTimeStr.length() <= 10) { // 秒级
+                return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
+            } else { // 毫秒级
+                return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+            }
+        } catch (NumberFormatException e) {
+            // 如果不是时间戳，继续原有解析逻辑
+        }
+
         try {
             // 尝试解析第一种格式：yyyy-MM-dd'T'HH:mm
             return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
@@ -332,7 +437,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     try {
                         // 尝试解析第四种格式：带时区的ISO 8601格式（如2025-05-21T05:52:26.000Z）
                         OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(); // 转换为本地时间
+                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
                     } catch (DateTimeParseException e4) {
                         throw new IllegalArgumentException("无法解析时间格式: " + dateTimeStr);
                     }

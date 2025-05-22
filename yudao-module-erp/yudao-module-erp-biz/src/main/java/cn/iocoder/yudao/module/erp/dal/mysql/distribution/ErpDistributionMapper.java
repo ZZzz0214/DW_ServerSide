@@ -111,6 +111,7 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .selectAs(ErpDistributionSaleDO::getSalesperson, ErpDistributionRespVO::getSalesperson)
                 .selectAs(ErpDistributionSaleDO::getCustomerName, ErpDistributionRespVO::getCustomerName)
                 .selectAs(ErpDistributionSaleDO::getOtherFees, ErpDistributionRespVO::getSaleOtherFees)
+                .selectAs(ErpDistributionSaleDO::getTransferPerson, ErpDistributionRespVO::getTransferPerson)
                 // 添加销售售后字段映射
                 .selectAs(ErpDistributionSaleDO::getSaleAfterSalesStatus, ErpDistributionRespVO::getSaleAfterSalesStatus)
                 .selectAs(ErpDistributionSaleDO::getSaleAfterSalesSituation, ErpDistributionRespVO::getSaleAfterSalesSituation)
