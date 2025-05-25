@@ -70,9 +70,6 @@ public class ErpDistributionController {
     public CommonResult<Boolean> updateDistributionStatus(@RequestParam("id") Long id,
                                                           @RequestParam("status") Integer status,
                                                           @RequestParam("otherFees") BigDecimal otherFees) {
-        System.out.println("更改的订单id为 "+id);
-        System.out.println("更改的订单id为 "+status);
-        System.out.println("其他费用为 "+otherFees);
         distributionService.updateDistributionStatus(id, status, otherFees);
         return success(true);
     }
@@ -170,11 +167,84 @@ public class ErpDistributionController {
         }
 
         // 4. 获取并合并销售信息
+//        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
+//        if (sale != null) {
+//            BeanUtils.copyProperties(sale, respVO, "id","shippingFee","otherFees");
+//            System.out.println("查看一下是不是销售价格覆盖了"+respVO);
+//            respVO.setSaleOtherFees(sale.getOtherFees());
+//
+//            // 根据客户名称和组品ID查询销售价格
+//            if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
+//                ErpSalePriceRespVO salePrice = salePriceService.getSalePriceByGroupProductIdAndCustomerName(
+//                        purchase.getComboProductId(), sale.getCustomerName());
+//                if (salePrice != null) {
+//                    respVO.setSalePrice(salePrice.getDistributionPrice());
+//
+//                    // 计算销售运费
+//                    BigDecimal saleShippingFee = BigDecimal.ZERO;
+//                    switch (salePrice.getShippingFeeType()) {
+//                        case 0: // 固定运费
+//                            saleShippingFee = salePrice.getFixedShippingFee();
+//                            System.out.println("固定运费: " + saleShippingFee);
+//                            break;
+//                        case 1: // 按件计费
+//                            int quantity = distribution.getProductQuantity();
+//                            int additionalQuantity = salePrice.getAdditionalItemQuantity();
+//                            BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
+//
+//                            if (additionalQuantity > 0) {
+//                                int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
+//                                saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+//                                System.out.println(String.format("按件计费 - 数量: %d, 附加件数量: %d, 附加件价格: %s, 运费: %s",
+//                                        quantity, additionalQuantity, additionalPrice, saleShippingFee));
+//                            }
+//                            break;
+//                        case 2: // 按重计费
+//                            int quantity2 = distribution.getProductQuantity();
+//                            ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+//                            BigDecimal productWeight = comboProduct.getWeight(); // 使用组品重量
+//                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity2));
+//
+//                            System.out.println(String.format("按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
+//                                    productWeight, quantity2, totalWeight));
+//                            System.out.println(String.format("首重: %s, 首重价格: %s, 续重单位: %s, 续重价格: %s",
+//                                    salePrice.getFirstWeight(), salePrice.getFirstWeightPrice(),
+//                                    salePrice.getAdditionalWeight(), salePrice.getAdditionalWeightPrice()));
+//
+//                            if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
+//                                saleShippingFee = salePrice.getFirstWeightPrice();
+//                                System.out.println("总重量<=首重，运费=" + saleShippingFee);
+//                            } else {
+//                                BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
+//                                BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
+//                                saleShippingFee = salePrice.getFirstWeightPrice().add(
+//                                        salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
+//                                );
+//                                System.out.println(String.format("总重量>首重 - 超出重量: %s, 续重单位数: %s, 运费: %s",
+//                                        additionalWeight, additionalUnits, saleShippingFee));
+//                            }
+//                            break;
+//                    }
+//                    respVO.setSaleShippingFee(saleShippingFee);
+//                    System.out.println("最终销售运费：" + saleShippingFee);
+//
+//                    // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
+//                    BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
+//                            .multiply(new BigDecimal(distribution.getProductQuantity()))
+//                            .add(saleShippingFee)
+//                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+//                    respVO.setTotalSaleAmount(totalSaleAmount);
+//                }
+//            }
+//        }
+
+        // 在getDistribution方法中修改销售信息部分
+        // 4. 获取并合并销售信息
         ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
         if (sale != null) {
             BeanUtils.copyProperties(sale, respVO, "id","shippingFee","otherFees");
-            System.out.println("查看一下是不是销售价格覆盖了"+respVO);
             respVO.setSaleOtherFees(sale.getOtherFees());
+            respVO.setSaleShippingFee(sale.getShippingFee()); // 直接使用销售表中的运费字段
 
             // 根据客户名称和组品ID查询销售价格
             if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
@@ -183,58 +253,10 @@ public class ErpDistributionController {
                 if (salePrice != null) {
                     respVO.setSalePrice(salePrice.getDistributionPrice());
 
-                    // 计算销售运费
-                    BigDecimal saleShippingFee = BigDecimal.ZERO;
-                    switch (salePrice.getShippingFeeType()) {
-                        case 0: // 固定运费
-                            saleShippingFee = salePrice.getFixedShippingFee();
-                            System.out.println("固定运费: " + saleShippingFee);
-                            break;
-                        case 1: // 按件计费
-                            int quantity = distribution.getProductQuantity();
-                            int additionalQuantity = salePrice.getAdditionalItemQuantity();
-                            BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
-
-                            if (additionalQuantity > 0) {
-                                int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
-                                saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
-                                System.out.println(String.format("按件计费 - 数量: %d, 附加件数量: %d, 附加件价格: %s, 运费: %s",
-                                        quantity, additionalQuantity, additionalPrice, saleShippingFee));
-                            }
-                            break;
-                        case 2: // 按重计费
-                            int quantity2 = distribution.getProductQuantity();
-                            ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
-                            BigDecimal productWeight = comboProduct.getWeight(); // 使用组品重量
-                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity2));
-
-                            System.out.println(String.format("按重计费 - 产品重量: %s, 数量: %d, 总重量: %s",
-                                    productWeight, quantity2, totalWeight));
-                            System.out.println(String.format("首重: %s, 首重价格: %s, 续重单位: %s, 续重价格: %s",
-                                    salePrice.getFirstWeight(), salePrice.getFirstWeightPrice(),
-                                    salePrice.getAdditionalWeight(), salePrice.getAdditionalWeightPrice()));
-
-                            if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
-                                saleShippingFee = salePrice.getFirstWeightPrice();
-                                System.out.println("总重量<=首重，运费=" + saleShippingFee);
-                            } else {
-                                BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
-                                BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
-                                saleShippingFee = salePrice.getFirstWeightPrice().add(
-                                        salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
-                                );
-                                System.out.println(String.format("总重量>首重 - 超出重量: %s, 续重单位数: %s, 运费: %s",
-                                        additionalWeight, additionalUnits, saleShippingFee));
-                            }
-                            break;
-                    }
-                    respVO.setSaleShippingFee(saleShippingFee);
-                    System.out.println("最终销售运费：" + saleShippingFee);
-
                     // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
                     BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
                             .multiply(new BigDecimal(distribution.getProductQuantity()))
-                            .add(saleShippingFee)
+                            .add(sale.getShippingFee() != null ? sale.getShippingFee() : BigDecimal.ZERO)
                             .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
                     respVO.setTotalSaleAmount(totalSaleAmount);
                 }
@@ -554,6 +576,7 @@ public class ErpDistributionController {
         if (sale != null) {
             BeanUtils.copyProperties(sale, respVO, "id");
             respVO.setSaleOtherFees(sale.getOtherFees());
+            respVO.setSaleShippingFee(sale.getShippingFee()); // 直接使用销售表中的运费字段
 
             // 根据客户名称和组品ID查询销售价格
             ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
@@ -563,45 +586,52 @@ public class ErpDistributionController {
                 if (salePrice != null) {
                     respVO.setSalePrice(salePrice.getDistributionPrice());
 
-                    // 计算销售运费
-                    BigDecimal saleShippingFee = BigDecimal.ZERO;
-                    switch (salePrice.getShippingFeeType()) {
-                        case 0: // 固定运费
-                            saleShippingFee = salePrice.getFixedShippingFee();
-                            break;
-                        case 1: // 按件计费
-                            int quantity = distribution.getProductQuantity();
-                            int additionalQuantity = salePrice.getAdditionalItemQuantity();
-                            BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
-
-                            if (additionalQuantity > 0) {
-                                int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
-                                saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
-                            }
-                            break;
-                        case 2: // 按重计费
-                            quantity = distribution.getProductQuantity();
-                            ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
-                            BigDecimal productWeight = comboProduct.getWeight();
-                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
-
-                            if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
-                                saleShippingFee = salePrice.getFirstWeightPrice();
-                            } else {
-                                BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
-                                BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
-                                saleShippingFee = salePrice.getFirstWeightPrice().add(
-                                        salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
-                                );
-                            }
-                            break;
-                    }
-                    respVO.setSaleShippingFee(saleShippingFee);
+//                    // 计算销售运费
+//                    BigDecimal saleShippingFee = BigDecimal.ZERO;
+//                    switch (salePrice.getShippingFeeType()) {
+//                        case 0: // 固定运费
+//                            saleShippingFee = salePrice.getFixedShippingFee();
+//                            break;
+//                        case 1: // 按件计费
+//                            int quantity = distribution.getProductQuantity();
+//                            int additionalQuantity = salePrice.getAdditionalItemQuantity();
+//                            BigDecimal additionalPrice = salePrice.getAdditionalItemPrice();
+//
+//                            if (additionalQuantity > 0) {
+//                                int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
+//                                saleShippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
+//                            }
+//                            break;
+//                        case 2: // 按重计费
+//                            quantity = distribution.getProductQuantity();
+//                            ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+//                            BigDecimal productWeight = comboProduct.getWeight();
+//                            BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
+//
+//                            if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
+//                                saleShippingFee = salePrice.getFirstWeightPrice();
+//                            } else {
+//                                BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
+//                                BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
+//                                saleShippingFee = salePrice.getFirstWeightPrice().add(
+//                                        salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
+//                                );
+//                            }
+//                            break;
+//                    }
+//                    respVO.setSaleShippingFee(saleShippingFee);
+//
+//                    // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
+//                    BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
+//                            .multiply(new BigDecimal(distribution.getProductQuantity()))
+//                            .add(saleShippingFee)
+//                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+//                    respVO.setTotalSaleAmount(totalSaleAmount);
 
                     // 计算销售总额 = 销售单价*数量 + 销售运费 + 销售其他费用
                     BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
                             .multiply(new BigDecimal(distribution.getProductQuantity()))
-                            .add(saleShippingFee)
+                            .add(sale.getShippingFee() != null ? sale.getShippingFee() : BigDecimal.ZERO)
                             .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
                     respVO.setTotalSaleAmount(totalSaleAmount);
                 }
