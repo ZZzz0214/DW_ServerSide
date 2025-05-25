@@ -116,4 +116,10 @@ public class ErpDistributionPurchaseAuditVO {
 
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
+
+    @Schema(description = "采购反审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseUnapproveTime;
+
+    @Schema(description = "采购审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseApprovalTime;
 }

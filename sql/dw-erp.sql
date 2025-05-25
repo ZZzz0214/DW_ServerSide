@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 22/05/2025 00:15:23
+ Date: 25/05/2025 19:07:15
 */
 
 SET NAMES utf8mb4;
@@ -81,7 +81,7 @@ CREATE TABLE `erp_combo_product`  (
 -- ----------------------------
 -- Records of erp_combo_product
 -- ----------------------------
-INSERT INTO `erp_combo_product` VALUES (35, 'ZPK20250504200153000001', '产品A*1 + 产品ABC*2', '123', '', '123', 3.00, '123', '123', 12.000000, 18.000000, NULL, 2, 50.00, 1, 10.00, 1.00, 5.00, 2.00, 10.00, 123, '', '2025-05-04 20:01:54', '', '2025-05-13 17:46:24', b'0', 1, 0);
+INSERT INTO `erp_combo_product` VALUES (35, 'ZPK20250504200153000001', '产品A*3 + 产品ABC*4', '123', '', '123', 7.00, '123', '123', 32.000000, 48.000000, NULL, 2, 50.00, 1, 10.00, 1.00, 5.00, 2.00, 10.00, 123, '', '2025-05-04 20:01:54', '', '2025-05-23 01:45:19', b'0', 1, 0);
 
 -- ----------------------------
 -- Table structure for erp_combo_product_item
@@ -101,13 +101,13 @@ CREATE TABLE `erp_combo_product_item`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_combo_product_id`(`combo_product_id` ASC) USING BTREE COMMENT '组合产品编号索引',
   INDEX `idx_item_product_id`(`item_product_id` ASC) USING BTREE COMMENT '单品产品编号索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 99 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '组合产品与单品关联表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 101 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '组合产品与单品关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_combo_product_item
 -- ----------------------------
-INSERT INTO `erp_combo_product_item` VALUES (97, 35, 14, 1, '', '2025-05-13 17:46:24', '', '2025-05-13 17:46:24', b'0', 1);
-INSERT INTO `erp_combo_product_item` VALUES (98, 35, 15, 2, '', '2025-05-13 17:46:24', '', '2025-05-13 17:46:24', b'0', 1);
+INSERT INTO `erp_combo_product_item` VALUES (99, 35, 14, 3, '', '2025-05-23 01:45:20', '', '2025-05-23 01:45:20', b'0', 1);
+INSERT INTO `erp_combo_product_item` VALUES (100, 35, 15, 4, '', '2025-05-23 01:45:20', '', '2025-05-23 01:45:20', b'0', 1);
 
 -- ----------------------------
 -- Table structure for erp_customer
@@ -136,7 +136,7 @@ CREATE TABLE `erp_customer`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 客户表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 客户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_customer
@@ -145,6 +145,7 @@ INSERT INTO `erp_customer` VALUES (3, '123123', NULL, NULL, NULL, NULL, NULL, NU
 INSERT INTO `erp_customer` VALUES (4, '123', NULL, NULL, NULL, NULL, NULL, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-14 17:35:06', '1', '2025-05-14 17:35:06', b'0', 1);
 INSERT INTO `erp_customer` VALUES (5, '帅哥', NULL, NULL, NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-20 12:59:51', '1', '2025-05-20 12:59:51', b'0', 1);
 INSERT INTO `erp_customer` VALUES (6, '大哥', NULL, NULL, NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-20 22:55:13', '1', '2025-05-20 22:55:13', b'0', 1);
+INSERT INTO `erp_customer` VALUES (7, '天才', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-22 14:59:05', '1', '2025-05-22 14:59:05', b'0', 1);
 
 -- ----------------------------
 -- Table structure for erp_distribution_base
@@ -161,7 +162,7 @@ CREATE TABLE `erp_distribution_base`  (
   `original_product_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原表商品',
   `original_standard` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原表规格',
   `original_quantity` int(11) NULL DEFAULT NULL COMMENT '原表数量',
-  `after_sales_status` int(11) NULL DEFAULT NULL COMMENT '售后状态',
+  `after_sales_status` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '售后状态',
   `remark` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注信息',
   `combo_product_id` bigint(20) NULL DEFAULT NULL COMMENT '组品编号',
   `product_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '产品名称（->组品编号）',
@@ -178,13 +179,18 @@ CREATE TABLE `erp_distribution_base`  (
   `order_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '订单号',
   `after_sales_time` datetime NULL DEFAULT NULL COMMENT '售后时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发基础表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发基础表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_distribution_base
 -- ----------------------------
-INSERT INTO `erp_distribution_base` VALUES (16, 'DFJL20250520130027000001', '123', '123', '123', '123', '123', '123', '123', 12, 123, '123', 35, '产品A*1 + 产品ABC*2', '123', 2, 1, b'0', '1', '2025-05-20 13:00:27', '1', '2025-05-20 13:00:27', 10, '123', '123', NULL);
-INSERT INTO `erp_distribution_base` VALUES (17, 'DFJL20250521165430000001', '顺丰', '555', '王林', '1515040', '广金', '权威', '545', 3, 213, '132', 35, '产品A*1 + 产品ABC*2', '123', 4, 1, b'0', '1', '2025-05-21 16:54:31', '1', '2025-05-21 16:54:31', 10, '555', '555', NULL);
+INSERT INTO `erp_distribution_base` VALUES (20, 'DFJL20250522021210000001', '123', '', '123', '123', '123', '', '123', 1, '123', NULL, 35, '产品A*1 + 产品ABC*2', '123', 1, 1, b'0', '1', '2025-05-22 02:12:11', '1', '2025-05-22 02:13:15', 10, '123', '123', '1970-01-01 08:00:00');
+INSERT INTO `erp_distribution_base` VALUES (21, 'DFJL20250522150515000001', '12312', '12313', '12315', '12316', '收件地址22', '', '123', 1, '1234562233', '123', 35, '产品A*1 + 产品ABC*2', '123', 3, 1, b'0', '1', '2025-05-22 15:05:15', '1', '2025-05-22 16:16:20', 10, '12314', '12311', '1970-01-01 08:00:00');
+INSERT INTO `erp_distribution_base` VALUES (22, 'DFJL20250522164808000001', '1232', '1232', '谢政2', '131435805172', '1232', '1232', '1232', 1, '我爱1231234455678912', '1232', 35, '产品A*1 + 产品ABC*2', '123', 2, 1, b'0', '1', '2025-05-22 16:48:09', '1', '2025-05-22 22:32:48', 10, '1232', '1232', '2025-05-22 22:32:25');
+INSERT INTO `erp_distribution_base` VALUES (23, 'DFJL20250522232418000001', '123', '123', '天才', '12316', '收件地址22', '123', '123', 1, '123', '123', 35, '产品A*1 + 产品ABC*2', '123', 1, 1, b'0', '1', '2025-05-22 23:24:19', '1', '2025-05-22 23:24:19', 10, '123', '123', '2025-05-22 23:24:17');
+INSERT INTO `erp_distribution_base` VALUES (24, 'DFJL20250522232510000001', '123', '123', '天才', '12316', '123', '', '123', 1, '123', '123', 35, '产品A*1 + 产品ABC*2', '123', 3, 1, b'0', '1', '2025-05-22 23:25:10', '1', '2025-05-22 23:25:10', 10, '123', '123', '2025-05-22 23:25:07');
+INSERT INTO `erp_distribution_base` VALUES (25, 'DFJL20250522233106000001', '物流公司1', '123', '收件姓名', '13132', '收件地址', '123', '123', 3, '123', '123', 35, '产品A*1 + 产品ABC*2', '123', 3, 1, b'0', '1', '2025-05-22 23:31:07', '1', '2025-05-22 23:31:07', 10, '123', '111', '2025-05-22 23:30:50');
+INSERT INTO `erp_distribution_base` VALUES (26, 'DFJL20250522233850000001', '123', '123', '收件姓名', '13132', '1', '', '123', 2, '123', '123', 35, '产品A*1 + 产品ABC*2', '123', 2, 1, b'0', '1', '2025-05-22 23:38:50', '1', '2025-05-22 23:38:50', 10, '123', '111', '2025-05-22 23:38:48');
 
 -- ----------------------------
 -- Table structure for erp_distribution_purchase
@@ -213,15 +219,21 @@ CREATE TABLE `erp_distribution_purchase`  (
   `purchase_after_sales_time` datetime NULL DEFAULT NULL COMMENT '采购售后时间',
   `purchase_audit_status` int(11) NULL DEFAULT NULL COMMENT '采购审核状态',
   `purchase_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '采购备注信息',
+  `purchase_unapprove_time` datetime NULL DEFAULT NULL COMMENT '采购反审批时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `combo_product_id`(`combo_product_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发采购表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '代发采购表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_distribution_purchase
 -- ----------------------------
-INSERT INTO `erp_distribution_purchase` VALUES (19, 16, 35, '123', '123', 12.00, 35.00, 1.00, 60.00, 1, b'0', '1', '2025-05-20 13:00:27', '1', '2025-05-20 13:00:27', 30, NULL, NULL, NULL, NULL, 10, NULL);
-INSERT INTO `erp_distribution_purchase` VALUES (20, 17, 35, '123', '123', 12.00, 65.00, 1.00, 114.00, 1, b'0', '1', '2025-05-21 16:54:31', '1', '2025-05-21 16:54:31', 30, NULL, NULL, NULL, NULL, 10, NULL);
+INSERT INTO `erp_distribution_purchase` VALUES (23, 20, 35, '123', '123', 12.00, 15.00, 1.00, 28.00, 1, b'0', '1', '2025-05-22 02:12:11', '1', '2025-05-22 02:12:11', 30, NULL, NULL, NULL, NULL, 10, NULL, NULL);
+INSERT INTO `erp_distribution_purchase` VALUES (24, 21, 35, '123', '123', 12.00, 45.00, 1.00, 82.00, 1, b'0', '1', '2025-05-22 15:05:15', '1', '2025-05-22 16:07:44', 30, NULL, NULL, NULL, NULL, 10, NULL, NULL);
+INSERT INTO `erp_distribution_purchase` VALUES (25, 22, 35, '123', '123', 12.00, 35.00, 2.00, 61.00, 1, b'0', '1', '2025-05-22 16:48:09', '1', '2025-05-25 18:25:59', 30, NULL, 4.00, NULL, '2025-05-30 17:30:35', 10, NULL, '2025-05-25 18:25:59');
+INSERT INTO `erp_distribution_purchase` VALUES (26, 23, 35, '123', '123', 12.00, 15.00, 1.00, 28.00, 1, b'0', '1', '2025-05-22 23:24:20', '1', '2025-05-25 18:28:05', 30, NULL, NULL, '2025-05-25 18:27:25', NULL, 10, NULL, '2025-05-25 18:28:05');
+INSERT INTO `erp_distribution_purchase` VALUES (27, 24, 35, '123', '123', 12.00, 45.00, 1.00, 82.00, 1, b'0', '1', '2025-05-22 23:25:10', '1', '2025-05-25 18:31:06', 30, NULL, NULL, '2025-05-25 18:26:22', NULL, 10, NULL, '2025-05-25 18:31:06');
+INSERT INTO `erp_distribution_purchase` VALUES (28, 25, 35, '123', '123', 12.00, 15.00, 3.00, 30.00, 1, b'0', '1', '2025-05-22 23:31:07', '1', '2025-05-25 18:37:03', 30, NULL, NULL, '2025-05-25 18:35:47', NULL, 10, '采购备注', '2025-05-25 18:37:03');
+INSERT INTO `erp_distribution_purchase` VALUES (29, 26, 35, '123', '123', 12.00, 15.00, 1.00, 28.00, 1, b'0', '1', '2025-05-22 23:38:50', '1', '2025-05-25 19:06:46', 30, NULL, NULL, '2025-05-25 19:06:26', NULL, 10, '采购备注', '2025-05-25 19:06:46');
 
 -- ----------------------------
 -- Table structure for erp_distribution_sale
@@ -249,15 +261,52 @@ CREATE TABLE `erp_distribution_sale`  (
   `sale_after_sales_time` datetime NULL DEFAULT NULL COMMENT '销售售后时间',
   `sale_audit_status` int(11) NULL DEFAULT NULL COMMENT '销售审核状态',
   `sale_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '出货备注信息',
+  `transfer_person` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '中转人员',
+  `sale_approval_time` datetime NULL DEFAULT NULL COMMENT '销售审批时间',
+  `sale_unapprove_time` datetime NULL DEFAULT NULL COMMENT '销售反审批时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `sale_price_id`(`sale_price_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '代发销售表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '代发销售表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_distribution_sale
 -- ----------------------------
-INSERT INTO `erp_distribution_sale` VALUES (15, 16, NULL, '0', '帅哥', 0.00, 35.00, 1.00, 1.00, 1, b'0', '1', '2025-05-20 13:00:27', '1', '2025-05-20 13:00:27', 30, NULL, NULL, NULL, 10, NULL);
-INSERT INTO `erp_distribution_sale` VALUES (16, 17, NULL, '0', '123123', 11.00, 65.00, 1.00, 55.00, 1, b'0', '1', '2025-05-21 16:54:31', '1', '2025-05-21 16:54:31', 30, NULL, NULL, NULL, 10, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (19, 20, NULL, '帅哥', '帅哥', 1.00, 15.00, 1.00, 12.00, 1, b'0', '1', '2025-05-22 02:12:11', '1', '2025-05-22 02:12:11', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (20, 21, NULL, '0', '天才', 0.00, 45.00, 1.00, 1.00, 1, b'0', '1', '2025-05-22 15:05:15', '1', '2025-05-22 15:05:15', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (21, 22, NULL, '帅哥', '天才', 1.00, 35.00, 6.00, 18.00, 1, b'0', '1', '2025-05-22 16:48:09', '1', '2025-05-22 22:32:48', 30, NULL, 1.00, '2025-05-23 17:55:12', 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (22, 23, NULL, '帅哥', '天才', 1.00, 15.00, 1.00, 12.00, 1, b'0', '1', '2025-05-22 23:24:20', '1', '2025-05-22 23:24:20', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (23, 24, NULL, '帅哥', '天才', 1.00, 45.00, 1.00, 14.00, 1, b'0', '1', '2025-05-22 23:25:10', '1', '2025-05-22 23:25:10', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (24, 25, NULL, '帅哥', '天才', 1.00, 15.00, 1.00, 12.00, 1, b'0', '1', '2025-05-22 23:31:07', '1', '2025-05-22 23:31:07', 30, NULL, NULL, NULL, 10, '出货备注', NULL, NULL, NULL);
+INSERT INTO `erp_distribution_sale` VALUES (25, 26, NULL, '帅哥', '天才', 1.00, 15.00, 1.00, 12.00, 1, b'0', '1', '2025-05-22 23:38:50', '1', '2025-05-25 19:06:52', 30, NULL, NULL, NULL, 10, '额\n出货备注', '	\n中转人员', '2025-05-25 19:06:33', '2025-05-25 19:06:52');
+
+-- ----------------------------
+-- Table structure for erp_dropship_assist
+-- ----------------------------
+DROP TABLE IF EXISTS `erp_dropship_assist`;
+CREATE TABLE `erp_dropship_assist`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '代发辅助表编号',
+  `no` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '编号',
+  `original_product` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '原表商品',
+  `original_spec` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '原表规格',
+  `original_quantity` int(11) NOT NULL COMMENT '原表数量',
+  `combo_product_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '组品编号',
+  `product_spec` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '产品规格',
+  `product_quantity` int(11) NOT NULL COMMENT '产品数量',
+  `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT '' COMMENT '创建者',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT '' COMMENT '更新者',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
+  `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 代发辅助表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of erp_dropship_assist
+-- ----------------------------
+INSERT INTO `erp_dropship_assist` VALUES (1, 'dffz20250525171112000001', '1232', '1232', 2, '35', '1232', 2, '1', '2025-05-25 17:11:13', '1', '2025-05-25 17:12:38', b'1', 1);
+INSERT INTO `erp_dropship_assist` VALUES (2, 'dffz20250525171232000001', '2', '2', 1, '35', '123', 1, '1', '2025-05-25 17:12:32', '1', '2025-05-25 17:12:35', b'1', 1);
+INSERT INTO `erp_dropship_assist` VALUES (3, 'dffz20250525183028000001', '123', '123', 1, '35', '123', 1, '1', '2025-05-25 18:30:29', '1', '2025-05-25 18:30:29', b'0', 1);
 
 -- ----------------------------
 -- Table structure for erp_finance_payment
@@ -282,7 +331,7 @@ CREATE TABLE `erp_finance_payment`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 付款单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 付款单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_finance_payment
@@ -317,7 +366,7 @@ CREATE TABLE `erp_finance_payment_item`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 付款项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 付款项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_finance_payment_item
@@ -354,7 +403,7 @@ CREATE TABLE `erp_finance_receipt`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 收款单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 收款单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_finance_receipt
@@ -391,7 +440,7 @@ CREATE TABLE `erp_finance_receipt_item`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 收款项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 收款项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_finance_receipt_item
@@ -446,7 +495,7 @@ CREATE TABLE `erp_group_buying`  (
   `deleted` bit(1) NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 团购货盘表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 团购货盘表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_group_buying
@@ -479,7 +528,7 @@ CREATE TABLE `erp_group_buying_info`  (
   `deleted` bit(1) NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 团购信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 团购信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_group_buying_info
@@ -513,7 +562,7 @@ CREATE TABLE `erp_group_buying_review`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_customer_id`(`customer_id` ASC) USING BTREE,
   INDEX `idx_group_buying_id`(`group_buying_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 团购复盘表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 团购复盘表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_group_buying_review
@@ -542,7 +591,7 @@ CREATE TABLE `erp_inventory`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_product_id`(`product_id` ASC) USING BTREE COMMENT '单品ID索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '库存表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '库存表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_inventory
@@ -555,7 +604,7 @@ INSERT INTO `erp_inventory` VALUES (5, 'CKJL20250518231601000001', 15, 1, 1, '12
 INSERT INTO `erp_inventory` VALUES (6, 'CKJL20250520001841000001', 35, 1, 1, '13', '1', '2025-05-20 00:18:42', '1', '2025-05-21 16:13:24', b'1', 1);
 INSERT INTO `erp_inventory` VALUES (7, 'CKJL20250521161307000001', 15, 1, 1, '备注', '1', '2025-05-21 16:13:08', '1', '2025-05-21 16:13:24', b'1', 1);
 INSERT INTO `erp_inventory` VALUES (8, 'CKJL20250521161330000001', 15, 2, 2, '123', '1', '2025-05-21 16:13:30', '1', '2025-05-21 16:13:30', b'0', 1);
-INSERT INTO `erp_inventory` VALUES (9, 'CKJL20250521161400000001', 15, 2, 2, '1232', '1', '2025-05-21 16:14:01', '1', '2025-05-21 16:14:24', b'0', 1);
+INSERT INTO `erp_inventory` VALUES (9, 'CKJL20250521161400000001', 14, 2, 2, '1232', '1', '2025-05-21 16:14:01', '1', '2025-05-23 00:51:45', b'0', 1);
 
 -- ----------------------------
 -- Table structure for erp_live_broadcasting
@@ -589,7 +638,7 @@ CREATE TABLE `erp_live_broadcasting`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_brand_id`(`brand_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 直播货盘表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 直播货盘表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_live_broadcasting
@@ -624,7 +673,7 @@ CREATE TABLE `erp_live_broadcasting_info`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_customer_id`(`customer_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 直播信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 直播信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_live_broadcasting_info
@@ -659,7 +708,7 @@ CREATE TABLE `erp_live_broadcasting_review`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_live_broadcasting_id`(`live_broadcasting_id` ASC) USING BTREE,
   INDEX `idx_customer_id`(`customer_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 直播复盘表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 直播复盘表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_live_broadcasting_review
@@ -686,7 +735,7 @@ CREATE TABLE `erp_notebook`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 记事本表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 记事本表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_notebook
@@ -694,7 +743,7 @@ CREATE TABLE `erp_notebook`  (
 INSERT INTO `erp_notebook` VALUES (1, 'JSB20250519003805000001', '', '任务A b', 1, '张撕', '备注123', '1', '2025-05-19 00:38:06', '1', '2025-05-19 00:38:44', b'1', 1);
 INSERT INTO `erp_notebook` VALUES (2, 'JSB20250519003836000001', '', '123', 0, '123', '123', '1', '2025-05-19 00:38:36', '1', '2025-05-19 00:38:41', b'1', 1);
 INSERT INTO `erp_notebook` VALUES (3, 'JSB20250521161525000001', '', '1232', 2, '大哥2', '备注2', '1', '2025-05-21 16:15:26', '1', '2025-05-21 16:49:40', b'1', 1);
-INSERT INTO `erp_notebook` VALUES (4, 'JSB20250521164950000001', '', '123', 1, '1', '123', '1', '2025-05-21 16:49:50', '1', '2025-05-21 16:55:57', b'0', 1);
+INSERT INTO `erp_notebook` VALUES (4, 'JSB20250521164950000001', '', '123', 0, '0', '123', '1', '2025-05-21 16:49:50', '1', '2025-05-23 00:56:58', b'0', 1);
 
 -- ----------------------------
 -- Table structure for erp_private_broadcasting
@@ -729,7 +778,7 @@ CREATE TABLE `erp_private_broadcasting`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_brand_id`(`brand_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 私播货盘表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 私播货盘表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_private_broadcasting
@@ -796,7 +845,7 @@ CREATE TABLE `erp_private_broadcasting_review`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_private_broadcasting_id`(`private_broadcasting_id` ASC) USING BTREE,
   INDEX `idx_customer_id`(`customer_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 私播复盘表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 私播复盘表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_private_broadcasting_review
@@ -971,7 +1020,7 @@ CREATE TABLE `erp_purchase_in`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `no`(`no` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 采购入库表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 采购入库表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_purchase_in
@@ -1002,7 +1051,7 @@ CREATE TABLE `erp_purchase_in_items`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售入库项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售入库项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_purchase_in_items
@@ -1238,7 +1287,7 @@ CREATE TABLE `erp_sale_order`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `no`(`no` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售订单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售订单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_sale_order
@@ -1284,7 +1333,7 @@ CREATE TABLE `erp_sale_order_items`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   `shipping_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '发货编码',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售订单项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售订单项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_sale_order_items
@@ -1394,7 +1443,7 @@ CREATE TABLE `erp_sale_price`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除（0：未删除，1：已删除）',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 65 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售价格表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 66 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售价格表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_sale_price
@@ -1402,6 +1451,7 @@ CREATE TABLE `erp_sale_price`  (
 INSERT INTO `erp_sale_price` VALUES (62, 'XSJG20250508141933000001', 35, '', '产品A*1+产品ABC*1', '123', '123123', 11.000000, 20.000000, NULL, 0, 10.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-08 14:19:34', '1', '2025-05-08 14:51:44', b'0', 1);
 INSERT INTO `erp_sale_price` VALUES (63, 'XSJG20250514173532000001', 35, '', '产品A*1+产品ABC*2', '123', '123', 2.000000, 3.000000, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-14 17:35:33', '1', '2025-05-14 17:35:33', b'0', 1);
 INSERT INTO `erp_sale_price` VALUES (64, 'XSJG20250520224630000001', 35, '', '产品A*1+产品ABC*2', '123', '帅哥', 1.000000, 1.000000, NULL, 0, 10.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '1', '2025-05-20 22:46:31', '1', '2025-05-20 22:46:31', b'0', 1);
+INSERT INTO `erp_sale_price` VALUES (65, 'XSJG20250522150622000001', 35, '', '产品A*1+产品ABC*2', '123', '天才', 1.000000, 2.000000, NULL, 1, NULL, NULL, NULL, 5, 10.00, NULL, NULL, NULL, NULL, '1', '2025-05-22 15:06:22', '1', '2025-05-22 15:06:22', b'0', 1);
 
 -- ----------------------------
 -- Table structure for erp_sale_return
@@ -1492,7 +1542,7 @@ CREATE TABLE `erp_salesperson`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除（0：未删除，1：已删除）',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售人员表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 销售人员表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_salesperson
@@ -1525,7 +1575,7 @@ CREATE TABLE `erp_sample`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 样品表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 样品表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_sample
@@ -1576,7 +1626,7 @@ CREATE TABLE `erp_stock_check`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 库存盘点单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 库存盘点单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_stock_check
@@ -1606,7 +1656,7 @@ CREATE TABLE `erp_stock_check_item`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 库存盘点项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 库存盘点项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_stock_check_item
@@ -1634,7 +1684,7 @@ CREATE TABLE `erp_stock_in`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它入库单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它入库单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_stock_in
@@ -1665,7 +1715,7 @@ CREATE TABLE `erp_stock_in_item`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它入库单项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它入库单项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_stock_in_item
@@ -1751,7 +1801,7 @@ CREATE TABLE `erp_stock_out`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它入库单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它入库单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_stock_out
@@ -1779,7 +1829,7 @@ CREATE TABLE `erp_stock_out_item`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它出库单项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 其它出库单项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_stock_out_item
@@ -1869,7 +1919,7 @@ CREATE TABLE `erp_warehouse`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 仓库表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 仓库表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_warehouse
@@ -1904,12 +1954,16 @@ CREATE TABLE `erp_wholesale_base`  (
   `logistics_number` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '物流单号',
   `after_sales_time` datetime NULL DEFAULT NULL COMMENT '售后时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发基础表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发基础表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_base
 -- ----------------------------
-INSERT INTO `erp_wholesale_base` VALUES (12, 'PFJL20250514174212000001', '', '', '', NULL, NULL, 35, '产品A*1 + 产品ABC*2', '', 4, 1, b'0', '1', '2025-05-14 17:42:12', '1', '2025-05-14 17:42:12', 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_base` VALUES (18, 'PFJL20250522005328000001', '123', '13143580517', '收件地址', 123, NULL, 35, '产品A*1 + 产品ABC*2', '', 1, 1, b'0', '1', '2025-05-22 00:53:28', '1', '2025-05-22 00:53:28', 10, NULL, '123', NULL, '1970-01-01 08:00:00');
+INSERT INTO `erp_wholesale_base` VALUES (19, 'PFJL20250522224703000001', '谢政', '13143580517', '123', 123, '123', 35, '产品A*1 + 产品ABC*2', '', 3, 1, b'0', '1', '2025-05-22 22:47:03', '1', '2025-05-22 22:47:03', 10, NULL, '123', NULL, '1970-01-01 08:00:00');
+INSERT INTO `erp_wholesale_base` VALUES (20, 'PFJL20250522230630000001', '谢政', '13143580517', '123', 123, '123', 35, '产品A*1 + 产品ABC*2', '123', 3, 1, b'0', '1', '2025-05-22 23:06:30', '1', '2025-05-22 23:06:40', 10, NULL, '123', '1234', '1970-01-01 08:00:00');
+INSERT INTO `erp_wholesale_base` VALUES (21, 'PFJL20250522234934000001', '谢政', '13143580517', '123', 123, '123', 35, '产品A*1 + 产品ABC*2', '', 2, 1, b'0', '1', '2025-05-22 23:49:35', '1', '2025-05-22 23:49:35', 10, NULL, '123', '123', '1970-01-01 08:00:00');
+INSERT INTO `erp_wholesale_base` VALUES (22, 'PFJL20250522235505000001', '谢政', '13143580517', '123', 123, '123', 35, '产品A*1 + 产品ABC*2', '123', 2, 1, b'0', '1', '2025-05-22 23:55:05', '1', '2025-05-22 23:55:18', 10, NULL, '123', '123', '1970-01-01 08:00:00');
 
 -- ----------------------------
 -- Table structure for erp_wholesale_purchase
@@ -1938,15 +1992,21 @@ CREATE TABLE `erp_wholesale_purchase`  (
   `purchase_after_sales_time` datetime NULL DEFAULT NULL COMMENT '采购售后时间',
   `purchase_audit_status` int(11) NULL DEFAULT NULL COMMENT '采购审核状态',
   `purchase_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '采购备注信息',
+  `purchase_approval_time` datetime NULL DEFAULT NULL COMMENT '批发采购审批时间',
+  `purchase_unapprove_time` datetime NULL DEFAULT NULL COMMENT '批发采购反审批时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `combo_product_id`(`combo_product_id` ASC) USING BTREE,
   CONSTRAINT `erp_wholesale_purchase_ibfk_1` FOREIGN KEY (`combo_product_id`) REFERENCES `erp_combo_product` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发采购表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发采购表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_purchase
 -- ----------------------------
-INSERT INTO `erp_wholesale_purchase` VALUES (12, 12, 35, '123', '123', 18.00, 1.00, 65.00, 1.00, 139.00, 1, b'0', '1', '2025-05-14 17:42:12', '1', '2025-05-14 17:42:12', 30, NULL, NULL, NULL, 10, NULL);
+INSERT INTO `erp_wholesale_purchase` VALUES (18, 18, 35, '123', '123', 18.00, 1.00, 15.00, 6.00, 40.00, 1, b'0', '1', '2025-05-22 00:53:28', '1', '2025-05-22 00:53:28', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_purchase` VALUES (19, 19, 35, '123', '123', 18.00, 1.00, 15.00, 1.00, 35.00, 1, b'0', '1', '2025-05-22 22:47:03', '1', '2025-05-22 22:47:03', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_purchase` VALUES (20, 20, 35, '123', '123', 18.00, 1.00, 45.00, 1.00, 101.00, 1, b'0', '1', '2025-05-22 23:06:30', '1', '2025-05-22 23:06:40', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_purchase` VALUES (21, 21, 35, '123', '123', 18.00, 2.00, 35.00, 2.00, 75.00, 1, b'0', '1', '2025-05-22 23:49:35', '1', '2025-05-25 19:00:30', 30, NULL, NULL, NULL, 10, NULL, '2025-05-25 19:00:11', '2025-05-25 19:00:30');
+INSERT INTO `erp_wholesale_purchase` VALUES (22, 22, 35, '123', '123', 18.00, 1.00, 35.00, 2.00, 73.00, 1, b'0', '1', '2025-05-22 23:55:05', '1', '2025-05-25 19:06:48', 30, NULL, NULL, NULL, 10, '	\n采购备注2', '2025-05-25 19:06:29', '2025-05-25 19:06:48');
 
 -- ----------------------------
 -- Table structure for erp_wholesale_purchase_order
@@ -2065,15 +2125,22 @@ CREATE TABLE `erp_wholesale_sale`  (
   `sale_after_sales_time` datetime NULL DEFAULT NULL COMMENT '销售售后时间',
   `sale_audit_status` int(11) NULL DEFAULT NULL COMMENT '销售审核状态',
   `sale_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '出货备注信息',
+  `transfer_person` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '中转人员',
+  `sale_approval_time` datetime NULL DEFAULT NULL COMMENT '批发销售审批时间',
+  `sale_unapprove_time` datetime NULL DEFAULT NULL COMMENT '批发销售反审批时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `sale_price_id`(`sale_price_id` ASC) USING BTREE,
   CONSTRAINT `erp_wholesale_sale_ibfk_1` FOREIGN KEY (`sale_price_id`) REFERENCES `erp_sale_price` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发销售表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发销售表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_sale
 -- ----------------------------
-INSERT INTO `erp_wholesale_sale` VALUES (11, 12, NULL, '', '', 0.00, 1.00, 65.00, 1.00, 0.00, 1, b'0', '1', '2025-05-14 17:42:12', '1', '2025-05-14 17:42:12', 30, NULL, NULL, NULL, 10, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (17, 18, NULL, '帅哥', '帅哥', 1.00, 1.00, 15.00, 3.00, 15.00, 1, b'0', '1', '2025-05-22 00:53:28', '1', '2025-05-22 00:53:28', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (18, 19, NULL, '帅哥', '天才', 2.00, 1.00, 15.00, 1.00, 14.00, 1, b'0', '1', '2025-05-22 22:47:03', '1', '2025-05-22 22:47:03', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (19, 20, NULL, '帅哥', '天才', 2.00, 1.00, 45.00, 1.00, 18.00, 1, b'0', '1', '2025-05-22 23:06:31', '1', '2025-05-22 23:06:40', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
+INSERT INTO `erp_wholesale_sale` VALUES (20, 21, NULL, '帅哥', '天才', 2.00, 1.00, 35.00, 3.00, 16.00, 1, b'0', '1', '2025-05-22 23:49:35', '1', '2025-05-25 19:06:17', 30, NULL, NULL, NULL, 10, NULL, NULL, '2025-05-25 19:05:54', '2025-05-25 19:06:17');
+INSERT INTO `erp_wholesale_sale` VALUES (21, 22, NULL, '帅哥', '天才', 2.00, 1.00, 35.00, 5.00, 16.00, 1, b'0', '1', '2025-05-22 23:55:05', '1', '2025-05-25 19:06:55', 30, NULL, NULL, NULL, 10, '出货备注2', '中转人员2', '2025-05-25 19:06:36', '2025-05-25 19:06:55');
 
 -- ----------------------------
 -- Table structure for erp_wholesale_sale_order
@@ -2117,7 +2184,7 @@ CREATE TABLE `erp_wholesale_sale_order`  (
   `total_hulala_fee` decimal(24, 6) NULL DEFAULT 0.000000 COMMENT '货拉拉费用合计',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `no`(`no` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 批发销售订单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 批发销售订单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_sale_order
@@ -2168,7 +2235,7 @@ CREATE TABLE `erp_wholesale_sale_order_items`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   `hulala_fee` decimal(10, 2) NULL DEFAULT 0.00 COMMENT '货拉拉费用',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 批发销售订单项表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 批发销售订单项表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_sale_order_items
@@ -2256,7 +2323,7 @@ CREATE TABLE `infra_api_error_log`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 21416 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统异常日志' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 21423 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统异常日志' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of infra_api_error_log
@@ -2454,6 +2521,10 @@ INSERT INTO `infra_api_error_log` VALUES (21415, '', 1, 2, 'yudao-server', 'POST
 INSERT INTO `infra_api_error_log` VALUES (21416, '', 1, 2, 'yudao-server', 'POST', '/admin-api/erp/distribution/create', '{\"query\":{},\"body\":\"{\\\"remark\\\":\\\"123\\\",\\\"fileUrl\\\":\\\"\\\",\\\"items\\\":[{\\\"productId\\\":35,\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"shippingCode\\\":\\\"123\\\",\\\"purchaser\\\":\\\"123\\\",\\\"supplier\\\":\\\"123\\\",\\\"purchasePrice\\\":12,\\\"shippingFee\\\":105,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":190,\\\"purchaseRemark\\\":\\\"\\\",\\\"count\\\":7,\\\"shippingFeeType\\\":2,\\\"fixedShippingFee\\\":50,\\\"additionalItemQuantity\\\":1,\\\"additionalItemPrice\\\":10,\\\"weight\\\":3,\\\"firstWeight\\\":1,\\\"firstWeightPrice\\\":5,\\\"additionalWeight\\\":2,\\\"additionalWeightPrice\\\":10,\\\"totalProductPrice\\\":190}],\\\"saleItems\\\":[{\\\"salesperson\\\":\\\"帅哥\\\",\\\"customerName\\\":\\\"帅哥\\\",\\\"salePrice\\\":1,\\\"saleShippingFee\\\":10,\\\"saleOtherFees\\\":1,\\\"totalSaleAmount\\\":18,\\\"saleRemark\\\":\\\"\\\",\\\"count\\\":7,\\\"shippingFeeType\\\":0,\\\"fixedShippingFee\\\":10,\\\"additionalItemQuantity\\\":null,\\\"additionalItemPrice\\\":null,\\\"firstWeight\\\":null,\\\"firstWeightPrice\\\":null,\\\"additionalWeight\\\":null,\\\"additionalWeightPrice\\\":null}],\\\"comboProductId\\\":35,\\\"logisticsCompany\\\":\\\"123\\\",\\\"trackingNumber\\\":\\\"123\\\",\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"productQuantity\\\":7,\\\"shippingCode\\\":\\\"123\\\",\\\"originalProductName\\\":\\\"\\\",\\\"originalStandard\\\":\\\"123\\\",\\\"originalQuantity\\\":1,\\\"receiverName\\\":\\\"谢政\\\",\\\"receiverPhone\\\":\\\"13143580517\\\",\\\"receiverAddress\\\":\\\"123\\\",\\\"afterSalesStatus\\\":\\\"123\\\",\\\"afterSalesTime\\\":\\\"2025-05-21 14:00:24\\\",\\\"productSpecification\\\":\\\"123\\\",\\\"purchaser\\\":\\\"123\\\",\\\"supplier\\\":\\\"123\\\",\\\"purchasePrice\\\":12,\\\"shippingFee\\\":105,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":190,\\\"salesperson\\\":\\\"帅哥\\\",\\\"customerName\\\":\\\"帅哥\\\",\\\"salePrice\\\":1,\\\"saleShippingFee\\\":10,\\\"saleOtherFees\\\":1,\\\"totalSaleAmount\\\":18,\\\"orderNumber\\\":\\\"123\\\"}\"}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-21 22:00:28', 'org.springframework.jdbc.BadSqlGrammarException', 'BadSqlGrammarException: \r\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n### The error may exist in cn/iocoder/yudao/module/erp/dal/mysql/distribution/ErpDistributionMapper.java (best guess)\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: SELECT id, no, logistics_company, tracking_number, receiver_name, receiver_phone, receiver_address, original_product_name, original_standard, original_quantity, after_sales_status, after_sales_time, remark, combo_product_id, product_name, shipping_code, product_quantity, tenant_id, deleted, status, product_specification, order_number, create_time, update_time, creator, updater FROM erp_distribution_base WHERE (no = ?) AND tenant_id = 1\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'', 'SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'', 'org.springframework.jdbc.BadSqlGrammarException: \r\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n### The error may exist in cn/iocoder/yudao/module/erp/dal/mysql/distribution/ErpDistributionMapper.java (best guess)\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: SELECT id, no, logistics_company, tracking_number, receiver_name, receiver_phone, receiver_address, original_product_name, original_standard, original_quantity, after_sales_status, after_sales_time, remark, combo_product_id, product_name, shipping_code, product_quantity, tenant_id, deleted, status, product_specification, order_number, create_time, update_time, creator, updater FROM erp_distribution_base WHERE (no = ?) AND tenant_id = 1\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n	at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:236)\r\n	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:73)\r\n	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92)\r\n	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy131.selectList(Unknown Source)\r\n	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy454.selectList(Unknown Source)\r\n	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:332)\r\n	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy454.selectOne(Unknown Source)\r\n	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:321)\r\n	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(Mybatis', 'org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator', 'SQLErrorCodeSQLExceptionTranslator.java', 'doTranslate', 236, 0, NULL, 0, NULL, '2025-05-21 22:00:28', NULL, '2025-05-21 22:00:28', b'0', 1);
 INSERT INTO `infra_api_error_log` VALUES (21417, '', 1, 2, 'yudao-server', 'POST', '/admin-api/erp/distribution/create', '{\"query\":{},\"body\":\"{\\\"remark\\\":\\\"123\\\",\\\"fileUrl\\\":\\\"\\\",\\\"items\\\":[{\\\"productId\\\":35,\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"shippingCode\\\":\\\"123\\\",\\\"purchaser\\\":\\\"123\\\",\\\"supplier\\\":\\\"123\\\",\\\"purchasePrice\\\":12,\\\"shippingFee\\\":105,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":190,\\\"purchaseRemark\\\":\\\"\\\",\\\"count\\\":7,\\\"shippingFeeType\\\":2,\\\"fixedShippingFee\\\":50,\\\"additionalItemQuantity\\\":1,\\\"additionalItemPrice\\\":10,\\\"weight\\\":3,\\\"firstWeight\\\":1,\\\"firstWeightPrice\\\":5,\\\"additionalWeight\\\":2,\\\"additionalWeightPrice\\\":10,\\\"totalProductPrice\\\":190}],\\\"saleItems\\\":[{\\\"salesperson\\\":\\\"帅哥\\\",\\\"customerName\\\":\\\"帅哥\\\",\\\"salePrice\\\":1,\\\"saleShippingFee\\\":10,\\\"saleOtherFees\\\":1,\\\"totalSaleAmount\\\":18,\\\"saleRemark\\\":\\\"\\\",\\\"count\\\":7,\\\"shippingFeeType\\\":0,\\\"fixedShippingFee\\\":10,\\\"additionalItemQuantity\\\":null,\\\"additionalItemPrice\\\":null,\\\"firstWeight\\\":null,\\\"firstWeightPrice\\\":null,\\\"additionalWeight\\\":null,\\\"additionalWeightPrice\\\":null}],\\\"comboProductId\\\":35,\\\"logisticsCompany\\\":\\\"123\\\",\\\"trackingNumber\\\":\\\"123\\\",\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"productQuantity\\\":7,\\\"shippingCode\\\":\\\"123\\\",\\\"originalProductName\\\":\\\"\\\",\\\"originalStandard\\\":\\\"123\\\",\\\"originalQuantity\\\":1,\\\"receiverName\\\":\\\"谢政\\\",\\\"receiverPhone\\\":\\\"13143580517\\\",\\\"receiverAddress\\\":\\\"123\\\",\\\"afterSalesStatus\\\":\\\"123\\\",\\\"afterSalesTime\\\":\\\"2025-05-21 14:00:24\\\",\\\"productSpecification\\\":\\\"123\\\",\\\"purchaser\\\":\\\"123\\\",\\\"supplier\\\":\\\"123\\\",\\\"purchasePrice\\\":12,\\\"shippingFee\\\":105,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":190,\\\"salesperson\\\":\\\"帅哥\\\",\\\"customerName\\\":\\\"帅哥\\\",\\\"salePrice\\\":1,\\\"saleShippingFee\\\":10,\\\"saleOtherFees\\\":1,\\\"totalSaleAmount\\\":18,\\\"orderNumber\\\":\\\"123\\\"}\"}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-21 22:00:36', 'org.springframework.jdbc.BadSqlGrammarException', 'BadSqlGrammarException: \r\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n### The error may exist in cn/iocoder/yudao/module/erp/dal/mysql/distribution/ErpDistributionMapper.java (best guess)\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: SELECT id, no, logistics_company, tracking_number, receiver_name, receiver_phone, receiver_address, original_product_name, original_standard, original_quantity, after_sales_status, after_sales_time, remark, combo_product_id, product_name, shipping_code, product_quantity, tenant_id, deleted, status, product_specification, order_number, create_time, update_time, creator, updater FROM erp_distribution_base WHERE (no = ?) AND tenant_id = 1\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'', 'SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'', 'org.springframework.jdbc.BadSqlGrammarException: \r\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n### The error may exist in cn/iocoder/yudao/module/erp/dal/mysql/distribution/ErpDistributionMapper.java (best guess)\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: SELECT id, no, logistics_company, tracking_number, receiver_name, receiver_phone, receiver_address, original_product_name, original_standard, original_quantity, after_sales_status, after_sales_time, remark, combo_product_id, product_name, shipping_code, product_quantity, tenant_id, deleted, status, product_specification, order_number, create_time, update_time, creator, updater FROM erp_distribution_base WHERE (no = ?) AND tenant_id = 1\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n	at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:236)\r\n	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:73)\r\n	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92)\r\n	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy131.selectList(Unknown Source)\r\n	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy454.selectList(Unknown Source)\r\n	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:332)\r\n	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy454.selectOne(Unknown Source)\r\n	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:321)\r\n	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(Mybatis', 'org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator', 'SQLErrorCodeSQLExceptionTranslator.java', 'doTranslate', 236, 0, NULL, 0, NULL, '2025-05-21 22:00:36', NULL, '2025-05-21 22:00:36', b'0', 1);
 INSERT INTO `infra_api_error_log` VALUES (21418, '', 1, 2, 'yudao-server', 'POST', '/admin-api/erp/distribution/create', '{\"query\":{},\"body\":\"{\\\"remark\\\":\\\"123\\\",\\\"fileUrl\\\":\\\"\\\",\\\"items\\\":[{\\\"productId\\\":35,\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"shippingCode\\\":\\\"123\\\",\\\"purchaser\\\":\\\"123\\\",\\\"supplier\\\":\\\"123\\\",\\\"purchasePrice\\\":12,\\\"shippingFee\\\":105,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":190,\\\"purchaseRemark\\\":\\\"\\\",\\\"count\\\":7,\\\"shippingFeeType\\\":2,\\\"fixedShippingFee\\\":50,\\\"additionalItemQuantity\\\":1,\\\"additionalItemPrice\\\":10,\\\"weight\\\":3,\\\"firstWeight\\\":1,\\\"firstWeightPrice\\\":5,\\\"additionalWeight\\\":2,\\\"additionalWeightPrice\\\":10,\\\"totalProductPrice\\\":190}],\\\"saleItems\\\":[{\\\"salesperson\\\":\\\"帅哥\\\",\\\"customerName\\\":\\\"帅哥\\\",\\\"salePrice\\\":1,\\\"saleShippingFee\\\":10,\\\"saleOtherFees\\\":1,\\\"totalSaleAmount\\\":18,\\\"saleRemark\\\":\\\"\\\",\\\"count\\\":7,\\\"shippingFeeType\\\":0,\\\"fixedShippingFee\\\":10,\\\"additionalItemQuantity\\\":null,\\\"additionalItemPrice\\\":null,\\\"firstWeight\\\":null,\\\"firstWeightPrice\\\":null,\\\"additionalWeight\\\":null,\\\"additionalWeightPrice\\\":null}],\\\"comboProductId\\\":35,\\\"logisticsCompany\\\":\\\"123\\\",\\\"trackingNumber\\\":\\\"123\\\",\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"productQuantity\\\":7,\\\"shippingCode\\\":\\\"123\\\",\\\"originalProductName\\\":\\\"\\\",\\\"originalStandard\\\":\\\"123\\\",\\\"originalQuantity\\\":1,\\\"receiverName\\\":\\\"谢政\\\",\\\"receiverPhone\\\":\\\"13143580517\\\",\\\"receiverAddress\\\":\\\"123\\\",\\\"afterSalesStatus\\\":\\\"123\\\",\\\"afterSalesTime\\\":\\\"2025-05-21 14:00:24\\\",\\\"productSpecification\\\":\\\"123\\\",\\\"purchaser\\\":\\\"123\\\",\\\"supplier\\\":\\\"123\\\",\\\"purchasePrice\\\":12,\\\"shippingFee\\\":105,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":190,\\\"salesperson\\\":\\\"帅哥\\\",\\\"customerName\\\":\\\"帅哥\\\",\\\"salePrice\\\":1,\\\"saleShippingFee\\\":10,\\\"saleOtherFees\\\":1,\\\"totalSaleAmount\\\":18,\\\"orderNumber\\\":\\\"123\\\"}\"}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-21 22:00:43', 'org.springframework.jdbc.BadSqlGrammarException', 'BadSqlGrammarException: \r\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n### The error may exist in cn/iocoder/yudao/module/erp/dal/mysql/distribution/ErpDistributionMapper.java (best guess)\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: SELECT id, no, logistics_company, tracking_number, receiver_name, receiver_phone, receiver_address, original_product_name, original_standard, original_quantity, after_sales_status, after_sales_time, remark, combo_product_id, product_name, shipping_code, product_quantity, tenant_id, deleted, status, product_specification, order_number, create_time, update_time, creator, updater FROM erp_distribution_base WHERE (no = ?) AND tenant_id = 1\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'', 'SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'', 'org.springframework.jdbc.BadSqlGrammarException: \r\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n### The error may exist in cn/iocoder/yudao/module/erp/dal/mysql/distribution/ErpDistributionMapper.java (best guess)\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: SELECT id, no, logistics_company, tracking_number, receiver_name, receiver_phone, receiver_address, original_product_name, original_standard, original_quantity, after_sales_status, after_sales_time, remark, combo_product_id, product_name, shipping_code, product_quantity, tenant_id, deleted, status, product_specification, order_number, create_time, update_time, creator, updater FROM erp_distribution_base WHERE (no = ?) AND tenant_id = 1\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column \'after_sales_time\' in \'field list\'\r\n	at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:236)\r\n	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:73)\r\n	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92)\r\n	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy131.selectList(Unknown Source)\r\n	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy454.selectList(Unknown Source)\r\n	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:332)\r\n	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)\r\n	at jdk.proxy2/jdk.proxy2.$Proxy454.selectOne(Unknown Source)\r\n	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectOne(BaseMapper.java:321)\r\n	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166)\r\n	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(Mybatis', 'org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator', 'SQLErrorCodeSQLExceptionTranslator.java', 'doTranslate', 236, 0, NULL, 0, NULL, '2025-05-21 22:00:43', NULL, '2025-05-21 22:00:43', b'0', 1);
+INSERT INTO `infra_api_error_log` VALUES (21419, '', 1, 2, 'yudao-server', 'PUT', '/admin-api/erp/distribution/update-purchase-after-sales', '{\"query\":{},\"body\":\"{\\\"id\\\":22,\\\"productName\\\":\\\"产品A*1 + 产品ABC*2\\\",\\\"productSpecification\\\":\\\"123\\\",\\\"productQuantity\\\":2,\\\"purchasePrice\\\":12,\\\"shippingFee\\\":35,\\\"otherFees\\\":1,\\\"totalPurchaseAmount\\\":60,\\\"purchaseAfterSalesAmount\\\":\\\"\\\",\\\"purchaseAfterSalesTime\\\":\\\"2025-05-22T17:30:35\\\",\\\"purchaseAfterSalesStatus\\\":40,\\\"purchaseAfterSalesSituation\\\":\\\"\\\",\\\"afterSalesTime\\\":1747906307000,\\\"afterSalesStatus\\\":\\\"我爱1\\\"}\"}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-22 17:33:27', 'java.lang.IllegalArgumentException', 'IllegalArgumentException: 无法解析时间格式: 1747906307000', 'IllegalArgumentException: 无法解析时间格式: 1747906307000', 'java.lang.IllegalArgumentException: 无法解析时间格式: 1747906307000\r\n	at cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionServiceImpl.parseDateTime(ErpDistributionServiceImpl.java:346)\r\n	at cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionServiceImpl.updatePurchaseAfterSales(ErpDistributionServiceImpl.java:244)\r\n	at cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionServiceImpl$$FastClassBySpringCGLIB$$b225a45c.invoke(<generated>)\r\n	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)\r\n	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:792)\r\n	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\r\n	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762)\r\n	at org.springframework.validation.beanvalidation.MethodValidationInterceptor.invoke(MethodValidationInterceptor.java:123)\r\n	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)\r\n	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762)\r\n	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123)\r\n	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:388)\r\n	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)\r\n	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)\r\n	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762)\r\n	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:707)\r\n	at cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionServiceImpl$$EnhancerBySpringCGLIB$$755a5784.updatePurchaseAfterSales(<generated>)\r\n	at cn.iocoder.yudao.module.erp.controller.admin.distribution.ErpDistributionController.updatePurchaseAfterSales(ErpDistributionController.java:618)\r\n	at cn.iocoder.yudao.module.erp.controller.admin.distribution.ErpDistributionController$$FastClassBySpringCGLIB$$36af6b67.invoke(<generated>)\r\n	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)\r\n	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:792)\r\n	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\r\n	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762)\r\n	at org.springframework.validation.beanvalidation.MethodValidationInterceptor.invoke(MethodValidationInterceptor.java:123)\r\n	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodIn', 'cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionServiceImpl', 'ErpDistributionServiceImpl.java', 'parseDateTime', 346, 0, NULL, 0, NULL, '2025-05-22 17:33:27', NULL, '2025-05-22 17:33:27', b'0', 1);
+INSERT INTO `infra_api_error_log` VALUES (21420, '', 1, 2, 'yudao-server', 'GET', '/admin-api/product/brand/list-all-simple', '{\"query\":{},\"body\":null}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-23 01:27:00', 'org.springframework.web.util.NestedServletException', 'NestedServletException: Handler dispatch failed; nested exception is java.lang.ExceptionInInitializerError', 'Error: Unresolved compilation problems: \n	The import cn.iocoder.yudao.module.product.controller.admin.brand.vo.ProductBrandCreateReqVO cannot be resolved\n	The import cn.iocoder.yudao.module.product.controller.admin.brand.vo.ProductBrandRespVO cannot be resolved\n	The import cn.iocoder.yudao.module.product.controller.admin.brand.vo.ProductBrandSimpleRespVO cannot be resolved\n	The import cn.iocoder.yudao.module.product.controller.admin.brand.vo.ProductBrandUpdateReqVO cannot be resolved\n	The import cn.iocoder.yudao.module.product.dal.dataobject.brand.ProductBrandDO cannot be resolved\n	ProductBrandConvert cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandCreateReqVO cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandDO cannot be resolved\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandUpdateReqVO cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandDO cannot be resolved\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandSimpleRespVO cannot be resolved to a type\n	The method convertList1(List<ProductBrandDO>) of type ProductBrandConvertImpl must override or implement a supertype method\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandSimpleRespVO cannot be resolved to a type\n	ProductBrandSimpleRespVO cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	The method convertList(List<ProductBrandDO>) of type ProductBrandConvertImpl must override or implement a supertype method\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	The method convertPage(PageResult<ProductBrandDO>) of type ProductBrandConvertImpl must override or implement a supertype method\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandRespVO cannot be resolved to a type\n	ProductBrandSimpleRespVO cannot be resolved to a type\n	ProductBrandDO cannot be resolved to a type\n	ProductBrandSimpleRespVO cannot be resolved to a type\n	ProductBrandSimpleRespVO cannot be resolved to a type\n', 'org.springframework.web.util.NestedServletException: Handler dispatch failed; nested exception is java.lang.ExceptionInInitializerError\r\n	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1087)\r\n	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:965)\r\n	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)\r\n	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898)\r\n	at javax.servlet.http.HttpServlet.service(HttpServlet.java:529)\r\n	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)\r\n	at javax.servlet.http.HttpServlet.service(HttpServlet.java:623)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:209)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:111)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at com.alibaba.druid.support.http.WebStatFilter.doFilter(WebStatFilter.java:114)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at cn.iocoder.yudao.framework.tenant.core.security.TenantSecurityWebFilter.doFilterInternal(TenantSecurityWebFilter.java:100)\r\n	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:352)\r\n	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:361)\r\n	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:361)\r\n	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)\r\n	at or', 'org.springframework.web.servlet.DispatcherServlet', 'DispatcherServlet.java', 'doDispatch', 1087, 0, NULL, 0, NULL, '2025-05-23 01:27:01', NULL, '2025-05-23 01:27:01', b'0', 1);
+INSERT INTO `infra_api_error_log` VALUES (21421, '', 1, 2, 'yudao-server', 'GET', '/admin-api/product/brand/list-all-simple', '{\"query\":{},\"body\":null}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-23 01:28:41', 'org.springframework.web.util.NestedServletException', 'NestedServletException: Handler dispatch failed; nested exception is java.lang.NoClassDefFoundError: Could not initialize class cn.iocoder.yudao.module.product.convert.brand.ProductBrandConvert', 'ExceptionInInitializerError: Exception java.lang.RuntimeException: java.lang.reflect.InvocationTargetException [in thread \"http-nio-48080-exec-8\"]', 'org.springframework.web.util.NestedServletException: Handler dispatch failed; nested exception is java.lang.NoClassDefFoundError: Could not initialize class cn.iocoder.yudao.module.product.convert.brand.ProductBrandConvert\r\n	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1087)\r\n	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:965)\r\n	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)\r\n	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898)\r\n	at javax.servlet.http.HttpServlet.service(HttpServlet.java:529)\r\n	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)\r\n	at javax.servlet.http.HttpServlet.service(HttpServlet.java:623)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:209)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:111)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at com.alibaba.druid.support.http.WebStatFilter.doFilter(WebStatFilter.java:114)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at cn.iocoder.yudao.framework.tenant.core.security.TenantSecurityWebFilter.doFilterInternal(TenantSecurityWebFilter.java:100)\r\n	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:352)\r\n	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:361)\r\n	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:361)\r\n	at org.springframework.security', 'org.springframework.web.servlet.DispatcherServlet', 'DispatcherServlet.java', 'doDispatch', 1087, 0, NULL, 0, NULL, '2025-05-23 01:28:41', NULL, '2025-05-23 01:28:41', b'0', 1);
+INSERT INTO `infra_api_error_log` VALUES (21422, '', 1, 2, 'yudao-server', 'GET', '/admin-api/product/brand/list-all-simple', '{\"query\":{},\"body\":null}', '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', '2025-05-23 01:28:51', 'org.springframework.web.util.NestedServletException', 'NestedServletException: Handler dispatch failed; nested exception is java.lang.NoClassDefFoundError: Could not initialize class cn.iocoder.yudao.module.product.convert.brand.ProductBrandConvert', 'ExceptionInInitializerError: Exception java.lang.RuntimeException: java.lang.reflect.InvocationTargetException [in thread \"http-nio-48080-exec-8\"]', 'org.springframework.web.util.NestedServletException: Handler dispatch failed; nested exception is java.lang.NoClassDefFoundError: Could not initialize class cn.iocoder.yudao.module.product.convert.brand.ProductBrandConvert\r\n	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1087)\r\n	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:965)\r\n	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)\r\n	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898)\r\n	at javax.servlet.http.HttpServlet.service(HttpServlet.java:529)\r\n	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)\r\n	at javax.servlet.http.HttpServlet.service(HttpServlet.java:623)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:209)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:111)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at com.alibaba.druid.support.http.WebStatFilter.doFilter(WebStatFilter.java:114)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at cn.iocoder.yudao.framework.tenant.core.security.TenantSecurityWebFilter.doFilterInternal(TenantSecurityWebFilter.java:100)\r\n	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117)\r\n	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:178)\r\n	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:153)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:352)\r\n	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:361)\r\n	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)\r\n	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)\r\n	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:361)\r\n	at org.springframework.security', 'org.springframework.web.servlet.DispatcherServlet', 'DispatcherServlet.java', 'doDispatch', 1087, 0, NULL, 0, NULL, '2025-05-23 01:28:51', NULL, '2025-05-23 01:28:51', b'0', 1);
 
 -- ----------------------------
 -- Table structure for infra_codegen_column
@@ -2545,7 +2616,7 @@ CREATE TABLE `infra_config`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '参数配置表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '参数配置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of infra_config
@@ -2598,7 +2669,7 @@ CREATE TABLE `infra_file`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1603 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文件表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1604 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文件表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of infra_file
@@ -2648,7 +2719,7 @@ CREATE TABLE `infra_file_config`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 28 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文件配置表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 29 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文件配置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of infra_file_config
@@ -2702,7 +2773,7 @@ CREATE TABLE `infra_job`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '定时任务表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 34 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '定时任务表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of infra_job
@@ -2767,7 +2838,7 @@ CREATE TABLE `member_address`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_userId`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '用户收件地址' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '用户收件地址' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_address
@@ -2798,7 +2869,7 @@ CREATE TABLE `member_config`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员配置表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员配置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_config
@@ -2827,7 +2898,7 @@ CREATE TABLE `member_experience_record`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '会员经验记录-用户编号',
   INDEX `idx_user_biz_type`(`user_id` ASC, `biz_type` ASC) USING BTREE COMMENT '会员经验记录-用户业务类型'
-) ENGINE = InnoDB AUTO_INCREMENT = 62 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员经验记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 63 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员经验记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_experience_record
@@ -2904,7 +2975,7 @@ CREATE TABLE `member_group`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户分组' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户分组' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_group
@@ -2931,7 +3002,7 @@ CREATE TABLE `member_level`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员等级' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员等级' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_level
@@ -2962,7 +3033,7 @@ CREATE TABLE `member_level_record`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '会员等级记录-用户编号'
-) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员等级记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员等级记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_level_record
@@ -3019,7 +3090,7 @@ CREATE TABLE `member_point_record`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `index_userId`(`user_id` ASC) USING BTREE,
   INDEX `index_title`(`title` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 88 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户积分记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 89 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户积分记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_point_record
@@ -3123,7 +3194,7 @@ CREATE TABLE `member_sign_in_config`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '签到规则' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '签到规则' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_sign_in_config
@@ -3158,7 +3229,7 @@ CREATE TABLE `member_sign_in_record`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '签到记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '签到记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_sign_in_record
@@ -3188,7 +3259,7 @@ CREATE TABLE `member_tag`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员标签' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '会员标签' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_tag
@@ -3228,7 +3299,7 @@ CREATE TABLE `member_user`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 285 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '会员用户' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 286 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '会员用户' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of member_user
@@ -3283,7 +3354,7 @@ CREATE TABLE `pay_app`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '支付应用信息' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '支付应用信息' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of pay_app
@@ -3700,7 +3771,7 @@ CREATE TABLE `product_brand`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品品牌' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品品牌' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_brand
@@ -3727,7 +3798,7 @@ CREATE TABLE `product_browse_history`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_spuId`(`spu_id` ASC) USING BTREE,
   INDEX `idx_userId`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 319 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品浏览记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 320 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品浏览记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_browse_history
@@ -3821,7 +3892,7 @@ CREATE TABLE `product_category`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 83 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品分类' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 84 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品分类' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_category
@@ -3930,7 +4001,7 @@ CREATE TABLE `product_comment`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品评论' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品评论' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_comment
@@ -3957,7 +4028,7 @@ CREATE TABLE `product_favorite`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_userId`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '商品收藏表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '商品收藏表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_favorite
@@ -3991,7 +4062,7 @@ CREATE TABLE `product_property`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_name`(`name`(32) ASC) USING BTREE COMMENT '规格名称索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品属性项' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品属性项' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_property
@@ -4030,7 +4101,7 @@ CREATE TABLE `product_property_value`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品属性值' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '商品属性值' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_property_value
@@ -4093,7 +4164,7 @@ CREATE TABLE `product_sku`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 36 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品sku' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品sku' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_sku
@@ -4164,7 +4235,7 @@ CREATE TABLE `product_spu`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 640 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品spu' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 641 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品spu' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_spu
@@ -4209,7 +4280,7 @@ CREATE TABLE `product_statistics`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_time`(`time` ASC) USING BTREE,
   INDEX `idx_spu_id`(`spu_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 75 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品统计表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 76 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '商品统计表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of product_statistics
@@ -4315,7 +4386,7 @@ CREATE TABLE `promotion_article`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章管理表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_article
@@ -4343,7 +4414,7 @@ CREATE TABLE `promotion_article_category`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章分类表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章分类表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_article_category
@@ -4373,7 +4444,7 @@ CREATE TABLE `promotion_banner`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'Banner 广告位' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'Banner 广告位' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_banner
@@ -4408,7 +4479,7 @@ CREATE TABLE `promotion_bargain_activity`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '砍价活动' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '砍价活动' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_bargain_activity
@@ -4432,7 +4503,7 @@ CREATE TABLE `promotion_bargain_help`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 36 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '砍价助力表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '砍价助力表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_bargain_help
@@ -4464,7 +4535,7 @@ CREATE TABLE `promotion_bargain_record`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '砍价记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '砍价记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_bargain_record
@@ -4498,7 +4569,7 @@ CREATE TABLE `promotion_combination_activity`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '拼团活动' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '拼团活动' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_combination_activity
@@ -4526,7 +4597,7 @@ CREATE TABLE `promotion_combination_product`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '拼团商品' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 34 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '拼团商品' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_combination_product
@@ -4573,7 +4644,7 @@ CREATE TABLE `promotion_combination_record`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '拼团记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '拼团记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_combination_record
@@ -4617,7 +4688,7 @@ CREATE TABLE `promotion_coupon`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 39 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '优惠劵' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 40 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '优惠劵' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_coupon
@@ -4691,7 +4762,7 @@ CREATE TABLE `promotion_coupon_template`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '优惠劵模板' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '优惠劵模板' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_coupon_template
@@ -4722,7 +4793,7 @@ CREATE TABLE `promotion_discount_activity`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '限时折扣活动' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '限时折扣活动' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_discount_activity
@@ -4753,7 +4824,7 @@ CREATE TABLE `promotion_discount_product`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '限时折扣商品\n' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 44 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '限时折扣商品\n' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_discount_product
@@ -4781,7 +4852,7 @@ CREATE TABLE `promotion_diy_page`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '装修页面' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '装修页面' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_diy_page
@@ -4817,7 +4888,7 @@ CREATE TABLE `promotion_diy_template`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '装修模板' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '装修模板' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_diy_template
@@ -4850,7 +4921,7 @@ CREATE TABLE `promotion_kefu_conversation`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '客服会话' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '客服会话' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_kefu_conversation
@@ -4879,7 +4950,7 @@ CREATE TABLE `promotion_kefu_message`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 53 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '客服消息' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 54 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '客服消息' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_kefu_message
@@ -4957,7 +5028,7 @@ CREATE TABLE `promotion_point_activity`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '积分商城活动' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '积分商城活动' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_point_activity
@@ -4985,7 +5056,7 @@ CREATE TABLE `promotion_point_product`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '积分商城商品' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '积分商城商品' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_point_product
@@ -5016,7 +5087,7 @@ CREATE TABLE `promotion_reward_activity`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '满减送活动' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '满减送活动' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_reward_activity
@@ -5048,7 +5119,7 @@ CREATE TABLE `promotion_seckill_activity`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 42 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '秒杀活动' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '秒杀活动' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_seckill_activity
@@ -5075,7 +5146,7 @@ CREATE TABLE `promotion_seckill_config`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '秒杀时段' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '秒杀时段' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_seckill_config
@@ -5111,7 +5182,7 @@ CREATE TABLE `promotion_seckill_product`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 82 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '秒杀参与商品' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 83 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '秒杀参与商品' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of promotion_seckill_product
@@ -5187,7 +5258,7 @@ CREATE TABLE `system_dict_data`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1685 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '字典数据表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1705 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '字典数据表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_dict_data
@@ -5677,7 +5748,7 @@ CREATE TABLE `system_dict_type`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `deleted_time` datetime NULL DEFAULT NULL COMMENT '删除时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 640 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '字典类型表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 649 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '字典类型表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_dict_type
@@ -5814,7 +5885,7 @@ CREATE TABLE `system_login_log`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3436 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3437 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_login_log
@@ -5841,6 +5912,7 @@ INSERT INTO `system_login_log` VALUES (3433, 100, '', 1, 2, 'admin', 0, '0:0:0:0
 INSERT INTO `system_login_log` VALUES (3434, 100, '', 1, 2, 'admin', 0, '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', NULL, '2025-05-20 18:42:52', NULL, '2025-05-20 18:42:52', b'0', 1);
 INSERT INTO `system_login_log` VALUES (3435, 100, '', 1, 2, 'admin', 0, '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', NULL, '2025-05-20 19:37:34', NULL, '2025-05-20 19:37:34', b'0', 1);
 INSERT INTO `system_login_log` VALUES (3436, 100, '', 1, 2, 'admin', 0, '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', NULL, '2025-05-21 21:24:06', NULL, '2025-05-21 21:24:06', b'0', 1);
+INSERT INTO `system_login_log` VALUES (3437, 100, '', 1, 2, 'admin', 0, '0:0:0:0:0:0:0:1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', NULL, '2025-05-25 17:02:57', NULL, '2025-05-25 17:02:57', b'0', 1);
 
 -- ----------------------------
 -- Table structure for system_mail_account
@@ -5861,7 +5933,7 @@ CREATE TABLE `system_mail_account`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邮箱账号表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邮箱账号表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_mail_account
@@ -5925,7 +5997,7 @@ CREATE TABLE `system_mail_template`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邮件模版表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邮件模版表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_mail_template
@@ -5959,7 +6031,7 @@ CREATE TABLE `system_menu`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3056 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '菜单权限表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3059 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '菜单权限表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_menu
@@ -6309,13 +6381,13 @@ INSERT INTO `system_menu` VALUES (2634, '库存盘点单更新', 'erp:stock-chec
 INSERT INTO `system_menu` VALUES (2635, '库存盘点单删除', 'erp:stock-check:delete', 3, 4, 2631, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:57', b'0');
 INSERT INTO `system_menu` VALUES (2636, '库存盘点单导出', 'erp:stock-check:export', 3, 5, 2631, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:59', b'0');
 INSERT INTO `system_menu` VALUES (2637, '库存盘点单审批', 'erp:stock-check:update-status', 3, 6, 2631, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:13:03', b'0');
-INSERT INTO `system_menu` VALUES (2638, '销售代发订单', '', 2, 1, 2617, 'order', 'fa:first-order', 'erp/sale/order/index', 'ErpSaleOrder', 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-04-13 02:08:55', b'0');
-INSERT INTO `system_menu` VALUES (2639, '销售订单查询', 'erp:sale-order:query', 3, 1, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:49', b'0');
-INSERT INTO `system_menu` VALUES (2640, '销售订单创建', 'erp:sale-order:create', 3, 2, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:52', b'0');
-INSERT INTO `system_menu` VALUES (2641, '销售订单更新', 'erp:sale-order:update', 3, 3, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:55', b'0');
-INSERT INTO `system_menu` VALUES (2642, '销售订单删除', 'erp:sale-order:delete', 3, 4, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:57', b'0');
-INSERT INTO `system_menu` VALUES (2643, '销售订单导出', 'erp:sale-order:export', 3, 5, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:59', b'0');
-INSERT INTO `system_menu` VALUES (2644, '销售订单审批', 'erp:sale-order:update-status', 3, 6, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:13:03', b'0');
+INSERT INTO `system_menu` VALUES (2638, '销售代发订单', '', 2, 1, 2617, 'order', 'fa:first-order', 'erp/sale/order/index', 'ErpSaleOrder', 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:55', b'1');
+INSERT INTO `system_menu` VALUES (2639, '销售订单查询', 'erp:sale-order:query', 3, 1, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:44', b'1');
+INSERT INTO `system_menu` VALUES (2640, '销售订单创建', 'erp:sale-order:create', 3, 2, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:46', b'1');
+INSERT INTO `system_menu` VALUES (2641, '销售订单更新', 'erp:sale-order:update', 3, 3, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:48', b'1');
+INSERT INTO `system_menu` VALUES (2642, '销售订单删除', 'erp:sale-order:delete', 3, 4, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:49', b'1');
+INSERT INTO `system_menu` VALUES (2643, '销售订单导出', 'erp:sale-order:export', 3, 5, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:51', b'1');
+INSERT INTO `system_menu` VALUES (2644, '销售订单审批', 'erp:sale-order:update-status', 3, 6, 2638, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 17:42:53', b'1');
 INSERT INTO `system_menu` VALUES (2645, '财务管理', '', 1, 50, 2563, 'finance', 'ep:money', '', '', 0, b'1', b'1', b'1', '1', '2024-02-10 08:05:58', '1', '2024-02-10 08:06:07', b'0');
 INSERT INTO `system_menu` VALUES (2646, '结算账户', '', 2, 10, 2645, 'account', 'fa:universal-access', 'erp/finance/account/index', 'ErpAccount', 0, b'1', b'1', b'1', '', '2024-02-10 00:15:07', '1', '2024-02-14 08:24:31', b'0');
 INSERT INTO `system_menu` VALUES (2647, '结算账户查询', 'erp:account:query', 3, 1, 2646, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-10 00:15:07', '', '2024-02-10 00:15:07', b'0');
@@ -6337,13 +6409,13 @@ INSERT INTO `system_menu` VALUES (2662, '销售退货更新', 'erp:sale-return:u
 INSERT INTO `system_menu` VALUES (2663, '销售退货删除', 'erp:sale-return:delete', 3, 4, 2659, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:57', b'0');
 INSERT INTO `system_menu` VALUES (2664, '销售退货导出', 'erp:sale-return:export', 3, 5, 2659, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:12:59', b'0');
 INSERT INTO `system_menu` VALUES (2665, '销售退货审批', 'erp:sale-return:update-status', 3, 6, 2659, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-07 11:13:03', b'0');
-INSERT INTO `system_menu` VALUES (2666, '采购代发订单', '', 2, 1, 2602, 'order', 'fa-solid:border-all', 'erp/purchase/order/index', 'ErpPurchaseOrder', 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-04-12 19:52:24', b'0');
-INSERT INTO `system_menu` VALUES (2667, '采购订单查询', 'erp:purchase-order:query', 3, 1, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:45:17', b'0');
-INSERT INTO `system_menu` VALUES (2668, '采购订单创建', 'erp:purchase-order:create', 3, 2, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:44:54', b'0');
-INSERT INTO `system_menu` VALUES (2669, '采购订单更新', 'erp:purchase-order:update', 3, 3, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:44:58', b'0');
-INSERT INTO `system_menu` VALUES (2670, '采购订单删除', 'erp:purchase-order:delete', 3, 4, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:45:00', b'0');
-INSERT INTO `system_menu` VALUES (2671, '采购订单导出', 'erp:purchase-order:export', 3, 5, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:45:05', b'0');
-INSERT INTO `system_menu` VALUES (2672, '采购订单审批', 'erp:purchase-order:update-status', 3, 6, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:45:08', b'0');
+INSERT INTO `system_menu` VALUES (2666, '采购代发订单', '', 2, 1, 2602, 'order', 'fa-solid:border-all', 'erp/purchase/order/index', 'ErpPurchaseOrder', 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:20:01', b'1');
+INSERT INTO `system_menu` VALUES (2667, '采购订单查询', 'erp:purchase-order:query', 3, 1, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:19:38', b'1');
+INSERT INTO `system_menu` VALUES (2668, '采购订单创建', 'erp:purchase-order:create', 3, 2, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:19:45', b'1');
+INSERT INTO `system_menu` VALUES (2669, '采购订单更新', 'erp:purchase-order:update', 3, 3, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:19:49', b'1');
+INSERT INTO `system_menu` VALUES (2670, '采购订单删除', 'erp:purchase-order:delete', 3, 4, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:19:54', b'1');
+INSERT INTO `system_menu` VALUES (2671, '采购订单导出', 'erp:purchase-order:export', 3, 5, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:19:56', b'1');
+INSERT INTO `system_menu` VALUES (2672, '采购订单审批', 'erp:purchase-order:update-status', 3, 6, 2666, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-05-22 16:19:58', b'1');
 INSERT INTO `system_menu` VALUES (2673, '采购入库', '', 2, 5, 2602, 'in', 'fa-solid:gopuram', 'erp/purchase/in/index', 'ErpPurchaseIn', 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '1', '2025-04-12 19:54:28', b'0');
 INSERT INTO `system_menu` VALUES (2674, '采购入库查询', 'erp:purchase-in:query', 3, 1, 2673, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:45:17', b'0');
 INSERT INTO `system_menu` VALUES (2675, '采购入库创建', 'erp:purchase-in:create', 3, 2, 2673, '', '', '', NULL, 0, b'1', b'1', b'1', '', '2024-02-05 16:08:56', '', '2024-02-12 00:44:54', b'0');
@@ -6450,20 +6522,20 @@ INSERT INTO `system_menu` VALUES (2934, '采购代发审批', '', 2, 3, 2602, 'a
 INSERT INTO `system_menu` VALUES (2935, '采购订单审批', 'erp:purchase-order:update-status', 3, 1, 2934, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 01:31:36', '1', '2025-04-13 22:59:15', b'1');
 INSERT INTO `system_menu` VALUES (2936, '采购代发反审批', '', 2, 3, 2645, 'unpurchaseorder', 'ep:help', 'erp/finance/unpurchaseorder/index', 'ErpPurchaseUnApproval', 0, b'1', b'1', b'1', '1', '2025-04-12 15:57:36', '1', '2025-04-14 02:00:51', b'0');
 INSERT INTO `system_menu` VALUES (2937, '采购代发反审批', 'erp:purchase-order:updata-status', 3, 1, 2936, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 15:59:05', '1', '2025-04-12 15:59:05', b'0');
-INSERT INTO `system_menu` VALUES (2938, '采购批发订单', '', 2, 2, 2602, 'orders', 'fa-solid:border-all', 'erp/purchase/orders/index', 'ErpPurchaseOrders', 0, b'1', b'1', b'1', '1', '2025-04-12 19:54:16', '1', '2025-04-12 19:56:46', b'0');
-INSERT INTO `system_menu` VALUES (2939, '采购订单查询', 'erp:wholesale-purchase-order:query', 3, 1, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:57:55', '1', '2025-04-12 19:59:16', b'0');
-INSERT INTO `system_menu` VALUES (2940, '采购订单创建', 'erp:wholesale-purchase-order:create', 3, 2, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:14', '1', '2025-04-12 19:59:26', b'0');
-INSERT INTO `system_menu` VALUES (2941, '采购订单更新', 'erp:wholesale-purchase-order:update', 3, 3, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:24', '1', '2025-04-12 19:59:33', b'0');
-INSERT INTO `system_menu` VALUES (2942, '采购订单删除', 'erp:wholesale-purchase-order:delete', 3, 4, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:36', '1', '2025-04-12 19:59:43', b'0');
-INSERT INTO `system_menu` VALUES (2943, '采购订单导出', 'erp:wholesale-purchase-order:export', 3, 5, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:47', '1', '2025-04-12 19:59:56', b'0');
-INSERT INTO `system_menu` VALUES (2944, '采购订单审批', 'erp:wholesale-purchase-order:update-status', 3, 6, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:57', '1', '2025-04-12 20:00:13', b'0');
-INSERT INTO `system_menu` VALUES (2945, '销售批发订单', '', 2, 2, 2617, 'orders', 'fa:first-order', 'erp/sale/orders/index', 'ErpSaleOrders', 0, b'1', b'1', b'1', '1', '2025-04-13 02:05:20', '1', '2025-04-13 02:05:20', b'0');
-INSERT INTO `system_menu` VALUES (2946, '销售订单查询', 'erp:wholesale-sale-out:query', 3, 1, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:07:55', '1', '2025-04-13 02:07:55', b'0');
-INSERT INTO `system_menu` VALUES (2947, '销售订单创建', 'erp:wholesale-sale-out:create', 3, 2, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:09:24', '1', '2025-04-13 02:09:24', b'0');
-INSERT INTO `system_menu` VALUES (2948, '销售订单更新', 'erp:wholesale-sale-out:update', 3, 3, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:10:00', '1', '2025-04-13 02:10:00', b'0');
-INSERT INTO `system_menu` VALUES (2949, '销售订单审批', 'erp:wholesale-sale-out:update-status', 3, 6, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:10:24', '1', '2025-04-13 02:10:24', b'0');
-INSERT INTO `system_menu` VALUES (2950, '销售订单删除', 'erp:wholesale-sale-out:delete', 3, 4, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:10:43', '1', '2025-04-13 02:10:43', b'0');
-INSERT INTO `system_menu` VALUES (2951, '销售订单导出', 'erp:wholesale-sale-out:export', 3, 5, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:11:08', '1', '2025-04-13 02:11:08', b'0');
+INSERT INTO `system_menu` VALUES (2938, '采购批发订单', '', 2, 2, 2602, 'orders', 'fa-solid:border-all', 'erp/purchase/orders/index', 'ErpPurchaseOrders', 0, b'1', b'1', b'1', '1', '2025-04-12 19:54:16', '1', '2025-05-22 16:20:17', b'1');
+INSERT INTO `system_menu` VALUES (2939, '采购订单查询', 'erp:wholesale-purchase-order:query', 3, 1, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:57:55', '1', '2025-05-22 16:20:04', b'1');
+INSERT INTO `system_menu` VALUES (2940, '采购订单创建', 'erp:wholesale-purchase-order:create', 3, 2, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:14', '1', '2025-05-22 16:20:06', b'1');
+INSERT INTO `system_menu` VALUES (2941, '采购订单更新', 'erp:wholesale-purchase-order:update', 3, 3, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:24', '1', '2025-05-22 16:20:09', b'1');
+INSERT INTO `system_menu` VALUES (2942, '采购订单删除', 'erp:wholesale-purchase-order:delete', 3, 4, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:36', '1', '2025-05-22 16:20:10', b'1');
+INSERT INTO `system_menu` VALUES (2943, '采购订单导出', 'erp:wholesale-purchase-order:export', 3, 5, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:47', '1', '2025-05-22 16:20:13', b'1');
+INSERT INTO `system_menu` VALUES (2944, '采购订单审批', 'erp:wholesale-purchase-order:update-status', 3, 6, 2938, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-12 19:58:57', '1', '2025-05-22 16:20:15', b'1');
+INSERT INTO `system_menu` VALUES (2945, '销售批发订单', '', 2, 2, 2617, 'orders', 'fa:first-order', 'erp/sale/orders/index', 'ErpSaleOrders', 0, b'1', b'1', b'1', '1', '2025-04-13 02:05:20', '1', '2025-05-22 17:43:16', b'1');
+INSERT INTO `system_menu` VALUES (2946, '销售订单查询', 'erp:wholesale-sale-out:query', 3, 1, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:07:55', '1', '2025-05-22 17:43:02', b'1');
+INSERT INTO `system_menu` VALUES (2947, '销售订单创建', 'erp:wholesale-sale-out:create', 3, 2, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:09:24', '1', '2025-05-22 17:43:05', b'1');
+INSERT INTO `system_menu` VALUES (2948, '销售订单更新', 'erp:wholesale-sale-out:update', 3, 3, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:10:00', '1', '2025-05-22 17:43:07', b'1');
+INSERT INTO `system_menu` VALUES (2949, '销售订单审批', 'erp:wholesale-sale-out:update-status', 3, 6, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:10:24', '1', '2025-05-22 17:43:13', b'1');
+INSERT INTO `system_menu` VALUES (2950, '销售订单删除', 'erp:wholesale-sale-out:delete', 3, 4, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:10:43', '1', '2025-05-22 17:43:09', b'1');
+INSERT INTO `system_menu` VALUES (2951, '销售订单导出', 'erp:wholesale-sale-out:export', 3, 5, 2945, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 02:11:08', '1', '2025-05-22 17:43:11', b'1');
 INSERT INTO `system_menu` VALUES (2952, '采购代发审批', '', 2, 3, 2602, 'approvalorder', 'ep:help', 'erp/purchase/approvalorder/index', 'ErpPurchaseApproval', 0, b'1', b'1', b'1', '1', '2025-04-13 23:26:26', '1', '2025-04-14 01:57:24', b'0');
 INSERT INTO `system_menu` VALUES (2953, '采购订单审批', 'erp:purchase-order:update-status', 3, 1, 2952, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-04-13 23:27:13', '1', '2025-04-13 23:27:13', b'0');
 INSERT INTO `system_menu` VALUES (2954, '采购批发审批', '', 2, 4, 2602, 'approvalorders', 'ep:help', 'erp/purchase/approvalorders/index', 'ErpPurchaseApprovals', 0, b'1', b'1', b'1', '1', '2025-04-13 23:32:00', '1', '2025-04-14 01:58:10', b'0');
@@ -6523,51 +6595,60 @@ INSERT INTO `system_menu` VALUES (3007, '样品表新增', 'erp:sample:create', 
 INSERT INTO `system_menu` VALUES (3008, '样品表删除', 'erp:sample:delete', 3, 2, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-19 01:07:17', '1', '2025-05-19 01:11:34', b'0');
 INSERT INTO `system_menu` VALUES (3009, '样品表更改', 'erp:sample:update', 3, 3, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-19 01:07:36', '1', '2025-05-19 01:11:44', b'0');
 INSERT INTO `system_menu` VALUES (3010, '样品表查询', 'erp:sample:query', 3, 4, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-19 01:07:53', '1', '2025-05-19 01:11:51', b'0');
-INSERT INTO `system_menu` VALUES (3011, '团购货盘表', '', 2, 1, 2995, 'erp/groupbuying/index', 'ep:add-location', 'erp/groupbuying/index', 'ErpGroupBuying', 0, b'1', b'1', b'1', '1', '2025-05-20 16:50:26', '1', '2025-05-20 16:50:26', b'0');
+INSERT INTO `system_menu` VALUES (3011, '团购货盘表', '', 2, 1, 3056, 'erp/groupbuying/index', 'ep:add-location', 'erp/groupbuying/index', 'ErpGroupBuying', 0, b'1', b'1', b'1', '1', '2025-05-20 16:50:26', '1', '2025-05-23 01:13:09', b'0');
 INSERT INTO `system_menu` VALUES (3012, '团购货盘表新增', 'erp:groupbuying:create', 3, 1, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:51:28', '1', '2025-05-20 16:51:28', b'0');
 INSERT INTO `system_menu` VALUES (3013, '团购货盘表删除', 'erp:groupbuying:delete', 3, 2, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:51:53', '1', '2025-05-20 16:51:53', b'0');
 INSERT INTO `system_menu` VALUES (3014, '团购货盘表更新', 'erp:groupbuying:update', 3, 3, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:52:19', '1', '2025-05-20 16:52:19', b'0');
 INSERT INTO `system_menu` VALUES (3015, '团购货盘表查询', 'erp:groupbuying:query', 3, 4, 3011, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 16:52:43', '1', '2025-05-20 16:52:43', b'0');
-INSERT INTO `system_menu` VALUES (3016, '团购复盘表', '', 2, 1, 2995, 'erp/groupbuyingreview/index', 'ep:add-location', 'erp/groupbuyingreview/index', 'ErpGroupBuyingReview', 0, b'1', b'1', b'1', '1', '2025-05-20 18:44:57', '1', '2025-05-20 18:44:57', b'0');
+INSERT INTO `system_menu` VALUES (3016, '团购复盘表', '', 2, 1, 3056, 'erp/groupbuyingreview/index', 'ep:add-location', 'erp/groupbuyingreview/index', 'ErpGroupBuyingReview', 0, b'1', b'1', b'1', '1', '2025-05-20 18:44:57', '1', '2025-05-23 01:13:13', b'0');
 INSERT INTO `system_menu` VALUES (3017, '团购复盘表新增', 'erp:groupbuyingreview:create', 3, 1, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:45:54', '1', '2025-05-20 18:48:42', b'0');
 INSERT INTO `system_menu` VALUES (3018, '团购复盘表删除', 'erp:groupbuyingreview:delete', 3, 2, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:46:30', '1', '2025-05-20 18:48:53', b'0');
 INSERT INTO `system_menu` VALUES (3019, '团购复盘表更改', 'erp:groupbuyingreview:update', 3, 3, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:46:55', '1', '2025-05-20 18:48:57', b'0');
 INSERT INTO `system_menu` VALUES (3020, '团购复盘表查询', 'erp:groupbuyingreview:query', 3, 4, 3016, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:47:21', '1', '2025-05-20 18:49:02', b'0');
-INSERT INTO `system_menu` VALUES (3021, '团购信息表', '', 2, 1, 2995, 'erp/groupbuyinginfo/index', 'ep:add-location', 'erp/groupbuyinginfo/index', 'ErpGroupBuyingInfo', 0, b'1', b'1', b'1', '1', '2025-05-20 20:09:28', '1', '2025-05-20 20:09:28', b'0');
+INSERT INTO `system_menu` VALUES (3021, '团购信息表', '', 2, 1, 3056, 'erp/groupbuyinginfo/index', 'ep:add-location', 'erp/groupbuyinginfo/index', 'ErpGroupBuyingInfo', 0, b'1', b'1', b'1', '1', '2025-05-20 20:09:28', '1', '2025-05-23 01:13:14', b'0');
 INSERT INTO `system_menu` VALUES (3022, '团购信息表新增', 'erp:groupbuyinginfo:create', 3, 1, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:10:05', '1', '2025-05-20 20:10:05', b'0');
 INSERT INTO `system_menu` VALUES (3023, '团购信息表删除', 'erp:groupbuyinginfo:delete', 3, 2, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:10:24', '1', '2025-05-20 20:10:24', b'0');
 INSERT INTO `system_menu` VALUES (3024, '团购信息表更改', 'erp:groupbuyinginfo:update', 3, 3, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:10:53', '1', '2025-05-20 20:10:53', b'0');
 INSERT INTO `system_menu` VALUES (3025, '团购信息表查询', 'erp:groupbuyinginfo:query', 3, 4, 3021, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 20:11:12', '1', '2025-05-20 20:11:12', b'0');
-INSERT INTO `system_menu` VALUES (3026, '私播货盘表', '', 2, 4, 2995, 'erp/privatebroadcasting/index', 'ep:bell-filled', 'erp/privatebroadcasting/index', 'ErpPrivateBroadcasting', 0, b'1', b'1', b'1', '1', '2025-05-20 18:24:03', '1', '2025-05-20 18:24:03', b'0');
+INSERT INTO `system_menu` VALUES (3026, '私播货盘表', '', 2, 4, 3057, 'erp/privatebroadcasting/index', 'ep:bell-filled', 'erp/privatebroadcasting/index', 'ErpPrivateBroadcasting', 0, b'1', b'1', b'1', '1', '2025-05-20 18:24:03', '1', '2025-05-23 01:12:06', b'0');
 INSERT INTO `system_menu` VALUES (3027, '私播货盘表新增', 'erp:private-broadcasting:create', 3, 1, 3026, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:25:33', '1', '2025-05-20 18:25:33', b'0');
 INSERT INTO `system_menu` VALUES (3028, '私播货盘表删除', 'erp:private-broadcasting:delete', 3, 2, 3026, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:26:03', '1', '2025-05-20 18:26:03', b'0');
 INSERT INTO `system_menu` VALUES (3029, '私播货盘表更改', 'erp:private-broadcasting:update', 3, 3, 3026, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:26:26', '1', '2025-05-20 18:26:26', b'0');
 INSERT INTO `system_menu` VALUES (3030, '私播货盘表查询', 'erp:private-broadcasting:query', 3, 4, 3026, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 18:26:45', '1', '2025-05-20 18:26:45', b'0');
-INSERT INTO `system_menu` VALUES (3031, '私播复盘表', '', 2, 5, 2995, 'erp/privatebroadcastingreview/index', 'ep:bell-filled', 'erp/privatebroadcastingreview/index', 'ErpPrivateBroadcastingReview', 0, b'1', b'1', b'1', '1', '2025-05-20 19:03:12', '1', '2025-05-20 19:03:12', b'0');
+INSERT INTO `system_menu` VALUES (3031, '私播复盘表', '', 2, 5, 3057, 'erp/privatebroadcastingreview/index', 'ep:bell-filled', 'erp/privatebroadcastingreview/index', 'ErpPrivateBroadcastingReview', 0, b'1', b'1', b'1', '1', '2025-05-20 19:03:12', '1', '2025-05-23 01:12:16', b'0');
 INSERT INTO `system_menu` VALUES (3032, '私播复盘表新增', 'erp:private-broadcasting-review:create', 3, 1, 3031, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 19:03:44', '1', '2025-05-20 19:03:44', b'0');
 INSERT INTO `system_menu` VALUES (3033, '私播复盘表删除', 'erp:private-broadcasting-review:delete', 3, 2, 3031, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 19:04:07', '1', '2025-05-20 19:04:07', b'0');
 INSERT INTO `system_menu` VALUES (3034, '私播复盘表更新', 'erp:private-broadcasting-review:update', 3, 3, 3031, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 19:04:20', '1', '2025-05-20 19:04:20', b'0');
 INSERT INTO `system_menu` VALUES (3035, '私播复盘表查询', 'erp:private-broadcasting-review:query', 3, 4, 3031, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 19:04:34', '1', '2025-05-20 19:04:34', b'0');
-INSERT INTO `system_menu` VALUES (3036, '私播信息表', '', 2, 6, 2995, 'erp/privatebroadcastinginfo/index', 'ep:bell-filled', 'erp/privatebroadcastinginfo/index', 'ErpPrivateBroadcastingInfo', 0, b'1', b'1', b'1', '1', '2025-05-20 22:02:12', '1', '2025-05-20 22:02:12', b'0');
+INSERT INTO `system_menu` VALUES (3036, '私播信息表', '', 2, 6, 3057, 'erp/privatebroadcastinginfo/index', 'ep:bell-filled', 'erp/privatebroadcastinginfo/index', 'ErpPrivateBroadcastingInfo', 0, b'1', b'1', b'1', '1', '2025-05-20 22:02:12', '1', '2025-05-23 01:12:24', b'0');
 INSERT INTO `system_menu` VALUES (3037, '私播信息表新增', 'erp:private-broadcasting-info:create', 3, 1, 3036, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 22:02:29', '1', '2025-05-20 22:03:08', b'0');
 INSERT INTO `system_menu` VALUES (3038, '私播信息表删除', 'erp:private-broadcasting-info:delete', 3, 2, 3036, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 22:02:40', '1', '2025-05-20 22:03:24', b'0');
 INSERT INTO `system_menu` VALUES (3039, '私播信息表更新', 'erp:private-broadcasting-info:update', 3, 3, 3036, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 22:02:47', '1', '2025-05-20 22:03:18', b'0');
 INSERT INTO `system_menu` VALUES (3040, '私播信息表查询', 'erp:private-broadcasting-info:query', 3, 4, 3036, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-20 22:02:53', '1', '2025-05-20 22:03:31', b'0');
-INSERT INTO `system_menu` VALUES (3041, '直播货盘表', '', 2, 1, 2995, 'erp/livebroadcasting/index', 'ep:add-location', 'erp/livebroadcasting/index', 'ErpLiveBroadcasting', 0, b'1', b'1', b'1', '1', '2025-05-21 00:32:20', '1', '2025-05-21 00:32:20', b'0');
+INSERT INTO `system_menu` VALUES (3041, '直播货盘表', '', 2, 1, 3058, 'erp/livebroadcasting/index', 'ep:add-location', 'erp/livebroadcasting/index', 'ErpLiveBroadcasting', 0, b'1', b'1', b'1', '1', '2025-05-21 00:32:20', '1', '2025-05-23 01:13:31', b'0');
 INSERT INTO `system_menu` VALUES (3042, '直播货盘表新增', 'erp:livebroadcasting:create', 3, 1, 3041, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 00:33:33', '1', '2025-05-21 00:33:33', b'0');
 INSERT INTO `system_menu` VALUES (3043, '直播货盘表删除', 'erp:livebroadcasting:delete', 3, 2, 3041, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 00:35:13', '1', '2025-05-21 00:35:13', b'0');
 INSERT INTO `system_menu` VALUES (3044, '直播货盘表更新', 'erp:livebroadcasting:update', 3, 3, 3041, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 00:36:40', '1', '2025-05-21 00:36:40', b'0');
 INSERT INTO `system_menu` VALUES (3045, '直播货盘表查询', 'erp:livebroadcasting:query', 3, 4, 3041, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 00:38:06', '1', '2025-05-21 00:38:06', b'0');
-INSERT INTO `system_menu` VALUES (3046, '直播复盘表', '', 2, 1, 2995, 'erp/livebroadcastingreview/index', 'ep:add-location', 'erp/livebroadcastingreview/index', 'ErpLiveBroadcastingReview', 0, b'1', b'1', b'1', '1', '2025-05-21 01:42:31', '1', '2025-05-21 01:42:31', b'0');
+INSERT INTO `system_menu` VALUES (3046, '直播复盘表', '', 2, 1, 3058, 'erp/livebroadcastingreview/index', 'ep:add-location', 'erp/livebroadcastingreview/index', 'ErpLiveBroadcastingReview', 0, b'1', b'1', b'1', '1', '2025-05-21 01:42:31', '1', '2025-05-23 01:13:32', b'0');
 INSERT INTO `system_menu` VALUES (3047, '直播复盘表新增', 'erp:livebroadcastingreview:create', 3, 1, 3046, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 01:43:36', '1', '2025-05-21 01:43:36', b'0');
 INSERT INTO `system_menu` VALUES (3048, '直播复盘表删除', 'erp:livebroadcastingreview:delete', 3, 2, 3046, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 01:44:01', '1', '2025-05-21 01:44:01', b'0');
 INSERT INTO `system_menu` VALUES (3049, '直播复盘表更新', 'erp:livebroadcastingreview:update', 3, 3, 3046, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 01:44:23', '1', '2025-05-21 01:44:23', b'0');
 INSERT INTO `system_menu` VALUES (3050, '直播复盘表查询', 'erp:livebroadcastingreview:query', 3, 4, 3046, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 01:44:42', '1', '2025-05-21 01:44:42', b'0');
-INSERT INTO `system_menu` VALUES (3051, '直播信息表', '', 2, 1, 2995, 'erp/livebroadcastinginfo/index', 'ep:add-location', 'erp/livebroadcastinginfo/index', 'ErpLiveBroadcastingInfo', 0, b'1', b'1', b'1', '1', '2025-05-21 14:13:59', '1', '2025-05-21 14:16:17', b'0');
+INSERT INTO `system_menu` VALUES (3051, '直播信息表', '', 2, 1, 3058, 'erp/livebroadcastinginfo/index', 'ep:add-location', 'erp/livebroadcastinginfo/index', 'ErpLiveBroadcastingInfo', 0, b'1', b'1', b'1', '1', '2025-05-21 14:13:59', '1', '2025-05-23 01:13:37', b'0');
 INSERT INTO `system_menu` VALUES (3052, '直播信息表新增', 'erp:livebroadcastinginfo:create', 3, 1, 3051, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 14:14:35', '1', '2025-05-21 14:14:35', b'0');
 INSERT INTO `system_menu` VALUES (3053, '直播信息表删除', 'erp:livebroadcastinginfo:delete', 3, 2, 3051, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 14:14:54', '1', '2025-05-21 14:14:54', b'0');
 INSERT INTO `system_menu` VALUES (3054, '直播信息表更新', 'erp:livebroadcastinginfo:update', 3, 3, 3051, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 14:15:16', '1', '2025-05-21 14:15:16', b'0');
 INSERT INTO `system_menu` VALUES (3055, '直播信息表查询', 'erp:livebroadcastinginfo:query', 3, 4, 3051, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-21 14:15:34', '1', '2025-05-21 14:15:34', b'0');
+INSERT INTO `system_menu` VALUES (3056, '团购信息表', '', 1, 70, 2563, 'tuangou', 'ep:add-location', '', '', 0, b'1', b'1', b'1', '1', '2025-05-23 01:09:40', '1', '2025-05-23 01:09:40', b'0');
+INSERT INTO `system_menu` VALUES (3057, '私播信息表', '', 1, 80, 2563, 'sibo', 'ep:add-location', '', '', 0, b'1', b'1', b'1', '1', '2025-05-23 01:10:14', '1', '2025-05-23 01:10:14', b'0');
+INSERT INTO `system_menu` VALUES (3058, '直播信息表', '', 1, 90, 2563, 'zhibo', 'ep:add-location', '', '', 0, b'1', b'1', b'1', '1', '2025-05-23 01:10:36', '1', '2025-05-23 01:10:36', b'0');
+INSERT INTO `system_menu` VALUES (3059, '代发辅助表', '', 2, 1, 2995, 'erp/dropship/index', 'ep:add-location', 'erp/dropship/index', 'ErpDropshipAssist', 0, b'1', b'1', b'1', '1', '2025-05-25 17:04:18', '1', '2025-05-25 17:04:18', b'0');
+INSERT INTO `system_menu` VALUES (3060, '代发辅助表新增', 'erp:dropship:create', 3, 1, 3059, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-25 17:04:57', '1', '2025-05-25 17:04:57', b'0');
+INSERT INTO `system_menu` VALUES (3061, '代发辅助表删除', 'erp:dropship:delete', 3, 2, 3006, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-25 17:05:16', '1', '2025-05-25 17:05:29', b'1');
+INSERT INTO `system_menu` VALUES (3062, '代发辅助表删除', 'erp:dropship:delete', 3, 2, 3059, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-25 17:05:51', '1', '2025-05-25 17:05:51', b'0');
+INSERT INTO `system_menu` VALUES (3063, '代发辅助表更改', 'erp:dropship:update', 3, 3, 3059, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-25 17:06:12', '1', '2025-05-25 17:06:12', b'0');
+INSERT INTO `system_menu` VALUES (3064, '代发辅助表查询', 'erp:dropship:query', 3, 4, 3059, '', '', '', '', 0, b'1', b'1', b'1', '1', '2025-05-25 17:06:47', '1', '2025-05-25 17:06:47', b'0');
 
 -- ----------------------------
 -- Table structure for system_notice
@@ -6586,7 +6667,7 @@ CREATE TABLE `system_notice`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '通知公告表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '通知公告表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_notice
@@ -6682,7 +6763,7 @@ CREATE TABLE `system_oauth2_access_token`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_access_token`(`access_token` ASC) USING BTREE,
   INDEX `idx_refresh_token`(`refresh_token` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13065 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'OAuth2 访问令牌' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13248 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'OAuth2 访问令牌' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_oauth2_access_token
@@ -7709,7 +7790,185 @@ INSERT INTO `system_oauth2_access_token` VALUES (13073, 1, 2, '{\"nickname\":\"�
 INSERT INTO `system_oauth2_access_token` VALUES (13074, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'b8eef4bd1e3149a1b799fa3341be99fc', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-21 22:56:12', NULL, '2025-05-21 22:26:12', NULL, '2025-05-21 22:57:09', b'1', 1);
 INSERT INTO `system_oauth2_access_token` VALUES (13075, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '5e20624b206446d2ac905c409c54760f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-21 23:27:09', NULL, '2025-05-21 22:57:09', NULL, '2025-05-21 23:27:41', b'1', 1);
 INSERT INTO `system_oauth2_access_token` VALUES (13076, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '14b9bc0285c94d6784ca1df329699ecc', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-21 23:57:41', NULL, '2025-05-21 23:27:41', NULL, '2025-05-21 23:58:30', b'1', 1);
-INSERT INTO `system_oauth2_access_token` VALUES (13077, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '8438ea55916f43808fe28857b3ee0524', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 00:28:30', NULL, '2025-05-21 23:58:30', NULL, '2025-05-21 23:58:30', b'0', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13077, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '8438ea55916f43808fe28857b3ee0524', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 00:28:30', NULL, '2025-05-21 23:58:30', NULL, '2025-05-22 00:29:04', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13078, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'fc29117c9efc4019a04a28125dd7e57f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 00:59:04', NULL, '2025-05-22 00:29:04', NULL, '2025-05-22 00:59:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13079, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '878f2a8ace1d4da98ac6eebd7e901513', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 01:29:30', NULL, '2025-05-22 00:59:30', NULL, '2025-05-22 01:29:31', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13080, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'cee3207ac16749d7b53cae4b9cdec3f2', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 01:59:31', NULL, '2025-05-22 01:29:31', NULL, '2025-05-22 02:01:31', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13081, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '13cd7e90de37407e94b2407840f339ab', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 02:31:31', NULL, '2025-05-22 02:01:31', NULL, '2025-05-22 02:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13082, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'd0fd150eed644d64b62e2c960f243e56', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 03:03:30', NULL, '2025-05-22 02:33:30', NULL, '2025-05-22 03:03:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13083, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'cf1520745d504eadb366e439bf6869f5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 03:33:30', NULL, '2025-05-22 03:03:30', NULL, '2025-05-22 03:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13084, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '2902477f3b5e418ba4cc0aa62d400216', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 04:03:30', NULL, '2025-05-22 03:33:30', NULL, '2025-05-22 04:03:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13085, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '5961a69d20cb4e54a4bf3a658187e61c', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 04:33:30', NULL, '2025-05-22 04:03:30', NULL, '2025-05-22 04:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13086, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3d0f5675a5ba4ab2ba354d7e8100a9a8', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 05:03:30', NULL, '2025-05-22 04:33:30', NULL, '2025-05-22 05:03:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13087, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '8fb9e501b4144c939cb8a2e00cc98cc6', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 05:33:30', NULL, '2025-05-22 05:03:30', NULL, '2025-05-22 05:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13088, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '8e83c8502e61464fa053c56ecc353002', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 06:03:30', NULL, '2025-05-22 05:33:30', NULL, '2025-05-22 06:03:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13089, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '07521e96e756404d9cb29cb8afde2269', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 06:33:30', NULL, '2025-05-22 06:03:30', NULL, '2025-05-22 06:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13090, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'd9fe569965cd4d6da42ac193e8b3d0ea', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 07:03:30', NULL, '2025-05-22 06:33:30', NULL, '2025-05-22 07:03:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13091, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'd17f99cde14f466a8b881bb344599d56', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 07:33:30', NULL, '2025-05-22 07:03:30', NULL, '2025-05-22 07:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13092, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '043d1bdbbbb44cd89917a8c6151a2d0d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 08:03:30', NULL, '2025-05-22 07:33:30', NULL, '2025-05-22 08:03:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13093, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '924e68786ebe4066acdef1d30f6a4d78', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 08:33:30', NULL, '2025-05-22 08:03:30', NULL, '2025-05-22 08:33:30', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13094, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '60ea73e7843344d7ae2648a275d0a25e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 09:03:30', NULL, '2025-05-22 08:33:30', NULL, '2025-05-22 09:03:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13095, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '060a135c69f84b5e91bdbc105e63d420', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 09:33:32', NULL, '2025-05-22 09:03:32', NULL, '2025-05-22 09:33:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13096, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '7def731c818046b9a9aa8a5f00fc504d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 10:03:32', NULL, '2025-05-22 09:33:32', NULL, '2025-05-22 10:03:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13097, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '4d5f8d0a84614bd0b7bcd7d1ecbb022a', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 10:33:32', NULL, '2025-05-22 10:03:32', NULL, '2025-05-22 10:33:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13098, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '0bf98f3b9db0411d8c8889cceae0fcac', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 11:03:32', NULL, '2025-05-22 10:33:32', NULL, '2025-05-22 11:03:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13099, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '2470e572c32d4a9aa6b39c06fa629cf7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 11:33:32', NULL, '2025-05-22 11:03:32', NULL, '2025-05-22 11:33:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13100, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c8627e322e4242a8b90a6a0624805b90', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 12:03:32', NULL, '2025-05-22 11:33:32', NULL, '2025-05-22 12:03:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13101, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'f3e4b12351f44f38961757df370688f1', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 12:33:32', NULL, '2025-05-22 12:03:32', NULL, '2025-05-22 12:33:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13102, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '979e16acfb3244128c9f759eff939cde', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 13:03:33', NULL, '2025-05-22 12:33:33', NULL, '2025-05-22 13:05:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13103, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '94a825c34b9d44e09e4b988b08444c89', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 13:35:32', NULL, '2025-05-22 13:05:32', NULL, '2025-05-22 13:35:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13104, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '4749f566948943f586f215d22de409b6', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 14:05:32', NULL, '2025-05-22 13:35:32', NULL, '2025-05-22 14:05:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13105, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'be517b2e7b9d4c9293f441dc6ac73cc9', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 14:35:33', NULL, '2025-05-22 14:05:33', NULL, '2025-05-22 14:37:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13106, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a368e03ed6fa4d4995faedb964781e6a', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 15:07:32', NULL, '2025-05-22 14:37:32', NULL, '2025-05-22 15:08:10', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13107, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'b3416cab4b534344a97482e4b0c6747f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 15:38:10', NULL, '2025-05-22 15:08:10', NULL, '2025-05-22 15:38:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13108, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '9995759c11c248678fb852d75883cf15', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 16:08:35', NULL, '2025-05-22 15:38:35', NULL, '2025-05-22 16:08:56', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13109, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '98f7727e36294be5a848b4b3a6fb8b6d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 16:38:56', NULL, '2025-05-22 16:08:56', NULL, '2025-05-22 16:38:57', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13110, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '2218c689354f44adb9aa6cc1481b5319', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 17:08:57', NULL, '2025-05-22 16:38:57', NULL, '2025-05-22 17:09:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13111, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'f1cdeef90a774abd8c6bc09c1376fffd', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 17:39:34', NULL, '2025-05-22 17:09:34', NULL, '2025-05-22 17:39:35', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13112, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a2117fa917e6417586a2638d9bc8145e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 18:09:35', NULL, '2025-05-22 17:39:35', NULL, '2025-05-22 18:11:36', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13113, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '2fecbb85a6ca4d859e3d6fbf4cd456ce', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 18:41:36', NULL, '2025-05-22 18:11:36', NULL, '2025-05-22 18:42:15', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13114, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a39499fc77214b4ea4d7ea99b8290d66', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 19:12:15', NULL, '2025-05-22 18:42:15', NULL, '2025-05-22 19:12:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13115, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3c5d67cfa3d74e589a5751dbbcb04626', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 19:42:32', NULL, '2025-05-22 19:12:32', NULL, '2025-05-22 19:42:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13116, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '2e5ae4e9ea26467c84f43e5551005a9e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 20:12:32', NULL, '2025-05-22 19:42:32', NULL, '2025-05-22 20:12:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13117, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'efad2ace408141e7b8187a2da360933d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 20:42:32', NULL, '2025-05-22 20:12:32', NULL, '2025-05-22 20:42:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13118, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '4cb8e60fcd00442e98789c142eafcd18', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 21:12:32', NULL, '2025-05-22 20:42:32', NULL, '2025-05-22 21:14:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13119, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '381b127e9eeb444797b29096783911c7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 21:44:33', NULL, '2025-05-22 21:14:33', NULL, '2025-05-22 21:45:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13120, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'eebbe12a0d744c4abc3c7a5450b07cfd', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 22:15:32', NULL, '2025-05-22 21:45:32', NULL, '2025-05-22 22:15:59', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13121, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '6729b879e5a74d35a1614bac1dd4825b', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 22:46:00', NULL, '2025-05-22 22:16:00', NULL, '2025-05-22 22:46:20', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13122, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '7cfe471ec675497a896e1562390c7870', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 23:16:21', NULL, '2025-05-22 22:46:21', NULL, '2025-05-22 23:16:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13123, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '7527312102784346896c3429c1bf1fa3', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 23:16:21', NULL, '2025-05-22 22:46:21', NULL, '2025-05-22 23:16:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13124, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '29d99dfa790b440eb94aa0ca525fa138', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-22 23:46:33', NULL, '2025-05-22 23:16:33', NULL, '2025-05-22 23:47:07', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13125, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'f24752c4115941d98893eca99c0c845f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 00:17:08', NULL, '2025-05-22 23:47:08', NULL, '2025-05-23 00:17:47', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13126, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '376131094f2247a6922a9ff11fdb6e4a', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 00:47:47', NULL, '2025-05-23 00:17:47', NULL, '2025-05-23 00:47:54', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13127, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c8731f639c4647eeaacfd92ee84b8e19', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 01:17:54', NULL, '2025-05-23 00:47:54', NULL, '2025-05-23 01:17:58', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13128, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '49356d21aefd495fae638207cbaa45b1', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 01:47:58', NULL, '2025-05-23 01:17:58', NULL, '2025-05-23 01:48:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13129, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'd42b1bd496fe4f6c846fa771b4ac0bc7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 02:18:33', NULL, '2025-05-23 01:48:33', NULL, '2025-05-23 02:20:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13130, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'f6e1c0c46bbc4af298cb8ccfefec2ac7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 02:50:33', NULL, '2025-05-23 02:20:33', NULL, '2025-05-23 02:52:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13131, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '26a42b17631a4ac086b86493ce7a0ece', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 03:22:33', NULL, '2025-05-23 02:52:33', NULL, '2025-05-23 03:24:33', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13132, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'b1e78ecb84774772b2a5850c44a38512', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 03:54:33', NULL, '2025-05-23 03:24:33', NULL, '2025-05-23 03:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13133, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '2fae386a41de46bc91eecdba6b73c043', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 04:26:32', NULL, '2025-05-23 03:56:32', NULL, '2025-05-23 04:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13134, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'e8a8d94c5bde4f91864d86e5bffc9d28', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 04:56:32', NULL, '2025-05-23 04:26:32', NULL, '2025-05-23 04:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13135, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '412d001177164ca1b72b0012e7f6630d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 05:26:32', NULL, '2025-05-23 04:56:32', NULL, '2025-05-23 05:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13136, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '8aceb72902a144b69d195ab8dcad8fb2', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 05:56:32', NULL, '2025-05-23 05:26:32', NULL, '2025-05-23 05:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13137, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'b203f4eba48d4dbc9ae8eb66663e2335', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 06:26:32', NULL, '2025-05-23 05:56:32', NULL, '2025-05-23 06:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13138, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c46802d8e6984245afd4921a3717c791', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 06:56:32', NULL, '2025-05-23 06:26:32', NULL, '2025-05-23 06:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13139, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3aa36c3780c94682ae3873f10d7a2883', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 07:26:32', NULL, '2025-05-23 06:56:32', NULL, '2025-05-23 07:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13140, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3b3eb7e679f5465c99339ff38382c35d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 07:56:32', NULL, '2025-05-23 07:26:32', NULL, '2025-05-23 07:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13141, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'd19d3121a70b41cc888288e55d598227', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 08:26:32', NULL, '2025-05-23 07:56:32', NULL, '2025-05-23 08:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13142, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '82b0051c812245da9c69a0274a5ad97c', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 08:56:32', NULL, '2025-05-23 08:26:32', NULL, '2025-05-23 08:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13143, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'bf0fc7ee612e45d69a18e85fbd774421', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 09:26:32', NULL, '2025-05-23 08:56:32', NULL, '2025-05-23 09:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13144, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c345c841db184a3ab83994e041574ec5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 09:56:32', NULL, '2025-05-23 09:26:32', NULL, '2025-05-23 09:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13145, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'beeef1df95844443ab52f7ee4a0c1b83', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 10:26:32', NULL, '2025-05-23 09:56:32', NULL, '2025-05-23 10:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13146, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c5a7043086c14415a6af263e4d17621e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 10:56:32', NULL, '2025-05-23 10:26:32', NULL, '2025-05-23 10:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13147, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '63dadb1373a84367942f187d15d0a0f5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 11:26:32', NULL, '2025-05-23 10:56:32', NULL, '2025-05-23 11:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13148, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ea5f7ead8821496d85e3f1b7045a7dc4', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 11:56:32', NULL, '2025-05-23 11:26:32', NULL, '2025-05-23 11:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13149, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ae164f9d660340ccae5c2ea1dc419d41', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 12:26:32', NULL, '2025-05-23 11:56:32', NULL, '2025-05-23 12:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13150, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'bf4fe766b9654a86a472ed1c289e4402', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 12:56:32', NULL, '2025-05-23 12:26:32', NULL, '2025-05-23 12:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13151, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ebd35c7da3f042bd83ebac383439db54', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 13:26:32', NULL, '2025-05-23 12:56:32', NULL, '2025-05-23 13:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13152, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '738522de4497462492ca34cf39d609cf', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 13:56:32', NULL, '2025-05-23 13:26:32', NULL, '2025-05-23 13:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13153, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c73331d23ebe4764a1879d12779c037c', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 14:26:32', NULL, '2025-05-23 13:56:32', NULL, '2025-05-23 14:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13154, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a1bd208be20e40a987093fb9d3d4412b', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 14:56:32', NULL, '2025-05-23 14:26:32', NULL, '2025-05-23 14:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13155, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '890f5cb8654e4019a71a5459a151abed', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 15:26:32', NULL, '2025-05-23 14:56:32', NULL, '2025-05-23 15:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13156, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'e7cc295c0f1a443dac45b7117e8f317c', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 15:56:32', NULL, '2025-05-23 15:26:32', NULL, '2025-05-23 15:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13157, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '0dd0a94bc09c4fc480bc118eb3d8c864', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 16:26:32', NULL, '2025-05-23 15:56:32', NULL, '2025-05-23 16:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13158, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '225ffd4cc3474fbcb3b0323306d26fee', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 16:56:32', NULL, '2025-05-23 16:26:32', NULL, '2025-05-23 16:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13159, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '56a6bca84f3b45f99168723530581148', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 17:26:32', NULL, '2025-05-23 16:56:32', NULL, '2025-05-23 17:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13160, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'fa1b72d095f14e648986c5ade8c4b0e0', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 17:56:32', NULL, '2025-05-23 17:26:32', NULL, '2025-05-23 17:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13161, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c898dc0869144bc9b7d32766991d310b', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 18:26:32', NULL, '2025-05-23 17:56:32', NULL, '2025-05-23 18:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13162, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '89aa2f258a0140eca79cde0faae1f0b1', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 18:56:32', NULL, '2025-05-23 18:26:32', NULL, '2025-05-23 18:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13163, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'df1829e602924079b8b770fc73e01a7e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 19:26:32', NULL, '2025-05-23 18:56:32', NULL, '2025-05-23 19:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13164, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '5187ee0c9e9143e69cf249487c8c3974', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 19:56:32', NULL, '2025-05-23 19:26:32', NULL, '2025-05-23 19:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13165, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '63a17ce40c40460aa51b75fe2bc0d4ed', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 20:26:32', NULL, '2025-05-23 19:56:32', NULL, '2025-05-23 20:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13166, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '91848851ce174763b5ae1758e2325af1', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 20:56:32', NULL, '2025-05-23 20:26:32', NULL, '2025-05-23 20:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13167, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '286d8533e94141daa726d849f6fbeba7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 21:26:32', NULL, '2025-05-23 20:56:32', NULL, '2025-05-23 21:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13168, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '6b45b59b91994ea4bae3199596c32771', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 21:56:32', NULL, '2025-05-23 21:26:32', NULL, '2025-05-23 21:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13169, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '38dd1cf6e23f4c3086e453c62ab6db16', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 22:26:32', NULL, '2025-05-23 21:56:32', NULL, '2025-05-23 22:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13170, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ef05ea43c9b04dd89d5878d3f3cfa695', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 22:56:32', NULL, '2025-05-23 22:26:32', NULL, '2025-05-23 22:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13171, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '11751d85c9784ac18c78f753bc66d4ce', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 23:26:32', NULL, '2025-05-23 22:56:32', NULL, '2025-05-23 23:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13172, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '1dbe006e683045d69bc62798adfa7287', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-23 23:56:32', NULL, '2025-05-23 23:26:32', NULL, '2025-05-23 23:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13173, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ffad6848509f4b7eb854b95639e90155', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 00:26:32', NULL, '2025-05-23 23:56:32', NULL, '2025-05-24 00:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13174, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '774420cf565e4de295f593f6cb4b665d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 00:56:32', NULL, '2025-05-24 00:26:32', NULL, '2025-05-24 00:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13175, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '4d202eb9c1c84da795c919cd5fdb1992', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 01:26:32', NULL, '2025-05-24 00:56:32', NULL, '2025-05-24 01:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13176, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a6888016d015445a85d649c77971be9b', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 01:56:32', NULL, '2025-05-24 01:26:32', NULL, '2025-05-24 01:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13177, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '950d2455597f4e0fb0eda39c08d500f6', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 02:26:32', NULL, '2025-05-24 01:56:32', NULL, '2025-05-24 02:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13178, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3988e0fd351c4aa4a67234da8befbc88', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 02:56:32', NULL, '2025-05-24 02:26:32', NULL, '2025-05-24 02:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13179, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ffcec69ffd2c401ba1f6aaa24fd7c47e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 03:26:32', NULL, '2025-05-24 02:56:32', NULL, '2025-05-24 03:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13180, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'aca09d503d18441b8fede7801855ded1', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 03:56:32', NULL, '2025-05-24 03:26:32', NULL, '2025-05-24 03:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13181, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '67ff6bdfa6ed43289d7e6a9f899216f4', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 04:26:32', NULL, '2025-05-24 03:56:32', NULL, '2025-05-24 04:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13182, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '201179ea50744369b356818e5911205d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 04:56:32', NULL, '2025-05-24 04:26:32', NULL, '2025-05-24 04:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13183, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'fa6b409275f247d28e9bf89243594e62', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 05:26:32', NULL, '2025-05-24 04:56:32', NULL, '2025-05-24 05:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13184, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '121124b80a654b19a53d82a61ff86619', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 05:56:32', NULL, '2025-05-24 05:26:32', NULL, '2025-05-24 05:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13185, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '938dfd1594884e65985e7e20f4b1bea9', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 06:26:32', NULL, '2025-05-24 05:56:32', NULL, '2025-05-24 06:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13186, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '70d0edafdd664d6aba61464fc8abf4df', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 06:56:32', NULL, '2025-05-24 06:26:32', NULL, '2025-05-24 06:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13187, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '14e8994c100741128641587663d76801', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 07:26:32', NULL, '2025-05-24 06:56:32', NULL, '2025-05-24 07:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13188, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '0146d45432304eb8a35856679b5f45ab', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 07:56:32', NULL, '2025-05-24 07:26:32', NULL, '2025-05-24 07:56:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13189, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'b078157272a746a7882917eb97f13e43', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 08:26:32', NULL, '2025-05-24 07:56:32', NULL, '2025-05-24 08:26:32', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13190, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '4feee84babb849b69a7f756e12f3decb', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 08:56:32', NULL, '2025-05-24 08:26:32', NULL, '2025-05-24 08:56:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13191, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '71dedaa7eb69452784c0c1c6a6e02457', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 09:26:34', NULL, '2025-05-24 08:56:34', NULL, '2025-05-24 09:28:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13192, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '54a0aa1aa3234a6c888f60a328cc3899', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 09:58:34', NULL, '2025-05-24 09:28:34', NULL, '2025-05-24 10:00:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13193, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '6db9e8c6f3224c3b81b6a56b8d99b11a', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 10:30:34', NULL, '2025-05-24 10:00:34', NULL, '2025-05-24 10:32:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13194, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '57274e9cd06c4ccbb3db269d009fdde5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 11:02:34', NULL, '2025-05-24 10:32:34', NULL, '2025-05-24 11:04:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13195, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '025a2a642f4c42cf9467617cda506114', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 11:34:34', NULL, '2025-05-24 11:04:34', NULL, '2025-05-24 11:36:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13196, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '469e166b34bf4536a3bb8f3818c4e062', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 12:06:34', NULL, '2025-05-24 11:36:34', NULL, '2025-05-24 12:08:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13197, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'dd850eefd3464e689a3d8d7475e10eb2', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 12:38:34', NULL, '2025-05-24 12:08:34', NULL, '2025-05-24 12:40:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13198, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c273f4dfced3469998e6a4f70657a852', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 13:10:34', NULL, '2025-05-24 12:40:34', NULL, '2025-05-24 13:12:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13199, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '66134f540e6246e2973eb4f14bf41f69', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 13:42:34', NULL, '2025-05-24 13:12:34', NULL, '2025-05-24 13:44:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13200, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '48def2b944b94139a597ea2b6eb6bd1f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 14:14:34', NULL, '2025-05-24 13:44:34', NULL, '2025-05-24 14:16:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13201, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '259c46b738d244c499d326ea3fa25ee7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 14:46:34', NULL, '2025-05-24 14:16:34', NULL, '2025-05-24 14:48:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13202, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '4491f7a245454fa98b9c1a65582edcf3', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 15:18:34', NULL, '2025-05-24 14:48:34', NULL, '2025-05-24 15:20:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13203, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'efaa68e5ef0e4f0295eb52da2b173b2b', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 15:50:34', NULL, '2025-05-24 15:20:34', NULL, '2025-05-24 15:52:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13204, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '1743164e44c844308b5ecf2160a56a4d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 16:22:34', NULL, '2025-05-24 15:52:34', NULL, '2025-05-24 16:24:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13205, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '724cace9f2da41dc9b9337376be055e5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 16:54:34', NULL, '2025-05-24 16:24:34', NULL, '2025-05-24 16:56:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13206, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '71c4ea1f04ae47fbb831bdc0011eb5c6', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 17:26:34', NULL, '2025-05-24 16:56:34', NULL, '2025-05-24 17:28:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13207, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3bd64ff6448c46738a15c1399c43cfef', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 17:58:34', NULL, '2025-05-24 17:28:34', NULL, '2025-05-24 18:00:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13208, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '24dc8d036d8f42c98a4ba48cff190f23', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 18:30:34', NULL, '2025-05-24 18:00:34', NULL, '2025-05-24 18:32:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13209, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '29b22b378abb4cb4ab8041947d683c62', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 19:02:34', NULL, '2025-05-24 18:32:34', NULL, '2025-05-24 19:04:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13210, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ce19464861df4475bad27b5d771e4ede', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 19:34:34', NULL, '2025-05-24 19:04:34', NULL, '2025-05-24 19:36:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13211, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '498e081ff1f0442ab23cfdf375f4aa93', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 20:06:34', NULL, '2025-05-24 19:36:34', NULL, '2025-05-24 20:08:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13212, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '35d6514f25f74ef3bef7cfd299d60a24', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 20:38:34', NULL, '2025-05-24 20:08:34', NULL, '2025-05-24 20:40:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13213, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '0b73c124fd0d4b5886f10ff2a63304f0', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 21:10:34', NULL, '2025-05-24 20:40:34', NULL, '2025-05-24 21:12:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13214, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'db67506ecced4b76b3ff0843cd1c8cfa', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 21:42:34', NULL, '2025-05-24 21:12:34', NULL, '2025-05-24 21:44:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13215, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ec5703653c8b45afa1fbe2c3f38b87a5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 22:14:34', NULL, '2025-05-24 21:44:34', NULL, '2025-05-24 22:16:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13216, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '7c3c25635fc24767b5a93247248d5006', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 22:46:34', NULL, '2025-05-24 22:16:34', NULL, '2025-05-24 22:48:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13217, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '59584d3bfb8346ce93d05cd7d4d8a9ed', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 23:18:34', NULL, '2025-05-24 22:48:34', NULL, '2025-05-24 23:20:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13218, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '942f01f6df6c48248a36bf8e206aab4c', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-24 23:50:34', NULL, '2025-05-24 23:20:34', NULL, '2025-05-24 23:52:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13219, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'e95ff9cdd74445c099ecca4d1c747f60', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 00:22:34', NULL, '2025-05-24 23:52:34', NULL, '2025-05-25 00:24:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13220, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '65193e6a065f45b399d8e5e1ffe2c52a', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 00:54:34', NULL, '2025-05-25 00:24:34', NULL, '2025-05-25 00:54:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13221, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'eb020b8fd94e49c19f6e85455e891bfc', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 01:24:34', NULL, '2025-05-25 00:54:34', NULL, '2025-05-25 01:26:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13222, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'fd80a6789b454dddb5fca8ae38f0e05d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 01:56:34', NULL, '2025-05-25 01:26:34', NULL, '2025-05-25 01:58:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13223, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '417d79ab46c1415aa30808dc0cf4f17d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 02:28:34', NULL, '2025-05-25 01:58:34', NULL, '2025-05-25 02:30:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13224, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3755b58da9484fe4b97b42ee3d36ed76', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 03:00:34', NULL, '2025-05-25 02:30:34', NULL, '2025-05-25 03:02:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13225, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '1f982d5468e84e56845b8afd5c8e6b37', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 03:32:34', NULL, '2025-05-25 03:02:34', NULL, '2025-05-25 03:34:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13226, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a938b273fe3f43b28122032bb4072ba2', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 04:04:34', NULL, '2025-05-25 03:34:34', NULL, '2025-05-25 04:06:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13227, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'e8bb5e9491e74f0da5a7437e65d9bd82', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 04:36:34', NULL, '2025-05-25 04:06:34', NULL, '2025-05-25 04:38:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13228, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '77db942490dc48d09318501f91541359', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 05:08:34', NULL, '2025-05-25 04:38:34', NULL, '2025-05-25 05:10:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13229, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '40f5c0b9b91143ba84ad77103f913ef7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 05:40:34', NULL, '2025-05-25 05:10:34', NULL, '2025-05-25 05:42:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13230, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'f7323e2cf81d48b283368b87ed8a10b8', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 06:12:34', NULL, '2025-05-25 05:42:34', NULL, '2025-05-25 06:12:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13231, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a9ba08f71c9543eb8dce2952aa0493b8', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 06:42:34', NULL, '2025-05-25 06:12:34', NULL, '2025-05-25 06:44:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13232, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'bba72edcfaa444cf8a572248d813eba6', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 07:14:34', NULL, '2025-05-25 06:44:34', NULL, '2025-05-25 07:16:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13233, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c69763c47ba04d699051c1bd8e6c7c5a', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 07:46:34', NULL, '2025-05-25 07:16:34', NULL, '2025-05-25 07:48:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13234, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '3bc0f917dc2b42599428f05cff724a5f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 08:18:34', NULL, '2025-05-25 07:48:34', NULL, '2025-05-25 08:20:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13235, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '46e07739b64e420990f890ae318280b7', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 08:50:34', NULL, '2025-05-25 08:20:34', NULL, '2025-05-25 08:52:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13236, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '7ea0ec7be5cf4f97ae8ca5923dda2da5', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 09:22:34', NULL, '2025-05-25 08:52:34', NULL, '2025-05-25 09:24:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13237, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '8708beb7ce6d47209463c127ba0fd497', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 09:54:34', NULL, '2025-05-25 09:24:34', NULL, '2025-05-25 09:56:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13238, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'cc4c30a4280544c5a46c733238123989', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 10:26:34', NULL, '2025-05-25 09:56:34', NULL, '2025-05-25 10:28:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13239, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '09937d57ecf8413fbf4e8903fd88d196', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 10:58:34', NULL, '2025-05-25 10:28:34', NULL, '2025-05-25 11:00:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13240, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '6bc2774923504997a796cb5ec08f93d1', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 11:30:34', NULL, '2025-05-25 11:00:34', NULL, '2025-05-25 11:32:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13241, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '0be7aef97dd941c4bdf1306c12498b34', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 12:02:34', NULL, '2025-05-25 11:32:34', NULL, '2025-05-25 12:04:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13242, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c31e7744512a45ca904f1a4e4802e028', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 12:34:34', NULL, '2025-05-25 12:04:34', NULL, '2025-05-25 12:36:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13243, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '34c70e6a67f04e33853c737247f9421f', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 13:06:34', NULL, '2025-05-25 12:36:34', NULL, '2025-05-25 13:06:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13244, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'c3ed5acabbe7422ba08d411e1f831b6e', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 13:36:34', NULL, '2025-05-25 13:06:34', NULL, '2025-05-25 13:37:46', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13245, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '37de1aae7ea6423081771cd39ebdd718', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 14:07:46', NULL, '2025-05-25 13:37:46', NULL, '2025-05-25 14:08:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13246, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '10995e3a9ff842b2a8c0de7ab026b50d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 14:38:34', NULL, '2025-05-25 14:08:34', NULL, '2025-05-25 14:38:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13247, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'ec7c79e34c2a495e9b745401312390b0', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 15:08:34', NULL, '2025-05-25 14:38:34', NULL, '2025-05-25 15:08:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13248, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'a7c083f2e2924580bb7acec432f2ec77', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 15:38:34', NULL, '2025-05-25 15:08:34', NULL, '2025-05-25 15:38:35', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13249, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'dd1dfdf921ea48ae8756d158a1f02ebc', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 16:08:35', NULL, '2025-05-25 15:38:35', NULL, '2025-05-25 16:28:35', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13250, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '5d72a4d62d8e400ca3464c7340d4528d', '13fa4bd589d74b7fa15538ecdc4680de', 'default', NULL, '2025-05-25 16:58:35', NULL, '2025-05-25 16:28:35', NULL, '2025-05-25 16:28:35', b'0', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13251, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '9426c8ad700846a0b814d782835b7937', 'f72e1b15675f44efbe38ebd9a8294f35', 'default', NULL, '2025-05-25 17:32:57', NULL, '2025-05-25 17:02:57', NULL, '2025-05-25 17:33:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13252, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '1147f082c007448bae1a809168f3597b', 'f72e1b15675f44efbe38ebd9a8294f35', 'default', NULL, '2025-05-25 18:03:34', NULL, '2025-05-25 17:33:34', NULL, '2025-05-25 18:03:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13253, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '082adab818e84d4a86fc74e3532853bf', 'f72e1b15675f44efbe38ebd9a8294f35', 'default', NULL, '2025-05-25 18:33:34', NULL, '2025-05-25 18:03:34', NULL, '2025-05-25 18:35:21', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13254, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', 'f3113821f563424bb738127057e22d50', 'f72e1b15675f44efbe38ebd9a8294f35', 'default', NULL, '2025-05-25 19:05:21', NULL, '2025-05-25 18:35:21', NULL, '2025-05-25 19:05:34', b'1', 1);
+INSERT INTO `system_oauth2_access_token` VALUES (13255, 1, 2, '{\"nickname\":\"芋道源码\",\"deptId\":\"103\"}', '94cef78d65a44dcb8bfe56117e996a72', 'f72e1b15675f44efbe38ebd9a8294f35', 'default', NULL, '2025-05-25 19:35:34', NULL, '2025-05-25 19:05:35', NULL, '2025-05-25 19:05:35', b'0', 1);
 
 -- ----------------------------
 -- Table structure for system_oauth2_approve
@@ -7819,7 +8078,7 @@ CREATE TABLE `system_oauth2_refresh_token`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1729 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'OAuth2 刷新令牌' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1730 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'OAuth2 刷新令牌' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_oauth2_refresh_token
@@ -7843,6 +8102,7 @@ INSERT INTO `system_oauth2_refresh_token` VALUES (1726, 1, '31ea831e15704305b8b4
 INSERT INTO `system_oauth2_refresh_token` VALUES (1727, 1, 'd27a4d7eac2647578392816331ae211e', 2, 'default', NULL, '2025-06-19 18:42:52', NULL, '2025-05-20 18:42:52', NULL, '2025-05-20 18:42:52', b'0', 1);
 INSERT INTO `system_oauth2_refresh_token` VALUES (1728, 1, '5cc2a80f634846c7ad8e9ae21010771e', 2, 'default', NULL, '2025-06-19 19:37:34', NULL, '2025-05-20 19:37:34', NULL, '2025-05-20 19:37:34', b'0', 1);
 INSERT INTO `system_oauth2_refresh_token` VALUES (1729, 1, '13fa4bd589d74b7fa15538ecdc4680de', 2, 'default', NULL, '2025-06-20 21:24:06', NULL, '2025-05-21 21:24:06', NULL, '2025-05-21 21:24:06', b'0', 1);
+INSERT INTO `system_oauth2_refresh_token` VALUES (1730, 1, 'f72e1b15675f44efbe38ebd9a8294f35', 2, 'default', NULL, '2025-06-24 17:02:57', NULL, '2025-05-25 17:02:57', NULL, '2025-05-25 17:02:57', b'0', 1);
 
 -- ----------------------------
 -- Table structure for system_operate_log
@@ -7894,7 +8154,7 @@ CREATE TABLE `system_post`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '岗位信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '岗位信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_post
@@ -8597,7 +8857,7 @@ CREATE TABLE `system_sms_channel`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '短信渠道' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '短信渠道' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_sms_channel
@@ -8695,7 +8955,7 @@ CREATE TABLE `system_sms_template`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '短信模板' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '短信模板' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_sms_template
@@ -8734,7 +8994,7 @@ CREATE TABLE `system_social_client`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '社交客户端表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 44 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '社交客户端表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_social_client
@@ -8841,7 +9101,7 @@ CREATE TABLE `system_tenant_package`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 111 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '租户套餐表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 112 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '租户套餐表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_tenant_package
@@ -8863,7 +9123,7 @@ CREATE TABLE `system_user_post`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 125 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户岗位表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 126 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户岗位表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of system_user_post
@@ -8946,7 +9206,7 @@ CREATE TABLE `system_users`  (
 -- ----------------------------
 -- Records of system_users
 -- ----------------------------
-INSERT INTO `system_users` VALUES (1, 'admin', '$2a$10$mRMIYLDtRHlf6.9ipiqH1.Z.bh/R9dO9d5iHiGYPigi6r5KOoR2Wm', '芋道源码', '管理员', 103, '[1,2]', 'aoteman@126.com', '18818260277', 2, 'http://test.yudao.iocoder.cn/bf2002b38950c904243be7c825d3f82e29f25a44526583c3fde2ebdff3a87f75.png', 0, '0:0:0:0:0:0:0:1', '2025-05-21 21:24:06', 'admin', '2021-01-05 17:03:47', NULL, '2025-05-21 21:24:06', b'0', 1);
+INSERT INTO `system_users` VALUES (1, 'admin', '$2a$10$mRMIYLDtRHlf6.9ipiqH1.Z.bh/R9dO9d5iHiGYPigi6r5KOoR2Wm', '芋道源码', '管理员', 103, '[1,2]', 'aoteman@126.com', '18818260277', 2, 'http://test.yudao.iocoder.cn/bf2002b38950c904243be7c825d3f82e29f25a44526583c3fde2ebdff3a87f75.png', 0, '0:0:0:0:0:0:0:1', '2025-05-25 17:02:57', 'admin', '2021-01-05 17:03:47', NULL, '2025-05-25 17:02:57', b'0', 1);
 INSERT INTO `system_users` VALUES (100, 'yudao', '$2a$04$IgUse/ibRzAZ3rngCThmtemJeoh15Ux1TQ2hIMe4iwt/K3LcFHEda', '芋道', '不要吓我', 104, '[1]', 'yudao@iocoder.cn', '15601691300', 1, '', 0, '0:0:0:0:0:0:0:1', '2024-11-02 14:00:46', '', '2021-01-07 09:07:17', NULL, '2024-11-02 14:00:46', b'0', 1);
 INSERT INTO `system_users` VALUES (103, 'yuanma', '$2a$04$fUBSmjKCPYAUmnMzOb6qE.eZCGPhHi1JmAKclODbfS/O7fHOl2bH6', '源码', NULL, 106, NULL, 'yuanma@iocoder.cn', '15601701300', 0, '', 0, '0:0:0:0:0:0:0:1', '2024-08-11 17:48:12', '', '2021-01-13 23:50:35', NULL, '2024-08-11 17:48:12', b'0', 1);
 INSERT INTO `system_users` VALUES (104, 'test', '$2a$04$jDFLttgfik0QqJKAbfhMa.2A9xXoZmAIxakdFJUzkX.MgBKT6ddo6', '测试号', NULL, 107, '[1,2]', '111@qq.com', '15601691200', 1, '', 0, '0:0:0:0:0:0:0:1', '2024-09-17 15:05:43', '', '2021-01-21 02:13:53', NULL, '2024-09-17 15:05:43', b'0', 1);
@@ -9005,7 +9265,7 @@ CREATE TABLE `trade_after_sale`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 24 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '售后订单' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '售后订单' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_after_sale
@@ -9050,7 +9310,7 @@ CREATE TABLE `trade_after_sale_log`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 40 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '售后订单日志' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 41 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '售后订单日志' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_after_sale_log
@@ -9124,7 +9384,7 @@ CREATE TABLE `trade_brokerage_record`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '用户编号',
   INDEX `idx_biz`(`biz_type` ASC, `biz_id` ASC) USING BTREE COMMENT '业务',
   INDEX `idx_status`(`status` ASC) USING BTREE COMMENT '状态'
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '佣金记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '佣金记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_brokerage_record
@@ -9159,7 +9419,7 @@ CREATE TABLE `trade_brokerage_user`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 295 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '分销用户' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 296 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '分销用户' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_brokerage_user
@@ -9204,7 +9464,7 @@ CREATE TABLE `trade_brokerage_withdraw`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '用户编号',
   INDEX `idx_audit_status`(`status` ASC) USING BTREE COMMENT '状态'
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '佣金提现' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '佣金提现' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_brokerage_withdraw
@@ -9236,7 +9496,7 @@ CREATE TABLE `trade_cart`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 98 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '购物车的商品信息' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 99 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '购物车的商品信息' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_cart
@@ -9314,7 +9574,7 @@ CREATE TABLE `trade_config`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '交易中心配置' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '交易中心配置' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_config
@@ -9339,7 +9599,7 @@ CREATE TABLE `trade_delivery_express`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递公司' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递公司' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_delivery_express
@@ -9365,7 +9625,7 @@ CREATE TABLE `trade_delivery_express_template`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递运费模板' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递运费模板' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_delivery_express_template
@@ -9393,7 +9653,7 @@ CREATE TABLE `trade_delivery_express_template_charge`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递运费模板计费配置' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递运费模板计费配置' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_delivery_express_template_charge
@@ -9430,7 +9690,7 @@ CREATE TABLE `trade_delivery_express_template_free`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递运费模板包邮配置' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '快递运费模板包邮配置' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_delivery_express_template_free
@@ -9481,7 +9741,7 @@ CREATE TABLE `trade_delivery_pick_up_store`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '自提门店' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '自提门店' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_delivery_pick_up_store
@@ -9553,7 +9813,7 @@ CREATE TABLE `trade_order`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 221 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '交易订单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 222 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '交易订单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_order
@@ -9779,7 +10039,7 @@ CREATE TABLE `trade_order_item`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 216 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '交易订单明细表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 217 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '交易订单明细表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_order_item
@@ -10003,7 +10263,7 @@ CREATE TABLE `trade_order_log`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8784 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '交易订单日志' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 8785 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '交易订单日志' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_order_log
@@ -10263,7 +10523,7 @@ CREATE TABLE `trade_statistics`  (
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `trade_statistics_time_index`(`time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 152 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '交易统计表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 153 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '交易统计表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of trade_statistics
@@ -10439,7 +10699,7 @@ CREATE TABLE `yudao_demo01_contact`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '示例联系人表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '示例联系人表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of yudao_demo01_contact
@@ -10461,7 +10721,7 @@ CREATE TABLE `yudao_demo02_category`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '示例分类表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '示例分类表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of yudao_demo02_category
@@ -10489,7 +10749,7 @@ CREATE TABLE `yudao_demo03_course`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '学生课程表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '学生课程表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of yudao_demo03_course
@@ -10527,7 +10787,7 @@ CREATE TABLE `yudao_demo03_grade`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '学生班级表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '学生班级表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of yudao_demo03_grade
@@ -10553,7 +10813,7 @@ CREATE TABLE `yudao_demo03_student`  (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '学生表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '学生表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of yudao_demo03_student

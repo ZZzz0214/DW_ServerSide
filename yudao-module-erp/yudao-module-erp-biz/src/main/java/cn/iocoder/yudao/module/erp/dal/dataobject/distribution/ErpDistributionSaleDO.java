@@ -116,4 +116,14 @@ public class ErpDistributionSaleDO extends BaseDO {
      * 中转人员
      */
     private String transferPerson;
+
+    /**
+     * 销售审批时间
+     */
+    private LocalDateTime saleApprovalTime;
+
+    /**
+     * 销售反审批时间
+     */
+    private LocalDateTime saleUnapproveTime;
 }

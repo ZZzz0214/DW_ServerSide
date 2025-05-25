@@ -93,4 +93,9 @@ public class ErpWholesaleSaleAuditVO {
     @Schema(description = "中转人员", example = "中转员A")
     private String transferPerson;
 
+    @Schema(description = "批发销售审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime saleApprovalTime;
+
+    @Schema(description = "批发销售反审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime saleUnapproveTime;
 }

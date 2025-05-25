@@ -93,6 +93,12 @@ public class ErpWholesaleRespVO {
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
 
+    @Schema(description = "批发采购审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseApprovalTime;
+
+    @Schema(description = "批发采购反审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseUnapproveTime;
+    
     // 来自 ErpWholesaleSaleDO
 //    @Schema(description = "关联销售价格表", example = "1")
 //    private Long salePriceId;
@@ -133,6 +139,12 @@ public class ErpWholesaleRespVO {
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
 
+    @Schema(description = "批发销售审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime saleApprovalTime;
+
+    @Schema(description = "批发销售反审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime saleUnapproveTime;
+    
     @Schema(description = "中转人员", example = "中转员A")
     private String transferPerson;
 

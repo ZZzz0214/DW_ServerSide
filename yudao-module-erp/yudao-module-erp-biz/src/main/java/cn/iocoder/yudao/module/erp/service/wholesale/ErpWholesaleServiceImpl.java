@@ -225,6 +225,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         ErpWholesalePurchaseDO updateObj = new ErpWholesalePurchaseDO()
                 .setPurchaseAuditStatus(purchaseAuditStatus)
                 .setOtherFees(otherFees);
+        
+        // 根据审核状态设置相应时间
+        if (purchaseAuditStatus == 20) { // 审核通过
+            updateObj.setPurchaseApprovalTime(LocalDateTime.now());
+        } else if (purchaseAuditStatus == 10) { // 反审核
+            updateObj.setPurchaseUnapproveTime(LocalDateTime.now());
+        }
+
         purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
                 .eq(ErpWholesalePurchaseDO::getBaseId, id));
     }
@@ -250,6 +258,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         ErpWholesaleSaleDO updateObj = new ErpWholesaleSaleDO()
                 .setSaleAuditStatus(saleAuditStatus)
                 .setOtherFees(otherFees);
+        
+        // 根据审核状态设置相应时间
+        if (saleAuditStatus == 20) { // 审核通过
+            updateObj.setSaleApprovalTime(LocalDateTime.now());
+        } else if (saleAuditStatus == 10) { // 反审核
+            updateObj.setSaleUnapproveTime(LocalDateTime.now());
+        }
+
         saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
                 .eq(ErpWholesaleSaleDO::getBaseId, id));
     }
