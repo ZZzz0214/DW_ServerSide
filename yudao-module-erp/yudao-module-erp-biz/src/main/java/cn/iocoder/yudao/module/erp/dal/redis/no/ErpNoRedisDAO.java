@@ -141,6 +141,12 @@ public class ErpNoRedisDAO {
      * 直播信息编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastinginfo.ErpLiveBroadcastingInfoDO}
      */
     public static final String LIVE_BROADCASTING_INFO_NO_PREFIX = "ZBXX";
+
+    
+    /**
+     * 代发辅助编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO}
+     */
+    public static final String DROPSHIP_ASSIST_NO_PREFIX = "dffz";
    
     
     @Resource

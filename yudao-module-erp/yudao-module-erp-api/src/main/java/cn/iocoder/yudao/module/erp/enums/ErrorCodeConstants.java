@@ -298,4 +298,12 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode LIVE_BROADCASTING_INFO_NOT_APPROVE = new ErrorCode(1_030_119_004, "直播信息未审核，无法操作");
     ErrorCode LIVE_BROADCASTING_INFO_APPROVE_FAIL = new ErrorCode(1_030_119_005, "审核失败，只有未审核的直播信息才能审核");
     ErrorCode LIVE_BROADCASTING_INFO_PROCESS_FAIL = new ErrorCode(1_030_119_006, "反审核失败，只有已审核的直播信息才能反审核");
+    // ========== ERP 代发辅助（1-030-110-000） ==========
+    ErrorCode DROPSHIP_ASSIST_NOT_EXISTS = new ErrorCode(1_030_110_000, "代发辅助记录不存在");
+    ErrorCode DROPSHIP_ASSIST_NO_EXISTS = new ErrorCode(1_030_110_001, "代发辅助编号已存在");
+    ErrorCode DROPSHIP_ASSIST_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_110_002, "代发辅助记录({})已审核，无法修改");
+    ErrorCode DROPSHIP_ASSIST_DELETE_FAIL_APPROVE = new ErrorCode(1_030_110_003, "代发辅助记录({})已审核，无法删除");
+    ErrorCode DROPSHIP_ASSIST_NOT_APPROVE = new ErrorCode(1_030_110_004, "代发辅助记录未审核，无法操作");
+    ErrorCode DROPSHIP_ASSIST_APPROVE_FAIL = new ErrorCode(1_030_110_005, "审核失败，只有未审核的代发辅助记录才能审核");
+    ErrorCode DROPSHIP_ASSIST_PROCESS_FAIL = new ErrorCode(1_030_110_006, "反审核失败，只有已审核的代发辅助记录才能反审核");
 }

@@ -94,4 +94,14 @@ public class ErpWholesaleSaleDO extends BaseDO {
      * 中转人员
      */
     private String transferPerson;
+
+    /**
+     * 批发销售审批时间
+     */
+    private LocalDateTime saleApprovalTime;
+
+    /**
+     * 批发销售反审批时间
+     */
+    private LocalDateTime saleUnapproveTime;
 }

@@ -100,6 +100,12 @@ public class ErpDistributionRespVO {
     @Schema(description = "出货备注信息", example = "出货备注示例")
     private String saleRemark;
 
+    @Schema(description = "采购反审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseUnapproveTime;
+
+    @Schema(description = "采购审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseApprovalTime;
+
     // 来自 ErpDistributionSaleDO
     @Schema(description = "销售人员", example = "销售员A")
     private String salesperson;
@@ -134,6 +140,11 @@ public class ErpDistributionRespVO {
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
 
+    @Schema(description = "销售审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime saleApprovalTime;
+
+    @Schema(description = "销售反审批时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime saleUnapproveTime;
     
     @Schema(description = "中转人员", example = "中转员A")
     private String transferPerson;

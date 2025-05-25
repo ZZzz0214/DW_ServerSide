@@ -115,4 +115,14 @@ public class ErpWholesalePurchaseDO extends BaseDO {
      * 采购审核状态
      */
     private Integer purchaseAuditStatus;
+
+    /**
+     * 批发采购审批时间
+     */
+    private LocalDateTime purchaseApprovalTime;
+
+    /**
+     * 批发采购反审批时间
+     */
+    private LocalDateTime purchaseUnapproveTime;
 }
