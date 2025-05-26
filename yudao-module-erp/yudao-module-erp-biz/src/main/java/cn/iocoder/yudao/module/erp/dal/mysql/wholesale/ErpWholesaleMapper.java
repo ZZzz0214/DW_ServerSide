@@ -105,6 +105,7 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 .selectAs(ErpWholesaleSaleDO::getSalesperson, ErpWholesaleRespVO::getSalesperson)
                 .selectAs(ErpWholesaleSaleDO::getCustomerName, ErpWholesaleRespVO::getCustomerName)
                 .selectAs(ErpWholesaleSaleDO::getTruckFee, ErpWholesaleRespVO::getSaleTruckFee)
+                .selectAs(ErpWholesaleSaleDO::getLogisticsFee, ErpWholesaleRespVO::getSaleLogisticsFee) // 直接使用销售表中的物流费用
                 .selectAs(ErpWholesaleSaleDO::getOtherFees, ErpWholesaleRespVO::getSaleOtherFees)
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesStatus, ErpWholesaleRespVO::getSaleAfterSalesStatus)
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesSituation, ErpWholesaleRespVO::getSaleAfterSalesSituation)
@@ -112,52 +113,22 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
                 .selectAs(ErpWholesaleSaleDO::getSaleAfterSalesTime, ErpWholesaleRespVO::getSaleAfterSalesTime)
                 .selectAs(ErpWholesaleSaleDO::getTransferPerson, ErpWholesaleRespVO::getTransferPerson)
                 .selectAs(ErpWholesaleSaleDO::getSaleAuditStatus, ErpWholesaleRespVO::getSaleAuditStatus);
+
         // 联表查询销售价格信息
-//        query.leftJoin(ErpSalePriceDO.class,
-//                ErpSalePriceDO::getGroupProductId, ErpWholesalePurchaseDO::getComboProductId)
-//                .eq(ErpSalePriceDO::getCustomerName, ErpWholesaleSaleDO::getCustomerName)
-//                .selectAs(ErpSalePriceDO::getWholesalePrice, ErpWholesaleRespVO::getSalePrice);
         query.leftJoin(ErpSalePriceDO.class,
                         wrapper -> wrapper
                                 .eq(ErpSalePriceDO::getGroupProductId, ErpWholesalePurchaseDO::getComboProductId)
                                 .eq(ErpSalePriceDO::getCustomerName, ErpWholesaleSaleDO::getCustomerName))
                 .selectAs(ErpSalePriceDO::getWholesalePrice, ErpWholesaleRespVO::getSalePrice);
-            // 计算销售物流费用
-            query.selectAs(
-                "CASE " +
-                "WHEN t4.shipping_fee_type = 0 THEN t4.fixed_shipping_fee " +
-                "WHEN t4.shipping_fee_type = 1 THEN " +
-                "  CASE WHEN t4.additional_item_quantity > 0 " +
-                "    THEN t4.additional_item_price * CEIL(t.product_quantity / t4.additional_item_quantity) " +
-                "    ELSE 0 END " +
-                "WHEN t4.shipping_fee_type = 2 THEN " +
-                "  CASE WHEN t2.weight * t.product_quantity <= t4.first_weight " +
-                "    THEN t4.first_weight_price " +
-                "    ELSE t4.first_weight_price + t4.additional_weight_price * " +
-                "      CEIL((t2.weight * t.product_quantity - t4.first_weight) / t4.additional_weight) END " +
-                "ELSE 0 END",
-                ErpWholesaleRespVO::getSaleLogisticsFee
-            );
 
-            // 计算销售总额 = 销售单价*数量 + 销售物流费用 + 销售其他费用
-            query.selectAs(
+        // 计算销售总额 = 销售单价*数量 + 销售货拉拉费 + 销售物流费用 + 销售其他费用
+        query.selectAs(
                 "t4.wholesale_price * t.product_quantity + " +
                 "COALESCE(t3.truck_fee, 0) + " +
-                "CASE " +
-                "WHEN t4.shipping_fee_type = 0 THEN t4.fixed_shipping_fee " +
-                "WHEN t4.shipping_fee_type = 1 THEN " +
-                "  CASE WHEN t4.additional_item_quantity > 0 " +
-                "    THEN t4.additional_item_price * CEIL(t.product_quantity / t4.additional_item_quantity) " +
-                "    ELSE 0 END " +
-                "WHEN t4.shipping_fee_type = 2 THEN " +
-                "  CASE WHEN t2.weight * t.product_quantity <= t4.first_weight " +
-                "    THEN t4.first_weight_price " +
-                "    ELSE t4.first_weight_price + t4.additional_weight_price * " +
-                "      CEIL((t2.weight * t.product_quantity - t4.first_weight) / t4.additional_weight) END " +
-                "ELSE 0 END + " +
+                "COALESCE(t3.logistics_fee, 0) + " +
                 "COALESCE(t3.other_fees, 0)",
                 ErpWholesaleRespVO::getTotalSaleAmount
-            );
+        );
 
             PageResult<ErpDistributionRespVO> result = selectJoinPage(reqVO, ErpDistributionRespVO.class, query);
             System.out.println("Query result: " + result);
