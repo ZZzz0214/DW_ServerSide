@@ -88,6 +88,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setBaseId(distribution.getId())
                 .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setSaleAfterSalesStatus(30)
+                .setShippingFee(createReqVO.getSaleShippingFee())
                 .setOtherFees(createReqVO.getSaleOtherFees());
         saleMapper.insert(sale);
 
@@ -350,7 +351,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
                 .setPurchaseAuditStatus(purchaseAuditStatus)
                 .setOtherFees(otherFees);
-        
+
         // 根据审核状态设置相应时间
         if (purchaseAuditStatus == 20) { // 审核通过
             updateObj.setPurchaseApprovalTime(LocalDateTime.now());
@@ -382,7 +383,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
                 .setSaleAuditStatus(saleAuditStatus)
                 .setOtherFees(otherFees);
-        
+
         // 根据审核状态设置相应时间
         if (saleAuditStatus == 20) { // 审核通过
             updateObj.setSaleApprovalTime(LocalDateTime.now());
