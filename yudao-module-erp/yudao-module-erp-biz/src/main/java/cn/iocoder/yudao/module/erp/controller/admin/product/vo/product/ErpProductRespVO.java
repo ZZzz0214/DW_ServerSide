@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @ExcelIgnoreUnannotated
 public class ErpProductRespVO {
 
+    private Long lastId;
+    
     @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "15672")
     @ExcelProperty("产品编号")
     private Long id;
