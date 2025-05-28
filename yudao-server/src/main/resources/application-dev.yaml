@@ -3,6 +3,8 @@ server:
 
 --- #################### 数据库相关配置 ####################
 
+
+
 spring:
   # 数据源配置项
   autoconfigure:
@@ -51,6 +53,13 @@ spring:
           url: jdbc:mysql://127.0.0.1:3306/dw-erp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
           username: root
           password: xiezheng123
+  #elasticsearch
+  elasticsearch:
+    uris: http://localhost:9200 # Elasticsearch服务器地址
+    username: elastic # 如果有认证
+    password: yourpassword # 如果有认证
+    connection-timeout: 1s # 连接超时时间
+    socket-timeout: 30s # socket超时时间
 
   # Redis 配置。Redisson 默认的配置足够使用，一般不需要进行调优
   redis:
