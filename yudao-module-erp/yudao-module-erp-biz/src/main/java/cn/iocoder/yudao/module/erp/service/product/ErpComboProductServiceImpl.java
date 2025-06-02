@@ -17,11 +17,14 @@ import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.logging.log4j.core.config.Scheduled;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
@@ -75,6 +78,29 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     @Resource
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void initESIndex() {
+        System.out.println("开始初始化组合产品ES索引...");
+        try {
+            // 初始化组合产品主表索引
+            IndexOperations comboIndexOps = elasticsearchRestTemplate.indexOps(ErpComboProductES.class);
+            if (!comboIndexOps.exists()) {
+                comboIndexOps.create();
+                comboIndexOps.putMapping(comboIndexOps.createMapping(ErpComboProductES.class));
+                System.out.println("组合产品主表索引创建成功");
+            }
+
+            // 初始化组合产品关联项索引
+            IndexOperations itemIndexOps = elasticsearchRestTemplate.indexOps(ErpComboProductItemES.class);
+            if (!itemIndexOps.exists()) {
+                itemIndexOps.create();
+                itemIndexOps.putMapping(itemIndexOps.createMapping(ErpComboProductItemES.class));
+                System.out.println("组合产品关联项索引创建成功");
+            }
+        } catch (Exception e) {
+            System.err.println("组合产品索引初始化失败: " + e.getMessage());
+        }
+    }
     @Override
     public Long createCombo(@Valid ErpComboSaveReqVO createReqVO) {
         long startTime = System.currentTimeMillis();
@@ -249,6 +275,28 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     //@Cacheable(value = "comboPageCache", key = "#pageReqVO.hashCode()")
     public PageResult<ErpComboRespVO> getComboVOPage(ErpComboPageReqVO pageReqVO) {
         //System.out.println("1");
+
+        try {
+            // 1. 检查数据库是否有数据
+            long dbCount = erpComboMapper.selectCount(null);
+            if (dbCount == 0) {
+                return new PageResult<>(Collections.emptyList(), 0L);
+            }
+
+            // 2. 检查ES索引是否存在
+            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpComboProductES.class);
+            if (!indexOps.exists()) {
+                initESIndex(); // 如果索引不存在则创建
+                fullSyncToES(); // 全量同步数据
+                return getComboVOPageFromDB(pageReqVO); // 首次查询使用数据库
+            }
+
+            // 3. 检查ES是否有数据
+            long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpComboProductES.class);
+            if (esCount == 0) {
+                fullSyncToES(); // 同步数据到ES
+                return getComboVOPageFromDB(pageReqVO); // 首次查询使用数据库
+            }
         // 1. 构建基础查询条件
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                 .withPageable(PageRequest.of(0, pageReqVO.getPageSize()))
@@ -418,6 +466,18 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         });
 
         return new PageResult<>(voList, searchHits.getTotalHits());
+
+               // ... 原有代码 ...
+    } catch (Exception e) {
+        System.err.println("ES查询失败，回退到数据库查询: " + e.getMessage());
+        return getComboVOPageFromDB(pageReqVO);
+    }
+    }
+
+    // 添加数据库查询方法
+    private PageResult<ErpComboRespVO> getComboVOPageFromDB(ErpComboPageReqVO pageReqVO) {
+        PageResult<ErpComboProductDO> pageResult = erpComboMapper.selectPage(pageReqVO);
+        return new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpComboRespVO.class), pageResult.getTotal());
     }
 
     private PageResult<ErpComboRespVO> handleDeepPagination(ErpComboPageReqVO pageReqVO,
@@ -758,4 +818,42 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 //
 //        comboProductItemESRepository.saveAll(itemESList);
 //    }
+
+// 添加全量同步方法
+        @Async
+        public void fullSyncToES() {
+            try {
+                // 同步主表数据
+                List<ErpComboProductDO> combos = erpComboMapper.selectList(null);
+                if (CollUtil.isEmpty(combos)) {
+                    System.out.println("数据库中没有组合产品数据，跳过ES同步");
+                    return;
+                }
+
+                List<ErpComboProductES> comboESList = combos.stream()
+                    .map(this::convertComboToES)
+                    .collect(Collectors.toList());
+                comboProductESRepository.saveAll(comboESList);
+
+                // 同步关联项数据
+                List<ErpComboProductItemDO> items = erpComboProductItemMapper.selectList(null);
+                if (CollUtil.isEmpty(items)) {
+                    System.out.println("没有组合产品关联项数据，跳过同步");
+                    return;
+                }
+
+                List<ErpComboProductItemES> itemESList = items.stream()
+                    .map(item -> {
+                        ErpComboProductItemES es = new ErpComboProductItemES();
+                        BeanUtils.copyProperties(item, es);
+                        return es;
+                    })
+                    .collect(Collectors.toList());
+                comboProductItemESRepository.saveAll(itemESList);
+
+                System.out.println("全量同步ES数据完成，共同步" + comboESList.size() + "条组合产品和" + itemESList.size() + "条关联项");
+            } catch (Exception e) {
+                System.err.println("全量同步ES数据失败: " + e.getMessage());
+            }
+        }
 }

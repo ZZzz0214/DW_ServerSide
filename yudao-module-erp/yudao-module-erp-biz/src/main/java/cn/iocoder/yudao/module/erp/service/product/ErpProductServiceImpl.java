@@ -301,7 +301,7 @@ public class ErpProductServiceImpl implements ErpProductService {
         return new PageResult<>(voList, searchHits.getTotalHits());
 
     } catch (Exception e) {
-        System.err.println("ES查询失败，回退到数据库查询: " + e.getMessage());
+        System.out.println("ES查询失败，回退到数据库查询: " + e.getMessage());
         return getProductVOPageFromDB(pageReqVO);
     }
     }
