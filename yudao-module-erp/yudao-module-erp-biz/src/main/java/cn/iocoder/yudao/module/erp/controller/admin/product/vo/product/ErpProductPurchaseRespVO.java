@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Schema(description = "管理后台 - ERP 产品 Response VO")
 @Data
 @ExcelIgnoreUnannotated
-public class ErpProductRespVO {
+public class ErpProductPurchaseRespVO {
 
     private Long lastId;
 
@@ -72,6 +72,28 @@ public class ErpProductRespVO {
     @Schema(description = "采购人员")
     @ExcelProperty("采购人员")
     private String purchaser;
+
+
+    @Schema(description = "供应商名")
+    @ExcelProperty("供应商名")
+    private String supplier;
+
+    @Schema(description = "采购单价（单位：元）")
+    @ExcelProperty("采购单价")
+    private BigDecimal purchasePrice;
+
+    @Schema(description = "批发单价（单位：元）")
+    @ExcelProperty("批发单价")
+    private BigDecimal wholesalePrice;
+
+    @Schema(description = "备注信息")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+    @Schema(description = "对外最低出货单价（单位：元）")
+    @ExcelProperty("对外最低出货单价")
+    private BigDecimal minPurchasePrice;
+
 
 
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
@@ -279,20 +301,10 @@ public class ErpProductRespVO {
 
 
 
-    @Schema(description = "供应商名")
-    private String supplier;
 
-    @Schema(description = "采购单价（单位：元）")
-    private BigDecimal purchasePrice;
 
-    @Schema(description = "批发单价（单位：元）")
-    private BigDecimal wholesalePrice;
 
-    @Schema(description = "备注信息")
-    private String remark;
 
-    @Schema(description = "对外最低采购单价（单位：元）")
-    private BigDecimal minPurchasePrice;
 
     @Schema(description = "对外最低批发单价（单位：元）")
     private BigDecimal minWholesalePrice;

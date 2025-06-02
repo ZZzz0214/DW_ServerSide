@@ -1,7 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview;
+import java.io.IOException;
 import java.util.Collections;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.ErpGroupBuyingReviewPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.ErpGroupBuyingReviewRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.ErpGroupBuyingReviewSaveReqVO;
@@ -16,6 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.List;
+
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import javax.servlet.http.HttpServletResponse;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -75,5 +82,18 @@ public class ErpGroupBuyingReviewController {
     public CommonResult<List<ErpGroupBuyingReviewRespVO>> getGroupBuyingReviewListByIds(@RequestParam("ids") List<Long> ids) {
         List<ErpGroupBuyingReviewRespVO> list = groupBuyingReviewService.getGroupBuyingReviewVOList(ids);
         return success(list);
+    }
+
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出团购复盘 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportGroupBuyingReviewExcel(@Valid ErpGroupBuyingReviewPageReqVO pageReqVO,
+              HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        PageResult<ErpGroupBuyingReviewRespVO> pageResult = groupBuyingReviewService.getGroupBuyingReviewVOPage(pageReqVO);
+        // 导出 Excel
+        ExcelUtils.write(response, "团购复盘.xlsx", "数据", ErpGroupBuyingReviewRespVO.class,
+                pageResult.getList());
     }
 }

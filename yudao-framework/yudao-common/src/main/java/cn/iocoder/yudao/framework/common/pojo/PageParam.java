@@ -30,17 +30,17 @@ public class PageParam implements Serializable {
     @Schema(description = "每页条数，最大值为 100", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     @NotNull(message = "每页条数不能为空")
     @Min(value = 1, message = "每页条数最小值为 1")
-    @Max(value = 100, message = "每页条数最大值为 100")
+    @Max(value = 1000, message = "每页条数最大值为 1000")
     private Integer pageSize = PAGE_SIZE;
 
         // 新增构造函数
         public PageParam() {
         }
-    
+
         public PageParam(Integer pageNo, Integer pageSize) {
             this.pageNo = pageNo;
             this.pageSize = pageSize;
         }
-    
+
 
 }

@@ -1,19 +1,13 @@
 package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 
-import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Schema(description = "管理后台 - ERP 组合产品 Response VO")
-@Data
-@ExcelIgnoreUnannotated
-public class ErpComboRespVO {
-
+public class ErpComboPurchaseRespVO {
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "15672")
     private Long id;
 
@@ -47,15 +41,19 @@ public class ErpComboRespVO {
     private String purchaser;
 
     @Schema(description = "供应商名")
+    @ExcelProperty("供应商名")
     private String supplier;
 
     @Schema(description = "采购单价（单位：元）")
+    @ExcelProperty("采购单价")
     private BigDecimal purchasePrice;
 
     @Schema(description = "批发单价（单位：元）")
+    @ExcelProperty("批发单价")
     private BigDecimal wholesalePrice;
 
     @Schema(description = "备注信息")
+    @ExcelProperty("备注信息")
     private String remark;
 
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
@@ -123,6 +121,4 @@ public class ErpComboRespVO {
 
     @Schema(description = "单品列表")
     private List<ErpProductRespVO> items;
-
-
 }

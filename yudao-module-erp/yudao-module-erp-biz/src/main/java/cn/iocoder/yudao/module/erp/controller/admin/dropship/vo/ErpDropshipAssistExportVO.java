@@ -1,17 +1,15 @@
 package cn.iocoder.yudao.module.erp.controller.admin.dropship.vo;
 
+
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Schema(description = "管理后台 - ERP 代发辅助 Response VO")
+@Schema(description = "管理后台 - ERP 代发辅助导出 VO")
 @Data
-public class ErpDropshipAssistRespVO {
-
-    @Schema(description = "代发辅助表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    private Long id;
+public class ErpDropshipAssistExportVO {
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "DF202403250001")
     @ExcelProperty("编号")
@@ -56,9 +54,4 @@ public class ErpDropshipAssistRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-
-    @Schema(description = "产品简称", example = "组合A")
-    private String productShortName;
-
-
 }

@@ -276,3 +276,5 @@ iot:
 spring:
   elasticsearch:
     uris: http://localhost:9200
+    connection-timeout: 600000 # 连接超时时间设置为10分钟（600000毫秒）
+    socket-timeout: 600000 # socket超时时间设置为10分钟
