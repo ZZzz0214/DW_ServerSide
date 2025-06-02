@@ -16,7 +16,6 @@ public class ErpComboSaveReqVO {
     private Long id;
 
     @Schema(description = "组合产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "李四")
-    @NotEmpty(message = "组合产品名称不能为空")
     private String name;
 
     @Schema(description = "产品简称")
@@ -77,11 +76,9 @@ public class ErpComboSaveReqVO {
     private BigDecimal additionalWeightPrice;
 
     @Schema(description = "产品数量（组合产品中包含的单品总数）", requiredMode = Schema.RequiredMode.REQUIRED, example = "5")
-    @NotNull(message = "产品数量不能为空")
     private Integer totalQuantity;
 
     @Schema(description = "产品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
-    @NotNull(message = "产品状态不能为空")
     private Integer status;
 
 //    @Schema(description = "关联的单品列表", requiredMode = Schema.RequiredMode.REQUIRED)
