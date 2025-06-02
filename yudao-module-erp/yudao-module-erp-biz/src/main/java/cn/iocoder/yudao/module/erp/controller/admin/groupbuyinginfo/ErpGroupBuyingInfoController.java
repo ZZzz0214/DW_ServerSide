@@ -18,6 +18,14 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.List;
 
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - ERP 团购信息")
@@ -76,5 +84,17 @@ public class ErpGroupBuyingInfoController {
     public CommonResult<List<ErpGroupBuyingInfoRespVO>> getGroupBuyingInfoListByIds(@RequestParam("ids") List<Long> ids) {
         List<ErpGroupBuyingInfoRespVO> list = groupBuyingInfoService.getGroupBuyingInfoVOList(ids);
         return success(list);
+    }
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出团购信息 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:group-buying-info:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportGroupBuyingInfoExcel(@Valid ErpGroupBuyingInfoPageReqVO pageReqVO,
+              HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        PageResult<ErpGroupBuyingInfoRespVO> pageResult = groupBuyingInfoService.getGroupBuyingInfoVOPage(pageReqVO);
+        // 导出 Excel
+        ExcelUtils.write(response, "团购信息.xlsx", "数据", ErpGroupBuyingInfoRespVO.class,
+                pageResult.getList());
     }
 }

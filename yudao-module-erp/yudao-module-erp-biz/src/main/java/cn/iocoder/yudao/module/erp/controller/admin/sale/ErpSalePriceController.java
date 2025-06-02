@@ -108,7 +108,7 @@ public class ErpSalePriceController {
     public void exportSalePriceExcel(@Valid ErpSalePricePageReqVO pageReqVO, HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpSalePriceRespVO> pageResult = salePriceService.getSalePriceVOPage(pageReqVO);
-        ExcelUtils.write(response, "销售价格.xls", "数据", ErpSalePriceRespVO.class, pageResult.getList());
+        ExcelUtils.write(response, "销售价格.xlsx", "数据", ErpSalePriceRespVO.class, pageResult.getList());
     }
 
     @GetMapping("/search")
@@ -118,7 +118,7 @@ public class ErpSalePriceController {
         List<ErpSalePriceRespVO> erpSalePrices = salePriceService.searchProducts(searchReqVO);
         return success(erpSalePrices);
     }
-    
+
     @GetMapping("/missing-prices")
     @Operation(summary = "获取缺失价格的销售记录")
     @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")

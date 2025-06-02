@@ -103,6 +103,7 @@ public class ErpComboSaveReqVO {
 //    }
 
     @Schema(description = "关联的单品列表", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "单品不为空")
     private List<ErpProductRespVO> items;
 
 }

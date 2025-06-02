@@ -16,30 +16,48 @@ import java.time.LocalDateTime;
 public class ErpGroupBuyingReviewRespVO {
 
     @Schema(description = "团购复盘编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty("团购复盘编号")
     private Long id;
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "GBR001")
     @ExcelProperty("编号")
     private String no;
 
+    @Schema(description = "品牌名称", example = "XX品牌")
+    @ExcelProperty("品牌名称")
+    private String brandName;
+
+    @Schema(description = "产品名称", example = "XX产品")
+    @ExcelProperty("产品名称")
+    private String productName;
+
+    @Schema(description = "产品规格", example = "500g/袋")
+    @ExcelProperty("产品规格")
+    private String productSpecification;
+
+    @Schema(description = "产品SKU", example = "SKU12345")
+    @ExcelProperty("产品SKU")
+    private String productSku;
+
     @Schema(description = "备注信息", example = "备注内容")
     @ExcelProperty("备注信息")
     private String remark;
 
-    @Schema(description = "客户编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty("客户编号")
-    private Long customerId;
     @Schema(description = "客户名称", example = "客户A")
+    @ExcelProperty("客户名称")
     private String customerName;
 
-    @Schema(description = "团购货盘表ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty("团购货盘表ID")
-    private Long groupBuyingId;
 
     @Schema(description = "供团价格", example = "100.00")
     @ExcelProperty("供团价格")
     private BigDecimal supplyGroupPrice;
+
+    @Schema(description = "快递费用", example = "100.00")
+    @ExcelProperty("快递费用")
+    private BigDecimal expressFee;
+
+    @Schema(description = "开团机制", example = "满100人成团")
+    @ExcelProperty("开团机制")
+    private String groupMechanism;
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
@@ -61,27 +79,20 @@ public class ErpGroupBuyingReviewRespVO {
     @ExcelProperty("复团销量")
     private Integer repeatGroupSales;
 
+    @Schema(description = "创建者")
+    @ExcelProperty("创建人员")
+    private String creator;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
-    @Schema(description = "产品名称", example = "XX产品")
-    @ExcelProperty("产品名称")
-    private String productName;
+    @Schema(description = "团购货盘表ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Long groupBuyingId;
 
-    @Schema(description = "品牌名称", example = "XX品牌")
-    @ExcelProperty("品牌名称")
-    private String brandName;
 
-    @Schema(description = "产品规格", example = "500g/袋")
-    @ExcelProperty("产品规格")
-    private String productSpecification;
 
-    @Schema(description = "产品SKU", example = "SKU12345")
-    @ExcelProperty("产品SKU")
-    private String productSku;
 
-    @Schema(description = "开团机制", example = "满100人成团")
-    @ExcelProperty("开团机制")
-    private String groupMechanism;
+
+
 }

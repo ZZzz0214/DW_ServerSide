@@ -1,7 +1,9 @@
 package cn.iocoder.yudao.module.erp.controller.admin.groupbuying;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingSaveReqVO;
@@ -13,8 +15,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import javax.servlet.http.HttpServletResponse;
+
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -76,5 +83,18 @@ public class ErpGroupBuyingController {
     public CommonResult<List<ErpGroupBuyingRespVO>> getGroupBuyingListByIds(@RequestParam("ids") List<Long> ids) {
         List<ErpGroupBuyingRespVO> list = groupBuyingService.getGroupBuyingVOList(ids);
         return success(list);
+    }
+
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出团购货盘 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:group-buying:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportGroupBuyingExcel(@Valid ErpGroupBuyingPageReqVO pageReqVO,
+              HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        PageResult<ErpGroupBuyingRespVO> pageResult = groupBuyingService.getGroupBuyingVOPage(pageReqVO);
+        // 导出 Excel
+        ExcelUtils.write(response, "团购货盘.xlsx", "数据", ErpGroupBuyingRespVO.class,
+                pageResult.getList());
     }
 }

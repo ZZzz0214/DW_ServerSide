@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -69,12 +72,12 @@ public class ErpNoRedisDAO {
     /**
      * 产品编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO}
      */
-    public static final String PRODUCT_NO_PREFIX = "CPK";
+    public static final String PRODUCT_NO_PREFIX = "CPXX";
 
     /**
      * 组合产品编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO}
      */
-    public static final String COMBO_PRODUCT_NO_PREFIX = "ZPK";
+    public static final String COMBO_PRODUCT_NO_PREFIX = "ZPXX";
 
     /**
      * 付款单 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentDO}
@@ -142,13 +145,13 @@ public class ErpNoRedisDAO {
      */
     public static final String LIVE_BROADCASTING_INFO_NO_PREFIX = "ZBXX";
 
-    
+
     /**
      * 代发辅助编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO}
      */
-    public static final String DROPSHIP_ASSIST_NO_PREFIX = "dffz";
-   
-    
+    public static final String DROPSHIP_ASSIST_NO_PREFIX = "DFFZ";
+
+
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
@@ -177,5 +180,8 @@ public class ErpNoRedisDAO {
         stringRedisTemplate.expire(key, Duration.ofDays(1L));
         return noPrefix + String.format("%06d", no);
     }
+
+
+
 
 }

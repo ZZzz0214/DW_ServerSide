@@ -103,7 +103,7 @@ public class ErpComboProductController {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpComboRespVO> pageResult = comboProductService.getComboVOPage(pageReqVO);
         // 导出 Excel
-        ExcelUtils.write(response, "组合产品.xls", "数据", ErpComboRespVO.class,
+        ExcelUtils.write(response, "组品信息.xlsx", "数据", ErpComboRespVO.class,
                 pageResult.getList());
     }
 

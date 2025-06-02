@@ -14,15 +14,14 @@ import java.time.LocalDateTime;
 public class ErpGroupBuyingInfoRespVO {
 
     @Schema(description = "团购信息编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty("团购信息编号")
     private Long id;
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "GBI001")
     @ExcelProperty("编号")
     private String no;
 
-    @Schema(description = "客户姓名", example = "张三")
-    @ExcelProperty("客户姓名")
+    @Schema(description = "客户名称", example = "张三")
+    @ExcelProperty("客户名称")
     private String customerName;
 
     @Schema(description = "客户职位", example = "采购经理")
@@ -64,6 +63,10 @@ public class ErpGroupBuyingInfoRespVO {
     @Schema(description = "备注信息", example = "备注内容")
     @ExcelProperty("备注信息")
     private String remark;
+
+    @Schema(description = "创建者")
+    @ExcelProperty("创建人员")
+    private String creator;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")

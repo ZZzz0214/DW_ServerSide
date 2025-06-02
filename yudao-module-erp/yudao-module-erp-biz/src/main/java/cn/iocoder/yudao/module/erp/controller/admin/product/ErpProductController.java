@@ -76,7 +76,7 @@ public class ErpProductController {
     @Operation(summary = "获得产品分页")
     @PreAuthorize("@ss.hasPermission('erp:product:query')")
     public CommonResult<PageResult<ErpProductRespVO>> getProductPage(@Valid ErpProductPageReqVO pageReqVO) {
-        System.out.println("调用产品分类");
+        System.out.println("调用产品分页"+pageReqVO);
         return success(productService.getProductVOPage(pageReqVO));
     }
 
@@ -103,7 +103,7 @@ public class ErpProductController {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpProductRespVO> pageResult = productService.getProductVOPage(pageReqVO);
         // 导出 Excel
-        ExcelUtils.write(response, "产品.xls", "数据", ErpProductRespVO.class,
+        ExcelUtils.write(response, "产品信息.xlsx", "数据", ErpProductRespVO.class,
                 pageResult.getList());
     }
 

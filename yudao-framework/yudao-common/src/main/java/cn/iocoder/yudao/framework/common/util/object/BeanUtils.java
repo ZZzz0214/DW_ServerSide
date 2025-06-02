@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -72,5 +73,11 @@ public class BeanUtils {
             return;
         }
         BeanUtil.copyProperties(source, target, ignoreProperties);
+    }
+    public static Map<String, Object> beanToMap(Object bean) {
+        if (bean == null) {
+            return null;
+        }
+        return BeanUtil.beanToMap(bean);
     }
 }

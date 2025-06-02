@@ -58,8 +58,8 @@ spring:
     uris: http://localhost:9200 # Elasticsearch服务器地址
     username: elastic # 如果有认证
     password: yourpassword # 如果有认证
-    connection-timeout: 1s # 连接超时时间
-    socket-timeout: 30s # socket超时时间
+    connection-timeout: 600000 # 连接超时时间设置为10分钟
+    socket-timeout: 600000 # socket超时时间设置为10分钟
 
   # Redis 配置。Redisson 默认的配置足够使用，一般不需要进行调优
   redis:
