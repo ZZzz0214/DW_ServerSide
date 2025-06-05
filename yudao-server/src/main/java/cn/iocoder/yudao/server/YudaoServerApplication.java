@@ -14,7 +14,12 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  */
 @SuppressWarnings("SpringComponentScan") // 忽略 IDEA 无法识别 ${yudao.info.base-package}
 @SpringBootApplication(scanBasePackages = {"${yudao.info.base-package}.server", "${yudao.info.base-package}.module"})
-@EnableElasticsearchRepositories(basePackages = "cn.iocoder.yudao.module.erp.service.product")
+//@EnableElasticsearchRepositories(basePackages = "cn.iocoder.yudao.module.erp.service.product")
+@EnableElasticsearchRepositories(basePackages = {
+    "cn.iocoder.yudao.module.erp.service.product",
+    "cn.iocoder.yudao.module.erp.service.distribution",
+        "cn.iocoder.yudao.module.erp.service.sale"// 新增的包路径
+})
 public class YudaoServerApplication {
 
     public static void main(String[] args) {
