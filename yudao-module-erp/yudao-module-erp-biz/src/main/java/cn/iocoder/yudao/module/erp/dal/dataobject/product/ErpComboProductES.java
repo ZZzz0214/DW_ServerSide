@@ -8,6 +8,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.elasticsearch.annotations.Setting;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 
 @Data
@@ -88,4 +89,17 @@ public class ErpComboProductES {
     // 租户ID（用于多租户隔离）
     @Field(name = "tenant_id", type = FieldType.Long)
     private Long tenantId;
+
+
+    @Field(name = "create_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime createTime;
+
+    @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime updateTime;
+
+    @Field(name = "creator", type = FieldType.Keyword)
+    private String creator;
+
+    @Field(name = "updater", type = FieldType.Keyword)
+    private String updater;
 }
