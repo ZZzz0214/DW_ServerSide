@@ -126,6 +126,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         } else {
             ErpDistributionBaseESDO es = convertBaseToES(base);
             distributionBaseESRepository.save(es);
+
         }
     }
 
@@ -133,10 +134,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     private void syncPurchaseToES(Long purchaseId) {
         ErpDistributionPurchaseDO purchase = purchaseMapper.selectById(purchaseId);
         if (purchase == null) {
-            distributionPurchaseESRepository.deleteById(purchaseId);
+            distributionPurchaseESRepository.deleteByBaseId(purchaseId);
         } else {
             ErpDistributionPurchaseESDO es = convertPurchaseToES(purchase);
             distributionPurchaseESRepository.save(es);
+
+
         }
     }
 
@@ -144,10 +147,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     private void syncSaleToES(Long saleId) {
         ErpDistributionSaleDO sale = saleMapper.selectById(saleId);
         if (sale == null) {
-            distributionSaleESRepository.deleteById(saleId);
+            distributionSaleESRepository.deleteByBaseId(saleId);
         } else {
             ErpDistributionSaleESDO es = convertSaleToES(sale);
             distributionSaleESRepository.save(es);
+
         }
     }
 
@@ -214,7 +218,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     public Long createDistribution(ErpDistributionSaveReqVO createReqVO) {
         // 1. 校验数据
         validateDistributionForCreateOrUpdate(null, createReqVO);
-        System.out.println(createReqVO);
+       // System.out.println(createReqVO);
 
         // 2. 生成代发单号，并校验唯一性
         String no = noRedisDAO.generate(ErpNoRedisDAO.DISTRIBUTION_NO_PREFIX);
@@ -247,10 +251,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setOtherFees(createReqVO.getSaleOtherFees());
         saleMapper.insert(sale);
 
-        // 同步到ES
-        syncBaseToES(distribution.getId());
-        syncPurchaseToES(purchase.getId());
-        syncSaleToES(sale.getId());
+    // 同步到ES
+    syncBaseToES(distribution.getId());
+    // 修改为传入采购记录ID和销售记录ID
+    syncPurchaseToES(purchase.getId());
+    syncSaleToES(sale.getId());
 
         return distribution.getId();
     }
@@ -311,8 +316,10 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(updateReqVO.getId());
         if (purchase != null) {
             if (!ErpAuditStatus.APPROVE.getStatus().equals(purchase.getPurchaseAuditStatus())) {
+                Long originalId = purchase.getId();
                 purchase = BeanUtils.toBean(updateReqVO, ErpDistributionPurchaseDO.class)
-                        .setBaseId(updateReqVO.getId());
+                        .setBaseId(updateReqVO.getId())
+                        .setId(originalId); // 恢复原始ID
                 purchaseMapper.update(purchase,
                     new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
                         .eq(ErpDistributionPurchaseDO::getBaseId, updateReqVO.getId()));
@@ -323,22 +330,27 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionSaleDO sale = saleMapper.selectByBaseId(updateReqVO.getId());
         if (sale != null) {
             if (!ErpAuditStatus.APPROVE.getStatus().equals(sale.getSaleAuditStatus())) {
+                Long originalId = sale.getId();
                 sale = BeanUtils.toBean(updateReqVO, ErpDistributionSaleDO.class)
                         .setBaseId(updateReqVO.getId())
-                        .setOtherFees(updateReqVO.getSaleOtherFees());
+                        .setShippingFee(updateReqVO.getSaleShippingFee())
+                        .setOtherFees(updateReqVO.getSaleOtherFees())
+                        .setId(originalId); // 恢复原始ID
                 saleMapper.update(sale,
                     new LambdaUpdateWrapper<ErpDistributionSaleDO>()
                         .eq(ErpDistributionSaleDO::getBaseId, updateReqVO.getId()));
             }
         }
-        // 同步到ES
+        // 5. 同步到ES（在数据库更新完成后）
         syncBaseToES(updateReqVO.getId());
         if (purchase != null) {
+            //System.out.println("传入到采购里面的是"+purchase.getId());
             syncPurchaseToES(purchase.getId());
         }
         if (sale != null) {
             syncSaleToES(sale.getId());
         }
+
 
     }
 
@@ -363,18 +375,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 4. 删除销售信息
         saleMapper.deleteByBaseIds(ids);
 
-                // 从ES删除
+        // 从ES删除
         ids.forEach(id -> {
+            //System.out.println("删除id"+id);
             distributionBaseESRepository.deleteById(id);
-            // 获取关联的采购和销售记录ID并删除
-            ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
-            if (purchase != null) {
-                distributionPurchaseESRepository.deleteById(purchase.getId());
-            }
-            ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
-            if (sale != null) {
-                distributionSaleESRepository.deleteById(sale.getId());
-            }
+            // 直接通过baseId删除采购和销售记录
+            distributionPurchaseESRepository.deleteByBaseId(id);
+            distributionSaleESRepository.deleteByBaseId(id);
         });
     }
 
