@@ -101,7 +101,7 @@ public class ErpDistributionController {
         ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
         if (purchase != null) {
             BeanUtils.copyProperties(purchase, respVO, "id");
-            System.out.println("查看一下采购"+respVO);
+            //System.out.println("查看一下采购"+respVO);
             // 通过组品ID获取组品信息并设置相关字段
             if (purchase.getComboProductId() != null) {
                 ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());

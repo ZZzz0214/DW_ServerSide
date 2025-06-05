@@ -12,4 +12,5 @@ public interface ErpDistributionPurchaseESRepository extends ElasticsearchReposi
     Optional<ErpDistributionPurchaseESDO> findByBaseId(Long baseId);
 
     Optional<ErpDistributionPurchaseESDO> findByBaseIdAndPurchaseAuditStatus(Long baseId, Integer purchaseAuditStatus);
+    void deleteByBaseId(Long baseId);
 }

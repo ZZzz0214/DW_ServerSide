@@ -336,14 +336,14 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 ErpComboProductES.class,
                 IndexCoordinates.of("erp_combo_products"));
                 // 打印搜索结果
-        System.out.println("===== 搜索结果 =====");
-        System.out.println("总命中数: " + searchHits.getTotalHits());
-        searchHits.forEach(hit -> {
-            ErpComboProductES combo = hit.getContent();
-            System.out.println("ID: " + combo.getId() +
-                             ", 名称: " + combo.getName() +
-                             ", 组合名称: " + combo.getComboName());
-        });
+//        System.out.println("===== 搜索结果 =====");
+//        System.out.println("总命中数: " + searchHits.getTotalHits());
+//        searchHits.forEach(hit -> {
+//            ErpComboProductES combo = hit.getContent();
+//            System.out.println("ID: " + combo.getId() +
+//                             ", 名称: " + combo.getName() +
+//                             ", 组合名称: " + combo.getComboName());
+//        });
 
         // 获取所有组合产品ID
         List<Long> comboIds = searchHits.stream()
@@ -408,7 +408,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         List<ErpComboRespVO> voList = searchHits.stream()
                 .map(SearchHit::getContent)
                 .map(combo -> {
-                    System.out.println("处理组合产品ID: " + combo.getId()); // 调试打印
+                    //System.out.println("处理组合产品ID: " + combo.getId()); // 调试打印
                     List<ErpComboProductItemES> items = itemsMap.getOrDefault(combo.getId(), Collections.emptyList());
                    // System.out.println("关联项数量: " + items.size()); // 调试打印
 
@@ -417,10 +417,10 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     // 计算总重量
                     BigDecimal totalWeight = BigDecimal.ZERO;
                     for (int i = 0; i < items.size(); i++) {
-                        System.out.println("处理第" + (i+1) + "个关联项，产品ID: " + items.get(i).getItemProductId()); // 调试打印
+                        //System.out.println("处理第" + (i+1) + "个关联项，产品ID: " + items.get(i).getItemProductId()); // 调试打印
                         ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
                         if (product == null) {
-                            System.out.println("未找到产品ID: " + items.get(i).getItemProductId()); // 调试打印
+                            //System.out.println("未找到产品ID: " + items.get(i).getItemProductId()); // 调试打印
                             continue;
                         }
 
