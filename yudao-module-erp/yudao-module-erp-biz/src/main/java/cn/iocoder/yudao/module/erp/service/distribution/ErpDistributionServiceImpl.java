@@ -138,8 +138,6 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         } else {
             ErpDistributionPurchaseESDO es = convertPurchaseToES(purchase);
             distributionPurchaseESRepository.save(es);
-
-
         }
     }
 
@@ -151,7 +149,6 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         } else {
             ErpDistributionSaleESDO es = convertSaleToES(sale);
             distributionSaleESRepository.save(es);
-
         }
     }
 
@@ -777,71 +774,215 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         }
     }
 
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public void updatePurchaseAfterSales(ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
+//        // 1. 校验存在
+//        ErpDistributionBaseDO distribution = validateDistribution(reqVO.getId());
+//
+//        // 2. 解析时间，兼容多种格式
+//        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
+//        LocalDateTime AfterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+//
+//
+//            // 3. 更新基础表的售后信息
+//            distributionMapper.updateById(new ErpDistributionBaseDO()
+//            .setId(reqVO.getId())
+//            .setAfterSalesStatus(reqVO.getAfterSalesStatus())
+//            .setAfterSalesTime(AfterSalesTime));
+//        // 4. 更新采购售后信息
+//        ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
+//                .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
+////                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
+//                .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
+//                .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
+//        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+//                .eq(ErpDistributionPurchaseDO::getBaseId, reqVO.getId()));
+//    }
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public void updateSaleAfterSales(ErpDistributionSaleAfterSalesUpdateReqVO reqVO) {
+//        // 1. 校验存在
+//        ErpDistributionBaseDO distribution = validateDistribution(reqVO.getId());
+//
+//        // 2. 解析时间，兼容多种格式
+//        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
+//        LocalDateTime AfterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+//
+//        // 3. 更新基础表的售后信息
+//        distributionMapper.updateById(new ErpDistributionBaseDO()
+//                .setId(reqVO.getId())
+//                .setAfterSalesStatus(reqVO.getAfterSalesStatus())
+//                .setAfterSalesTime(AfterSalesTime));
+//
+//        // 4. 更新销售售后信息
+//        ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
+//                .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
+////                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
+//                .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
+//                .setSaleAfterSalesTime(purchaseAfterSalesTime);
+//        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+//                .eq(ErpDistributionSaleDO::getBaseId, reqVO.getId()));
+//    }
+//
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees) {
+//        // 1. 校验存在
+//        ErpDistributionBaseDO distribution = validateDistribution(id);
+//
+//        // 2. 获取当前采购审核状态
+//        ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+//        if (purchase == null) {
+//            throw exception(DISTRIBUTION_NOT_EXISTS);
+//        }
+//
+//        // 3. 校验状态是否重复
+//        if (purchase.getPurchaseAuditStatus() != null && purchase.getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+//            throw exception(DISTRIBUTION_PROCESS_FAIL);
+//        }
+//
+//        // 4. 更新采购审核状态
+//        ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
+//                .setPurchaseAuditStatus(purchaseAuditStatus)
+//                .setOtherFees(otherFees);
+//
+//        // 根据审核状态设置相应时间
+//        if (purchaseAuditStatus == 20) { // 审核通过
+//            updateObj.setPurchaseApprovalTime(LocalDateTime.now());
+//        } else if (purchaseAuditStatus == 10) { // 反审核
+//            updateObj.setPurchaseUnapproveTime(LocalDateTime.now());
+//        }
+//
+//        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+//                .eq(ErpDistributionPurchaseDO::getBaseId, id));
+//    }
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
+//        // 1. 校验存在
+//        ErpDistributionBaseDO distribution = validateDistribution(id);
+//
+//        // 2. 获取当前销售审核状态
+//        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
+//        if (sale == null) {
+//            throw exception(DISTRIBUTION_NOT_EXISTS);
+//        }
+//
+//        // 3. 校验状态是否重复
+//        if (sale.getSaleAuditStatus() != null && sale.getSaleAuditStatus().equals(saleAuditStatus)) {
+//            throw exception(DISTRIBUTION_PROCESS_FAIL);
+//        }
+//
+//        // 4. 更新销售审核状态
+//        ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
+//                .setSaleAuditStatus(saleAuditStatus)
+//                .setOtherFees(otherFees);
+//
+//        // 根据审核状态设置相应时间
+//        if (saleAuditStatus == 20) { // 审核通过
+//            updateObj.setSaleApprovalTime(LocalDateTime.now());
+//        } else if (saleAuditStatus == 10) { // 反审核
+//            updateObj.setSaleUnapproveTime(LocalDateTime.now());
+//        }
+//
+//        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+//                .eq(ErpDistributionSaleDO::getBaseId, id));
+//    }
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseAfterSales(ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
-        // 1. 校验存在
-        ErpDistributionBaseDO distribution = validateDistribution(reqVO.getId());
+        // 1. 校验存在 - 使用ES查询
+        Optional<ErpDistributionBaseESDO> baseOpt = distributionBaseESRepository.findById(reqVO.getId());
+        if (!baseOpt.isPresent()) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
 
-        // 2. 解析时间，兼容多种格式
+        // 2. 解析时间
         LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
-        LocalDateTime AfterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+        LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
 
-
-            // 3. 更新基础表的售后信息
-            distributionMapper.updateById(new ErpDistributionBaseDO()
+        // 3. 更新基础表
+        distributionMapper.updateById(new ErpDistributionBaseDO()
             .setId(reqVO.getId())
             .setAfterSalesStatus(reqVO.getAfterSalesStatus())
-            .setAfterSalesTime(AfterSalesTime));
-        // 4. 更新采购售后信息
-        ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
-                .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
-//                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
-                .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
-                .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
-        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
-                .eq(ErpDistributionPurchaseDO::getBaseId, reqVO.getId()));
+            .setAfterSalesTime(afterSalesTime));
+
+        // 4. 更新采购表 - 使用ES查询
+        Optional<ErpDistributionPurchaseESDO> purchaseOpt = distributionPurchaseESRepository.findByBaseId(reqVO.getId());
+        if (purchaseOpt.isPresent()) {
+            ErpDistributionPurchaseDO updateObj = new ErpDistributionPurchaseDO()
+                    .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
+                    .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
+                    .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
+            purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
+                    .eq(ErpDistributionPurchaseDO::getBaseId, reqVO.getId()));
+
+            // 同步到ES
+            syncPurchaseToES(purchaseOpt.get().getId());
+        }
+
+        // 同步基础表到ES
+        syncBaseToES(reqVO.getId());
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateSaleAfterSales(ErpDistributionSaleAfterSalesUpdateReqVO reqVO) {
-        // 1. 校验存在
-        ErpDistributionBaseDO distribution = validateDistribution(reqVO.getId());
+        // 1. 校验存在 - 使用ES查询
+        Optional<ErpDistributionBaseESDO> baseOpt = distributionBaseESRepository.findById(reqVO.getId());
+        if (!baseOpt.isPresent()) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
 
-        // 2. 解析时间，兼容多种格式
-        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
-        LocalDateTime AfterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+        // 2. 解析时间
+        LocalDateTime saleAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
+        LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
 
-        // 3. 更新基础表的售后信息
+        // 3. 更新基础表
         distributionMapper.updateById(new ErpDistributionBaseDO()
                 .setId(reqVO.getId())
                 .setAfterSalesStatus(reqVO.getAfterSalesStatus())
-                .setAfterSalesTime(AfterSalesTime));
+                .setAfterSalesTime(afterSalesTime));
 
-        // 4. 更新销售售后信息
-        ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
-                .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
-//                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
-                .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
-                .setSaleAfterSalesTime(purchaseAfterSalesTime);
-        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
-                .eq(ErpDistributionSaleDO::getBaseId, reqVO.getId()));
+        // 4. 更新销售表 - 使用ES查询
+        Optional<ErpDistributionSaleESDO> saleOpt = distributionSaleESRepository.findByBaseId(reqVO.getId());
+        if (saleOpt.isPresent()) {
+            ErpDistributionSaleDO updateObj = new ErpDistributionSaleDO()
+                    .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
+                    .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
+                    .setSaleAfterSalesTime(saleAfterSalesTime);
+            saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
+                    .eq(ErpDistributionSaleDO::getBaseId, reqVO.getId()));
+
+            // 同步到ES
+            syncSaleToES(saleOpt.get().getId());
+        }
+
+        // 同步基础表到ES
+        syncBaseToES(reqVO.getId());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees) {
-        // 1. 校验存在
-        ErpDistributionBaseDO distribution = validateDistribution(id);
+        // 1. 校验存在 - 使用ES查询
+        Optional<ErpDistributionBaseESDO> baseOpt = distributionBaseESRepository.findById(id);
+        if (!baseOpt.isPresent()) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
 
-        // 2. 获取当前采购审核状态
-        ErpDistributionPurchaseDO purchase = purchaseMapper.selectByBaseId(id);
-        if (purchase == null) {
+        // 2. 获取当前采购审核状态 - 使用ES查询
+        Optional<ErpDistributionPurchaseESDO> purchaseOpt = distributionPurchaseESRepository.findByBaseId(id);
+        if (!purchaseOpt.isPresent()) {
             throw exception(DISTRIBUTION_NOT_EXISTS);
         }
 
         // 3. 校验状态是否重复
-        if (purchase.getPurchaseAuditStatus() != null && purchase.getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+        if (purchaseOpt.get().getPurchaseAuditStatus() != null &&
+            purchaseOpt.get().getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
             throw exception(DISTRIBUTION_PROCESS_FAIL);
         }
 
@@ -850,30 +991,39 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setPurchaseAuditStatus(purchaseAuditStatus)
                 .setOtherFees(otherFees);
 
-        // 根据审核状态设置相应时间
-        if (purchaseAuditStatus == 20) { // 审核通过
+        // 设置时间
+        if (purchaseAuditStatus == 20) {
             updateObj.setPurchaseApprovalTime(LocalDateTime.now());
-        } else if (purchaseAuditStatus == 10) { // 反审核
+        } else if (purchaseAuditStatus == 10) {
             updateObj.setPurchaseUnapproveTime(LocalDateTime.now());
         }
 
         purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionPurchaseDO>()
                 .eq(ErpDistributionPurchaseDO::getBaseId, id));
+
+        // 同步到ES
+        syncPurchaseToES(purchaseOpt.get().getId());
+        syncBaseToES(id);
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
-        // 1. 校验存在
-        ErpDistributionBaseDO distribution = validateDistribution(id);
+        // 1. 校验存在 - 使用ES查询
+        Optional<ErpDistributionBaseESDO> baseOpt = distributionBaseESRepository.findById(id);
+        if (!baseOpt.isPresent()) {
+            throw exception(DISTRIBUTION_NOT_EXISTS);
+        }
 
-        // 2. 获取当前销售审核状态
-        ErpDistributionSaleDO sale = saleMapper.selectByBaseId(id);
-        if (sale == null) {
+        // 2. 获取当前销售审核状态 - 使用ES查询
+        Optional<ErpDistributionSaleESDO> saleOpt = distributionSaleESRepository.findByBaseId(id);
+        if (!saleOpt.isPresent()) {
             throw exception(DISTRIBUTION_NOT_EXISTS);
         }
 
         // 3. 校验状态是否重复
-        if (sale.getSaleAuditStatus() != null && sale.getSaleAuditStatus().equals(saleAuditStatus)) {
+        if (saleOpt.get().getSaleAuditStatus() != null &&
+            saleOpt.get().getSaleAuditStatus().equals(saleAuditStatus)) {
             throw exception(DISTRIBUTION_PROCESS_FAIL);
         }
 
@@ -882,15 +1032,19 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setSaleAuditStatus(saleAuditStatus)
                 .setOtherFees(otherFees);
 
-        // 根据审核状态设置相应时间
-        if (saleAuditStatus == 20) { // 审核通过
+        // 设置时间
+        if (saleAuditStatus == 20) {
             updateObj.setSaleApprovalTime(LocalDateTime.now());
-        } else if (saleAuditStatus == 10) { // 反审核
+        } else if (saleAuditStatus == 10) {
             updateObj.setSaleUnapproveTime(LocalDateTime.now());
         }
 
         saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpDistributionSaleDO>()
                 .eq(ErpDistributionSaleDO::getBaseId, id));
+
+        // 同步到ES
+        syncSaleToES(saleOpt.get().getId());
+        syncBaseToES(id);
     }
 
 //    private LocalDateTime parseDateTime(String dateTimeStr) {

@@ -12,13 +12,20 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePri
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
@@ -47,6 +54,64 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
+
+    @Resource
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
+
+    @Resource
+    private ErpSalePriceESRepository salePriceESRepository;
+
+    // ES索引初始化
+    @EventListener(ApplicationReadyEvent.class)
+    public void initESIndex() {
+        System.out.println("开始初始化销售价格ES索引...");
+        try {
+            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
+            if (!indexOps.exists()) {
+                indexOps.create();
+                indexOps.putMapping(indexOps.createMapping(ErpSalePriceESDO.class));
+                System.out.println("销售价格索引创建成功");
+            }
+        } catch (Exception e) {
+            System.err.println("销售价格索引初始化失败: " + e.getMessage());
+        }
+    }
+
+    // 同步数据到ES
+    private void syncToES(Long id) {
+        ErpSalePriceDO salePrice = erpSalePriceMapper.selectById(id);
+        if (salePrice == null) {
+            salePriceESRepository.deleteById(id);
+        } else {
+            ErpSalePriceESDO es = convertToES(salePrice);
+            salePriceESRepository.save(es);
+        }
+    }
+
+    // 转换方法
+    private ErpSalePriceESDO convertToES(ErpSalePriceDO salePrice) {
+        ErpSalePriceESDO es = new ErpSalePriceESDO();
+        BeanUtils.copyProperties(salePrice, es);
+        return es;
+    }
+
+    // 全量同步方法
+    @Async
+    public void fullSyncToES() {
+        try {
+            List<ErpSalePriceDO> salePrices = erpSalePriceMapper.selectList(null);
+            if (CollUtil.isNotEmpty(salePrices)) {
+                List<ErpSalePriceESDO> esList = salePrices.stream()
+                        .map(this::convertToES)
+                        .collect(Collectors.toList());
+                salePriceESRepository.saveAll(esList);
+            }
+            System.out.println("销售价格全量同步ES数据完成");
+        } catch (Exception e) {
+            System.err.println("销售价格全量同步ES数据失败: " + e.getMessage());
+        }
+    }
+
     @Override
     public Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO) {
         // 1. 生成销售价格表编号
@@ -74,6 +139,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         }
 
         erpSalePriceMapper.insert(salePriceDO);
+        syncToES(salePriceDO.getId()); // 新增ES同步
         return salePriceDO.getId();
     }
 
@@ -98,6 +164,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         }
 
         erpSalePriceMapper.updateById(updateObj);
+        syncToES(updateReqVO.getId()); // 新增ES同步
     }
 
     @Override
@@ -109,6 +176,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             validateSalePriceExists(id);
         }
         erpSalePriceMapper.deleteBatchIds(ids);
+        ids.forEach(this::syncToES); // 新增ES同步
     }
 
     @Override
@@ -142,6 +210,19 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Override
     public PageResult<ErpSalePriceRespVO> getSalePriceVOPage(ErpSalePricePageReqVO pageReqVO) {
         // 1. 查询销售价格分页数据
+
+            // 2. 检查ES索引是否存在
+        IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
+        if (!indexOps.exists()) {
+            initESIndex(); // 如果索引不存在则创建
+            fullSyncToES(); // 全量同步数据
+        }
+
+        // 3. 检查ES是否有数据
+        long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
+        if (esCount == 0) {
+            fullSyncToES(); // 同步数据到ES
+        }
         PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
 
         // 2. 转换为VO列表并设置组合产品信息
