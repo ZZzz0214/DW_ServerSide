@@ -386,23 +386,21 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
             if (StringUtils.isNotBlank(pageReqVO.getNo())) {
                 boolQuery.must(QueryBuilders.matchQuery("no", pageReqVO.getNo()));
+                System.out.println("添加查询条件 - no: " + pageReqVO.getNo());
             }
 //            if (pageReqVO.getStatus() != null) {
 //                boolQuery.must(QueryBuilders.termQuery("status", pageReqVO.getStatus()));
 //            }
             if (StringUtils.isNotBlank(pageReqVO.getReceiverName())) {
                 boolQuery.must(QueryBuilders.matchQuery("receiverName", pageReqVO.getReceiverName()));
+                System.out.println("添加查询条件 - receiverName: " + pageReqVO.getReceiverName());
             }
             if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
                 boolQuery.must(QueryBuilders.rangeQuery("createTime")
                         .gte(pageReqVO.getCreateTime()[0])
                         .lte(pageReqVO.getCreateTime()[1]));
-            }
-            if (pageReqVO.getPurchaseAuditStatus() != null) {
-                boolQuery.must(QueryBuilders.termQuery("purchaseAuditStatus", pageReqVO.getPurchaseAuditStatus()));
-            }
-            if (pageReqVO.getSaleAuditStatus() != null) {
-                boolQuery.must(QueryBuilders.termQuery("saleAuditStatus", pageReqVO.getSaleAuditStatus()));
+                        System.out.println("添加查询条件 - createTime范围: " + 
+                        pageReqVO.getCreateTime()[0] + " - " + pageReqVO.getCreateTime()[1]);
             }
 
             queryBuilder.withQuery(boolQuery);
@@ -417,6 +415,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     queryBuilder.build(),
                     ErpWholesaleBaseESDO.class,
                     IndexCoordinates.of("erp_wholesale_base"));
+                    System.out.println("查询结果总数: " + searchHits.getTotalHits());
+                    System.out.println("查询到的文档数量: " + searchHits.getSearchHits().size());
 
             List<ErpWholesaleRespVO> voList = searchHits.stream()
                     .map(SearchHit::getContent)
@@ -439,6 +439,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         Optional<ErpWholesalePurchaseESDO> purchaseOpt = pageReqVO.getPurchaseAuditStatus() != null
                                 ? wholesalePurchaseESRepository.findByBaseIdAndPurchaseAuditStatus(esDO.getId(), pageReqVO.getPurchaseAuditStatus())
                                 : wholesalePurchaseESRepository.findByBaseId(esDO.getId());
+                        // 如果有采购审核状态条件但找不到匹配记录，则返回null
+                        if (pageReqVO.getPurchaseAuditStatus() != null && !purchaseOpt.isPresent()) {
+                            return null;
+                        }                                
                         if (purchaseOpt.isPresent()) {
                             ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
                             //BeanUtils.copyProperties(purchase, vo);
@@ -480,6 +484,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         Optional<ErpWholesaleSaleESDO> saleOpt = pageReqVO.getSaleAuditStatus() != null
                                 ? wholesaleSaleESRepository.findByBaseIdAndSaleAuditStatus(esDO.getId(), pageReqVO.getSaleAuditStatus())
                                 : wholesaleSaleESRepository.findByBaseId(esDO.getId());
+                        // 如果有销售审核状态条件但找不到匹配记录，则返回null
+                        if (pageReqVO.getSaleAuditStatus() != null && !saleOpt.isPresent()) {
+                            return null;
+                        }
                         if (saleOpt.isPresent()) {
                             ErpWholesaleSaleESDO sale = saleOpt.get();
                             //BeanUtils.copyProperties(sale, vo);
