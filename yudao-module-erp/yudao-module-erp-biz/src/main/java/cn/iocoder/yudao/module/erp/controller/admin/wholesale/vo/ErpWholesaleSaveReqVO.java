@@ -30,7 +30,7 @@ public class ErpWholesaleSaveReqVO {
     private String receiverAddress;
 
     @Schema(description = "售后状况", example = "0")
-    private Integer afterSalesStatus;
+    private String afterSalesStatus;
 
     @Schema(description = "备注信息", example = "备注")
     private String remark;
@@ -71,7 +71,7 @@ public class ErpWholesaleSaveReqVO {
     private BigDecimal totalPurchaseAmount;
 
     @Schema(description = "售后时间", example = "2025-05-21T12:34:56")
-    private LocalDateTime afterSalesTime;
+    private String afterSalesTime;
 
     @Schema(description = "采购备注信息", example = "采购备注示例")
     private String purchaseRemark;

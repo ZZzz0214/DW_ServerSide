@@ -1,10 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.product;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ProductSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductSearchReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 
 import javax.validation.Valid;
@@ -116,5 +113,14 @@ public interface ErpProductService {
      * @return 搜索到的产品列表
      */
     List<ErpProductRespVO> searchProducts(ErpProductSearchReqVO searchReqVO);
+
+        /**
+     * 批量导入产品
+     *
+     * @param importProducts     导入产品列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpProductImportRespVO importProductList(List<ErpProductImportExcelVO> importProducts, boolean isUpdateSupport);
 
 }

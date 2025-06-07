@@ -98,4 +98,7 @@ public class ErpWholesaleSaleAuditVO {
 
     @Schema(description = "批发销售反审批时间", example = "2023-01-01 12:00:00")
     private LocalDateTime saleUnapproveTime;
+
+    @Schema(description = "采购售后情况", example = "售后情况说明")
+    private String afterSalesStatus;
 }

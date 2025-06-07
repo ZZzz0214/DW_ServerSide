@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 产品 Response VO")
 @Data
+@Builder
 @ExcelIgnoreUnannotated
 public class ErpProductRespVO {
 
@@ -41,8 +43,6 @@ public class ErpProductRespVO {
     @Schema(description = "产品规格")
     @ExcelProperty("产品规格")
     private String standard;
-
-
 
     @Schema(description = "产品日期")
     @ExcelProperty("产品日期")

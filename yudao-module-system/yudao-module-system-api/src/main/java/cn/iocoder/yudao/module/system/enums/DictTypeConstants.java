@@ -23,4 +23,10 @@ public interface DictTypeConstants {
     String SMS_SEND_STATUS = "system_sms_send_status"; // 短信发送状态
     String SMS_RECEIVE_STATUS = "system_sms_receive_status"; // 短信接收状态
 
+     // ========== ERP 模块 ==========
+     String ERP_PRODUCT_BRAND = "erp_product_brand"; // ERP产品品牌
+     String ERP_PRODUCT_CATEGORY = "erp_product_category"; // ERP产品品类
+     String ERP_PRODUCT_STATUS = "erp_product_status"; // ERP产品状态
+ 
+
 }

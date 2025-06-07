@@ -21,9 +21,6 @@ public class ErpDistributionPurchaseAfterSalesUpdateReqVO {
 
     @Schema(description = "采购售后状态", example = "1")
     private Integer purchaseAfterSalesStatus;
-//
-//    @Schema(description = "采购售后情况", example = "售后情况说明")
-//    private String purchaseAfterSalesSituation;
 
     @Schema(description = "售后状态", example = "1")
     private String afterSalesStatus;

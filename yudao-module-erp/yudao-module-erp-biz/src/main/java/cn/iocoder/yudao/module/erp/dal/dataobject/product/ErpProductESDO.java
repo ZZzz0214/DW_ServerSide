@@ -22,7 +22,7 @@ public class ErpProductESDO {
     @Field(name = "no", type = FieldType.Keyword)
     private String no;
 
-    @Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "name", type = FieldType.Keyword)
     private String name;
 
     @Field(name = "image", type = FieldType.Keyword)

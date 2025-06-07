@@ -40,7 +40,7 @@ public class ErpWholesaleBaseDO extends BaseDO {
     private String receiverAddress;
 
     /** 售后状况 */
-    private Integer afterSalesStatus;
+    private String afterSalesStatus;
 
     /**
      * 售后时间

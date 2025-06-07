@@ -20,9 +20,7 @@ public class ErpDistributionSaleAfterSalesUpdateReqVO {
 
     @Schema(description = "销售售后状态", example = "1")
     private Integer saleAfterSalesStatus;
-//
-//    @Schema(description = "销售售后情况", example = "售后情况说明")
-//    private String saleAfterSalesSituation;
+
 
     @Schema(description = "售后状态", example = "1")
     private String afterSalesStatus;

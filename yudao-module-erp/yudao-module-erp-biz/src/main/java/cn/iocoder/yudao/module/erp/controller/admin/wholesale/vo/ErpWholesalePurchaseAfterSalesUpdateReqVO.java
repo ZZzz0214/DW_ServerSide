@@ -21,8 +21,11 @@ public class ErpWholesalePurchaseAfterSalesUpdateReqVO {
     @Schema(description = "采购售后状态", example = "1")
     private Integer purchaseAfterSalesStatus;
 
-    @Schema(description = "采购售后情况", example = "售后情况说明")
-    private String purchaseAfterSalesSituation;
+    @Schema(description = "售后状态", example = "1")
+    private String afterSalesStatus;
+
+    @Schema(description = "售后时间", example = "2023-01-01 12:00:00")
+    private String afterSalesTime;
 
     @Schema(description = "采购售后金额", example = "100.00")
     private BigDecimal purchaseAfterSalesAmount;

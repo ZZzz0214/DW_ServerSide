@@ -4,10 +4,14 @@ import cn.iocoder.yudao.framework.excel.core.handler.SelectSheetWriteHandler;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.converters.longconverter.LongStringConverter;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -49,5 +53,16 @@ public class ExcelUtils {
                 .autoCloseStream(false)  // 不要自动关闭，交给 Servlet 自己处理
                 .doReadAllSync();
     }
+
+        // 新增InputStream参数的read方法
+    public static <T> List<T> read(InputStream inputStream, Class<T> head) throws IOException {
+        return EasyExcel.read(inputStream, head, null)
+                .autoCloseStream(false)
+                .doReadAllSync();
+    }
+
+
+
+
 
 }

@@ -218,11 +218,12 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (wholesaleMapper.selectByNo(no) != null) {
             throw exception(WHOLESALE_NO_EXISTS);
         }
-
+        LocalDateTime AfterSalesTime = parseDateTime(createReqVO.getAfterSalesTime());
         // 3. 插入批发记录
         ErpWholesaleBaseDO wholesale = BeanUtils.toBean(createReqVO, ErpWholesaleBaseDO.class)
                 .setNo(no)
-                .setStatus(ErpAuditStatus.PROCESS.getStatus());
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setAfterSalesTime(AfterSalesTime);
         wholesaleMapper.insert(wholesale);
 
         // 4. 插入采购信息
@@ -238,6 +239,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .setBaseId(wholesale.getId())
                 .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setSaleAfterSalesStatus(30)
+                .setLogisticsFee(createReqVO.getSaleLogisticsFee())
                 .setTruckFee(createReqVO.getSaleTruckFee())
                 .setOtherFees(createReqVO.getSaleOtherFees());
         saleMapper.insert(sale);
@@ -399,7 +401,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 boolQuery.must(QueryBuilders.rangeQuery("createTime")
                         .gte(pageReqVO.getCreateTime()[0])
                         .lte(pageReqVO.getCreateTime()[1]));
-                        System.out.println("添加查询条件 - createTime范围: " + 
+                        System.out.println("添加查询条件 - createTime范围: " +
                         pageReqVO.getCreateTime()[0] + " - " + pageReqVO.getCreateTime()[1]);
             }
 
@@ -442,7 +444,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         // 如果有采购审核状态条件但找不到匹配记录，则返回null
                         if (pageReqVO.getPurchaseAuditStatus() != null && !purchaseOpt.isPresent()) {
                             return null;
-                        }                                
+                        }
                         if (purchaseOpt.isPresent()) {
                             ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
                             //BeanUtils.copyProperties(purchase, vo);
@@ -463,18 +465,15 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                                 vo.setSupplier(comboProduct.getSupplier());
                                 vo.setPurchasePrice(comboProduct.getWholesalePrice());
 
+                                // 直接使用采购记录中的运费值
+                                vo.setLogisticsFee(purchase.getLogisticsFee());
                                 // 计算采购运费
-                                BigDecimal logisticsFee = calculatePurchaseLogisticsFee(
-                                        comboProduct,
-                                        esDO.getProductQuantity(),
-                                        purchase.getTruckFee());
-                                vo.setLogisticsFee(logisticsFee);
 
                                 // 计算采购总额 = 采购单价*数量 + 货拉拉费 + 物流费用 + 其他费用
                                 BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
                                         .multiply(BigDecimal.valueOf(esDO.getProductQuantity()))
                                         .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                                        .add(logisticsFee)
+                                        .add(purchase.getLogisticsFee()!= null? purchase.getLogisticsFee() : BigDecimal.ZERO)
                                         .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
                                 vo.setTotalPurchaseAmount(totalPurchaseAmount);
                             }
@@ -578,6 +577,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         List<ErpWholesaleRespVO> voList = searchHits.stream()
         .map(SearchHit::getContent)
         .map(esDO -> {
+            //ErpWholesaleRespVO vo = BeanUtils.toBean(esDO, ErpWholesaleRespVO.class);
             ErpWholesaleRespVO vo = new ErpWholesaleRespVO();
             // 设置基础表字段
             vo.setId(esDO.getId());
@@ -591,13 +591,17 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             vo.setProductSpecification(esDO.getProductSpecification());
             vo.setRemark(esDO.getRemark());
             vo.setCreateTime(esDO.getCreateTime());
-
             // 从ES查询采购信息（通过baseId匹配）
             Optional<ErpWholesalePurchaseESDO> purchaseOpt = pageReqVO.getPurchaseAuditStatus() != null
                     ? wholesalePurchaseESRepository.findByBaseIdAndPurchaseAuditStatus(esDO.getId(), pageReqVO.getPurchaseAuditStatus())
                     : wholesalePurchaseESRepository.findByBaseId(esDO.getId());
+            // 如果有采购审核状态条件但找不到匹配记录，则返回null
+            if (pageReqVO.getPurchaseAuditStatus() != null && !purchaseOpt.isPresent()) {
+                return null;
+            }
             if (purchaseOpt.isPresent()) {
                 ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
+                //BeanUtils.copyProperties(purchase, vo);
                 vo.setTruckFee(purchase.getTruckFee());
                 vo.setComboProductId(purchase.getComboProductId());
                 vo.setOtherFees(purchase.getOtherFees());
@@ -605,27 +609,73 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
                 vo.setPurchaseAfterSalesAmount(purchase.getPurchaseAfterSalesAmount());
                 vo.setPurchaseAuditStatus(purchase.getPurchaseAuditStatus());
+                // 从ES查询组品信息
+                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(purchase.getComboProductId());
+                if (comboProductOpt.isPresent()) {
+                    ErpComboProductES comboProduct = comboProductOpt.get();
+                    vo.setProductName(comboProduct.getName());
+                    vo.setShippingCode(comboProduct.getShippingCode());
+                    vo.setPurchaser(comboProduct.getPurchaser());
+                    vo.setSupplier(comboProduct.getSupplier());
+                    vo.setPurchasePrice(comboProduct.getWholesalePrice());
+
+                    // 直接使用采购记录中的运费值
+                    vo.setLogisticsFee(purchase.getLogisticsFee());
+                    // 计算采购运费
+
+                    // 计算采购总额 = 采购单价*数量 + 货拉拉费 + 物流费用 + 其他费用
+                    BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
+                            .multiply(BigDecimal.valueOf(esDO.getProductQuantity()))
+                            .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
+                            .add(purchase.getLogisticsFee()!= null? purchase.getLogisticsFee() : BigDecimal.ZERO)
+                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
+                    vo.setTotalPurchaseAmount(totalPurchaseAmount);
+                }
             }
 
             // 从ES查询销售信息（通过baseId匹配）
             Optional<ErpWholesaleSaleESDO> saleOpt = pageReqVO.getSaleAuditStatus() != null
                     ? wholesaleSaleESRepository.findByBaseIdAndSaleAuditStatus(esDO.getId(), pageReqVO.getSaleAuditStatus())
                     : wholesaleSaleESRepository.findByBaseId(esDO.getId());
+            // 如果有销售审核状态条件但找不到匹配记录，则返回null
+            if (pageReqVO.getSaleAuditStatus() != null && !saleOpt.isPresent()) {
+                return null;
+            }
             if (saleOpt.isPresent()) {
                 ErpWholesaleSaleESDO sale = saleOpt.get();
-                vo.setSalesperson(sale.getSalesperson());
-                vo.setCustomerName(sale.getCustomerName());
-                vo.setSaleTruckFee(sale.getTruckFee());
-                vo.setSaleLogisticsFee(sale.getLogisticsFee());
-                vo.setSaleOtherFees(sale.getOtherFees());
-                vo.setSaleAfterSalesStatus(sale.getSaleAfterSalesStatus());
-                vo.setSaleAfterSalesSituation(sale.getSaleAfterSalesSituation());
-                vo.setSaleAfterSalesAmount(sale.getSaleAfterSalesAmount());
-                vo.setSaleAfterSalesTime(sale.getSaleAfterSalesTime() != null ?
-                    sale.getSaleAfterSalesTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) :
-                    null);
-                vo.setTransferPerson(sale.getTransferPerson());
-                vo.setSaleAuditStatus(sale.getSaleAuditStatus());
+                //BeanUtils.copyProperties(sale, vo);
+                 // 设置销售表字段
+                 vo.setSalesperson(sale.getSalesperson());
+                 vo.setCustomerName(sale.getCustomerName());
+                 vo.setSaleTruckFee(sale.getTruckFee());
+                 vo.setSaleLogisticsFee(sale.getLogisticsFee());
+                 vo.setSaleOtherFees(sale.getOtherFees());
+                 vo.setSaleAfterSalesStatus(sale.getSaleAfterSalesStatus());
+                 vo.setSaleAfterSalesSituation(sale.getSaleAfterSalesSituation());
+                 vo.setSaleAfterSalesAmount(sale.getSaleAfterSalesAmount());
+                 // 设置销售售后时间（将LocalDateTime转换为String）
+                 vo.setSaleAfterSalesTime(sale.getSaleAfterSalesTime() != null ?
+                 sale.getSaleAfterSalesTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) :
+                 null);
+                 vo.setTransferPerson(sale.getTransferPerson());
+                 vo.setSaleAuditStatus(sale.getSaleAuditStatus());
+                // 从ES查询销售价格信息
+                Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                        purchaseOpt.map(ErpWholesalePurchaseESDO::getComboProductId).orElse(null),
+                        sale.getCustomerName());
+                if (salePriceOpt.isPresent()) {
+                    vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+
+                    // 计算销售总额 = 销售单价*数量 + 销售货拉拉费 + 销售物流费用 + 销售其他费用
+                    if (purchaseOpt.isPresent()) {
+                        BigDecimal totalSaleAmount = salePriceOpt.get().getWholesalePrice()
+                                .multiply(BigDecimal.valueOf(esDO.getProductQuantity()))
+                                .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
+                                .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
+                                .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+                        vo.setTotalSaleAmount(totalSaleAmount);
+                    }
+                }
             }
 
             return vo;
@@ -890,20 +940,27 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         }
 
         LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
-
-        // 3. 更新采购售后信息
-        ErpWholesalePurchaseDO updateObj = new ErpWholesalePurchaseDO()
+        LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+    
+        // 3. 更新基础表售后信息
+        ErpWholesaleBaseDO baseUpdateObj = new ErpWholesaleBaseDO()
+                .setId(reqVO.getId())
+                .setAfterSalesStatus(reqVO.getAfterSalesStatus())
+                .setAfterSalesTime(afterSalesTime);
+        wholesaleMapper.updateById(baseUpdateObj);
+    
+        // 4. 更新采购售后信息
+        ErpWholesalePurchaseDO purchaseUpdateObj = new ErpWholesalePurchaseDO()
                 .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
-                .setPurchaseAfterSalesSituation(reqVO.getPurchaseAfterSalesSituation())
                 .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
                 .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
-
-        purchaseMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
+    
+        purchaseMapper.update(purchaseUpdateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
                 .eq(ErpWholesalePurchaseDO::getBaseId, reqVO.getId()));
-
-        // 4. 同步到ES
-        syncPurchaseToES(purchaseOpt.get().getId());
+    
+        // 5. 同步到ES
         syncBaseToES(reqVO.getId());
+        syncPurchaseToES(purchaseOpt.get().getId());
     }
 
     @Override
@@ -920,22 +977,29 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (!saleOpt.isPresent()) {
             throw exception(WHOLESALE_NOT_EXISTS);
         }
-
-        LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
-
-        // 3. 更新销售售后信息
-        ErpWholesaleSaleDO updateObj = new ErpWholesaleSaleDO()
+        LocalDateTime saleAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
+        LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+    
+        // 3. 更新基础表售后信息
+        ErpWholesaleBaseDO baseUpdateObj = new ErpWholesaleBaseDO()
+                .setId(reqVO.getId())
+                .setAfterSalesStatus(reqVO.getAfterSalesStatus())
+                .setAfterSalesTime(afterSalesTime);
+        wholesaleMapper.updateById(baseUpdateObj);
+    
+        // 4. 更新销售售后信息
+        ErpWholesaleSaleDO saleUpdateObj = new ErpWholesaleSaleDO()
                 .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
-                .setSaleAfterSalesSituation(reqVO.getSaleAfterSalesSituation())
                 .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
-                .setSaleAfterSalesTime(purchaseAfterSalesTime);
-
-        saleMapper.update(updateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
+                .setSaleAfterSalesTime(saleAfterSalesTime);
+    
+        saleMapper.update(saleUpdateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
                 .eq(ErpWholesaleSaleDO::getBaseId, reqVO.getId()));
-
-        // 4. 同步到ES
-        syncSaleToES(saleOpt.get().getId());
+    
+        // 5. 同步到ES
         syncBaseToES(reqVO.getId());
+        syncSaleToES(saleOpt.get().getId());
+    
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {

@@ -25,8 +25,8 @@ public class ErpWholesaleBaseESDO {
     @Field(name = "receiver_address", type = FieldType.Text)
     private String receiverAddress;
 
-    @Field(name = "after_sales_status", type = FieldType.Integer)
-    private Integer afterSalesStatus;
+    @Field(name = "after_sales_status")
+    private String afterSalesStatus;
 
     @Field(name = "after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime afterSalesTime;
@@ -40,7 +40,7 @@ public class ErpWholesaleBaseESDO {
     @Field(name = "product_name", type = FieldType.Text)
     private String productName;
 
-    @Field(name = "shipping_code", type = FieldType.Keyword)
+    @Field(name = "shipping_code")
     private String shippingCode;
 
     @Field(name = "product_quantity", type = FieldType.Integer)
@@ -49,10 +49,10 @@ public class ErpWholesaleBaseESDO {
     @Field(name = "tenant_id", type = FieldType.Long)
     private Long tenantId;
 
-    @Field(name = "deleted", type = FieldType.Boolean)
+    @Field(name = "deleted")
     private Boolean deleted;
 
-    @Field(name = "status", type = FieldType.Integer)
+    @Field(name = "status")
     private Integer status;
 
     @Field(name = "product_specification", type = FieldType.Text)
