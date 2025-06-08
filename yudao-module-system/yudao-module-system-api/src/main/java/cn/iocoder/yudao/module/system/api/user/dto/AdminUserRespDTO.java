@@ -17,6 +17,12 @@ public class AdminUserRespDTO {
      * 用户ID
      */
     private Long id;
+
+    /**
+     * 用户账号
+     */
+    private String username;
+
     /**
      * 用户昵称
      */

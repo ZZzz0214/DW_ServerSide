@@ -80,4 +80,21 @@ public class BeanUtils {
         }
         return BeanUtil.beanToMap(bean);
     }
+
+    // ... 其他方法保持不变 ...
+
+    public static <S, T> List<T> toBeanList(List<S> source, Class<T> targetType) {
+        if (source == null) {
+            return null;
+        }
+        return CollectionUtils.convertList(source, s -> toBean(s, targetType));
+    }
+
+    public static <S, T> List<T> toBeanList(List<S> source, Class<T> targetType, Consumer<T> peek) {
+        List<T> list = toBeanList(source, targetType);
+        if (list != null) {
+            list.forEach(peek);
+        }
+        return list;
+    }
 }

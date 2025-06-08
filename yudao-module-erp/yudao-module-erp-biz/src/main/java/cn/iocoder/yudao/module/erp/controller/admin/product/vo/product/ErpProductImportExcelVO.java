@@ -142,7 +142,7 @@ public class ErpProductImportExcelVO {
     private BigDecimal weight;
 
     @ExcelProperty("箱规数量")
-    private String productWidth;
+    private String productCartonSpec;
 
     @ExcelProperty("箱长宽高")
     private String cartonLength;

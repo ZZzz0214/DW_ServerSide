@@ -109,6 +109,20 @@ public class ErpProductController {
         ExcelUtils.write(response, "产品信息.xlsx", "数据", ErpProductRespVO.class,
                 pageResult.getList());
     }
+    @GetMapping("/export-excel2")
+    @Operation(summary = "导出采购产品 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:product:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportProductExcel2(@Valid ErpProductPageReqVO pageReqVO,
+                                   HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        PageResult<ErpProductRespVO> pageResult = productService.getProductVOPage(pageReqVO);
+        // 导出 Excel
+        // 转换为采购VO并导出Excel
+        List<ErpProductPurchaseRespVO> purchaseList = BeanUtils.toBeanList(pageResult.getList(), ErpProductPurchaseRespVO.class);
+        System.out.println("1111"+purchaseList);
+        ExcelUtils.write(response, "采购产品信息.xlsx", "数据", ErpProductPurchaseRespVO.class, purchaseList);
+    }
 
     @GetMapping("/search")
     @Operation(summary = "搜索产品")

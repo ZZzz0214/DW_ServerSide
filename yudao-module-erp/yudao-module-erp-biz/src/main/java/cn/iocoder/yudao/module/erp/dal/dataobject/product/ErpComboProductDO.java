@@ -118,14 +118,12 @@ public class ErpComboProductDO extends BaseDO {
      * 产品数量（组合产品中包含的单品总数）
      */
     private Integer totalQuantity;
-    /**
-     * 创建者
-     */
-    private String creator;
-    /**
-     * 更新者
-     */
-    private String updater;
+
+//    private String creator;
+//    /**
+//     * 更新者
+//     */
+//    private String updater;
     /**
      * 是否删除（0：未删除，1：已删除）
      */

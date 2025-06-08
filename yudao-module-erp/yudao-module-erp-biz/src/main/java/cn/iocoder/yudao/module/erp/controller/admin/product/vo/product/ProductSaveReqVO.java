@@ -40,7 +40,7 @@ public class ProductSaveReqVO {
     @Schema(description = "产品日期")
     private LocalDateTime productionDate;
 
-    @Schema(description = "保质期天数")
+    @Schema(description = "保质日期")
     private Integer expiryDay;
 
     @Schema(description = "品牌名称")
@@ -77,16 +77,11 @@ public class ProductSaveReqVO {
     private Integer packagingMaterialQuantity;
 
     @Schema(description = "返单时效")
-    private LocalDateTime orderReplenishmentLeadTime;
+    private String orderReplenishmentLeadTime;
 
-    @Schema(description = "产品长宽高")
-    private String productDimensions;
-
-    @Schema(description = "产品箱规")
+    @Schema(description = "箱规数量")
     private String cartonSpecifications;
 
-    @Schema(description = "箱长宽高")
-    private String cartonDimensions;
 
     @Schema(description = "箱规重量")
     private Double cartonWeight;
@@ -115,38 +110,14 @@ public class ProductSaveReqVO {
     @Schema(description = "返单时效单位")
     private String orderReplenishmentLeadTimeUnit;
 
-    @Schema(description = "品长")
+    @Schema(description = "品长宽高")
     private String productLength;
 
-    @Schema(description = "品宽")
-    private String productWidth;
-
-    @Schema(description = "品高")
-    private String productHeight;
-
-    @Schema(description = "品长宽高单位")
-    private String productDimensionsUnit;
-
-    @Schema(description = "箱长")
+    @Schema(description = "箱长宽高")
     private String cartonLength;
-
-    @Schema(description = "箱宽")
-    private String cartonWidth;
-
-    @Schema(description = "箱高")
-    private String cartonHeight;
-
-    @Schema(description = "箱长宽高单位")
-    private String cartonDimensionsUnit;
-
-    @Schema(description = "箱规重量单位")
-    private String cartonWeightUnit;
 
     @Schema(description = "产品箱规")
     private String productCartonSpec;
-
-    @Schema(description = "产品箱规单位") 
-    private String productCartonSpecUnit;
 
     @Schema(description = "公域活动最低价")
     private String publicDomainEventMinimumPrice;
@@ -163,11 +134,6 @@ public class ProductSaveReqVO {
     @Schema(description = "团购活动最低价")
     private String groupBuyEventMinimunPrice;
 
-    @Schema(description = "保质日期单位")
-    private String expiryUnit;
-
-    @Schema(description = "产品重量单位")
-    private String weightUnit;
 
     @Schema(description = "采购人员")
     private String purchaser;

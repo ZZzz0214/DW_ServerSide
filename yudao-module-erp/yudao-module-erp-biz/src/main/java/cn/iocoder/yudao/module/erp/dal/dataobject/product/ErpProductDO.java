@@ -134,7 +134,7 @@ public class ErpProductDO extends BaseDO {
     /**
      * 返单时效
      */
-    private LocalDateTime orderReplenishmentLeadTime;
+    private String orderReplenishmentLeadTime;
 
 
     /**
@@ -177,65 +177,34 @@ public class ErpProductDO extends BaseDO {
      */
     private String afterSalesScript;
 
-    /**
-     * 返单时效单位
-     */
-    private String orderReplenishmentLeadTimeUnit;
+
 
     /**
      * 品长
      */
     private String productLength;
 
-    /**
-     * 品宽
-     */
-    private String productWidth;
 
-    /**
-     * 品高
-     */
-    private String productHeight;
 
-    /**
-     * 品长宽高单位
-     */
-    private String productDimensionsUnit;
+
 
     /**
      * 箱长
      */
     private String cartonLength;
 
-    /**
-     * 箱宽
-     */
-    private String cartonWidth;
+
+
+
+
+
 
     /**
-     * 箱高
-     */
-    private String cartonHeight;
-
-    /**
-     * 箱长宽高单位
-     */
-    private String cartonDimensionsUnit;
-
-    /**
-     * 箱规重量单位
-     */
-    private String cartonWeightUnit;
-
-    /**
-     * 产品箱规
+     * 箱规数量
      */
     private String productCartonSpec;
 
-    /**
-     * 产品箱规单位
-     */
-    private String productCartonSpecUnit;
+
 
     /**
      * 公域活动最低价
@@ -339,15 +308,9 @@ public class ErpProductDO extends BaseDO {
      */
     private BigDecimal additionalWeightPrice;
 
-    /**
-     * 保质日期单位
-     */
-    private String expiryUnit;
 
-    /**
-     * 产品重量单位
-     */
-    private String weightUnit;
+
+
 
       /**
      * 租户编号

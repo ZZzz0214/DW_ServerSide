@@ -87,10 +87,8 @@ public class ErpProductESDO {
     @Field(name = "packaging_material_quantity", type = FieldType.Integer)
     private Integer packagingMaterialQuantity;
 
-    @Field(name = "production_date", type = FieldType.Date,
-            format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime orderReplenishmentLeadTime;
+    @Field(name = "production_date", type = FieldType.Text)
+    private String orderReplenishmentLeadTime;
 
     @Field(name = "product_dimensions", type = FieldType.Keyword)
     private String productDimensions;

@@ -5,11 +5,9 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -100,11 +98,31 @@ public class ErpComboProductController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportComboProductExcel(@Valid ErpComboPageReqVO pageReqVO,
                                         HttpServletResponse response) throws IOException {
-        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        //pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        pageReqVO.setPageSize(10000);
+
         PageResult<ErpComboRespVO> pageResult = comboProductService.getComboVOPage(pageReqVO);
         // 导出 Excel
         ExcelUtils.write(response, "组品信息.xlsx", "数据", ErpComboRespVO.class,
                 pageResult.getList());
+    }
+
+    @GetMapping("/export-excel2")
+    @Operation(summary = "导出组合产品 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:combo-product:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportComboProductExcel2(@Valid ErpComboPageReqVO pageReqVO,
+                                        HttpServletResponse response) throws IOException {
+        System.out.println("调用导出2");
+        //pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+            // 设置ES允许的最大分页大小10000
+        pageReqVO.setPageSize(10000);
+        PageResult<ErpComboRespVO> pageResult = comboProductService.getComboVOPage(pageReqVO);
+        System.out.println("从es查询0"+pageResult);
+        // 导出 Excel
+        List<ErpComboPurchaseRespVO> purchaseList = BeanUtils.toBeanList(pageResult.getList(), ErpComboPurchaseRespVO.class);
+        System.out.println("查看数据"+purchaseList);
+        ExcelUtils.write(response, "组品信息.xlsx", "数据", ErpComboPurchaseRespVO.class, purchaseList);
     }
 
     @GetMapping("/search")

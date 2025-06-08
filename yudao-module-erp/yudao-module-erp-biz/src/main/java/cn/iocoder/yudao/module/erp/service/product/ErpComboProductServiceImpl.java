@@ -395,13 +395,13 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         Map<Long, List<ErpComboProductItemES>> itemsMap = itemHits.stream()
                 .map(SearchHit::getContent)
                 .collect(Collectors.groupingBy(ErpComboProductItemES::getComboProductId));
-//                System.out.println("===== itemsMap详情 =====");
-//        itemsMap.forEach((comboId, items) -> {
-//            System.out.println("组合产品ID: " + comboId + ", 关联项数量: " + items.size());
-//            items.forEach(item -> System.out.println("  关联项ID: " + item.getId()
-//                + ", 产品ID: " + item.getItemProductId()
-//                + ", 数量: " + item.getItemQuantity()));
-//        });
+                System.out.println("===== itemsMap详情 =====");
+        itemsMap.forEach((comboId, items) -> {
+            System.out.println("组合产品ID: " + comboId + ", 关联项数量: " + items.size());
+            items.forEach(item -> System.out.println("  关联项ID: " + item.getId()
+                + ", 产品ID: " + item.getItemProductId()
+                + ", 数量: " + item.getItemQuantity()));
+        });
 
 
         // 获取所有产品ID
@@ -425,12 +425,12 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                         hit -> hit.getContent().getId(),
                         SearchHit::getContent));
 
-//        System.out.println("===== productMap详情 =====");
-//        productMap.forEach((productId, product) -> {
-//            System.out.println("产品ID: " + productId
-//                + ", 名称: " + product.getName()
-//                + ", 重量: " + product.getWeight());
-//        });
+        System.out.println("===== productMap详情 =====");
+        productMap.forEach((productId, product) -> {
+            System.out.println("产品ID: " + productId
+                + ", 名称: " + product.getName()
+                + ", 重量: " + product.getWeight());
+        });
 
         // 转换结果并设置组合产品名称和重量
         List<ErpComboRespVO> voList = searchHits.stream()
@@ -444,6 +444,10 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     StringBuilder nameBuilder = new StringBuilder();
                     // 计算总重量
                     BigDecimal totalWeight = BigDecimal.ZERO;
+                    // 计算采购总价
+                    BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+                    // 计算批发总价
+                    BigDecimal totalWholesalePrice = BigDecimal.ZERO;
                     for (int i = 0; i < items.size(); i++) {
                         //System.out.println("处理第" + (i+1) + "个关联项，产品ID: " + items.get(i).getItemProductId()); // 调试打印
                         ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
@@ -466,12 +470,31 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                             BigDecimal quantity = new BigDecimal(items.get(i).getItemQuantity());
                             totalWeight = totalWeight.add(product.getWeight().multiply(quantity));
                         }
+
+                        // 计算采购价
+                        if (product.getPurchasePrice() != null) {
+                            BigDecimal quantity = new BigDecimal(items.get(i).getItemQuantity());
+                            totalPurchasePrice = totalPurchasePrice.add(
+                                product.getPurchasePrice().multiply(quantity)
+                            );
+                        }
+
+                        // 计算批发价
+                        if (product.getWholesalePrice() != null) {
+                            BigDecimal quantity = new BigDecimal(items.get(i).getItemQuantity());
+                            totalWholesalePrice = totalWholesalePrice.add(
+                                product.getWholesalePrice().multiply(quantity)
+                            );
+                        }
+
                     }
 
                     // 转换VO并设置名称和重量
                     ErpComboRespVO vo = BeanUtils.toBean(combo, ErpComboRespVO.class);
                     vo.setName(nameBuilder.toString());
                     vo.setWeight(totalWeight);
+                    vo.setPurchasePrice(totalPurchasePrice);
+                    vo.setWholesalePrice(totalWholesalePrice);
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -683,17 +706,46 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         }
         // 计算总重量 (单品weight*数量)
         BigDecimal totalWeight = BigDecimal.ZERO;
+//        for (int i = 0; i < products.size(); i++) {
+//            BigDecimal itemWeight = products.get(i).getWeight();
+//            if (itemWeight != null) {
+//                BigDecimal quantity = new BigDecimal(comboItems.get(i).getItemQuantity());
+//                totalWeight = totalWeight.add(itemWeight.multiply(quantity));
+//            }
+//        }
+
+        // 计算采购总价 (单品purchasePrice*数量)
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        // 计算批发总价 (单品wholesalePrice*数量)
+        BigDecimal totalWholesalePrice = BigDecimal.ZERO;
+
         for (int i = 0; i < products.size(); i++) {
             BigDecimal itemWeight = products.get(i).getWeight();
             if (itemWeight != null) {
                 BigDecimal quantity = new BigDecimal(comboItems.get(i).getItemQuantity());
                 totalWeight = totalWeight.add(itemWeight.multiply(quantity));
             }
+
+            // 计算采购总价
+            BigDecimal purchasePrice = products.get(i).getPurchasePrice();
+            if (purchasePrice != null) {
+                BigDecimal itemQuantity = new BigDecimal(comboItems.get(i).getItemQuantity());
+                totalPurchasePrice = totalPurchasePrice.add(purchasePrice.multiply(itemQuantity));
+            }
+
+            // 计算批发总价
+            BigDecimal wholesalePrice = products.get(i).getWholesalePrice();
+            if (wholesalePrice != null) {
+                BigDecimal itemQuantity = new BigDecimal(comboItems.get(i).getItemQuantity());
+                totalWholesalePrice = totalWholesalePrice.add(wholesalePrice.multiply(itemQuantity));
+            }
         }
         // 组装响应对象
         ErpComboRespVO comboRespVO = BeanUtils.toBean(comboProduct, ErpComboRespVO.class);
         comboRespVO.setName(nameBuilder.toString());
         comboRespVO.setWeight(totalWeight);
+        comboRespVO.setPurchasePrice(totalPurchasePrice);
+        comboRespVO.setWholesalePrice(totalWholesalePrice);
 
         // 组装单品列表
         List<ErpProductRespVO> productVOs = products.stream()

@@ -1,7 +1,12 @@
 package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.UserNicknameExcelConverter;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,15 +62,18 @@ public class ErpProductRespVO {
     private Integer expiryDay;
 
     @Schema(description = "品牌名称")
-    @ExcelProperty("品牌名称")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brand;
 
     @Schema(description = "产品品类编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "11161")
-    @ExcelProperty("产品品类")
+    @ExcelProperty(value = "产品品类", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
     private Long categoryId;
 
     @Schema(description = "产品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
-    @ExcelProperty("产品状态")
+    @ExcelProperty(value = "产品状态", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_STATUS)
     private Integer status;
 
     @Schema(description = "产品卖点")
@@ -86,13 +94,7 @@ public class ErpProductRespVO {
     @ExcelProperty("固定运费（单位：元）")
     private BigDecimal fixedShippingFee;
 
-//    @Schema(description = "首件数量")
-//    @ExcelProperty("首件数量")
-//    private Integer firstItemQuantity;
-//
-//    @Schema(description = "首件价格（单位：元）")
-//    @ExcelProperty("首件价格（单位：元）")
-//    private BigDecimal firstItemPrice;
+
 
     @Schema(description = "按件数量")
     @ExcelProperty("按件数量")
@@ -144,11 +146,11 @@ public class ErpProductRespVO {
 
     @Schema(description = "返单时效")
     @ExcelProperty("返单时效")
-    private LocalDateTime orderReplenishmentLeadTime;
+    private String orderReplenishmentLeadTime;
 
     @Schema(description = "产品长宽高")
     @ExcelProperty("品长宽高")
-    private String productDimensions;
+    private String productLength;
 
     @Schema(description = "产品重量（单位：g）")
     @ExcelProperty("产品重量（单位：g）")
@@ -156,11 +158,11 @@ public class ErpProductRespVO {
 
     @Schema(description = "箱规数量")
     @ExcelProperty("箱规数量")
-    private String productWidth;
+    private String productCartonSpec;
 
     @Schema(description = "箱长宽高")
     @ExcelProperty("箱长宽高")
-    private String cartonDimensions;
+    private String cartonLength;
 
     @Schema(description = "箱规重量")
     @ExcelProperty("箱规重量")
@@ -215,7 +217,7 @@ public class ErpProductRespVO {
     private String groupBuyEventMinimunPrice;
 
     @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
-    @ExcelProperty("创建人员")
+    @ExcelProperty(value = "创建人员")
     private String creator;
 
 
@@ -236,50 +238,17 @@ public class ErpProductRespVO {
     private String categoryName;
 
 
-    @Schema(description = "返单时效单位")
-    private String orderReplenishmentLeadTimeUnit;
-
-    @Schema(description = "品长")
-    private String productLength;
-
-//    @Schema(description = "品宽")
-//    @ExcelProperty("品宽")
-//    private String productWidth;
-
-    @Schema(description = "品高")
-    private String productHeight;
-
-    @Schema(description = "品长宽高单位")
-    private String productDimensionsUnit;
-
-    @Schema(description = "箱长")
-    private String cartonLength;
-
-    @Schema(description = "箱宽")
-    private String cartonWidth;
-
-    @Schema(description = "箱高")
-    private String cartonHeight;
-
-    @Schema(description = "箱长宽高单位")
-    private String cartonDimensionsUnit;
-
-    @Schema(description = "箱规重量单位")
-    private String cartonWeightUnit;
-
-    @Schema(description = "产品箱规")
-    private String productCartonSpec;
-
-    @Schema(description = "产品箱规单位")
-    private String productCartonSpecUnit;
 
 
 
-    @Schema(description = "保质日期单位")
-    private String expiryUnit;
 
-    @Schema(description = "产品重量单位")
-    private String weightUnit;
+
+
+
+
+
+
+
 
 
 
@@ -300,7 +269,6 @@ public class ErpProductRespVO {
 
     @Schema(description = "对外最低批发单价（单位：元）")
     private BigDecimal minWholesalePrice;
-
 
 
 

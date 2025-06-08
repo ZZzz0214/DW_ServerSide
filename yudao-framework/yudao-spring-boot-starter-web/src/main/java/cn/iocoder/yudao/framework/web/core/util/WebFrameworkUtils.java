@@ -7,6 +7,8 @@ import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
 import cn.iocoder.yudao.framework.web.config.WebProperties;
+import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -27,6 +29,42 @@ public class WebFrameworkUtils {
     private static final String REQUEST_ATTRIBUTE_COMMON_RESULT = "common_result";
 
     public static final String HEADER_TENANT_ID = "tenant-id";
+
+    private static AdminUserApi adminUserApi;
+
+    @Autowired
+    public void setAdminUserApi(AdminUserApi adminUserApi) {
+        WebFrameworkUtils.adminUserApi = adminUserApi;
+    }
+
+    // ... 其他代码保持不变 ...
+
+    public static String getUsernameById(Long userId) {
+        if (userId == null || adminUserApi == null) {
+            return null;
+        }
+        return adminUserApi.getUser(userId).getUsername();
+    }
+    // ... 其他代码保持不变 ...
+
+    private static final String REQUEST_ATTRIBUTE_LOGIN_USERNAME = "login_user_username";
+
+    public static void setLoginUsername(ServletRequest request, String username) {
+        request.setAttribute(REQUEST_ATTRIBUTE_LOGIN_USERNAME, username);
+    }
+
+    public static String getLoginUsername(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return (String) request.getAttribute(REQUEST_ATTRIBUTE_LOGIN_USERNAME);
+    }
+
+    public static String getLoginUsername() {
+        HttpServletRequest request = getRequest();
+        return getLoginUsername(request);
+    }
+
 
     /**
      * 终端的 Header

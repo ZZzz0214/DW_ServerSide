@@ -1,12 +1,23 @@
 package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 
+import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Schema(description = "管理后台 - ERP 产品 Response VO")
+@Data
+@Builder
+@ExcelIgnoreUnannotated
+@NoArgsConstructor
+@AllArgsConstructor
 public class ErpComboPurchaseRespVO {
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "15672")
     private Long id;
@@ -33,7 +44,7 @@ public class ErpComboPurchaseRespVO {
     private String shippingCode;
 
     @Schema(description = "产品重量（单位：kg）")
-    @ExcelProperty("产品重量（单位：g）")
+    @ExcelProperty("产品重量")
     private BigDecimal weight;
 
     @Schema(description = "采购人员")
