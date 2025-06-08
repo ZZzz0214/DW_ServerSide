@@ -314,4 +314,8 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     // ========== ERP 产品 1-030-500-000 ==========
 
     ErrorCode PRODUCT_NAME_DUPLICATE = new ErrorCode(1_030_500_006, "产品名称({})已存在");
+    ErrorCode COMBO_PRODUCT_NAME_DUPLICATE = new ErrorCode(1_030_510_001, "组合产品名称({})已存在");
+    // ========== ERP 代发辅助导入 1-030-111-000 ==========
+    ErrorCode DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_111_000, "导入代发辅助数据不能为空");
+    ErrorCode DROPSHIP_ASSIST_IMPORT_NO_EXISTS = new ErrorCode(1_030_111_001, "第{}行的代发辅助编号({})已存在");
 }

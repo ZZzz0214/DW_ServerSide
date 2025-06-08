@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.dropship;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
@@ -9,6 +10,10 @@ import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssis
 import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 @Mapper
 public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO> {
@@ -38,6 +43,12 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
         return selectJoinPage(reqVO, ErpDropshipAssistRespVO.class, query);
     }
 
+    default List<ErpDropshipAssistDO> selectListByNoIn(Collection<String> nos) {
+        if (CollUtil.isEmpty(nos)) {
+            return Collections.emptyList();
+        }
+        return selectList(ErpDropshipAssistDO::getNo, nos);
+    }
     default ErpDropshipAssistDO selectByNo(String no) {
         return selectOne(ErpDropshipAssistDO::getNo, no);
     }

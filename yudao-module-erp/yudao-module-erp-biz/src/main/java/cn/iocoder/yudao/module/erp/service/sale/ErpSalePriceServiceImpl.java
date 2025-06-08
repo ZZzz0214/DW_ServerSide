@@ -175,8 +175,9 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         for (Long id : ids) {
             validateSalePriceExists(id);
         }
+        System.out.println(ids);
         erpSalePriceMapper.deleteBatchIds(ids);
-        ids.forEach(this::syncToES); // 新增ES同步
+        ids.forEach(id -> salePriceESRepository.deleteById(id));
     }
 
     @Override
@@ -209,19 +210,54 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 
     @Override
     public PageResult<ErpSalePriceRespVO> getSalePriceVOPage(ErpSalePricePageReqVO pageReqVO) {
-        // 1. 查询销售价格分页数据
+//        // 1. 查询销售价格分页数据
+//
+//            // 2. 检查ES索引是否存在
+//        IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
+//        if (!indexOps.exists()) {
+//            initESIndex(); // 如果索引不存在则创建
+//            fullSyncToES(); // 全量同步数据
+//        }
+//
+//        // 3. 检查ES是否有数据
+//        long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
+//        if (esCount == 0) {
+//            fullSyncToES(); // 同步数据到ES
+//        }
+        // 1. 检查数据库是否有数据
+        long dbCount = erpSalePriceMapper.selectCount(null);
 
-            // 2. 检查ES索引是否存在
+        // 2. 检查ES索引是否存在
         IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
-        if (!indexOps.exists()) {
-            initESIndex(); // 如果索引不存在则创建
-            fullSyncToES(); // 全量同步数据
+        boolean indexExists = indexOps.exists();
+
+        // 3. 检查ES数据量
+        long esCount = 0;
+        if (indexExists) {
+            esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
         }
 
-        // 3. 检查ES是否有数据
-        long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
-        if (esCount == 0) {
-            fullSyncToES(); // 同步数据到ES
+        // 4. 处理数据库和ES数据不一致的情况
+        if (dbCount == 0) {
+            if (indexExists && esCount > 0) {
+                // 数据库为空但ES有数据，清空ES
+                salePriceESRepository.deleteAll();
+                System.out.println("检测到数据库为空但ES有数据，已清空销售价格ES索引");
+            }
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+
+        if (!indexExists) {
+            initESIndex();
+            fullSyncToES();
+            return getSalePriceVOPageFromDB(pageReqVO);
+        }
+
+        if (esCount == 0 || dbCount != esCount) {
+            fullSyncToES();
+            if (esCount == 0) {
+                return getSalePriceVOPageFromDB(pageReqVO);
+            }
         }
         PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
 
@@ -243,6 +279,25 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         return new PageResult<>(voList, pageResult.getTotal());
     }
 
+    private PageResult<ErpSalePriceRespVO> getSalePriceVOPageFromDB(ErpSalePricePageReqVO pageReqVO) {
+        PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
+
+        List<ErpSalePriceRespVO> voList = pageResult.getList().stream()
+                .map(doObj -> {
+                    ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
+                    if (doObj.getGroupProductId() != null) {
+                        ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(doObj.getGroupProductId());
+                        if (comboRespVO != null) {
+                            vo.setComboList(Collections.singletonList(comboRespVO));
+                            vo.setGroupProductId(comboRespVO.getId());
+                        }
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        return new PageResult<>(voList, pageResult.getTotal());
+    }
 //    @Override
 //    public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
 //        // 查询销售价格基本信息

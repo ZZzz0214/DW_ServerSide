@@ -83,19 +83,19 @@ public class ErpProductController {
         return success(productService.getProductVOPage(pageReqVO));
     }
 
-//    @GetMapping("/simple-list")
-//    @Operation(summary = "获得产品精简列表", description = "只包含被开启的产品，主要用于前端的下拉选项")
-//    public CommonResult<List<ErpProductRespVO>> getProductSimpleList() {
-//        List<ErpProductRespVO> list = productService.getProductVOListByStatus(CommonStatusEnum.ENABLE.getStatus());
-//        return success(convertList(list, product -> new ErpProductRespVO()
-//                .setId(product.getId())
-//                .setName(product.getName())
-//                .setBarCode(product.getBarCode())
-//                .setCategoryId(product.getCategoryId())
-//                .setUnitId(product.getUnitId())
-//                .setUnitName(product.getUnitName())
-//                .setPurchasePrice(product.getPurchasePrice())));
-//    }
+    @GetMapping("/simple-list")
+    @Operation(summary = "获得产品精简列表", description = "只包含被开启的产品，主要用于前端的下拉选项")
+    public CommonResult<List<ErpProductRespVO>> getProductSimpleList() {
+        List<ErpProductRespVO> list = productService.getProductVOListByStatus(CommonStatusEnum.ENABLE.getStatus());
+        return success(convertList(list, product -> new ErpProductRespVO()
+                .setId(product.getId())
+                .setName(product.getName())
+                .setBarCode(product.getBarCode())
+                .setCategoryId(product.getCategoryId())
+                .setUnitId(product.getUnitId())
+                .setUnitName(product.getUnitName())
+                .setPurchasePrice(product.getPurchasePrice())));
+    }
 
     @GetMapping("/export-excel")
     @Operation(summary = "导出产品 Excel")

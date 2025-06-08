@@ -3,11 +3,11 @@ package cn.iocoder.yudao.module.erp.service.dropship;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
-import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.dropship.ErpDropshipAssistMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
@@ -16,10 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
@@ -133,5 +131,62 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         if (dropshipAssist != null && !ObjectUtil.equal(dropshipAssist.getId(), id)) {
             throw exception(DROPSHIP_ASSIST_NO_EXISTS);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpDropshipAssistImportRespVO importDropshipAssistList(List<ErpDropshipAssistImportExcelVO> importList, boolean isUpdateSupport) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY);
+        }
+    
+        // 初始化返回结果
+        ErpDropshipAssistImportRespVO respVO = ErpDropshipAssistImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+    
+        // 查询已存在的代发辅助记录
+        Set<String> noSet = importList.stream()
+                .map(ErpDropshipAssistImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        List<ErpDropshipAssistDO> existList = dropshipAssistMapper.selectListByNoIn(noSet);
+        Map<String, ErpDropshipAssistDO> noDropshipAssistMap = convertMap(existList, ErpDropshipAssistDO::getNo);
+    
+        // 遍历处理每个导入项
+        for (int i = 0; i < importList.size(); i++) {
+            ErpDropshipAssistImportExcelVO importVO = importList.get(i);
+            try {
+                // 判断是否支持更新
+                ErpDropshipAssistDO existDropshipAssist = noDropshipAssistMap.get(importVO.getNo());
+                if (existDropshipAssist == null) {
+                    // 创建
+                    ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
+                    if (StrUtil.isEmpty(dropshipAssist.getNo())) {
+                        dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
+                    }
+                    dropshipAssistMapper.insert(dropshipAssist);
+                    respVO.getCreateNames().add(dropshipAssist.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新
+                    ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
+                    updateDropshipAssist.setId(existDropshipAssist.getId());
+                    dropshipAssistMapper.updateById(updateDropshipAssist);
+                    respVO.getUpdateNames().add(updateDropshipAssist.getNo());
+                } else {
+                    throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                }
+            } catch (ServiceException ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
+                respVO.getFailureNames().put(errorKey, ex.getMessage());
+            } catch (Exception ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
+                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+    
+        return respVO;
     }
 }

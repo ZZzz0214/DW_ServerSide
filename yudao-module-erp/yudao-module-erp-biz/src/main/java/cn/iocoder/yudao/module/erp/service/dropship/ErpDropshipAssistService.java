@@ -2,9 +2,7 @@ package cn.iocoder.yudao.module.erp.service.dropship;
 
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
 
 import javax.validation.Valid;
@@ -40,4 +38,6 @@ public interface ErpDropshipAssistService {
 
     // 获取代发辅助记录VO分页
     PageResult<ErpDropshipAssistRespVO> getDropshipAssistVOPage(ErpDropshipAssistPageReqVO pageReqVO);
+
+    ErpDropshipAssistImportRespVO importDropshipAssistList(List<ErpDropshipAssistImportExcelVO> importList, boolean isUpdateSupport);
 }

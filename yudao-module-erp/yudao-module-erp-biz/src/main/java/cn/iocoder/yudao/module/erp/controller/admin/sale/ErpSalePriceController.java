@@ -30,7 +30,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - ERP 销售价格")
 @RestController
-@RequestMapping("/erp/sale-price")
+@RequestMapping("/erp/saleprice")
 @Validated
 public class ErpSalePriceController {
 
@@ -57,6 +57,7 @@ public class ErpSalePriceController {
     @Parameter(name = "ids", description = "编号数组", required = true)
     @PreAuthorize("@ss.hasPermission('erp:sale-price:delete')")
     public CommonResult<Boolean> deleteSalePrice(@RequestParam("ids") List<Long> ids) {
+        System.out.println("要删除id"+ids);
         salePriceService.deleteSalePrice(ids);
         return success(true);
     }

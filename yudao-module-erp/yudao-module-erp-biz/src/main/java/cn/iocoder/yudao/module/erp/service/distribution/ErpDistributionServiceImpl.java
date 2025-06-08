@@ -406,25 +406,81 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     @Override
     public PageResult<ErpDistributionRespVO> getDistributionVOPage(ErpDistributionPageReqVO pageReqVO) {
         try {
+//            // 1. 检查数据库是否有数据
+//            long dbCount = distributionMapper.selectCount(null);
+//            if (dbCount == 0) {
+//                return new PageResult<>(Collections.emptyList(), 0L);
+//            }
+//
+//            // 2. 检查ES索引是否存在
+//            IndexOperations baseIndexOps = elasticsearchRestTemplate.indexOps(ErpDistributionBaseESDO.class);
+//            if (!baseIndexOps.exists()) {
+//                initESIndex(); // 如果索引不存在则创建
+//                fullSyncToES(); // 全量同步数据
+//                return getDistributionVOPageFromDB(pageReqVO); // 首次查询使用数据库
+//            }
+//
+//            // 3. 检查ES是否有数据
+//            long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpDistributionBaseESDO.class);
+//            if (esCount == 0) {
+//                fullSyncToES(); // 同步数据到ES
+//                return getDistributionVOPageFromDB(pageReqVO); // 首次查询使用数据库
+//            }
+
             // 1. 检查数据库是否有数据
             long dbCount = distributionMapper.selectCount(null);
-            if (dbCount == 0) {
-                return new PageResult<>(Collections.emptyList(), 0L);
-            }
 
             // 2. 检查ES索引是否存在
             IndexOperations baseIndexOps = elasticsearchRestTemplate.indexOps(ErpDistributionBaseESDO.class);
-            if (!baseIndexOps.exists()) {
-                initESIndex(); // 如果索引不存在则创建
-                fullSyncToES(); // 全量同步数据
-                return getDistributionVOPageFromDB(pageReqVO); // 首次查询使用数据库
+            boolean baseIndexExists = baseIndexOps.exists();
+            IndexOperations purchaseIndexOps = elasticsearchRestTemplate.indexOps(ErpDistributionPurchaseESDO.class);
+            boolean purchaseIndexExists = purchaseIndexOps.exists();
+            IndexOperations saleIndexOps = elasticsearchRestTemplate.indexOps(ErpDistributionSaleESDO.class);
+            boolean saleIndexExists = saleIndexOps.exists();
+
+            // 3. 检查ES数据量
+            long baseEsCount = 0;
+            long purchaseEsCount = 0;
+            long saleEsCount = 0;
+            if (baseIndexExists) {
+                baseEsCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpDistributionBaseESDO.class);
+            }
+            if (purchaseIndexExists) {
+                purchaseEsCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpDistributionPurchaseESDO.class);
+            }
+            if (saleIndexExists) {
+                saleEsCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpDistributionSaleESDO.class);
             }
 
-            // 3. 检查ES是否有数据
-            long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpDistributionBaseESDO.class);
-            if (esCount == 0) {
-                fullSyncToES(); // 同步数据到ES
-                return getDistributionVOPageFromDB(pageReqVO); // 首次查询使用数据库
+            // 4. 处理数据库和ES数据不一致的情况
+            if (dbCount == 0) {
+                if (baseIndexExists && baseEsCount > 0) {
+                    // 数据库为空但基础ES有数据，清空ES
+                    elasticsearchRestTemplate.delete(new NativeSearchQueryBuilder().build(), ErpDistributionBaseESDO.class);
+                    System.out.println("检测到数据库为空但基础ES有数据，已清空基础ES索引");
+                }
+                if (purchaseIndexExists && purchaseEsCount > 0) {
+                    elasticsearchRestTemplate.delete(new NativeSearchQueryBuilder().build(), ErpDistributionPurchaseESDO.class);
+                    System.out.println("检测到数据库为空但采购ES有数据，已清空采购ES索引");
+                }
+                if (saleIndexExists && saleEsCount > 0) {
+                    elasticsearchRestTemplate.delete(new NativeSearchQueryBuilder().build(), ErpDistributionSaleESDO.class);
+                    System.out.println("检测到数据库为空但销售ES有数据，已清空销售ES索引");
+                }
+                return new PageResult<>(Collections.emptyList(), 0L);
+            }
+
+            if (!baseIndexExists || !purchaseIndexExists || !saleIndexExists) {
+                initESIndex();
+                fullSyncToES();
+                return getDistributionVOPageFromDB(pageReqVO);
+            }
+
+            if (baseEsCount == 0 || purchaseEsCount == 0 || saleEsCount == 0 || dbCount != baseEsCount) {
+                fullSyncToES();
+                if (baseEsCount == 0) {
+                    return getDistributionVOPageFromDB(pageReqVO);
+                }
             }
 
             // 1. 构建基础查询条件

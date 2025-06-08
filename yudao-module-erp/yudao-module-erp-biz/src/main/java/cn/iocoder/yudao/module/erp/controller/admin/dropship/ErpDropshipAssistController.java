@@ -11,18 +11,24 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
 import cn.iocoder.yudao.module.erp.service.dropship.ErpDropshipAssistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.IMPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.framework.common.util.object.BeanUtils.toBean;
 
@@ -99,4 +105,36 @@ public class ErpDropshipAssistController {
         ExcelUtils.write(response, "代发辅助信息.xlsx", "数据", ErpDropshipAssistExportVO.class,
         exportList);
     }
+    // ... 其他代码保持不变 ...
+
+    @PostMapping("/import")
+    @Operation(summary = "导入代发辅助")
+    @Parameters({
+        @Parameter(name = "file", description = "Excel 文件", required = true),
+        @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+    })
+    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:import')")
+    @ApiAccessLog(operateType = IMPORT)
+    public CommonResult<ErpDropshipAssistImportRespVO> importExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpDropshipAssistImportExcelVO> list = ExcelUtils.read(inputStream, ErpDropshipAssistImportExcelVO.class);
+            return success(dropshipAssistService.importDropshipAssistList(list, updateSupport));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
+    }
+
+//    @GetMapping("/get-import-template")
+//    @Operation(summary = "获得导入代发辅助模板")
+//    public void importTemplate(HttpServletResponse response) throws IOException {
+//        // 手动创建导出 demo
+//        List<ErpDropshipAssistImportExcelVO> list = Arrays.asList(
+//            new ErpDropshipAssistImportExcelVO().setOriginalSpec("示例代发辅助1"),
+//            new ErpDropshipAssistImportExcelVO().setProductName("示例代发辅助2");
+//        );
+//        // 输出
+//        ExcelUtils.write(response, "代发辅助导入模板.xls", "代发辅助列表", ErpDropshipAssistImportExcelVO.class, list);
+//    }
 }

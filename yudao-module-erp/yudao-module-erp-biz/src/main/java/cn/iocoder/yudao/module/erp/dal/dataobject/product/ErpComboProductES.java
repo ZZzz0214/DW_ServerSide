@@ -102,4 +102,8 @@ public class ErpComboProductES {
 
     @Field(name = "updater", type = FieldType.Keyword)
     private String updater;
+
+    //用于查找name的唯一
+    @Field(type = FieldType.Keyword)
+    private String normalizedName;
 }
