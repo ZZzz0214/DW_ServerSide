@@ -16,9 +16,9 @@ public class YudaoDictAutoConfiguration {
         DictFrameworkUtils.init(dictDataApi);
         return new DictFrameworkUtils();
     }
-    @Bean
-    public UserNicknameExcelConverter userNicknameExcelConverter(AdminUserApi adminUserApi) {
-        return new UserNicknameExcelConverter(adminUserApi);
-    }
+//    @Bean
+//    public UserNicknameExcelConverter userNicknameExcelConverter(AdminUserApi adminUserApi) {
+//        return new UserNicknameExcelConverter(adminUserApi);
+//    }
 
 }
