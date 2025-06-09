@@ -140,6 +140,7 @@ public class ErpSalePriceController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
+            System.out.println("调用导入");
             List<ErpSalePriceImportExcelVO> list = ExcelUtils.read(inputStream, ErpSalePriceImportExcelVO.class);
             return success(salePriceService.importSalePriceList(list, updateSupport));
         } catch (Exception e) {

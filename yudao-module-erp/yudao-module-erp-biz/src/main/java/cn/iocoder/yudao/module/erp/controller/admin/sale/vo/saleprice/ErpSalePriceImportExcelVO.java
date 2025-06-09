@@ -3,13 +3,21 @@ package cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Schema(description = "管理后台 - ERP 销售价格导入 Excel VO")
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Accessors(chain = false) // 设置 chain = false，避免用户导入有问题
 public class ErpSalePriceImportExcelVO {
 
     @Schema(description = "销售价格表业务编号", example = "XSJGBH20230001")
@@ -19,6 +27,7 @@ public class ErpSalePriceImportExcelVO {
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "12345")
     @ExcelProperty("组品编号")
     private String groupProductNo;
+
 
     @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "产品A")
     @ExcelProperty("产品名称")

@@ -514,60 +514,157 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
         }
     }
 
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public ErpSalePriceImportRespVO importSalePriceList(List<ErpSalePriceImportExcelVO> importList, boolean isUpdateSupport) {
+//        if (CollUtil.isEmpty(importList)) {
+//            throw exception(SALE_PRICE_IMPORT_LIST_IS_EMPTY);
+//        }
+//
+//        // 初始化返回结果
+//        ErpSalePriceImportRespVO respVO = ErpSalePriceImportRespVO.builder()
+//                .createNames(new ArrayList<>())
+//                .updateNames(new ArrayList<>())
+//                .failureNames(new LinkedHashMap<>())
+//                .build();
+//
+//        // 查询已存在的销售价格记录
+//        Set<String> noSet = importList.stream()
+//                .map(ErpSalePriceImportExcelVO::getNo)
+//                .filter(StrUtil::isNotBlank)
+//                .collect(Collectors.toSet());
+//        List<ErpSalePriceDO> existList = erpSalePriceMapper.selectListByNoIn(noSet);
+//        Map<String, ErpSalePriceDO> noSalePriceMap = convertMap(existList, ErpSalePriceDO::getNo);
+//
+//        // 遍历处理每个导入项
+//        for (int i = 0; i < importList.size(); i++) {
+//            ErpSalePriceImportExcelVO importVO = importList.get(i);
+//            try {
+//                ErpComboProductDO comboProduct = erpComboMapper.selectByNo(importVO.getGroupProductNo());
+//                // 判断是否支持更新
+//                ErpSalePriceDO existSalePrice = noSalePriceMap.get(importVO.getNo());
+//
+//                if (existSalePrice == null) {
+//                    // 创建
+//                    ErpSalePriceDO salePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class).setGroupProductId(comboProduct.getId());
+//                    if (StrUtil.isEmpty(salePrice.getNo())) {
+//                        salePrice.setNo(noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX));
+//                    }
+//                    erpSalePriceMapper.insert(salePrice);
+//                    respVO.getCreateNames().add(salePrice.getNo());
+//                } else if (isUpdateSupport) {
+//                    // 更新
+//                    ErpSalePriceDO updateSalePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class);
+//                    updateSalePrice.setId(existSalePrice.getId());
+//                    erpSalePriceMapper.updateById(updateSalePrice);
+//                    respVO.getUpdateNames().add(updateSalePrice.getNo());
+//                } else {
+//                    throw exception(SALE_PRICE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+//                }
+//            } catch (ServiceException ex) {
+//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
+//                respVO.getFailureNames().put(errorKey, ex.getMessage());
+//            } catch (Exception ex) {
+//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
+//                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+//            }
+//        }
+//
+//        return respVO;
+//    }
+
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public ErpSalePriceImportRespVO importSalePriceList(List<ErpSalePriceImportExcelVO> importList, boolean isUpdateSupport) {
-        if (CollUtil.isEmpty(importList)) {
-            throw exception(SALE_PRICE_IMPORT_LIST_IS_EMPTY);
-        }
-
-        // 初始化返回结果
-        ErpSalePriceImportRespVO respVO = ErpSalePriceImportRespVO.builder()
-                .createNames(new ArrayList<>())
-                .updateNames(new ArrayList<>())
-                .failureNames(new LinkedHashMap<>())
-                .build();
-
-        // 查询已存在的销售价格记录
-        Set<String> noSet = importList.stream()
-                .map(ErpSalePriceImportExcelVO::getNo)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toSet());
-        List<ErpSalePriceDO> existList = erpSalePriceMapper.selectListByNoIn(noSet);
-        Map<String, ErpSalePriceDO> noSalePriceMap = convertMap(existList, ErpSalePriceDO::getNo);
-
-        // 遍历处理每个导入项
-        for (int i = 0; i < importList.size(); i++) {
-            ErpSalePriceImportExcelVO importVO = importList.get(i);
-            try {
-                // 判断是否支持更新
-                ErpSalePriceDO existSalePrice = noSalePriceMap.get(importVO.getNo());
-                if (existSalePrice == null) {
-                    // 创建
-                    ErpSalePriceDO salePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class);
-                    if (StrUtil.isEmpty(salePrice.getNo())) {
-                        salePrice.setNo(noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX));
-                    }
-                    erpSalePriceMapper.insert(salePrice);
-                    respVO.getCreateNames().add(salePrice.getNo());
-                } else if (isUpdateSupport) {
-                    // 更新
-                    ErpSalePriceDO updateSalePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class);
-                    updateSalePrice.setId(existSalePrice.getId());
-                    erpSalePriceMapper.updateById(updateSalePrice);
-                    respVO.getUpdateNames().add(updateSalePrice.getNo());
-                } else {
-                    throw exception(SALE_PRICE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-                }
-            } catch (ServiceException ex) {
-                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
-                respVO.getFailureNames().put(errorKey, ex.getMessage());
-            } catch (Exception ex) {
-                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
-                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
-            }
-        }
-
-        return respVO;
+@Transactional(rollbackFor = Exception.class)
+public ErpSalePriceImportRespVO importSalePriceList(List<ErpSalePriceImportExcelVO> importList, boolean isUpdateSupport) {
+    if (CollUtil.isEmpty(importList)) {
+        throw exception(SALE_PRICE_IMPORT_LIST_IS_EMPTY);
     }
+
+    System.out.println("开始导入销售价格数据，共" + importList.size() + "条记录");
+
+    // 初始化返回结果
+    ErpSalePriceImportRespVO respVO = ErpSalePriceImportRespVO.builder()
+            .createNames(new ArrayList<>())
+            .updateNames(new ArrayList<>())
+            .failureNames(new LinkedHashMap<>())
+            .build();
+
+    // 查询已存在的销售价格记录
+    Set<String> noSet = importList.stream()
+            .map(ErpSalePriceImportExcelVO::getNo)
+            .filter(StrUtil::isNotBlank)
+            .collect(Collectors.toSet());
+    System.out.println("需要检查的销售价格编号列表：" + noSet);
+
+    List<ErpSalePriceDO> existList = erpSalePriceMapper.selectListByNoIn(noSet);
+    System.out.println("已存在的销售价格记录数量：" + existList.size());
+
+    Map<String, ErpSalePriceDO> noSalePriceMap = convertMap(existList, ErpSalePriceDO::getNo);
+
+    // 遍历处理每个导入项
+    for (int i = 0; i < importList.size(); i++) {
+        ErpSalePriceImportExcelVO importVO = importList.get(i);
+        System.out.println("正在处理第" + (i+1) + "条记录，编号：" + importVO.getNo());
+
+        try {
+            System.out.println("查找组品编号：" + importVO.getGroupProductNo());
+            ErpComboProductDO comboProduct = erpComboMapper.selectByNo(importVO.getGroupProductNo());
+            if (comboProduct == null) {
+                System.err.println("未找到组品编号：" + importVO.getGroupProductNo());
+                throw exception(SALE_PRICE_GROUP_PRODUCT_ID_REQUIRED, "组品编号不存在: " + importVO.getGroupProductNo());
+            }
+            System.out.println("找到组品ID：" + comboProduct.getId());
+
+            // 判断是否支持更新
+            ErpSalePriceDO existSalePrice = noSalePriceMap.get(importVO.getNo());
+            System.out.println("已存在记录检查结果：" + (existSalePrice != null));
+
+            if (existSalePrice == null) {
+                // 创建
+                System.out.println("准备创建新记录");
+                ErpSalePriceDO salePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class)
+                        .setGroupProductId(comboProduct.getId());
+
+                if (StrUtil.isEmpty(salePrice.getNo())) {
+                    String newNo = noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX);
+                    System.out.println("生成了新编号：" + newNo);
+                    salePrice.setNo(newNo);
+                }
+
+                System.out.println("准备插入记录：" + salePrice);
+                erpSalePriceMapper.insert(salePrice);
+                respVO.getCreateNames().add(salePrice.getNo());
+                System.out.println("创建成功，ID：" + salePrice.getId());
+            } else if (isUpdateSupport) {
+                // 更新
+                System.out.println("准备更新记录，ID：" + existSalePrice.getId());
+                ErpSalePriceDO updateSalePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class)
+                        .setId(existSalePrice.getId())
+                        .setGroupProductId(comboProduct.getId());
+
+                System.out.println("准备更新记录内容：" + updateSalePrice);
+                erpSalePriceMapper.updateById(updateSalePrice);
+                respVO.getUpdateNames().add(updateSalePrice.getNo());
+                System.out.println("更新成功");
+            } else {
+                System.err.println("记录已存在且不允许更新，编号：" + importVO.getNo());
+                throw exception(SALE_PRICE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+            }
+        } catch (ServiceException ex) {
+            String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
+            System.err.println("业务异常：" + ex.getMessage());
+            respVO.getFailureNames().put(errorKey, ex.getMessage());
+        } catch (Exception ex) {
+            String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
+            System.err.println("系统异常：" + ex.getMessage());
+            ex.printStackTrace();
+            respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+        }
+    }
+
+    System.out.println("导入完成，成功创建：" + respVO.getCreateNames().size() +
+                      "，成功更新：" + respVO.getUpdateNames().size() +
+                      "，失败：" + respVO.getFailureNames().size());
+    return respVO;
+}
 }
