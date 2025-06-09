@@ -3,10 +3,7 @@ package cn.iocoder.yudao.module.erp.service.sale;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductSearchReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 
 import javax.validation.Valid;
@@ -108,7 +105,7 @@ public interface ErpSalePriceService {
      * @return 销售价格 VO 列表
      */
     List<ErpSalePriceRespVO> getSalePriceVOListByCustomerName(String customerName);
-    
+
     /**
      * 获取销售价格 VO 列表（按状态筛选）
      *
@@ -130,7 +127,7 @@ public interface ErpSalePriceService {
      * @return 搜索到的产品列表
      */
     List<ErpSalePriceRespVO> searchProducts(ErpSalePriceSearchReqVO searchReqVO);
-    
+
     /**
      * 根据组品编号和客户名称获取销售价格
      *
@@ -144,4 +141,13 @@ public interface ErpSalePriceService {
      * 获取缺失价格的销售记录
      */
     List<ErpSalePriceRespVO> getMissingPrices();
+
+    /**
+     * 导入销售价格
+     *
+     * @param importList 导入数据列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpSalePriceImportRespVO importSalePriceList(List<ErpSalePriceImportExcelVO> importList, boolean isUpdateSupport);
 }

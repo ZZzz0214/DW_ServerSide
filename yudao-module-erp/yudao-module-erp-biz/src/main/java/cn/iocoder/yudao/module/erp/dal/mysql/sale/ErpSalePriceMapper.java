@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.sale;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
@@ -20,10 +21,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePri
 import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * ERP 销售价格 Mapper
@@ -35,6 +33,7 @@ public interface ErpSalePriceMapper extends BaseMapperX<ErpSalePriceDO> {
 
     <DTO, W> List<DTO> selectJoinList(@Param(Constant.CLAZZ) Class<DTO> clazz,
                                     @Param(Constants.WRAPPER) W wrapper);
+
     default PageResult<ErpSalePriceDO> selectPage(ErpSalePricePageReqVO reqVO) {
         MPJLambdaWrapperX<ErpSalePriceDO> query = new MPJLambdaWrapperX<ErpSalePriceDO>()
                 .likeIfPresent(ErpSalePriceDO::getCustomerName, reqVO.getCustomerName())
@@ -122,6 +121,13 @@ public interface ErpSalePriceMapper extends BaseMapperX<ErpSalePriceDO> {
         });
 
         return new ArrayList<>(resultMap.values());
+    }
+
+    default List<ErpSalePriceDO> selectListByNoIn(Collection<String> nos) {
+        if (CollUtil.isEmpty(nos)) {
+            return Collections.emptyList();
+        }
+        return selectList(ErpSalePriceDO::getNo, nos);
     }
 
 }

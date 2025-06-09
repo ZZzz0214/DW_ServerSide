@@ -327,7 +327,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             }
         // 1. 构建基础查询条件
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
-                .withPageable(PageRequest.of(0, pageReqVO.getPageSize()))
+                .withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()))
+                //.withPageable(PageRequest.of(0, pageReqVO.getPageSize()))
                 .withTrackTotalHits(true)
                 .withSort(Sort.by(Sort.Direction.ASC, "id")); // 必须包含唯一字段排序
 
@@ -531,21 +532,143 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         return new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpComboRespVO.class), pageResult.getTotal());
     }
 
-    private PageResult<ErpComboRespVO> handleDeepPagination(ErpComboPageReqVO pageReqVO,
+//    private PageResult<ErpComboRespVO> handleDeepPagination(ErpComboPageReqVO pageReqVO,
+//                                                           NativeSearchQueryBuilder queryBuilder) {
+//        //System.out.println("2");
+//        // 1. 计算需要跳过的记录数
+//        int skip = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
+//
+//        // 2. 使用search_after直接获取目标页
+//        NativeSearchQuery query = queryBuilder.build();
+//        query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
+//
+//        // 如果是深度分页，使用search_after
+//        if (skip > 0) {
+//            // 先获取前一页的最后一条记录
+//            NativeSearchQuery prevQuery = queryBuilder.build();
+//            prevQuery.setPageable(PageRequest.of(pageReqVO.getPageNo() - 2, 1));
+//
+//            SearchHits<ErpComboProductES> prevHits = elasticsearchRestTemplate.search(
+//                    prevQuery,
+//                    ErpComboProductES.class,
+//                    IndexCoordinates.of("erp_combo_products"));
+//
+//            if (prevHits.isEmpty()) {
+//                return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
+//            }
+//
+//            // 设置search_after参数
+//            SearchHit<ErpComboProductES> lastHit = prevHits.getSearchHits().get(0);
+//            query.setSearchAfter(lastHit.getSortValues());
+//        }
+//
+//        // 3. 执行查询
+//        SearchHits<ErpComboProductES> searchHits = elasticsearchRestTemplate.search(
+//                query,
+//                ErpComboProductES.class,
+//                IndexCoordinates.of("erp_combo_products"));
+//
+//       // 获取所有组合产品ID
+//        List<Long> comboIds = searchHits.stream()
+//                .map(hit -> hit.getContent().getId())
+//                .collect(Collectors.toList());
+//
+//        // 从ES查询所有关联项
+//        NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+//                .withQuery(QueryBuilders.termsQuery("combo_product_id", comboIds))
+//                .withPageable(PageRequest.of(0, pageReqVO.getPageSize())) // 添加分页参数
+//                .withTrackTotalHits(true) // 确保获取全部命中数
+//                .build();
+//
+//        //System.out.println("查询关联项条件2: " + itemQuery.getQuery()); // 打印查询条件
+//        SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+//                itemQuery,
+//                ErpComboProductItemES.class,
+//                IndexCoordinates.of("erp_combo_product_items"));
+//        //System.out.println("关联项查询结果数量2: " + itemHits.getTotalHits());
+//        // 按组合产品ID分组关联项
+//        Map<Long, List<ErpComboProductItemES>> itemsMap = itemHits.stream()
+//                .map(SearchHit::getContent)
+//                .collect(Collectors.groupingBy(ErpComboProductItemES::getComboProductId));
+//        //System.out.println("itemsMap大小2: " + itemsMap.size());
+//        // 获取所有产品ID
+//        List<Long> productIds = itemHits.stream()
+//                .map(hit -> hit.getContent().getItemProductId())
+//                .distinct()
+//                .collect(Collectors.toList());
+//
+//        // 从ES查询所有产品
+//        NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+//                .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+//                .withPageable(PageRequest.of(0, pageReqVO.getPageSize())) // 添加分页参数
+//                .withTrackTotalHits(true) // 确保获取全部命中数
+//                .build();
+//        SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+//                productQuery,
+//                ErpProductESDO.class,
+//                IndexCoordinates.of("erp_products"));
+//        Map<Long, ErpProductESDO> productMap = productHits.stream()
+//                .collect(Collectors.toMap(
+//                        hit -> hit.getContent().getId(),
+//                        SearchHit::getContent));
+//
+//        // 转换结果并设置组合产品名称和重量
+//        List<ErpComboRespVO> voList = searchHits.stream()
+//                .map(SearchHit::getContent)
+//                .map(combo -> {
+//                    //System.out.println("深度翻页处理组合产品ID: " + combo.getId()); // 调试打印
+//                    List<ErpComboProductItemES> items = itemsMap.getOrDefault(combo.getId(), Collections.emptyList());
+//                    //System.out.println("关联项数量: " + items.size()); // 调试打印
+//                    // 构建名称字符串
+//                    StringBuilder nameBuilder = new StringBuilder();
+//                    // 计算总重量
+//                    BigDecimal totalWeight = BigDecimal.ZERO;
+//                    for (int i = 0; i < items.size(); i++) {
+//                        ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
+//                        if (product == null) continue;
+//
+//                        if (i > 0) {
+//                            nameBuilder.append("+");
+//                        }
+//                        nameBuilder.append(product.getName())
+//                                .append("×")
+//                                .append(items.get(i).getItemQuantity());
+//
+//                        // 计算重量
+//                        if (product.getWeight() != null) {
+//                            BigDecimal quantity = new BigDecimal(items.get(i).getItemQuantity());
+//                            totalWeight = totalWeight.add(product.getWeight().multiply(quantity));
+//                        }
+//                    }
+//
+//                    // 转换VO并设置名称和重量
+//                    ErpComboRespVO vo = BeanUtils.toBean(combo, ErpComboRespVO.class);
+//                    vo.setName(nameBuilder.toString());
+//                    vo.setWeight(totalWeight);
+//                    return vo;
+//                })
+//                .collect(Collectors.toList());
+//
+//        return new PageResult<>(voList, searchHits.getTotalHits());
+//    }
+        private PageResult<ErpComboRespVO> handleDeepPagination(ErpComboPageReqVO pageReqVO,
                                                            NativeSearchQueryBuilder queryBuilder) {
-        //System.out.println("2");
         // 1. 计算需要跳过的记录数
         int skip = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
 
         // 2. 使用search_after直接获取目标页
         NativeSearchQuery query = queryBuilder.build();
         query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
+        query.addSort(Sort.by(Sort.Direction.ASC, "id")); // 保持一致的排序方式
 
         // 如果是深度分页，使用search_after
         if (skip > 0) {
-            // 先获取前一页的最后一条记录
-            NativeSearchQuery prevQuery = queryBuilder.build();
-            prevQuery.setPageable(PageRequest.of(pageReqVO.getPageNo() - 2, 1));
+            // 先获取前skip条记录
+            NativeSearchQuery prevQuery = new NativeSearchQueryBuilder()
+                    .withQuery(queryBuilder.build().getQuery())
+                    .withPageable(PageRequest.of(0, skip))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .build();
 
             SearchHits<ErpComboProductES> prevHits = elasticsearchRestTemplate.search(
                     prevQuery,
@@ -556,8 +679,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
             }
 
-            // 设置search_after参数
-            SearchHit<ErpComboProductES> lastHit = prevHits.getSearchHits().get(0);
+            // 获取最后一条记录作为search_after的起点
+            SearchHit<ErpComboProductES> lastHit = prevHits.getSearchHits().get(prevHits.getSearchHits().size() - 1);
             query.setSearchAfter(lastHit.getSortValues());
         }
 
@@ -567,7 +690,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 ErpComboProductES.class,
                 IndexCoordinates.of("erp_combo_products"));
 
-       // 获取所有组合产品ID
+        // 获取所有组合产品ID
         List<Long> comboIds = searchHits.stream()
                 .map(hit -> hit.getContent().getId())
                 .collect(Collectors.toList());
@@ -575,21 +698,20 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         // 从ES查询所有关联项
         NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.termsQuery("combo_product_id", comboIds))
-                .withPageable(PageRequest.of(0, pageReqVO.getPageSize())) // 添加分页参数
-                .withTrackTotalHits(true) // 确保获取全部命中数
+                .withPageable(PageRequest.of(0, pageReqVO.getPageSize()))
+                .withTrackTotalHits(true)
                 .build();
 
-        //System.out.println("查询关联项条件2: " + itemQuery.getQuery()); // 打印查询条件
         SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
                 itemQuery,
                 ErpComboProductItemES.class,
                 IndexCoordinates.of("erp_combo_product_items"));
-        //System.out.println("关联项查询结果数量2: " + itemHits.getTotalHits());
+
         // 按组合产品ID分组关联项
         Map<Long, List<ErpComboProductItemES>> itemsMap = itemHits.stream()
                 .map(SearchHit::getContent)
                 .collect(Collectors.groupingBy(ErpComboProductItemES::getComboProductId));
-        //System.out.println("itemsMap大小2: " + itemsMap.size());
+
         // 获取所有产品ID
         List<Long> productIds = itemHits.stream()
                 .map(hit -> hit.getContent().getItemProductId())
@@ -599,8 +721,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         // 从ES查询所有产品
         NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
-                .withPageable(PageRequest.of(0, pageReqVO.getPageSize())) // 添加分页参数
-                .withTrackTotalHits(true) // 确保获取全部命中数
+                .withPageable(PageRequest.of(0, pageReqVO.getPageSize()))
+                .withTrackTotalHits(true)
                 .build();
         SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
                 productQuery,
@@ -615,12 +737,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         List<ErpComboRespVO> voList = searchHits.stream()
                 .map(SearchHit::getContent)
                 .map(combo -> {
-                    //System.out.println("深度翻页处理组合产品ID: " + combo.getId()); // 调试打印
                     List<ErpComboProductItemES> items = itemsMap.getOrDefault(combo.getId(), Collections.emptyList());
-                    //System.out.println("关联项数量: " + items.size()); // 调试打印
-                    // 构建名称字符串
                     StringBuilder nameBuilder = new StringBuilder();
-                    // 计算总重量
                     BigDecimal totalWeight = BigDecimal.ZERO;
                     for (int i = 0; i < items.size(); i++) {
                         ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
@@ -633,14 +751,12 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                                 .append("×")
                                 .append(items.get(i).getItemQuantity());
 
-                        // 计算重量
                         if (product.getWeight() != null) {
                             BigDecimal quantity = new BigDecimal(items.get(i).getItemQuantity());
                             totalWeight = totalWeight.add(product.getWeight().multiply(quantity));
                         }
                     }
 
-                    // 转换VO并设置名称和重量
                     ErpComboRespVO vo = BeanUtils.toBean(combo, ErpComboRespVO.class);
                     vo.setName(nameBuilder.toString());
                     vo.setWeight(totalWeight);

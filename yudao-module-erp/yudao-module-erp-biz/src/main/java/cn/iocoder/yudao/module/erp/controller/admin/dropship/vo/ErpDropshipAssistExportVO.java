@@ -27,9 +27,12 @@ public class ErpDropshipAssistExportVO {
     @ExcelProperty("原表数量")
     private Integer originalQuantity;
 
+//    @Schema(description = "组品编号", example = "1")
+//    private String comboProductId;
+
     @Schema(description = "组品编号", example = "1")
     @ExcelProperty("组品编号")
-    private String comboProductId;
+    private String comboProductNo;
 
     @Schema(description = "发货编码", example = "SH123456")
     @ExcelProperty("发货编码")

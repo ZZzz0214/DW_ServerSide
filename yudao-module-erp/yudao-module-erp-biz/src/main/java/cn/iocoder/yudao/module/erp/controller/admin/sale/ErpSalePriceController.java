@@ -7,25 +7,26 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.*;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.IMPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - ERP 销售价格")
@@ -125,5 +126,24 @@ public class ErpSalePriceController {
     @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
     public CommonResult<List<ErpSalePriceRespVO>> getMissingPrices() {
         return success(salePriceService.getMissingPrices());
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "导入销售价格")
+    @Parameters({
+        @Parameter(name = "file", description = "Excel 文件", required = true),
+        @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+    })
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:import')")
+    @ApiAccessLog(operateType = IMPORT)
+    public CommonResult<ErpSalePriceImportRespVO> importExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpSalePriceImportExcelVO> list = ExcelUtils.read(inputStream, ErpSalePriceImportExcelVO.class);
+            return success(salePriceService.importSalePriceList(list, updateSupport));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
     }
 }

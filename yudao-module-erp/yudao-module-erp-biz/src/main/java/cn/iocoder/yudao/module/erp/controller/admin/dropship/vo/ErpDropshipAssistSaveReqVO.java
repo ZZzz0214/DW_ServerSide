@@ -27,6 +27,7 @@ public class ErpDropshipAssistSaveReqVO {
     private Integer originalQuantity;
 
     @Schema(description = "组品编号", example = "1")
+    @NotNull(message = "组品编号不能为空")
     private String comboProductId;
 
     @Schema(description = "产品规格", example = "规格B")

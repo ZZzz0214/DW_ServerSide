@@ -318,4 +318,22 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     // ========== ERP 代发辅助导入 1-030-111-000 ==========
     ErrorCode DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_111_000, "导入代发辅助数据不能为空");
     ErrorCode DROPSHIP_ASSIST_IMPORT_NO_EXISTS = new ErrorCode(1_030_111_001, "第{}行的代发辅助编号({})已存在");
+
+    ErrorCode SALE_PRICE_CUSTOMER_PRODUCT_DUPLICATE = new ErrorCode(1_030_300_006, "客户名称和产品名称组合已存在");
+
+    // ========== ERP 中转销售（1-030-120-000） ==========
+    ErrorCode TRANSIT_SALE_NOT_EXISTS = new ErrorCode(1_030_120_000, "中转销售记录不存在");
+    ErrorCode TRANSIT_SALE_NO_EXISTS = new ErrorCode(1_030_120_001, "中转销售编号已存在");
+    ErrorCode TRANSIT_SALE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_120_002, "中转销售记录({})已审核，无法修改");
+    ErrorCode TRANSIT_SALE_DELETE_FAIL_APPROVE = new ErrorCode(1_030_120_003, "中转销售记录({})已审核，无法删除");
+    ErrorCode TRANSIT_SALE_NOT_APPROVE = new ErrorCode(1_030_120_004, "中转销售记录未审核，无法操作");
+    ErrorCode TRANSIT_SALE_APPROVE_FAIL = new ErrorCode(1_030_120_005, "审核失败，只有未审核的中转销售记录才能审核");
+    ErrorCode TRANSIT_SALE_PROCESS_FAIL = new ErrorCode(1_030_120_006, "反审核失败，只有已审核的中转销售记录才能反审核");
+// ... existing transit sale error codes ...
+    ErrorCode TRANSIT_SALE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_120_007, "导入中转销售记录数据不能为空");
+    ErrorCode TRANSIT_SALE_IMPORT_NO_EXISTS = new ErrorCode(1_030_120_008, "导入失败，第{}行的中转销售记录编号({})已存在");
+    // ... existing code ...
+    ErrorCode SALE_PRICE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_300_007, "导入销售价格数据不能为空");
+    ErrorCode SALE_PRICE_IMPORT_NO_EXISTS = new ErrorCode(1_030_300_008, "导入失败，第{}行的销售价格编号({})已存在");
+
 }

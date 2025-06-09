@@ -32,9 +32,12 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .selectAs(ErpDropshipAssistDO::getComboProductId, ErpDropshipAssistRespVO::getComboProductId)
                 .selectAs(ErpDropshipAssistDO::getProductSpec, ErpDropshipAssistRespVO::getProductSpec)
                 .selectAs(ErpDropshipAssistDO::getProductQuantity, ErpDropshipAssistRespVO::getProductQuantity)
+                .selectAs(ErpDropshipAssistDO::getCreator, ErpDropshipAssistRespVO::getCreator)
                 .selectAs(ErpDropshipAssistDO::getCreateTime, ErpDropshipAssistRespVO::getCreateTime);
+
                 query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId)
                .selectAs(ErpComboProductDO::getName, ErpDropshipAssistRespVO::getProductName)
+               .selectAs(ErpComboProductDO::getNo, ErpDropshipAssistRespVO::getComboProductNo)
                .selectAs(ErpComboProductDO::getShortName, ErpDropshipAssistRespVO::getProductShortName)
                .selectAs(ErpComboProductDO::getShippingCode, ErpDropshipAssistRespVO::getShippingCode)
                .selectAs(ErpComboProductDO::getName, ErpDropshipAssistRespVO::getProductName);

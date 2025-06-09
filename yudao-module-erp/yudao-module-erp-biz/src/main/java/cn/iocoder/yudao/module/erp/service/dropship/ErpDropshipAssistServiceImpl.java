@@ -9,7 +9,9 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.dropship.ErpDropshipAssistMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,8 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
 
     @Resource
     private ErpNoRedisDAO noRedisDAO;
+    @Resource
+    private ErpComboMapper erpComboMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -139,14 +143,14 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         if (CollUtil.isEmpty(importList)) {
             throw exception(DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY);
         }
-    
+
         // 初始化返回结果
         ErpDropshipAssistImportRespVO respVO = ErpDropshipAssistImportRespVO.builder()
                 .createNames(new ArrayList<>())
                 .updateNames(new ArrayList<>())
                 .failureNames(new LinkedHashMap<>())
                 .build();
-    
+
         // 查询已存在的代发辅助记录
         Set<String> noSet = importList.stream()
                 .map(ErpDropshipAssistImportExcelVO::getNo)
@@ -154,11 +158,19 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                 .collect(Collectors.toSet());
         List<ErpDropshipAssistDO> existList = dropshipAssistMapper.selectListByNoIn(noSet);
         Map<String, ErpDropshipAssistDO> noDropshipAssistMap = convertMap(existList, ErpDropshipAssistDO::getNo);
-    
+
         // 遍历处理每个导入项
         for (int i = 0; i < importList.size(); i++) {
             ErpDropshipAssistImportExcelVO importVO = importList.get(i);
             try {
+                // 将组品业务编号转换为组品ID
+                if (StrUtil.isNotBlank(importVO.getComboProductId())) {
+                    ErpComboProductDO comboProduct = erpComboMapper.selectByNo(importVO.getComboProductId());
+                    if (comboProduct == null) {
+                        throw exception(COMBO_PRODUCT_NOT_EXISTS);
+                    }
+                    importVO.setComboProductId(comboProduct.getId().toString());
+                }
                 // 判断是否支持更新
                 ErpDropshipAssistDO existDropshipAssist = noDropshipAssistMap.get(importVO.getNo());
                 if (existDropshipAssist == null) {
@@ -186,7 +198,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                 respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
             }
         }
-    
+
         return respVO;
     }
 }

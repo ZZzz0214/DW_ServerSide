@@ -8,7 +8,9 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.service.dropship.ErpDropshipAssistService;
+import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -40,6 +42,8 @@ public class ErpDropshipAssistController {
 
     @Resource
     private ErpDropshipAssistService dropshipAssistService;
+    @Resource
+    private ErpComboProductService comboProductService;
 
     @PostMapping("/create")
     @Operation(summary = "创建代发辅助")
@@ -70,8 +74,28 @@ public class ErpDropshipAssistController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:dropship-assist:query')")
     public CommonResult<ErpDropshipAssistRespVO> getDropshipAssist(@RequestParam("id") Long id) {
+        // 查询基础信息
         ErpDropshipAssistDO dropshipAssist = dropshipAssistService.getDropshipAssist(id);
-        return success(toBean(dropshipAssist, ErpDropshipAssistRespVO.class));
+        if (dropshipAssist == null) {
+            return success(null);
+        }
+
+        // 转换为VO
+        ErpDropshipAssistRespVO respVO = BeanUtils.toBean(dropshipAssist, ErpDropshipAssistRespVO.class);
+
+        // 如果有关联组品，查询组品信息
+        if (dropshipAssist.getComboProductId() != null) {
+            Long comboProductId = Long.parseLong(dropshipAssist.getComboProductId());
+            ErpComboProductDO comboProduct = comboProductService.getCombo(comboProductId);
+            if (comboProduct != null) {
+                respVO.setName(comboProduct.getName());
+                respVO.setProductShortName(comboProduct.getShortName());
+                respVO.setShippingCode(comboProduct.getShippingCode());
+                respVO.setComboProductNo(comboProduct.getNo());
+            }
+        }
+        return success(respVO);
+
     }
 
     @GetMapping("/page")
@@ -79,6 +103,7 @@ public class ErpDropshipAssistController {
     @PreAuthorize("@ss.hasPermission('erp:dropship-assist:query')")
     public CommonResult<PageResult<ErpDropshipAssistRespVO>> getDropshipAssistPage(@Valid ErpDropshipAssistPageReqVO pageReqVO) {
         PageResult<ErpDropshipAssistRespVO> pageResult = dropshipAssistService.getDropshipAssistVOPage(pageReqVO);
+        System.out.println("查看代发"+pageResult.getList());
         return success(pageResult);
     }
 
@@ -97,8 +122,9 @@ public class ErpDropshipAssistController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportDropshipAssistExcel(@Valid ErpDropshipAssistPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
-        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        //pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpDropshipAssistRespVO> pageResult = dropshipAssistService.getDropshipAssistVOPage(pageReqVO);
+        System.out.println("查看代发辅助"+pageResult.getList());
         // 转换为导出VO
         List<ErpDropshipAssistExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDropshipAssistExportVO.class);
         // 导出 Excel

@@ -30,8 +30,11 @@ public class ErpDropshipAssistRespVO {
     private Integer originalQuantity;
 
     @Schema(description = "组品编号", example = "1")
-    @ExcelProperty("组品编号")
     private String comboProductId;
+
+    @Schema(description = "组品编号", example = "1")
+    @ExcelProperty("组品编号")
+    private String comboProductNo;
 
     @Schema(description = "发货编码", example = "SH123456")
     @ExcelProperty("发货编码")
@@ -59,6 +62,9 @@ public class ErpDropshipAssistRespVO {
 
     @Schema(description = "产品简称", example = "组合A")
     private String productShortName;
+
+    @Schema(description = "产品名称", example = "组合A")
+    private String name;
 
 
 }

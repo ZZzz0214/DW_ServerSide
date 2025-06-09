@@ -44,11 +44,11 @@ public class ErpDropshipAssistImportExcelVO {
     @ExcelProperty("产品数量")
     private Integer productQuantity;
 
-    @ExcelProperty("创建人员")
-    private String creator;
-
-    @ExcelProperty("创建时间")
-    private LocalDateTime createTime;
+//    @ExcelProperty("创建人员")
+//    private String creator;
+//
+//    @ExcelProperty("创建时间")
+//    private LocalDateTime createTime;
 
     @ExcelProperty("产品简称")
     private String productShortName;

@@ -27,6 +27,9 @@ public interface DictTypeConstants {
      String ERP_PRODUCT_BRAND = "erp_product_brand"; // ERP产品品牌
      String ERP_PRODUCT_CATEGORY = "erp_product_category"; // ERP产品品类
      String ERP_PRODUCT_STATUS = "erp_product_status"; // ERP产品状态
- 
+
+
+     String ERP_TRANSIT_PERSON = "erp_transit_person"; // ERP产品状态
+
 
 }

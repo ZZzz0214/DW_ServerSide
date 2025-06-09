@@ -1,15 +1,14 @@
 package cn.iocoder.yudao.module.erp.service.sale;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
+import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceSearchReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
@@ -24,18 +23,17 @@ import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 
 @Service
@@ -61,65 +59,68 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Resource
     private ErpSalePriceESRepository salePriceESRepository;
 
-    // ES索引初始化
-    @EventListener(ApplicationReadyEvent.class)
-    public void initESIndex() {
-        System.out.println("开始初始化销售价格ES索引...");
-        try {
-            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
-            if (!indexOps.exists()) {
-                indexOps.create();
-                indexOps.putMapping(indexOps.createMapping(ErpSalePriceESDO.class));
-                System.out.println("销售价格索引创建成功");
-            }
-        } catch (Exception e) {
-            System.err.println("销售价格索引初始化失败: " + e.getMessage());
-        }
-    }
-
-    // 同步数据到ES
-    private void syncToES(Long id) {
-        ErpSalePriceDO salePrice = erpSalePriceMapper.selectById(id);
-        if (salePrice == null) {
-            salePriceESRepository.deleteById(id);
-        } else {
-            ErpSalePriceESDO es = convertToES(salePrice);
-            salePriceESRepository.save(es);
-        }
-    }
-
-    // 转换方法
-    private ErpSalePriceESDO convertToES(ErpSalePriceDO salePrice) {
-        ErpSalePriceESDO es = new ErpSalePriceESDO();
-        BeanUtils.copyProperties(salePrice, es);
-        return es;
-    }
-
-    // 全量同步方法
-    @Async
-    public void fullSyncToES() {
-        try {
-            List<ErpSalePriceDO> salePrices = erpSalePriceMapper.selectList(null);
-            if (CollUtil.isNotEmpty(salePrices)) {
-                List<ErpSalePriceESDO> esList = salePrices.stream()
-                        .map(this::convertToES)
-                        .collect(Collectors.toList());
-                salePriceESRepository.saveAll(esList);
-            }
-            System.out.println("销售价格全量同步ES数据完成");
-        } catch (Exception e) {
-            System.err.println("销售价格全量同步ES数据失败: " + e.getMessage());
-        }
-    }
+//    // ES索引初始化
+//    @EventListener(ApplicationReadyEvent.class)
+//    public void initESIndex() {
+//        System.out.println("开始初始化销售价格ES索引...");
+//        try {
+//            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
+//            if (!indexOps.exists()) {
+//                indexOps.create();
+//                indexOps.putMapping(indexOps.createMapping(ErpSalePriceESDO.class));
+//                System.out.println("销售价格索引创建成功");
+//            }
+//        } catch (Exception e) {
+//            System.err.println("销售价格索引初始化失败: " + e.getMessage());
+//        }
+//    }
+//
+//    // 同步数据到ES
+//    private void syncToES(Long id) {
+//        ErpSalePriceDO salePrice = erpSalePriceMapper.selectById(id);
+//        if (salePrice == null) {
+//            salePriceESRepository.deleteById(id);
+//        } else {
+//            ErpSalePriceESDO es = convertToES(salePrice);
+//            salePriceESRepository.save(es);
+//        }
+//    }
+//
+//    // 转换方法
+//    private ErpSalePriceESDO convertToES(ErpSalePriceDO salePrice) {
+//        ErpSalePriceESDO es = new ErpSalePriceESDO();
+//        BeanUtils.copyProperties(salePrice, es);
+//        return es;
+//    }
+//
+//    // 全量同步方法
+//    @Async
+//    public void fullSyncToES() {
+//        try {
+//            List<ErpSalePriceDO> salePrices = erpSalePriceMapper.selectList(null);
+//            if (CollUtil.isNotEmpty(salePrices)) {
+//                List<ErpSalePriceESDO> esList = salePrices.stream()
+//                        .map(this::convertToES)
+//                        .collect(Collectors.toList());
+//                salePriceESRepository.saveAll(esList);
+//            }
+//            System.out.println("销售价格全量同步ES数据完成");
+//        } catch (Exception e) {
+//            System.err.println("销售价格全量同步ES数据失败: " + e.getMessage());
+//        }
+//    }
 
     @Override
     public Long createSalePrice(@Valid ErpSalePriceSaveReqVO createReqVO) {
+
+
+        System.out.println("妈的 前端传递的是"+createReqVO.getGroupProductId());
         // 1. 生成销售价格表编号
         String no = noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX);
         if (erpSalePriceMapper.selectByNo(no) != null) {
             throw exception(SALE_PRICE_NOT_EXISTS);
         }
-
+        validateCustomerProductUnique(createReqVO.getCustomerName(), createReqVO.getGroupProductId(), null);
         // 2. 根据groupProductId获取组品信息
         Long groupProductId = createReqVO.getGroupProductId();
         ErpComboRespVO comboInfo = null;
@@ -139,14 +140,14 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         }
 
         erpSalePriceMapper.insert(salePriceDO);
-        syncToES(salePriceDO.getId()); // 新增ES同步
+        //syncToES(salePriceDO.getId()); // 新增ES同步
         return salePriceDO.getId();
     }
 
     @Override
     public void updateSalePrice(@Valid ErpSalePriceSaveReqVO updateReqVO) {
         validateSalePriceExists(updateReqVO.getId());
-
+        validateCustomerProductUnique(updateReqVO.getCustomerName(), updateReqVO.getGroupProductId(), updateReqVO.getId());
         // 根据groupProductId获取组品信息
         Long groupProductId = updateReqVO.getGroupProductId();
         ErpComboRespVO comboInfo = null;
@@ -164,7 +165,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         }
 
         erpSalePriceMapper.updateById(updateObj);
-        syncToES(updateReqVO.getId()); // 新增ES同步
+        //syncToES(updateReqVO.getId()); // 新增ES同步
     }
 
     @Override
@@ -224,41 +225,41 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 //        if (esCount == 0) {
 //            fullSyncToES(); // 同步数据到ES
 //        }
-        // 1. 检查数据库是否有数据
-        long dbCount = erpSalePriceMapper.selectCount(null);
-
-        // 2. 检查ES索引是否存在
-        IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
-        boolean indexExists = indexOps.exists();
-
-        // 3. 检查ES数据量
-        long esCount = 0;
-        if (indexExists) {
-            esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
-        }
-
-        // 4. 处理数据库和ES数据不一致的情况
-        if (dbCount == 0) {
-            if (indexExists && esCount > 0) {
-                // 数据库为空但ES有数据，清空ES
-                salePriceESRepository.deleteAll();
-                System.out.println("检测到数据库为空但ES有数据，已清空销售价格ES索引");
-            }
-            return new PageResult<>(Collections.emptyList(), 0L);
-        }
-
-        if (!indexExists) {
-            initESIndex();
-            fullSyncToES();
-            return getSalePriceVOPageFromDB(pageReqVO);
-        }
-
-        if (esCount == 0 || dbCount != esCount) {
-            fullSyncToES();
-            if (esCount == 0) {
-                return getSalePriceVOPageFromDB(pageReqVO);
-            }
-        }
+//        // 1. 检查数据库是否有数据
+//        long dbCount = erpSalePriceMapper.selectCount(null);
+//
+//        // 2. 检查ES索引是否存在
+//        IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
+//        boolean indexExists = indexOps.exists();
+//
+//        // 3. 检查ES数据量
+//        long esCount = 0;
+//        if (indexExists) {
+//            esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
+//        }
+//
+//        // 4. 处理数据库和ES数据不一致的情况
+//        if (dbCount == 0) {
+//            if (indexExists && esCount > 0) {
+//                // 数据库为空但ES有数据，清空ES
+//                salePriceESRepository.deleteAll();
+//                System.out.println("检测到数据库为空但ES有数据，已清空销售价格ES索引");
+//            }
+//            return new PageResult<>(Collections.emptyList(), 0L);
+//        }
+//
+//        if (!indexExists) {
+//            initESIndex();
+//            fullSyncToES();
+//            return getSalePriceVOPageFromDB(pageReqVO);
+//        }
+//
+//        if (esCount == 0 || dbCount != esCount) {
+//            fullSyncToES();
+//            if (esCount == 0) {
+//                return getSalePriceVOPageFromDB(pageReqVO);
+//            }
+//        }
         PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
 
         // 2. 转换为VO列表并设置组合产品信息
@@ -270,6 +271,8 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
                     if (comboRespVO != null) {
                         vo.setComboList(Collections.singletonList(comboRespVO));
                         vo.setGroupProductId(comboRespVO.getId());
+                        vo.setGroupProductNo(comboRespVO.getNo());
+
                     }
                 }
                 return vo;
@@ -279,25 +282,25 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         return new PageResult<>(voList, pageResult.getTotal());
     }
 
-    private PageResult<ErpSalePriceRespVO> getSalePriceVOPageFromDB(ErpSalePricePageReqVO pageReqVO) {
-        PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
-
-        List<ErpSalePriceRespVO> voList = pageResult.getList().stream()
-                .map(doObj -> {
-                    ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
-                    if (doObj.getGroupProductId() != null) {
-                        ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(doObj.getGroupProductId());
-                        if (comboRespVO != null) {
-                            vo.setComboList(Collections.singletonList(comboRespVO));
-                            vo.setGroupProductId(comboRespVO.getId());
-                        }
-                    }
-                    return vo;
-                })
-                .collect(Collectors.toList());
-
-        return new PageResult<>(voList, pageResult.getTotal());
-    }
+//    private PageResult<ErpSalePriceRespVO> getSalePriceVOPageFromDB(ErpSalePricePageReqVO pageReqVO) {
+//        PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
+//
+//        List<ErpSalePriceRespVO> voList = pageResult.getList().stream()
+//                .map(doObj -> {
+//                    ErpSalePriceRespVO vo = BeanUtils.toBean(doObj, ErpSalePriceRespVO.class);
+//                    if (doObj.getGroupProductId() != null) {
+//                        ErpComboRespVO comboRespVO = erpComboProductService.getComboWithItems(doObj.getGroupProductId());
+//                        if (comboRespVO != null) {
+//                            vo.setComboList(Collections.singletonList(comboRespVO));
+//                            vo.setGroupProductId(comboRespVO.getId());
+//                        }
+//                    }
+//                    return vo;
+//                })
+//                .collect(Collectors.toList());
+//
+//        return new PageResult<>(voList, pageResult.getTotal());
+//    }
 //    @Override
 //    public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
 //        // 查询销售价格基本信息
@@ -493,5 +496,78 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
     @Override
     public List<ErpSalePriceRespVO> getMissingPrices() {
         return erpSalePriceMapper.selectMissingPrices();
+    }
+
+
+    private void validateCustomerProductUnique(String customerName, Long groupProductId, Long excludeId) {
+        if (StrUtil.isBlank(customerName) || groupProductId == null) {
+            return;
+        }
+
+        // 直接使用groupProductId和customerName进行校验
+        Long count = erpSalePriceMapper.selectCount(new LambdaQueryWrapper<ErpSalePriceDO>()
+                .eq(ErpSalePriceDO::getCustomerName, customerName)
+                .eq(ErpSalePriceDO::getGroupProductId, groupProductId)
+                .ne(excludeId != null, ErpSalePriceDO::getId, excludeId));
+        if (count > 0) {
+            throw exception(SALE_PRICE_CUSTOMER_PRODUCT_DUPLICATE);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpSalePriceImportRespVO importSalePriceList(List<ErpSalePriceImportExcelVO> importList, boolean isUpdateSupport) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(SALE_PRICE_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpSalePriceImportRespVO respVO = ErpSalePriceImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 查询已存在的销售价格记录
+        Set<String> noSet = importList.stream()
+                .map(ErpSalePriceImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        List<ErpSalePriceDO> existList = erpSalePriceMapper.selectListByNoIn(noSet);
+        Map<String, ErpSalePriceDO> noSalePriceMap = convertMap(existList, ErpSalePriceDO::getNo);
+
+        // 遍历处理每个导入项
+        for (int i = 0; i < importList.size(); i++) {
+            ErpSalePriceImportExcelVO importVO = importList.get(i);
+            try {
+                // 判断是否支持更新
+                ErpSalePriceDO existSalePrice = noSalePriceMap.get(importVO.getNo());
+                if (existSalePrice == null) {
+                    // 创建
+                    ErpSalePriceDO salePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class);
+                    if (StrUtil.isEmpty(salePrice.getNo())) {
+                        salePrice.setNo(noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX));
+                    }
+                    erpSalePriceMapper.insert(salePrice);
+                    respVO.getCreateNames().add(salePrice.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新
+                    ErpSalePriceDO updateSalePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class);
+                    updateSalePrice.setId(existSalePrice.getId());
+                    erpSalePriceMapper.updateById(updateSalePrice);
+                    respVO.getUpdateNames().add(updateSalePrice.getNo());
+                } else {
+                    throw exception(SALE_PRICE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                }
+            } catch (ServiceException ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
+                respVO.getFailureNames().put(errorKey, ex.getMessage());
+            } catch (Exception ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知销售价格";
+                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return respVO;
     }
 }

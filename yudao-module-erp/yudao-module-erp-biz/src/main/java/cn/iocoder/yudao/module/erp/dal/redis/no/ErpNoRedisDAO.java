@@ -151,6 +151,11 @@ public class ErpNoRedisDAO {
      */
     public static final String DROPSHIP_ASSIST_NO_PREFIX = "DFFZ";
 
+        /**
+     * 中转销售编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpTransitSaleDO}
+     */
+    public static final String TRANSIT_SALE_NO_PREFIX = "ZZXS";
+
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
