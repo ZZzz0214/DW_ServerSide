@@ -549,6 +549,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         ErpDistributionPurchaseESDO purchase = purchaseOpt.get();
                         vo.setPurchaseAuditStatus(purchase.getPurchaseAuditStatus());
                         vo.setOtherFees(purchase.getOtherFees());
+                        vo.setPurchaseRemark(purchase.getPurchaseRemark());
                         vo.setComboProductId(purchase.getComboProductId());
                         vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
                         vo.setPurchaseAfterSalesStatus(purchase.getPurchaseAfterSalesStatus());
@@ -589,6 +590,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setSaleAfterSalesSituation(sale.getSaleAfterSalesSituation());
                         vo.setSaleAfterSalesAmount(sale.getSaleAfterSalesAmount());
                         vo.setSaleAfterSalesTime(sale.getSaleAfterSalesTime());
+                        vo.setSaleRemark(sale.getSaleRemark());
                         vo.setSaleAuditStatus(sale.getSaleAuditStatus());
 
                         // 计算销售总额
@@ -703,7 +705,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 vo.setSaleAfterSalesAmount(sale.getSaleAfterSalesAmount());
                 vo.setSaleAfterSalesTime(sale.getSaleAfterSalesTime());
                 vo.setSaleAuditStatus(sale.getSaleAuditStatus());
-                
+                vo.setSaleRemark(sale.getSaleRemark());
+
 
                 // 计算销售总额
                 if (purchaseOpt.isPresent() && sale.getCustomerName() != null) {
@@ -759,28 +762,63 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     // 计算销售总额
 
+//    private void calculateSaleAmount(ErpDistributionRespVO vo, ErpDistributionPurchaseESDO purchase,
+//                                ErpDistributionSaleESDO sale) {
+//    // 从ES查询销售价格
+//    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+//            purchase.getComboProductId(), sale.getCustomerName());
+//
+//    if (salePriceOpt.isPresent()) {
+//        ErpSalePriceESDO salePrice = salePriceOpt.get();
+//        BigDecimal salePriceValue = salePrice.getDistributionPrice();
+//        BigDecimal saleOtherFees = sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO;
+//
+//        // 计算销售运费
+//        BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, vo.getProductQuantity(), purchase.getComboProductId());
+//
+//        BigDecimal totalSaleAmount = salePriceValue
+//                .multiply(new BigDecimal(vo.getProductQuantity()))
+//                .add(saleShippingFee)
+//                .add(saleOtherFees);
+//
+//        vo.setSalePrice(salePriceValue);
+//        vo.setSaleShippingFee(saleShippingFee);
+//        vo.setTotalSaleAmount(totalSaleAmount);
+//    }
+//    }
     private void calculateSaleAmount(ErpDistributionRespVO vo, ErpDistributionPurchaseESDO purchase,
-                                ErpDistributionSaleESDO sale) {
+                            ErpDistributionSaleESDO sale) {
     // 从ES查询销售价格
+    System.out.println("开始查询销售价格 - 组品ID: " + purchase.getComboProductId() + ", 客户名称: " + sale.getCustomerName());
     Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
             purchase.getComboProductId(), sale.getCustomerName());
 
     if (salePriceOpt.isPresent()) {
         ErpSalePriceESDO salePrice = salePriceOpt.get();
+        System.out.println("找到销售价格记录: " + salePrice);
+
         BigDecimal salePriceValue = salePrice.getDistributionPrice();
         BigDecimal saleOtherFees = sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO;
-        
+
+        System.out.println("销售单价: " + salePriceValue + ", 其他费用: " + saleOtherFees);
+
         // 计算销售运费
         BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, vo.getProductQuantity(), purchase.getComboProductId());
-        
+        System.out.println("计算出的销售运费: " + saleShippingFee);
+
         BigDecimal totalSaleAmount = salePriceValue
                 .multiply(new BigDecimal(vo.getProductQuantity()))
                 .add(saleShippingFee)
                 .add(saleOtherFees);
 
+        System.out.println("销售总额计算: " + salePriceValue + " * " + vo.getProductQuantity()
+                + " + " + saleShippingFee + " + " + saleOtherFees + " = " + totalSaleAmount);
+
         vo.setSalePrice(salePriceValue);
         vo.setSaleShippingFee(saleShippingFee);
         vo.setTotalSaleAmount(totalSaleAmount);
+    } else {
+        System.out.println("未找到匹配的销售价格记录");
     }
 }
 
@@ -801,7 +839,7 @@ private BigDecimal calculateSaleShippingFee(ErpSalePriceESDO salePrice, Integer 
             if (comboProductOpt.isPresent()) {
                 BigDecimal productWeight = comboProductOpt.get().getWeight();
                 BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
-                
+
                 if (totalWeight.compareTo(salePrice.getFirstWeight()) <= 0) {
                     shippingFee = salePrice.getFirstWeightPrice();
                 } else {
