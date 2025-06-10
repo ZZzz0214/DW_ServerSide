@@ -329,11 +329,15 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode TRANSIT_SALE_NOT_APPROVE = new ErrorCode(1_030_120_004, "中转销售记录未审核，无法操作");
     ErrorCode TRANSIT_SALE_APPROVE_FAIL = new ErrorCode(1_030_120_005, "审核失败，只有未审核的中转销售记录才能审核");
     ErrorCode TRANSIT_SALE_PROCESS_FAIL = new ErrorCode(1_030_120_006, "反审核失败，只有已审核的中转销售记录才能反审核");
-// ... existing transit sale error codes ...
     ErrorCode TRANSIT_SALE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_120_007, "导入中转销售记录数据不能为空");
     ErrorCode TRANSIT_SALE_IMPORT_NO_EXISTS = new ErrorCode(1_030_120_008, "导入失败，第{}行的中转销售记录编号({})已存在");
-    // ... existing code ...
     ErrorCode SALE_PRICE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_300_007, "导入销售价格数据不能为空");
     ErrorCode SALE_PRICE_IMPORT_NO_EXISTS = new ErrorCode(1_030_300_008, "导入失败，第{}行的销售价格编号({})已存在");
-
+    ErrorCode TRANSIT_SALE_GROUP_PRODUCT_ID_REQUIRED = new ErrorCode(1_030_120_009, "组品编号不能为空");
+    // ========== ERP 组合产品导入 1-030-504-000 ==========
+    ErrorCode COMBO_PRODUCT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_504_000, "导入组合产品数据不能为空");
+    ErrorCode COMBO_PRODUCT_IMPORT_NO_EMPTY = new ErrorCode(1_030_504_001, "组合产品编号不能为空");
+    ErrorCode COMBO_PRODUCT_IMPORT_SHORT_NAME_EMPTY = new ErrorCode(1_030_504_002, "组合产品简称不能为空");
+    ErrorCode COMBO_PRODUCT_IMPORT_NO_EXISTS = new ErrorCode(1_030_504_003, "组合产品编号({})已存在");
+    ErrorCode COMBO_PRODUCT_IMPORT_ITEM_NO_EXISTS = new ErrorCode(1_030_504_004, "单品编号({})不存在");
 }

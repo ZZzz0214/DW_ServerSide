@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.product;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
@@ -7,6 +8,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboP
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,5 +42,13 @@ public interface ErpComboMapper extends BaseMapperX<ErpComboProductDO> {
 
     default ErpComboProductDO selectByNo(String no) {
         return selectOne(ErpComboProductDO::getNo, no);
+    }
+
+
+    default List<ErpComboProductDO> selectListByNoIn(Collection<String> nos) {
+        if (CollUtil.isEmpty(nos)) {
+            return Collections.emptyList();
+        }
+        return selectList(ErpComboProductDO::getNo, nos);
     }
 }

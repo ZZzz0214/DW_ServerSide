@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboR
 import cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpTransitSaleDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.transitsale.ErpTransitSaleMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
@@ -35,6 +36,9 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
     private ErpNoRedisDAO noRedisDAO;
     @Resource
     private ErpComboProductService erpComboProductService;
+
+    @Resource
+    private ErpComboMapper erpComboMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -157,6 +161,63 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
         }
     }
 
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public ErpTransitSaleImportRespVO importTransitSaleList(List<ErpTransitSaleImportExcelVO> importList, boolean isUpdateSupport) {
+//        if (CollUtil.isEmpty(importList)) {
+//            throw exception(TRANSIT_SALE_IMPORT_LIST_IS_EMPTY);
+//        }
+//
+//        // 初始化返回结果
+//        ErpTransitSaleImportRespVO respVO = ErpTransitSaleImportRespVO.builder()
+//                .createNames(new ArrayList<>())
+//                .updateNames(new ArrayList<>())
+//                .failureNames(new LinkedHashMap<>())
+//                .build();
+//
+//        // 查询已存在的中转销售记录
+//        Set<String> noSet = importList.stream()
+//                .map(ErpTransitSaleImportExcelVO::getNo)
+//                .filter(StrUtil::isNotBlank)
+//                .collect(Collectors.toSet());
+//        List<ErpTransitSaleDO> existList = transitSaleMapper.selectListByNoIn(noSet);
+//        Map<String, ErpTransitSaleDO> noTransitSaleMap = convertMap(existList, ErpTransitSaleDO::getNo);
+//
+//        // 遍历处理每个导入项
+//        for (int i = 0; i < importList.size(); i++) {
+//            ErpTransitSaleImportExcelVO importVO = importList.get(i);
+//            try {
+//                // 判断是否支持更新
+//                ErpTransitSaleDO existTransitSale = noTransitSaleMap.get(importVO.getNo());
+//                if (existTransitSale == null) {
+//                    // 创建
+//                    ErpTransitSaleDO transitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class);
+//                    if (StrUtil.isEmpty(transitSale.getNo())) {
+//                        transitSale.setNo(noRedisDAO.generate(ErpNoRedisDAO.TRANSIT_SALE_NO_PREFIX));
+//                    }
+//                    transitSaleMapper.insert(transitSale);
+//                    respVO.getCreateNames().add(transitSale.getNo());
+//                } else if (isUpdateSupport) {
+//                    // 更新
+//                    ErpTransitSaleDO updateTransitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class);
+//                    updateTransitSale.setId(existTransitSale.getId());
+//                    transitSaleMapper.updateById(updateTransitSale);
+//                    respVO.getUpdateNames().add(updateTransitSale.getNo());
+//                } else {
+//                    throw exception(TRANSIT_SALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+//                }
+//            } catch (ServiceException ex) {
+//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知中转销售";
+//                respVO.getFailureNames().put(errorKey, ex.getMessage());
+//            } catch (Exception ex) {
+//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知中转销售";
+//                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+//            }
+//        }
+//
+//        return respVO;
+//    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ErpTransitSaleImportRespVO importTransitSaleList(List<ErpTransitSaleImportExcelVO> importList, boolean isUpdateSupport) {
@@ -183,11 +244,21 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
         for (int i = 0; i < importList.size(); i++) {
             ErpTransitSaleImportExcelVO importVO = importList.get(i);
             try {
-                // 判断是否支持更新
+                // 1. 根据groupProductNo查找对应的组品ID
+                if (StrUtil.isBlank(importVO.getGroupProductNo())) {
+                    throw exception(TRANSIT_SALE_GROUP_PRODUCT_ID_REQUIRED);
+                }
+                ErpComboProductDO comboProduct = erpComboMapper.selectByNo(importVO.getGroupProductNo());
+                if (comboProduct == null) {
+                    throw exception(TRANSIT_SALE_GROUP_PRODUCT_ID_REQUIRED, "组品编号不存在: " + importVO.getGroupProductNo());
+                }
+
+                // 2. 判断是否支持更新
                 ErpTransitSaleDO existTransitSale = noTransitSaleMap.get(importVO.getNo());
                 if (existTransitSale == null) {
                     // 创建
-                    ErpTransitSaleDO transitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class);
+                    ErpTransitSaleDO transitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class)
+                            .setGroupProductId(comboProduct.getId());
                     if (StrUtil.isEmpty(transitSale.getNo())) {
                         transitSale.setNo(noRedisDAO.generate(ErpNoRedisDAO.TRANSIT_SALE_NO_PREFIX));
                     }
@@ -195,8 +266,9 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
                     respVO.getCreateNames().add(transitSale.getNo());
                 } else if (isUpdateSupport) {
                     // 更新
-                    ErpTransitSaleDO updateTransitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class);
-                    updateTransitSale.setId(existTransitSale.getId());
+                    ErpTransitSaleDO updateTransitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class)
+                            .setId(existTransitSale.getId())
+                            .setGroupProductId(comboProduct.getId());
                     transitSaleMapper.updateById(updateTransitSale);
                     respVO.getUpdateNames().add(updateTransitSale.getNo());
                 } else {

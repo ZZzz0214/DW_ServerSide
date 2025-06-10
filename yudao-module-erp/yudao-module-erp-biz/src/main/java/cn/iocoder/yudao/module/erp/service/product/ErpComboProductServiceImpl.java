@@ -2,8 +2,11 @@ package cn.iocoder.yudao.module.erp.service.product;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
@@ -16,6 +19,8 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboProductItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.logging.log4j.core.config.Scheduled;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -33,6 +38,7 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -50,6 +56,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.COMBO_PRODUCT_NOT_EXISTS;
 
@@ -1176,5 +1183,401 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         }
         return nameMap;
     }
+
+
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public ErpComboImportRespVO importComboList(List<ErpComboImportExcelVO> importCombos, boolean isUpdateSupport) {
+//        if (CollUtil.isEmpty(importCombos)) {
+//            return new ErpComboImportRespVO().setCreateNames(Collections.emptyList())
+//                    .setUpdateNames(Collections.emptyList())
+//                    .setFailureNames(Collections.emptyList());
+//        }
+//
+//        List<String> createNames = new ArrayList<>();
+//        List<String> updateNames = new ArrayList<>();
+//        List<String> failureNames = new ArrayList<>();
+//
+//        for (ErpComboImportExcelVO importCombo : importCombos) {
+//            try {
+//                // 校验必填字段
+//                if (StrUtil.isEmpty(importCombo.getNo())) {
+//                    throw exception(COMBO_PRODUCT_IMPORT_NO_EMPTY);
+//                }
+//                if (StrUtil.isEmpty(importCombo.getShortName())) {
+//                    throw exception(COMBO_PRODUCT_IMPORT_SHORT_NAME_EMPTY);
+//                }
+//
+//                // 检查是否已存在
+//                ErpComboProductDO existCombo = erpComboMapper.selectByNo(importCombo.getNo());
+//                if (existCombo != null) {
+//                    if (!isUpdateSupport) {
+//                        throw exception(COMBO_PRODUCT_IMPORT_NO_EXISTS, importCombo.getNo());
+//                    }
+//                    // 更新逻辑
+//                    updateComboFromImport(importCombo, existCombo);
+//                    updateNames.add(importCombo.getNo());
+//                } else {
+//                    // 创建逻辑
+//                    createComboFromImport(importCombo);
+//                    createNames.add(importCombo.getNo());
+//                }
+//            } catch (Exception e) {
+//                failureNames.add(importCombo.getNo() + "(" + e.getMessage() + ")");
+//            }
+//        }
+//
+//        return new ErpComboImportRespVO()
+//                .setCreateNames(createNames)
+//                .setUpdateNames(updateNames)
+//                .setFailureNames(failureNames);
+//    }
+//
+//    private void createComboFromImport(ErpComboImportExcelVO importCombo) {
+//        // 保存组品主表
+//        ErpComboProductDO comboProductDO = BeanUtils.toBean(importCombo, ErpComboProductDO.class);
+//        erpComboMapper.insert(comboProductDO);
+//
+//        // 保存组品项
+//        saveComboItems(importCombo, comboProductDO.getId());
+//
+//        // 同步到ES
+//        syncComboToES(comboProductDO.getId());
+//    }
+//
+//    private void updateComboFromImport(ErpComboImportExcelVO importCombo, ErpComboProductDO existCombo) {
+//        // 更新组品主表
+//        ErpComboProductDO updateDO = BeanUtils.toBean(importCombo, ErpComboProductDO.class);
+//        updateDO.setId(existCombo.getId());
+//        erpComboMapper.updateById(updateDO);
+//
+//        // 先删除旧的组品项
+//        List<ErpComboProductItemDO> oldItems = erpComboProductItemMapper.selectByComboProductId(existCombo.getId());
+//        for (ErpComboProductItemDO oldItem : oldItems) {
+//            erpComboProductItemMapper.deleteById(oldItem.getId());
+//            comboProductItemESRepository.deleteById(oldItem.getId());
+//        }
+//
+//        // 保存新的组品项
+//        saveComboItems(importCombo, existCombo.getId());
+//
+//        // 同步到ES
+//        syncComboToES(existCombo.getId());
+//    }
+//
+//    private void saveComboItems(ErpComboImportExcelVO importCombo, Long comboProductId) {
+//        if (CollUtil.isEmpty(importCombo.getItems())) {
+//            return;
+//        }
+//
+//        for (ErpComboImportExcelVO.ComboItem item : importCombo.getItems()) {
+//            // 根据单品编号查询单品ID
+//            ErpProductDO product = erpProductMapper.selectByNo(item.getNo());
+//            if (product == null) {
+//                throw exception(COMBO_PRODUCT_IMPORT_ITEM_NO_EXISTS, item.getNo());
+//            }
+//
+//            // 保存组品项
+//            ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
+//            itemDO.setComboProductId(comboProductId);
+//            itemDO.setItemProductId(product.getId());
+//            itemDO.setItemQuantity(item.getItemQuantity());
+//            erpComboProductItemMapper.insert(itemDO);
+//
+//            // 同步到ES
+//            syncItemToES(itemDO.getId());
+//        }
+//    }
+
+
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public ErpComboImportRespVO importComboList(List<ErpComboImportExcelVO> importList, boolean isUpdateSupport) {
+//        if (CollUtil.isEmpty(importList)) {
+//            throw exception(COMBO_PRODUCT_IMPORT_LIST_IS_EMPTY);
+//        }
+//
+//        // 初始化返回结果
+//        ErpComboImportRespVO respVO = ErpComboImportRespVO.builder()
+//                .createNames(new ArrayList<>())
+//                .updateNames(new ArrayList<>())
+//                .failureNames(new LinkedHashMap<>())
+//                .build();
+//
+//        // 查询已存在的组合产品记录
+//        Set<String> noSet = importList.stream()
+//                .map(ErpComboImportExcelVO::getNo)
+//                .filter(StrUtil::isNotBlank)
+//                .collect(Collectors.toSet());
+//        List<ErpComboProductDO> existList = erpComboMapper.selectListByNoIn(noSet);
+//        Map<String, ErpComboProductDO> noComboMap = convertMap(existList, ErpComboProductDO::getNo);
+//
+//        // 遍历处理每个导入项
+//        for (int i = 0; i < importList.size(); i++) {
+//            ErpComboImportExcelVO importVO = importList.get(i);
+//            try {
+//                // 校验必填字段
+////                if (StrUtil.isEmpty(importVO.getShortName())) {
+////                    throw exception(COMBO_PRODUCT_IMPORT_SHORT_NAME_EMPTY);
+////                }
+//
+//                // 判断是否支持更新
+//                ErpComboProductDO existCombo = noComboMap.get(importVO.getNo());
+//                if (existCombo == null) {
+//                    // 创建
+//                    ErpComboProductDO comboProduct = BeanUtils.toBean(importVO, ErpComboProductDO.class);
+//                    if (StrUtil.isEmpty(comboProduct.getNo())) {
+//                        comboProduct.setNo(noRedisDAO.generate(ErpNoRedisDAO.COMBO_PRODUCT_NO_PREFIX));
+//                    }
+//                    erpComboMapper.insert(comboProduct);
+//
+//                    // 保存组品项
+//                    saveComboItems(importVO, comboProduct.getId());
+//
+//                    // 同步到ES
+//                    syncComboToES(comboProduct.getId());
+//
+//                    respVO.getCreateNames().add(comboProduct.getNo());
+//                } else if (isUpdateSupport) {
+//                    // 更新
+//                    ErpComboProductDO updateCombo = BeanUtils.toBean(importVO, ErpComboProductDO.class);
+//                    updateCombo.setId(existCombo.getId());
+//                    erpComboMapper.updateById(updateCombo);
+//
+//                    // 先删除旧的组品项
+//                    List<ErpComboProductItemDO> oldItems = erpComboProductItemMapper.selectByComboProductId(existCombo.getId());
+//                    for (ErpComboProductItemDO oldItem : oldItems) {
+//                        erpComboProductItemMapper.deleteById(oldItem.getId());
+//                        comboProductItemESRepository.deleteById(oldItem.getId());
+//                    }
+//
+//                    // 保存新的组品项
+//                    saveComboItems(importVO, existCombo.getId());
+//
+//                    // 同步到ES
+//                    syncComboToES(existCombo.getId());
+//
+//                    respVO.getUpdateNames().add(updateCombo.getNo());
+//                } else {
+//                    throw exception(COMBO_PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+//                }
+//            } catch (ServiceException ex) {
+//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知组合产品";
+//                respVO.getFailureNames().put(errorKey, ex.getMessage());
+//            } catch (Exception ex) {
+//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知组合产品";
+//                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+//            }
+//        }
+//
+//        return respVO;
+//    }
+
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpComboImportRespVO importComboList(List<ErpComboImportExcelVO> importList, boolean isUpdateSupport) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(COMBO_PRODUCT_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpComboImportRespVO respVO = ErpComboImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 查询已存在的组合产品记录
+        Set<String> noSet = importList.stream()
+                .map(ErpComboImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        List<ErpComboProductDO> existList = erpComboMapper.selectListByNoIn(noSet);
+        Map<String, ErpComboProductDO> noComboMap = convertMap(existList, ErpComboProductDO::getNo);
+
+        // 遍历处理每个导入项
+        for (int i = 0; i < importList.size(); i++) {
+            ErpComboImportExcelVO importVO = importList.get(i);
+            try {
+                // 判断是否支持更新
+                ErpComboProductDO existCombo = noComboMap.get(importVO.getNo());
+                if (existCombo == null) {
+                    // 创建
+                    ErpComboProductDO comboProduct = BeanUtils.toBean(importVO, ErpComboProductDO.class);
+                    if (StrUtil.isEmpty(comboProduct.getNo())) {
+                        comboProduct.setNo(noRedisDAO.generate(ErpNoRedisDAO.COMBO_PRODUCT_NO_PREFIX));
+                    }
+
+                    // 计算并设置总价和总重量
+                    calculateAndSetPricesAndWeight(importVO, comboProduct);
+
+                    erpComboMapper.insert(comboProduct);
+
+                    // 保存组品项
+                    saveComboItems(importVO, comboProduct.getId());
+
+                    // 同步到ES
+                    syncComboToES(comboProduct.getId());
+
+                    respVO.getCreateNames().add(comboProduct.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新
+                    ErpComboProductDO updateCombo = BeanUtils.toBean(importVO, ErpComboProductDO.class);
+                    updateCombo.setId(existCombo.getId());
+
+                    // 计算并设置总价和总重量
+                    calculateAndSetPricesAndWeight(importVO, updateCombo);
+
+                    erpComboMapper.updateById(updateCombo);
+
+                    // 先删除旧的组品项
+                    List<ErpComboProductItemDO> oldItems = erpComboProductItemMapper.selectByComboProductId(existCombo.getId());
+                    for (ErpComboProductItemDO oldItem : oldItems) {
+                        erpComboProductItemMapper.deleteById(oldItem.getId());
+                        comboProductItemESRepository.deleteById(oldItem.getId());
+                    }
+
+                    // 保存新的组品项
+                    saveComboItems(importVO, existCombo.getId());
+
+                    // 同步到ES
+                    syncComboToES(existCombo.getId());
+
+                    respVO.getUpdateNames().add(updateCombo.getNo());
+                } else {
+                    throw exception(COMBO_PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                }
+            } catch (ServiceException ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知组合产品";
+                respVO.getFailureNames().put(errorKey, ex.getMessage());
+            } catch (Exception ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知组合产品";
+                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return respVO;
+    }
+
+   /**
+     * 解析itemsString为ComboItem列表
+     */
+    private List<ComboItem> parseItemsString(String itemsString) {
+        if (StrUtil.isBlank(itemsString)) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(itemsString.split(";"))
+                .map(item -> {
+                    String[] parts = item.split(",");
+                    if (parts.length != 2) {
+                        throw new IllegalArgumentException("单品列表格式不正确，应为'产品编号,数量'格式");
+                    }
+                    return new ComboItem(parts[0], Integer.parseInt(parts[1]));
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 计算并设置组合产品的采购总价、批发总价和总重量
+     */
+    private void calculateAndSetPricesAndWeight(ErpComboImportExcelVO importVO, ErpComboProductDO comboProduct) {
+        List<ComboItem> items = parseItemsString(importVO.getItemsString());
+        if (CollUtil.isEmpty(items)) {
+            return;
+        }
+
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalWholesalePrice = BigDecimal.ZERO;
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        int totalQuantity = 0;
+        StringBuilder nameBuilder = new StringBuilder();
+
+        for (int i = 0; i < items.size(); i++) {
+            ComboItem item = items.get(i);
+            ErpProductDO product = erpProductMapper.selectByNo(item.getNo());
+            if (product == null) {
+                throw exception(COMBO_PRODUCT_IMPORT_ITEM_NO_EXISTS, item.getNo());
+            }
+
+            BigDecimal quantity = new BigDecimal(item.getItemQuantity());
+
+            // 构建名称字符串
+            if (i > 0) {
+                nameBuilder.append("+");
+            }
+            nameBuilder.append(product.getName())
+                     .append("×")
+                     .append(item.getItemQuantity());
+
+            // 计算采购总价
+            if (product.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(
+                    product.getPurchasePrice().multiply(quantity)
+                );
+            }
+
+            // 计算批发总价
+            if (product.getWholesalePrice() != null) {
+                totalWholesalePrice = totalWholesalePrice.add(
+                    product.getWholesalePrice().multiply(quantity)
+                );
+            }
+
+            // 计算总重量
+            if (product.getWeight() != null) {
+                totalWeight = totalWeight.add(
+                    product.getWeight().multiply(quantity)
+                );
+            }
+
+            totalQuantity += item.getItemQuantity();
+        }
+
+        // 设置计算结果
+        comboProduct.setName(nameBuilder.toString());
+        comboProduct.setPurchasePrice(totalPurchasePrice);
+        comboProduct.setWholesalePrice(totalWholesalePrice);
+        comboProduct.setWeight(totalWeight);
+        comboProduct.setTotalQuantity(totalQuantity);
+    }
+
+    /**
+     * 保存组合产品项
+     */
+    private void saveComboItems(ErpComboImportExcelVO importVO, Long comboProductId) {
+        List<ComboItem> items = parseItemsString(importVO.getItemsString());
+        if (CollUtil.isEmpty(items)) {
+            return;
+        }
+
+        for (ComboItem item : items) {
+            // 根据单品编号查询单品ID
+            ErpProductDO product = erpProductMapper.selectByNo(item.getNo());
+            if (product == null) {
+                throw exception(COMBO_PRODUCT_IMPORT_ITEM_NO_EXISTS, item.getNo());
+            }
+
+            // 保存组品项
+            ErpComboProductItemDO itemDO = new ErpComboProductItemDO();
+            itemDO.setComboProductId(comboProductId);
+            itemDO.setItemProductId(product.getId());
+            itemDO.setItemQuantity(item.getItemQuantity());
+            erpComboProductItemMapper.insert(itemDO);
+
+            // 同步到ES
+            syncItemToES(itemDO.getId());
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class ComboItem {
+        private String no;
+        private Integer itemQuantity;
+    }
+
+    // ... 其他代码保持不变 ...
 
 }

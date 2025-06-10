@@ -7,19 +7,27 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
@@ -132,4 +140,42 @@ public class ErpComboProductController {
         List<ErpComboRespVO> combos = comboProductService.searchCombos(searchReqVO);
         return success(combos);
     }
+
+
+    // ... 其他代码保持不变 ...
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得导入组合产品模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpComboImportExcelVO> list = Arrays.asList(
+            ErpComboImportExcelVO.builder()
+            .build()
+        );
+
+        System.out.println("查询一下模板"+list);
+        // 输出
+        ExcelUtils.write(response, "组合产品导入模板.xls", "组合产品列表", ErpComboImportExcelVO.class, list);
+    }
+
+
+
+    @PostMapping("/import")
+    @Operation(summary = "导入组合产品")
+    @Parameters({
+        @Parameter(name = "file", description = "Excel 文件", required = true),
+        @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+    })
+    @PreAuthorize("@ss.hasPermission('erp:combo-product:import')")
+    public CommonResult<ErpComboImportRespVO> importExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpComboImportExcelVO> list = ExcelUtils.read(inputStream, ErpComboImportExcelVO.class);
+            return success(comboProductService.importComboList(list, updateSupport));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
+    }
+
 }

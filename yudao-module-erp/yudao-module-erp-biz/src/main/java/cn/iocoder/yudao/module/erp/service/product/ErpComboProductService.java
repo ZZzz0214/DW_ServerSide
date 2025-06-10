@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.service.product;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSaveReqVO;
@@ -116,4 +118,15 @@ public interface ErpComboProductService {
      * @return 搜索结果列表
      */
     List<ErpComboRespVO> searchCombos(ErpComboSearchReqVO searchReqVO);
+
+
+    /**
+     * 批量导入组合产品
+     *
+     * @param importCombos     导入组合产品列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpComboImportRespVO importComboList(List<ErpComboImportExcelVO> importCombos, boolean isUpdateSupport);
+
 }

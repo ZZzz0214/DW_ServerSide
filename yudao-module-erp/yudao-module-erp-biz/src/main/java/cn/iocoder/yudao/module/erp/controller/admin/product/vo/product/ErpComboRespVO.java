@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.util.List;
 @Schema(description = "管理后台 - ERP 组合产品 Response VO")
 @Data
 @ExcelIgnoreUnannotated
+@Builder
 public class ErpComboRespVO {
 
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "15672")

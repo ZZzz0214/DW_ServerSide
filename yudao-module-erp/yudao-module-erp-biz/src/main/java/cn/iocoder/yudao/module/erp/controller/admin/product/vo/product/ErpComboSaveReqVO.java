@@ -51,11 +51,7 @@ public class ErpComboSaveReqVO {
     @Schema(description = "固定运费（单位：元）")
     private BigDecimal fixedShippingFee;
 
-//    @Schema(description = "首件数量")
-//    private Integer firstItemQuantity;
-//
-//    @Schema(description = "首件价格（单位：元）")
-//    private BigDecimal firstItemPrice;
+
 
     @Schema(description = "按件数量")
     private Integer additionalItemQuantity;
