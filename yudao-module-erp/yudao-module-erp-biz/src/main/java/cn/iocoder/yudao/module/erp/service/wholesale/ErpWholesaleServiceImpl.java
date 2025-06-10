@@ -42,6 +42,7 @@ import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 
 import javax.annotation.Resource;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -437,6 +438,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         vo.setProductSpecification(esDO.getProductSpecification());
                         vo.setRemark(esDO.getRemark());
                         vo.setCreateTime(esDO.getCreateTime());
+                        vo.setAfterSalesStatus(esDO.getAfterSalesStatus());
+                        vo.setAfterSalesTime(esDO.getAfterSalesTime());
                         // 从ES查询采购信息（通过baseId匹配）
                         Optional<ErpWholesalePurchaseESDO> purchaseOpt = pageReqVO.getPurchaseAuditStatus() != null
                                 ? wholesalePurchaseESRepository.findByBaseIdAndPurchaseAuditStatus(esDO.getId(), pageReqVO.getPurchaseAuditStatus())
@@ -455,6 +458,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                             vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
                             vo.setPurchaseAfterSalesAmount(purchase.getPurchaseAfterSalesAmount());
                             vo.setPurchaseAuditStatus(purchase.getPurchaseAuditStatus());
+                            vo.setPurchaseRemark(purchase.getPurchaseRemark());
                             // 从ES查询组品信息
                             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(purchase.getComboProductId());
                             if (comboProductOpt.isPresent()) {
@@ -505,6 +509,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                              null);
                              vo.setTransferPerson(sale.getTransferPerson());
                              vo.setSaleAuditStatus(sale.getSaleAuditStatus());
+                            vo.setSaleRemark(sale.getSaleRemark());
                             // 从ES查询销售价格信息
                             Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
                                     purchaseOpt.map(ErpWholesalePurchaseESDO::getComboProductId).orElse(null),
@@ -591,6 +596,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             vo.setProductSpecification(esDO.getProductSpecification());
             vo.setRemark(esDO.getRemark());
             vo.setCreateTime(esDO.getCreateTime());
+            vo.setAfterSalesStatus(esDO.getAfterSalesStatus());
+            vo.setAfterSalesTime(esDO.getAfterSalesTime());
             // 从ES查询采购信息（通过baseId匹配）
             Optional<ErpWholesalePurchaseESDO> purchaseOpt = pageReqVO.getPurchaseAuditStatus() != null
                     ? wholesalePurchaseESRepository.findByBaseIdAndPurchaseAuditStatus(esDO.getId(), pageReqVO.getPurchaseAuditStatus())
@@ -609,6 +616,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
                 vo.setPurchaseAfterSalesAmount(purchase.getPurchaseAfterSalesAmount());
                 vo.setPurchaseAuditStatus(purchase.getPurchaseAuditStatus());
+                vo.setPurchaseRemark(purchase.getPurchaseRemark());
                 // 从ES查询组品信息
                 Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(purchase.getComboProductId());
                 if (comboProductOpt.isPresent()) {
@@ -659,6 +667,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                  null);
                  vo.setTransferPerson(sale.getTransferPerson());
                  vo.setSaleAuditStatus(sale.getSaleAuditStatus());
+                vo.setSaleRemark(sale.getSaleRemark());
                 // 从ES查询销售价格信息
                 Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
                         purchaseOpt.map(ErpWholesalePurchaseESDO::getComboProductId).orElse(null),
@@ -941,23 +950,23 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
         LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
-    
+
         // 3. 更新基础表售后信息
         ErpWholesaleBaseDO baseUpdateObj = new ErpWholesaleBaseDO()
                 .setId(reqVO.getId())
                 .setAfterSalesStatus(reqVO.getAfterSalesStatus())
                 .setAfterSalesTime(afterSalesTime);
         wholesaleMapper.updateById(baseUpdateObj);
-    
+
         // 4. 更新采购售后信息
         ErpWholesalePurchaseDO purchaseUpdateObj = new ErpWholesalePurchaseDO()
                 .setPurchaseAfterSalesStatus(reqVO.getPurchaseAfterSalesStatus())
                 .setPurchaseAfterSalesAmount(reqVO.getPurchaseAfterSalesAmount())
                 .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
-    
+
         purchaseMapper.update(purchaseUpdateObj, new LambdaUpdateWrapper<ErpWholesalePurchaseDO>()
                 .eq(ErpWholesalePurchaseDO::getBaseId, reqVO.getId()));
-    
+
         // 5. 同步到ES
         syncBaseToES(reqVO.getId());
         syncPurchaseToES(purchaseOpt.get().getId());
@@ -979,30 +988,48 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         }
         LocalDateTime saleAfterSalesTime = parseDateTime(reqVO.getSaleAfterSalesTime());
         LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
-    
+
         // 3. 更新基础表售后信息
         ErpWholesaleBaseDO baseUpdateObj = new ErpWholesaleBaseDO()
                 .setId(reqVO.getId())
                 .setAfterSalesStatus(reqVO.getAfterSalesStatus())
                 .setAfterSalesTime(afterSalesTime);
         wholesaleMapper.updateById(baseUpdateObj);
-    
+
         // 4. 更新销售售后信息
         ErpWholesaleSaleDO saleUpdateObj = new ErpWholesaleSaleDO()
                 .setSaleAfterSalesStatus(reqVO.getSaleAfterSalesStatus())
                 .setSaleAfterSalesAmount(reqVO.getSaleAfterSalesAmount())
                 .setSaleAfterSalesTime(saleAfterSalesTime);
-    
+
         saleMapper.update(saleUpdateObj, new LambdaUpdateWrapper<ErpWholesaleSaleDO>()
                 .eq(ErpWholesaleSaleDO::getBaseId, reqVO.getId()));
-    
+
         // 5. 同步到ES
         syncBaseToES(reqVO.getId());
         syncSaleToES(saleOpt.get().getId());
-    
+
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {
+        // 先检查是否为null或空
+        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
+            return null;
+        }
+
+        // 尝试解析为时间戳格式
+        try {
+            long timestamp = Long.parseLong(dateTimeStr);
+            // 判断是秒级还是毫秒级时间戳
+            if (dateTimeStr.length() <= 10) { // 秒级
+                return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
+            } else { // 毫秒级
+                return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+            }
+        } catch (NumberFormatException e) {
+            // 如果不是时间戳，继续原有解析逻辑
+        }
+
         try {
             // 尝试解析第一种格式：yyyy-MM-dd'T'HH:mm
             return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
@@ -1018,7 +1045,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     try {
                         // 尝试解析第四种格式：带时区的ISO 8601格式（如2025-05-21T05:52:26.000Z）
                         OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(); // 转换为本地时间
+                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
                     } catch (DateTimeParseException e4) {
                         throw new IllegalArgumentException("无法解析时间格式: " + dateTimeStr);
                     }
