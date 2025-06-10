@@ -373,7 +373,9 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
         return salePrices.stream()
                 .filter(salePrice -> {
                     ErpComboProductDO comboProduct = erpComboMapper.selectById(salePrice.getGroupProductId());
-                    return comboProduct != null && comboProduct.getStatus().equals(CommonStatusEnum.ENABLE.getStatus());
+                    // 检查comboProduct是否为null，以及comboProduct.getStatus()是否为null
+                    return comboProduct != null && comboProduct.getStatus() != null
+                            && comboProduct.getStatus().equals(CommonStatusEnum.ENABLE.getStatus());
                 })
                 .map(salePrice -> BeanUtils.toBean(salePrice, ErpSalePriceRespVO.class))
                 .collect(Collectors.toList());
@@ -461,6 +463,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                             vo.setComboList(Collections.singletonList(comboRespVO));
                             vo.setGroupProductId(comboRespVO.getId());
                             vo.setProductName(comboRespVO.getName());
+                            vo.setWeight(comboRespVO.getWeight());
                             vo.setProductShortName(comboRespVO.getShortName());
                             vo.setOriginalQuantity(comboRespVO.getTotalQuantity());
                             vo.setShippingCode(comboRespVO.getShippingCode());

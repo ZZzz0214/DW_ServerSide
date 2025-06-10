@@ -125,4 +125,8 @@ public class ErpSalePriceRespVO {
 
     @Schema(description = "发货编码", example = "SH202503250001")
     private String shippingCode;
+
+    @Schema(description = "产品重量（单位：kg）")
+    @ExcelProperty("产品重量（单位：g）")
+    private BigDecimal weight;
 }
