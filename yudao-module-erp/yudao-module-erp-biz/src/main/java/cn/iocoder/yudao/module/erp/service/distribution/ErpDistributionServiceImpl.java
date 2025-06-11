@@ -4,10 +4,18 @@ package cn.iocoder.yudao.module.erp.service.distribution;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
@@ -17,7 +25,9 @@ import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionSaleMap
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductESRepository;
+import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceESRepository;
+import cn.iocoder.yudao.module.erp.service.sale.ErpSalespersonService;
 import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -84,6 +94,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Resource
     private ErpSalePriceESRepository salePriceESRepository;
+
+    @Resource
+    private ErpSalespersonService salespersonService;
+
+    @Resource
+    private ErpCustomerService customerService;
 
      // 初始化ES索引
      @EventListener(ApplicationReadyEvent.class)
@@ -771,30 +787,30 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     private void calculateSaleAmount(ErpDistributionRespVO vo, ErpDistributionPurchaseESDO purchase,
                             ErpDistributionSaleESDO sale) {
     // 从ES查询销售价格
-    System.out.println("开始查询销售价格 - 组品ID: " + purchase.getComboProductId() + ", 客户名称: " + sale.getCustomerName());
+    //System.out.println("开始查询销售价格 - 组品ID: " + purchase.getComboProductId() + ", 客户名称: " + sale.getCustomerName());
     Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
             purchase.getComboProductId(), sale.getCustomerName());
 
     if (salePriceOpt.isPresent()) {
         ErpSalePriceESDO salePrice = salePriceOpt.get();
-        System.out.println("找到销售价格记录: " + salePrice);
+        //System.out.println("找到销售价格记录: " + salePrice);
 
         BigDecimal salePriceValue = salePrice.getDistributionPrice();
         BigDecimal saleOtherFees = sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO;
 
-        System.out.println("销售单价: " + salePriceValue + ", 其他费用: " + saleOtherFees);
+        //System.out.println("销售单价: " + salePriceValue + ", 其他费用: " + saleOtherFees);
 
         // 计算销售运费
         BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, vo.getProductQuantity(), purchase.getComboProductId());
-        System.out.println("计算出的销售运费: " + saleShippingFee);
+        //System.out.println("计算出的销售运费: " + saleShippingFee);
 
         BigDecimal totalSaleAmount = salePriceValue
                 .multiply(new BigDecimal(vo.getProductQuantity()))
                 .add(saleShippingFee)
                 .add(saleOtherFees);
 
-        System.out.println("销售总额计算: " + salePriceValue + " * " + vo.getProductQuantity()
-                + " + " + saleShippingFee + " + " + saleOtherFees + " = " + totalSaleAmount);
+        //System.out.println("销售总额计算: " + salePriceValue + " * " + vo.getProductQuantity()
+              //  + " + " + saleShippingFee + " + " + saleOtherFees + " = " + totalSaleAmount);
 
         vo.setSalePrice(salePriceValue);
         vo.setSaleShippingFee(saleShippingFee);
@@ -1217,4 +1233,124 @@ private BigDecimal calculateSaleShippingFee(ErpSalePriceESDO salePrice, Integer 
             }
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpDistributionImportRespVO importDistributionList(List<ErpDistributionImportExcelVO> importList, boolean isUpdateSupport) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(DISTRIBUTION_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpDistributionImportRespVO respVO = ErpDistributionImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 查询已存在的代发订单记录
+        Set<String> noSet = importList.stream()
+                .map(ErpDistributionImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        List<ErpDistributionBaseESDO> existList = noSet.isEmpty()
+                ? Collections.emptyList()
+                : distributionBaseESRepository.findByNoIn(new ArrayList<>(noSet));
+//        Map<String, ErpDistributionBaseDO> noDistributionMap = convertMap(existList,
+//                esDO -> esDO.getNo(),
+//                esDO -> BeanUtils.toBean(esDO, ErpDistributionBaseDO.class));
+
+        Map<String, ErpDistributionBaseDO> noDistributionMap = convertMap(existList,
+                ErpDistributionBaseESDO::getNo,
+                esDO -> BeanUtils.toBean(esDO, ErpDistributionBaseDO.class));
+
+        // 遍历处理每个导入项
+        for (int i = 0; i < importList.size(); i++) {
+            ErpDistributionImportExcelVO importVO = importList.get(i);
+            try {
+                // 校验必填字段
+                //validateImportData(importVO);
+                                // 校验销售人员是否存在
+                if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                    List<ErpSalespersonRespVO> salespersons = salespersonService.searchSalespersons(
+                            new ErpSalespersonPageReqVO().setSalespersonName(importVO.getSalesperson()));
+                    if (CollUtil.isEmpty(salespersons)) {
+                        throw exception(DISTRIBUTION_SALESPERSON_NOT_EXISTS, importVO.getSalesperson());
+                    }
+                }
+
+                // 校验客户是否存在
+                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                    List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
+                            new ErpCustomerPageReqVO().setName(importVO.getCustomerName()));
+                    if (CollUtil.isEmpty(customers)) {
+                        throw exception(DISTRIBUTION_CUSTOMER_NOT_EXISTS, importVO.getCustomerName());
+                    }
+                }
+
+                // 获取组品ID
+                Long comboProductId = null;
+                if (StrUtil.isNotBlank(importVO.getComboProductNo())) {
+                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findByNo(importVO.getComboProductNo());
+                    if (!comboProductOpt.isPresent()) {
+                        throw exception(DISTRIBUTION_COMBO_PRODUCT_NOT_EXISTS, importVO.getComboProductNo());
+                    }
+                    comboProductId = comboProductOpt.get().getId();
+                }
+
+                // 判断是否支持更新
+                ErpDistributionBaseDO existDistribution = noDistributionMap.get(importVO.getNo());
+                if (existDistribution == null) {
+                    // 创建逻辑
+                    ErpDistributionSaveReqVO createReqVO = BeanUtils.toBean(importVO, ErpDistributionSaveReqVO.class).setComboProductId(comboProductId);
+                    Long id = createDistribution(createReqVO);
+                    respVO.getCreateNames().add(createReqVO.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新逻辑
+                    ErpDistributionSaveReqVO updateReqVO = BeanUtils.toBean(importVO, ErpDistributionSaveReqVO.class).setComboProductId(comboProductId);
+                    System.out.println("更新id"+existDistribution.getId());
+                    updateReqVO.setId(existDistribution.getId());
+                    updateDistribution(updateReqVO);
+                    respVO.getUpdateNames().add(updateReqVO.getNo());
+                } else {
+                    throw exception(DISTRIBUTION_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                }
+            } catch (ServiceException ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发订单";
+                respVO.getFailureNames().put(errorKey, ex.getMessage());
+            } catch (Exception ex) {
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发订单";
+                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return respVO;
+    }
+
+//    private void validateImportData(ErpDistributionImportExcelVO importVO) {
+//        // 1. 校验必填字段
+//        if (StringUtils.isEmpty(importVO.getNo())) {
+//            throw new ServiceException(DISTRIBUTION_NO_EMPTY);
+//        }
+//        if (StringUtils.isEmpty(importVO.getReceiverName())) {
+//            throw new ServiceException(DISTRIBUTION_RECEIVER_NAME_EMPTY);
+//        }
+//        if (StringUtils.isEmpty(importVO.getReceiverPhone())) {
+//            throw new ServiceException(DISTRIBUTION_RECEIVER_PHONE_EMPTY);
+//        }
+//        if (StringUtils.isEmpty(importVO.getReceiverAddress())) {
+//            throw new ServiceException(DISTRIBUTION_RECEIVER_ADDRESS_EMPTY);
+//        }
+//        if (importVO.getProductQuantity() == null || importVO.getProductQuantity() <= 0) {
+//            throw new ServiceException(DISTRIBUTION_PRODUCT_QUANTITY_INVALID);
+//        }
+//
+//        // 2. 校验组品信息
+//        if (!StringUtils.isEmpty(importVO.getComboProductNo())) {
+//            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findByNo(importVO.getComboProductNo());
+//            if (!comboProductOpt.isPresent()) {
+//                throw new ServiceException(DISTRIBUTION_COMBO_PRODUCT_NOT_EXISTS);
+//            }
+//        }
+//    }
 }

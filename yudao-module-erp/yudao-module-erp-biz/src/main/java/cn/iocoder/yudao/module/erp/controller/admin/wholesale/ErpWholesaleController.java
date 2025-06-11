@@ -161,7 +161,7 @@ public class ErpWholesaleController {
                             .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
                             .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
                             .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
-                    System.out.println("销售总额计算结果: " + totalAmount);
+                    //System.out.println("销售总额计算结果: " + totalAmount);
                     respVO.setTotalSaleAmount(totalAmount);
                 }
             }
@@ -794,13 +794,13 @@ public class ErpWholesaleController {
         public void exportApprovedPurchaseExcel(@Valid ErpWholesalePageReqVO pageReqVO,
                                               HttpServletResponse response) throws IOException {
             pageReqVO.setPageSize(10000);
-            
+
             PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
             List<ErpWholesalePurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesalePurchaseAuditExportVO.class);
-            
+
             ExcelUtils.write(response, "批发采购订单.xlsx", "数据", ErpWholesalePurchaseAuditExportVO.class, exportList);
         }
-    
+
         // 采购反审批导出
         @GetMapping("/purchase/export-unapproved")
         @Operation(summary = "导出已反审核批发采购订单")
@@ -810,13 +810,13 @@ public class ErpWholesaleController {
                                                 HttpServletResponse response) throws IOException {
             pageReqVO.setPageSize(10000);
             pageReqVO.setPurchaseAuditStatus(20); // 已反审核状态
-            
+
             PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
             List<ErpWholesalePurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesalePurchaseAuditExportVO.class);
-            
+
             ExcelUtils.write(response, "已反审核批发采购订单.xlsx", "数据", ErpWholesalePurchaseAuditExportVO.class, exportList);
         }
-    
+
         // 销售审批导出
         @GetMapping("/sale/export-approved")
         @Operation(summary = "导出批发销售订单")
@@ -825,13 +825,13 @@ public class ErpWholesaleController {
         public void exportApprovedSaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
                                           HttpServletResponse response) throws IOException {
             pageReqVO.setPageSize(10000);
-            
+
             PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
             List<ErpWholesaleSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleSaleAuditExportVO.class);
-            
+
             ExcelUtils.write(response, "批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
         }
-    
+
         // 销售反审批导出
         @GetMapping("/sale/export-unapproved")
         @Operation(summary = "导出已反审核批发销售订单")
@@ -841,10 +841,10 @@ public class ErpWholesaleController {
                                             HttpServletResponse response) throws IOException {
             pageReqVO.setPageSize(10000);
             pageReqVO.setSaleAuditStatus(20); // 已反审核状态
-            
+
             PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
             List<ErpWholesaleSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleSaleAuditExportVO.class);
-            
+
             ExcelUtils.write(response, "已反审核批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
         }
 

@@ -86,7 +86,7 @@ public class ErpDistributionSaveReqVO {
     @Schema(description = "出货备注信息", example = "出货备注示例")
     private String saleRemark;
 
-    @Schema(description = "关联组品表", example = "1")
+    @Schema(description = "组品编号", example = "1")
     private Long comboProductId;
 
     // 销售信息

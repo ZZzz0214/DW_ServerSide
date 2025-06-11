@@ -6,6 +6,8 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import java.math.BigDecimal;
@@ -81,4 +83,13 @@ public interface ErpDistributionService {
      * @param otherFees 其他费用
      */
     void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees);
-}
+
+   /**
+     * 导入代发订单
+     *
+     * @param importList 导入列表
+     * @param updateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpDistributionImportRespVO importDistributionList(List<ErpDistributionImportExcelVO> importList, boolean updateSupport);
+  }

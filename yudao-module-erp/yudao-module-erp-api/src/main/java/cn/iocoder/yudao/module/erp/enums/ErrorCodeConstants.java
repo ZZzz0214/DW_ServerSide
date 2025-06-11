@@ -23,7 +23,7 @@ public interface ErrorCodeConstants {
     ErrorCode PURCHASE_ORDER_NOT_APPROVE = new ErrorCode(1_030_101_006, "采购订单未审核，无法操作");
     ErrorCode PURCHASE_ORDER_ITEM_IN_FAIL_PRODUCT_EXCEED = new ErrorCode(1_030_101_007, "采购订单项({})超过最大允许入库数量({})");
     ErrorCode PURCHASE_ORDER_PROCESS_FAIL_EXISTS_IN = new ErrorCode(1_030_101_008, "反审核失败，已存在对应的采购入库单");
-ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_009, "采购订单项({})超过最大允许退货数量({})");
+    ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_009, "采购订单项({})超过最大允许退货数量({})");
     ErrorCode PURCHASE_ORDER_PROCESS_FAIL_EXISTS_RETURN = new ErrorCode(1_030_101_010, "反审核失败，已存在对应的采购退货单");
 
     // ========== ERP 采购入库（1-030-102-000） ==========
@@ -340,4 +340,17 @@ ErrorCode PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED = new ErrorCode(1_030_101_00
     ErrorCode COMBO_PRODUCT_IMPORT_SHORT_NAME_EMPTY = new ErrorCode(1_030_504_002, "组合产品简称不能为空");
     ErrorCode COMBO_PRODUCT_IMPORT_NO_EXISTS = new ErrorCode(1_030_504_003, "组合产品编号({})已存在");
     ErrorCode COMBO_PRODUCT_IMPORT_ITEM_NO_EXISTS = new ErrorCode(1_030_504_004, "单品编号({})不存在");
+        // ========== ERP 代发导入 1-030-104-000 ==========
+    ErrorCode DISTRIBUTION_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_104_007, "导入代发数据不能为空");
+    ErrorCode DISTRIBUTION_IMPORT_NO_EXISTS = new ErrorCode(1_030_104_008, "导入失败，第{}行的代发记录编号({})已存在");
+    ErrorCode DISTRIBUTION_IMPORT_NO_EMPTY = new ErrorCode(1_030_104_009, "代发编号不能为空");
+    ErrorCode DISTRIBUTION_IMPORT_RECEIVER_NAME_EMPTY = new ErrorCode(1_030_104_010, "收件人姓名不能为空");
+    ErrorCode DISTRIBUTION_IMPORT_RECEIVER_PHONE_EMPTY = new ErrorCode(1_030_104_011, "联系电话不能为空");
+    ErrorCode DISTRIBUTION_IMPORT_RECEIVER_ADDRESS_EMPTY = new ErrorCode(1_030_104_012, "详细地址不能为空");
+    ErrorCode DISTRIBUTION_IMPORT_PRODUCT_QUANTITY_INVALID = new ErrorCode(1_030_104_013, "产品数量必须大于0");
+    ErrorCode DISTRIBUTION_IMPORT_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_104_014, "组品编号({})不存在");
+    ErrorCode DISTRIBUTION_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_104_015, "组品编号({})不存在"); // 新增错误码
+    ErrorCode DISTRIBUTION_SALESPERSON_NOT_EXISTS = new ErrorCode(1_030_104_016, "销售人员({})不存在"); // 新增
+    ErrorCode DISTRIBUTION_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_104_017, "客户({})不存在"); // 新增
+
 }

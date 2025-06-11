@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.erp.controller.admin.distribution;
 import cn.iocoder.yudao.framework.common.pojo.*;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
@@ -20,18 +22,22 @@ import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceESRepository;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -239,6 +245,7 @@ public class ErpDistributionController {
                     respVO.setPurchaser(comboProduct.getPurchaser());
                     respVO.setSupplier(comboProduct.getSupplier());
                     respVO.setPurchasePrice(comboProduct.getPurchasePrice());
+                    respVO.setComboProductNo(comboProduct.getNo());
 
                     // 计算采购运费
                     BigDecimal shippingFee = BigDecimal.ZERO;
@@ -1082,12 +1089,12 @@ public class ErpDistributionController {
     public void exportPurchaseAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                       HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(10000);
-        
+
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-        
+
         // 转换为采购审核导出VO
         List<ErpDistributionPurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseAuditExportVO.class);
-        
+
         ExcelUtils.write(response, "代发采购审核信息.xlsx", "数据", ErpDistributionPurchaseAuditExportVO.class, exportList);
     }
 
@@ -1098,12 +1105,12 @@ public class ErpDistributionController {
     public void exportSaleAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                     HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(10000);
-        
+
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-        
+
         // 转换为销售审核导出VO
         List<ErpDistributionSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleAuditExportVO.class);
-        
+
         ExcelUtils.write(response, "代发销售审核信息.xlsx", "数据", ErpDistributionSaleAuditExportVO.class, exportList);
     }
     @GetMapping("/export-reviewed-purchase-excel")
@@ -1114,11 +1121,11 @@ public class ErpDistributionController {
                                          HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(10000);
         pageReqVO.setPurchaseAuditStatus(20); // 设置采购审核状态为已审核
-        
+
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-        
+
         List<ErpDistributionPurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseAuditExportVO.class);
-        
+
         ExcelUtils.write(response, "已审核代发采购信息.xlsx", "数据", ErpDistributionPurchaseAuditExportVO.class, exportList);
     }
 
@@ -1130,12 +1137,52 @@ public class ErpDistributionController {
                                      HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(10000);
         pageReqVO.setSaleAuditStatus(20); // 设置销售审核状态为已审核
-        
+
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-        
+
         List<ErpDistributionSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleAuditExportVO.class);
-        
+
         ExcelUtils.write(response, "已审核代发销售信息.xlsx", "数据", ErpDistributionSaleAuditExportVO.class, exportList);
+    }
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得导入代发模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpDistributionExportExcelVO> list = Arrays.asList(
+                ErpDistributionExportExcelVO.builder()
+                .no("示例订单1")
+                .orderNumber("ORD-001")
+                .receiverName("张三")
+                .receiverPhone("13800138000")
+                .build(),
+                ErpDistributionExportExcelVO.builder()
+                .no("示例订单2")
+                .orderNumber("ORD-002")
+                .receiverName("李四")
+                .receiverPhone("13900139000")
+                .build()
+        );
+        // 输出
+        ExcelUtils.write(response, "代发导入模板.xlsx", "代发列表", ErpDistributionExportExcelVO.class, list);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "导入代发")
+    @Parameters({
+            @Parameter(name = "file", description = "Excel 文件", required = true),
+            @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+    })
+    @PreAuthorize("@ss.hasPermission('erp:distribution:import')")
+    public CommonResult<ErpDistributionImportRespVO> importExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpDistributionImportExcelVO> list = ExcelUtils.read(inputStream, ErpDistributionImportExcelVO.class);
+            return success(distributionService.importDistributionList(list, updateSupport));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
     }
 
 }
