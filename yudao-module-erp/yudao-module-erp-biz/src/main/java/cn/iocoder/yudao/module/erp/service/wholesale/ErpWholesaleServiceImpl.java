@@ -391,9 +391,6 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 boolQuery.must(QueryBuilders.matchQuery("no", pageReqVO.getNo()));
                 System.out.println("添加查询条件 - no: " + pageReqVO.getNo());
             }
-//            if (pageReqVO.getStatus() != null) {
-//                boolQuery.must(QueryBuilders.termQuery("status", pageReqVO.getStatus()));
-//            }
             if (StringUtils.isNotBlank(pageReqVO.getReceiverName())) {
                 boolQuery.must(QueryBuilders.matchQuery("receiverName", pageReqVO.getReceiverName()));
                 System.out.println("添加查询条件 - receiverName: " + pageReqVO.getReceiverName());
@@ -437,6 +434,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         vo.setProductQuantity(esDO.getProductQuantity());
                         vo.setProductSpecification(esDO.getProductSpecification());
                         vo.setRemark(esDO.getRemark());
+                        vo.setCreator(esDO.getCreator());
                         vo.setCreateTime(esDO.getCreateTime());
                         vo.setAfterSalesStatus(esDO.getAfterSalesStatus());
                         vo.setAfterSalesTime(esDO.getAfterSalesTime());
@@ -452,7 +450,6 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                             ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
                             //BeanUtils.copyProperties(purchase, vo);
                             vo.setTruckFee(purchase.getTruckFee());
-                            vo.setComboProductId(purchase.getComboProductId());
                             vo.setOtherFees(purchase.getOtherFees());
                             vo.setPurchaseAfterSalesStatus(purchase.getPurchaseAfterSalesStatus());
                             vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
@@ -468,6 +465,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                                 vo.setPurchaser(comboProduct.getPurchaser());
                                 vo.setSupplier(comboProduct.getSupplier());
                                 vo.setPurchasePrice(comboProduct.getWholesalePrice());
+                                vo.setComboProductNo(comboProduct.getNo());
 
                                 // 直接使用采购记录中的运费值
                                 vo.setLogisticsFee(purchase.getLogisticsFee());
@@ -595,6 +593,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             vo.setProductQuantity(esDO.getProductQuantity());
             vo.setProductSpecification(esDO.getProductSpecification());
             vo.setRemark(esDO.getRemark());
+            vo.setCreator(esDO.getCreator());
             vo.setCreateTime(esDO.getCreateTime());
             vo.setAfterSalesStatus(esDO.getAfterSalesStatus());
             vo.setAfterSalesTime(esDO.getAfterSalesTime());
@@ -610,7 +609,6 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
                 //BeanUtils.copyProperties(purchase, vo);
                 vo.setTruckFee(purchase.getTruckFee());
-                vo.setComboProductId(purchase.getComboProductId());
                 vo.setOtherFees(purchase.getOtherFees());
                 vo.setPurchaseAfterSalesStatus(purchase.getPurchaseAfterSalesStatus());
                 vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
@@ -626,6 +624,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     vo.setPurchaser(comboProduct.getPurchaser());
                     vo.setSupplier(comboProduct.getSupplier());
                     vo.setPurchasePrice(comboProduct.getWholesalePrice());
+                    vo.setComboProductNo(comboProduct.getNo());
 
                     // 直接使用采购记录中的运费值
                     vo.setLogisticsFee(purchase.getLogisticsFee());

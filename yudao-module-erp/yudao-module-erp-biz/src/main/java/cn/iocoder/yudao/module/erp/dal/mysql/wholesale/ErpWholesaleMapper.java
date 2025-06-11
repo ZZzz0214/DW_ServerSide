@@ -43,7 +43,6 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
         query.leftJoin(ErpWholesalePurchaseDO.class, ErpWholesalePurchaseDO::getBaseId, ErpWholesaleBaseDO::getId)
                 .eq(reqVO.getPurchaseAuditStatus() != null, ErpWholesalePurchaseDO::getPurchaseAuditStatus, reqVO.getPurchaseAuditStatus()) // 修改为eq方法
                 .selectAs(ErpWholesalePurchaseDO::getTruckFee, ErpWholesaleRespVO::getTruckFee)
-                .selectAs(ErpWholesalePurchaseDO::getComboProductId, ErpWholesaleRespVO::getComboProductId)
                 .selectAs(ErpWholesalePurchaseDO::getOtherFees, ErpWholesaleRespVO::getOtherFees)
                 .selectAs(ErpWholesalePurchaseDO::getPurchaseAfterSalesStatus, ErpWholesaleRespVO::getPurchaseAfterSalesStatus)
                 .selectAs(ErpWholesalePurchaseDO::getPurchaseAfterSalesSituation, ErpWholesaleRespVO::getPurchaseAfterSalesSituation)
@@ -56,6 +55,7 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
         .selectAs(ErpComboProductDO::getShippingCode, ErpWholesaleRespVO::getShippingCode)
         .selectAs(ErpComboProductDO::getPurchaser, ErpWholesaleRespVO::getPurchaser)
         .selectAs(ErpComboProductDO::getSupplier, ErpWholesaleRespVO::getSupplier)
+        .selectAs(ErpComboProductDO::getNo, ErpWholesaleRespVO::getComboProductNo)
         .selectAs(ErpComboProductDO::getWholesalePrice, ErpWholesaleRespVO::getPurchasePrice);
 
         // 计算采购运费

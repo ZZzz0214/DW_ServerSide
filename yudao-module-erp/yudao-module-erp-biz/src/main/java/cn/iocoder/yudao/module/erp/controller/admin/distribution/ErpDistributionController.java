@@ -490,13 +490,13 @@ public class ErpDistributionController {
     public CommonResult<PageResult<ErpDistributionRespVO>> getDistributionPage(@Valid ErpDistributionPageReqVO pageReqVO) {
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
         pageResult.getList().forEach(item -> {
-            System.out.println(String.format("订单ID: %s, 采购总额: %s, 采购运费: %s, 销售总额: %s, 销售运费: %s, 客户名称: %s",
+            System.out.println(String.format("订单ID: %s, 组品编号: %s, 采购运费: %s, 销售总额: %s, 售后状况: %s, 售后时间: %s",
                     item.getId(),
-                    item.getTotalPurchaseAmount(),
+                    item.getComboProductNo(),
                     item.getShippingFee(),
                     item.getTotalSaleAmount(),
-                    item.getSaleShippingFee(),
-                    item.getCustomerName()));
+                    item.getAfterSalesStatus(),
+                    item.getAfterSalesTime()));
         });
         return success(pageResult);
     }
@@ -991,37 +991,151 @@ public class ErpDistributionController {
         return success(true);
     }
 
-        // ... 其他方法保持不变 ...
 
-        @GetMapping("/export-excel")
-        @Operation(summary = "导出代发 Excel")
-        @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
-        @ApiAccessLog(operateType = EXPORT)
-        public void exportDistributionExcel(@Valid ErpDistributionPageReqVO pageReqVO,
-                                          HttpServletResponse response) throws IOException {
-            pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-            PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-            // 导出 Excel
-            ExcelUtils.write(response, "代发信息.xlsx", "数据", ErpDistributionRespVO.class,
-                    pageResult.getList());
-        }
+    //导出第一种 可转换逻辑
 
-        @GetMapping("/export-excel2")
-        @Operation(summary = "导出代发采购 Excel")
-        @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
-        @ApiAccessLog(operateType = EXPORT)
-        public void exportDistributionPurchaseExcel(@Valid ErpDistributionPageReqVO pageReqVO,
-                                                 HttpServletResponse response) throws IOException {
-            pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-            PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-            // 转换为采购VO并导出Excel
-            List<ErpDistributionPurchaseAuditVO> purchaseList = BeanUtils.toBeanList(pageResult.getList(), ErpDistributionPurchaseAuditVO.class);
-            ExcelUtils.write(response, "代发采购信息.xlsx", "数据", ErpDistributionPurchaseAuditVO.class, purchaseList);
-        }
+//        @GetMapping("/export-excel2")
+//        @Operation(summary = "导出代发 Excel(自定义)")
+//        @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+//        @ApiAccessLog(operateType = EXPORT)
+//        public void exportDistributionExcel2(@Valid ErpDistributionPageReqVO pageReqVO,
+//                                        HttpServletResponse response) throws IOException {
+//            System.out.println("调用代发自定义导出");
+//            pageReqVO.setPageSize(10000);
+//
+//            PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+//
+//            List<ErpDistributionExportExcelVO> exportList = pageResult.getList().stream()
+//                    .map(item -> {
+//                        ErpDistributionExportExcelVO vo = BeanUtils.toBean(item, ErpDistributionExportExcelVO.class);
+//                        // 可以在这里添加额外的转换逻辑
+//                        return vo;
+//                    })
+//                    .collect(Collectors.toList());
+//
+//            ExcelUtils.write(response, "代发信息.xlsx", "数据", ErpDistributionExportExcelVO.class, exportList);
+//        }
 
-        // ... 其他方法保持不变 ...
+        //导出第二种  用toBeanList
+//        @GetMapping("/export-excel2")
+//        @Operation(summary = "导出代发 Excel(自定义)")
+//        @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+//        @ApiAccessLog(operateType = EXPORT)
+//        public void exportDistributionExcel2(@Valid ErpDistributionPageReqVO pageReqVO,
+//                                        HttpServletResponse response) throws IOException {
+//            System.out.println("调用代发自定义导出");
+//            pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+//            //pageReqVO.setPageSize(10000);
+//
+//            PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+//
+//            // 直接转换为导出VO
+//            List<ErpDistributionExportExcelVO> exportList = BeanUtils.toBeanList(pageResult.getList(), ErpDistributionExportExcelVO.class);
+//
+//            ExcelUtils.write(response, "代发信息.xlsx", "数据", ErpDistributionExportExcelVO.class, exportList);
+//        }
 
+    //第三种
+//    @GetMapping("/export-excel2")
+//    @Operation(summary = "导出代发 Excel(自定义)")
+//    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+//    @ApiAccessLog(operateType = EXPORT)
+//    public void exportDistributionExcel2(@Valid ErpDistributionPageReqVO pageReqVO,
+//                                         HttpServletResponse response) throws IOException {
+//        System.out.println("调用代发自定义导出");
+//        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+//
+//        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+//
+//        // 转换为导出VO
+//        List<ErpDistributionExportExcelVO> exportList = pageResult.getList().stream()
+//                .map(item -> BeanUtils.toBean(item, ErpDistributionExportExcelVO.class))
+//                .collect(Collectors.toList());
+//
+//        ExcelUtils.write(response, "代发信息.xlsx", "数据", ErpDistributionExportExcelVO.class, exportList);
+//    }
 
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出代发 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportDistributionExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                        HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        //pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        pageReqVO.setPageSize(10000);
+        // 获取分页数据
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        System.out.println("查看代发数据：" + pageResult.getList());
 
+        // 转换为导出VO
+        List<ErpDistributionExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "代发信息.xlsx", "数据", ErpDistributionExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-purchase-excel")
+    @Operation(summary = "导出代发采购审核 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportPurchaseAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                      HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(10000);
+        
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        
+        // 转换为采购审核导出VO
+        List<ErpDistributionPurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseAuditExportVO.class);
+        
+        ExcelUtils.write(response, "代发采购审核信息.xlsx", "数据", ErpDistributionPurchaseAuditExportVO.class, exportList);
+    }
+
+    @GetMapping("/export-sale-excel")
+    @Operation(summary = "导出代发销售审核 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportSaleAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                    HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(10000);
+        
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        
+        // 转换为销售审核导出VO
+        List<ErpDistributionSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleAuditExportVO.class);
+        
+        ExcelUtils.write(response, "代发销售审核信息.xlsx", "数据", ErpDistributionSaleAuditExportVO.class, exportList);
+    }
+    @GetMapping("/export-reviewed-purchase-excel")
+    @Operation(summary = "导出已审核代发采购 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportReviewedPurchaseExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                         HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(10000);
+        pageReqVO.setPurchaseAuditStatus(20); // 设置采购审核状态为已审核
+        
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        
+        List<ErpDistributionPurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseAuditExportVO.class);
+        
+        ExcelUtils.write(response, "已审核代发采购信息.xlsx", "数据", ErpDistributionPurchaseAuditExportVO.class, exportList);
+    }
+
+    @GetMapping("/export-reviewed-sale-excel")
+    @Operation(summary = "导出已审核代发销售 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportReviewedSaleExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                     HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(10000);
+        pageReqVO.setSaleAuditStatus(20); // 设置销售审核状态为已审核
+        
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        
+        List<ErpDistributionSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleAuditExportVO.class);
+        
+        ExcelUtils.write(response, "已审核代发销售信息.xlsx", "数据", ErpDistributionSaleAuditExportVO.class, exportList);
+    }
 
 }

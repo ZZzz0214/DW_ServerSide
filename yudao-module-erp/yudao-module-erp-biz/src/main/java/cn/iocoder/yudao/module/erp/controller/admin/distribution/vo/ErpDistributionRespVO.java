@@ -49,8 +49,11 @@ public class ErpDistributionRespVO {
     @Schema(description = "备注信息", example = "备注")
     private String remark;
 
-    @Schema(description = "组品编号", example = "1")
-    private Long comboProductId;
+    //@Schema(description = "组品编号", example = "1")
+    //private Long comboProductId;
+
+    @Schema(description = "组品编号", example = "CP20240001")
+    private String comboProductNo;
 
     @Schema(description = "产品名称", example = "商品B")
     private String productName;
@@ -145,11 +148,14 @@ public class ErpDistributionRespVO {
 
     @Schema(description = "销售反审批时间", example = "2023-01-01 12:00:00")
     private LocalDateTime saleUnapproveTime;
-    
+
     @Schema(description = "中转人员", example = "中转员A")
     private String transferPerson;
 
     // 公共字段
+
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String creator;
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime createTime;
 

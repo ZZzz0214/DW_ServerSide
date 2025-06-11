@@ -56,8 +56,11 @@ public class ErpDistributionPurchaseAuditVO {
     @Schema(description = "出货备注信息", example = "出货备注示例")
     private String saleRemark;
 
-    @Schema(description = "组品编号", example = "1")
-    private Long comboProductId;
+//    @Schema(description = "组品编号", example = "1")
+//    private Long comboProductId;
+
+    @Schema(description = "组品编号", example = "CP20240001")
+    private String comboProductNo;
 
     @Schema(description = "发货编码", example = "SH202403250001")
     private String shippingCode;
@@ -122,4 +125,9 @@ public class ErpDistributionPurchaseAuditVO {
 
     @Schema(description = "采购审批时间", example = "2023-01-01 12:00:00")
     private LocalDateTime purchaseApprovalTime;
+
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String creator;
+    @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    private LocalDateTime createTime;
 }

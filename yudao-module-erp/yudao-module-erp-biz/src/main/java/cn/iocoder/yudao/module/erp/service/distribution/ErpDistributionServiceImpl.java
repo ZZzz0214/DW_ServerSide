@@ -406,26 +406,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     @Override
     public PageResult<ErpDistributionRespVO> getDistributionVOPage(ErpDistributionPageReqVO pageReqVO) {
         try {
-//            // 1. 检查数据库是否有数据
-//            long dbCount = distributionMapper.selectCount(null);
-//            if (dbCount == 0) {
-//                return new PageResult<>(Collections.emptyList(), 0L);
-//            }
-//
-//            // 2. 检查ES索引是否存在
-//            IndexOperations baseIndexOps = elasticsearchRestTemplate.indexOps(ErpDistributionBaseESDO.class);
-//            if (!baseIndexOps.exists()) {
-//                initESIndex(); // 如果索引不存在则创建
-//                fullSyncToES(); // 全量同步数据
-//                return getDistributionVOPageFromDB(pageReqVO); // 首次查询使用数据库
-//            }
-//
-//            // 3. 检查ES是否有数据
-//            long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpDistributionBaseESDO.class);
-//            if (esCount == 0) {
-//                fullSyncToES(); // 同步数据到ES
-//                return getDistributionVOPageFromDB(pageReqVO); // 首次查询使用数据库
-//            }
+
 
             // 1. 检查数据库是否有数据
             long dbCount = distributionMapper.selectCount(null);
@@ -550,7 +531,6 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setPurchaseAuditStatus(purchase.getPurchaseAuditStatus());
                         vo.setOtherFees(purchase.getOtherFees());
                         vo.setPurchaseRemark(purchase.getPurchaseRemark());
-                        vo.setComboProductId(purchase.getComboProductId());
                         vo.setPurchaseAfterSalesSituation(purchase.getPurchaseAfterSalesSituation());
                         vo.setPurchaseAfterSalesStatus(purchase.getPurchaseAfterSalesStatus());
                         vo.setPurchaseAfterSalesAmount(purchase.getPurchaseAfterSalesAmount());
@@ -565,6 +545,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                                 vo.setPurchaser(comboProduct.getPurchaser());
                                 vo.setSupplier(comboProduct.getSupplier());
                                 vo.setPurchasePrice(comboProduct.getPurchasePrice());
+                                vo.setComboProductNo(comboProduct.getNo());
 
                                 // 计算运费和采购总额
                                 calculatePurchaseAmount(vo, comboProduct, purchase);
@@ -679,6 +660,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setPurchaser(comboProduct.getPurchaser());
                         vo.setSupplier(comboProduct.getSupplier());
                         vo.setPurchasePrice(comboProduct.getPurchasePrice());
+                        vo.setComboProductNo(comboProduct.getNo());
 
                         // 计算运费和采购总额
                         calculatePurchaseAmount(vo, comboProduct, purchase);
@@ -1192,30 +1174,6 @@ private BigDecimal calculateSaleShippingFee(ErpSalePriceESDO salePrice, Integer 
         syncBaseToES(id);
     }
 
-//    private LocalDateTime parseDateTime(String dateTimeStr) {
-//        try {
-//            // 尝试解析第一种格式：yyyy-MM-dd'T'HH:mm
-//            return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
-//        } catch (DateTimeParseException e1) {
-//            try {
-//                // 尝试解析第二种格式：yyyy-MM-dd'T'HH:mm:ss
-//                return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-//            } catch (DateTimeParseException e2) {
-//                try {
-//                    // 尝试解析第三种格式：yyyy-MM-dd HH:mm:ss
-//                    return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND));
-//                } catch (DateTimeParseException e3) {
-//                    try {
-//                        // 尝试解析第四种格式：带时区的ISO 8601格式（如2025-05-21T05:52:26.000Z）
-//                        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-//                        return offsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(); // 转换为本地时间
-//                    } catch (DateTimeParseException e4) {
-//                        throw new IllegalArgumentException("无法解析时间格式: " + dateTimeStr);
-//                    }
-//                }
-//            }
-//        }
-//    }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {
         // 先检查是否为null或空

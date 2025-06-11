@@ -54,8 +54,10 @@ public class ErpWholesaleRespVO {
     private String saleRemark;
 
     // 来自 ErpWholesalePurchaseDO
-    @Schema(description = "组品编号", example = "1")
-    private Long comboProductId;
+//    @Schema(description = "组品编号", example = "1")
+//    private Long comboProductId;
+    @Schema(description = "组品编号", example = "CP20240001")
+    private String comboProductNo;
 
     @Schema(description = "采购人员", example = "采购员A")
     private String purchaser;
@@ -150,6 +152,8 @@ public class ErpWholesaleRespVO {
 
 
     // 公共字段
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String creator;
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime createTime;
 

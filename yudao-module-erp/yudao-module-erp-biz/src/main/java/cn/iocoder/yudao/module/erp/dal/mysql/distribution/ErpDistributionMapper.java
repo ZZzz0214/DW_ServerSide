@@ -50,7 +50,7 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 //.selectAs(ErpDistributionPurchaseDO::getShippingFee, ErpDistributionRespVO::getShippingFee)
                 .eq(reqVO.getPurchaseAuditStatus() != null, ErpDistributionPurchaseDO::getPurchaseAuditStatus, reqVO.getPurchaseAuditStatus()) // 修改为eq方法
                 .selectAs(ErpDistributionPurchaseDO::getOtherFees, ErpDistributionRespVO::getOtherFees)
-                .selectAs(ErpDistributionPurchaseDO::getComboProductId, ErpDistributionRespVO::getComboProductId)
+                //.selectAs(ErpDistributionPurchaseDO::getComboProductId, ErpDistributionRespVO::getComboProductId)
                 .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesStatus, ErpDistributionRespVO::getPurchaseAfterSalesStatus)
                 .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesSituation, ErpDistributionRespVO::getPurchaseAfterSalesSituation)
                 .selectAs(ErpDistributionPurchaseDO::getPurchaseAfterSalesAmount, ErpDistributionRespVO::getPurchaseAfterSalesAmount)
@@ -65,7 +65,9 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
                 .selectAs(ErpComboProductDO::getShippingCode, ErpDistributionRespVO::getShippingCode)
                 .selectAs(ErpComboProductDO::getPurchaser, ErpDistributionRespVO::getPurchaser)
                 .selectAs(ErpComboProductDO::getSupplier, ErpDistributionRespVO::getSupplier)
+                .selectAs(ErpComboProductDO::getNo, ErpDistributionRespVO::getComboProductNo)
                 .selectAs(ErpComboProductDO::getPurchasePrice, ErpDistributionRespVO::getPurchasePrice);
+
 
         // 在运费计算前添加调试信息
 

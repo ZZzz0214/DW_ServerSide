@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.controller.admin.wholesale;
 
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import cn.iocoder.yudao.framework.common.pojo.*;
+import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
@@ -26,12 +28,15 @@ import org.springframework.web.bind.annotation.*;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - ERP 批发")
@@ -760,5 +765,87 @@ public class ErpWholesaleController {
         wholesaleService.updateSaleAfterSales(reqVO);
         return success(true);
     }
+
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出批发订单 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportWholesaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                   HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+
+        // 获取分页数据
+        PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+
+        // 转换为导出VO
+        List<ErpWholesaleExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "批发订单信息.xlsx", "数据", ErpWholesaleExportExcelVO.class, exportList);
+    }
+
+
+        // 采购审批导出
+        @GetMapping("/purchase/export-approved")
+        @Operation(summary = "导出批发采购订单")
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+        @ApiAccessLog(operateType = EXPORT)
+        public void exportApprovedPurchaseExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                              HttpServletResponse response) throws IOException {
+            pageReqVO.setPageSize(10000);
+            
+            PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+            List<ErpWholesalePurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesalePurchaseAuditExportVO.class);
+            
+            ExcelUtils.write(response, "批发采购订单.xlsx", "数据", ErpWholesalePurchaseAuditExportVO.class, exportList);
+        }
+    
+        // 采购反审批导出
+        @GetMapping("/purchase/export-unapproved")
+        @Operation(summary = "导出已反审核批发采购订单")
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+        @ApiAccessLog(operateType = EXPORT)
+        public void exportUnapprovedPurchaseExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                                HttpServletResponse response) throws IOException {
+            pageReqVO.setPageSize(10000);
+            pageReqVO.setPurchaseAuditStatus(20); // 已反审核状态
+            
+            PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+            List<ErpWholesalePurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesalePurchaseAuditExportVO.class);
+            
+            ExcelUtils.write(response, "已反审核批发采购订单.xlsx", "数据", ErpWholesalePurchaseAuditExportVO.class, exportList);
+        }
+    
+        // 销售审批导出
+        @GetMapping("/sale/export-approved")
+        @Operation(summary = "导出批发销售订单")
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+        @ApiAccessLog(operateType = EXPORT)
+        public void exportApprovedSaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                          HttpServletResponse response) throws IOException {
+            pageReqVO.setPageSize(10000);
+            
+            PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+            List<ErpWholesaleSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleSaleAuditExportVO.class);
+            
+            ExcelUtils.write(response, "批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
+        }
+    
+        // 销售反审批导出
+        @GetMapping("/sale/export-unapproved")
+        @Operation(summary = "导出已反审核批发销售订单")
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+        @ApiAccessLog(operateType = EXPORT)
+        public void exportUnapprovedSaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                            HttpServletResponse response) throws IOException {
+            pageReqVO.setPageSize(10000);
+            pageReqVO.setSaleAuditStatus(20); // 已反审核状态
+            
+            PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+            List<ErpWholesaleSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleSaleAuditExportVO.class);
+            
+            ExcelUtils.write(response, "已反审核批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
+        }
 
 }
