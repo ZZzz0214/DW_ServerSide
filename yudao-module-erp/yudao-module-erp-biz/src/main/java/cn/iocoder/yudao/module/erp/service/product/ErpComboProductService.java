@@ -129,4 +129,11 @@ public interface ErpComboProductService {
      */
     ErpComboImportRespVO importComboList(List<ErpComboImportExcelVO> importCombos, boolean isUpdateSupport);
 
+    /**
+     * 手动同步单个组合产品到ES（包括主表和关联项）
+     *
+     * @param comboId 组合产品ID
+     */
+    void manualSyncComboToES(Long comboId);
+
 }

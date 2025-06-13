@@ -791,6 +791,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     @Override
     public PageResult<ErpWholesaleRespVO> getWholesaleVOPage(ErpWholesalePageReqVO pageReqVO) {
         try {
+            System.out.println("批发传入的参数"+pageReqVO);
             // 1. 检查数据库是否有数据
             long dbCount = wholesaleCombinedMapper.selectCount(null);
 
@@ -855,6 +856,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     queryBuilder.build(),
                     ErpWholesaleCombinedESDO.class,
                     IndexCoordinates.of("erp_wholesale_combined"));
+            System.out.println("查询批发结果总数: " + searchHits.getTotalHits());
 
             List<ErpWholesaleRespVO> voList = searchHits.stream()
                     .map(SearchHit::getContent)

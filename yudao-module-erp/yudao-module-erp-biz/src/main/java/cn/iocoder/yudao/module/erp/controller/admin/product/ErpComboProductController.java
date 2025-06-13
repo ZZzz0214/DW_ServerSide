@@ -178,4 +178,13 @@ public class ErpComboProductController {
         }
     }
 
+    @PostMapping("/sync-es/{id}")
+    @Operation(summary = "手动同步组合产品到ES")
+    @Parameter(name = "id", description = "组合产品编号", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('erp:combo-product:update')")
+    public CommonResult<Boolean> syncComboToES(@PathVariable("id") Long id) {
+        comboProductService.manualSyncComboToES(id);
+        return success(true);
+    }
+
 }

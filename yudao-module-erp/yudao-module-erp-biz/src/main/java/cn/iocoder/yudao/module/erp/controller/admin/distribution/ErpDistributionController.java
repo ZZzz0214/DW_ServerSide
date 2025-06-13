@@ -705,7 +705,7 @@ public class ErpDistributionController {
         return success(result);
     }
 
-    @GetMapping("/purchase/get2")
+    @GetMapping("/purchase/get")
     @Operation(summary = "获得代发采购订单详情")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")

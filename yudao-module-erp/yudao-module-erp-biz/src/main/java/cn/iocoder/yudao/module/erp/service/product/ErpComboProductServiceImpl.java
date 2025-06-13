@@ -157,18 +157,14 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     @Override
     public void updateCombo(@Valid ErpComboSaveReqVO updateReqVO) {
         validateComboExists(updateReqVO.getId());
-            // 校验名称唯一性
+        // 校验名称唯一性
         validateComboNameUnique(updateReqVO.getName(), updateReqVO.getId());
         ErpComboProductDO updateObj = BeanUtils.toBean(updateReqVO, ErpComboProductDO.class);
         erpComboMapper.updateById(updateObj);
 
-        // 同步主表到 ES
-        syncComboToES(updateReqVO.getId());
-
         // 如果有单品关联信息，先删除旧的关联，再保存新的关联
         if (updateReqVO.getItems() != null) {
             // 删除旧的关联
-            //erpComboProductItemMapper.deleteByComboProductId(updateReqVO.getId());
             List<ErpComboProductItemDO> oldItems = erpComboProductItemMapper.selectByComboProductId(updateReqVO.getId());
             for (ErpComboProductItemDO oldItem : oldItems) {
                 erpComboProductItemMapper.deleteById(oldItem.getId());
@@ -186,6 +182,9 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 syncItemToES(itemDO.getId());
             }
         }
+
+        // 在所有关联项更新完成后，再同步主表到 ES
+        syncComboToES(updateReqVO.getId());
     }
 
     @Override
@@ -916,28 +915,27 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     /**
      * 同步组合产品到 ES
      */
-    private void syncComboToES(Long comboId)
-    {
-       // long startTime = System.currentTimeMillis();
-        ErpComboProductDO combo = erpComboMapper.selectById(comboId);
-        //System.out.println("查询组合产品耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-        if (combo == null ) {
-            comboProductESRepository.deleteById(comboId);
-           // System.out.println("删除ES组合产品耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-        } else {
-            ErpComboProductES es = convertComboToES(combo);
-           // System.out.println("转换ES对象耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-            comboProductESRepository.save(es);
-            System.out.println("保存ES组合产品ID: " + es.getId());
-
-//            // 检查索引是否存在
-//            boolean indexExists = elasticsearchRestTemplate.indexOps(IndexCoordinates.of("erp_combo_products")).exists();
-//            System.out.println("索引erp_combo_products是否存在: " + indexExists);
-//
-//            // 直接查询刚保存的数据
-//            ErpComboProductES savedES = comboProductESRepository.findById(es.getId()).orElse(null);
-//            System.out.println("查询ES结果: " + (savedES != null ? "成功" : "失败"));
-//System.out.println("保存ES组合产品耗时: " + (System.currentTimeMillis() - startTime) + "ms");
+    private void syncComboToES(Long comboId) {
+        try {
+            ErpComboProductDO combo = erpComboMapper.selectById(comboId);
+            if (combo == null) {
+                comboProductESRepository.deleteById(comboId);
+                System.out.println("删除ES组合产品ID: " + comboId);
+            } else {
+                ErpComboProductES es = convertComboToES(combo);
+                comboProductESRepository.save(es);
+                System.out.println("保存ES组合产品ID: " + es.getId() + ", 组合名称: " + es.getComboName());
+                
+                // 强制刷新ES索引，确保数据立即可见
+                try {
+                    elasticsearchRestTemplate.indexOps(ErpComboProductES.class).refresh();
+                } catch (Exception refreshException) {
+                    System.err.println("刷新ES索引失败: " + refreshException.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("同步组合产品到ES失败，ID: " + comboId + ", 错误: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -948,40 +946,92 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         ErpComboProductES es = new ErpComboProductES();
         BeanUtils.copyProperties(combo, es);
 
-        // 设置组合名称（用于搜索）
-        ErpComboRespVO comboWithItems = this.getComboWithItems(combo.getId());
-        if (comboWithItems != null) {
-            es.setComboName(comboWithItems.getName());
+        // 直接构建组合名称（用于搜索），避免循环调用
+        try {
+            String comboName = buildComboName(combo.getId());
+            es.setComboName(comboName);
+            // 如果数据库中的name字段为空，使用构建的组合名称
+            if (StrUtil.isBlank(es.getName())) {
+                es.setName(comboName);
+            }
+        } catch (Exception e) {
+            System.err.println("构建组合产品名称失败，ID: " + combo.getId() + ", 错误: " + e.getMessage());
+            // 如果构建失败，使用原有的name字段
+            es.setComboName(combo.getName());
         }
 
         return es;
     }
-//
+
+    /**
+     * 构建组合产品名称
+     */
+    private String buildComboName(Long comboId) {
+        // 查询组合产品关联的单品项
+        List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(comboId);
+        if (CollUtil.isEmpty(comboItems)) {
+            return "";
+        }
+
+        // 提取单品ID列表
+        List<Long> productIds = comboItems.stream()
+                .map(ErpComboProductItemDO::getItemProductId)
+                .collect(Collectors.toList());
+
+        // 查询单品详细信息
+        List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
+        if (CollUtil.isEmpty(products)) {
+            return "";
+        }
+
+        // 构建名称字符串
+        StringBuilder nameBuilder = new StringBuilder();
+        Map<Long, ErpProductDO> productMap = products.stream()
+                .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
+
+        for (int i = 0; i < comboItems.size(); i++) {
+            ErpComboProductItemDO item = comboItems.get(i);
+            ErpProductDO product = productMap.get(item.getItemProductId());
+            if (product == null) {
+                continue;
+            }
+
+            if (i > 0) {
+                nameBuilder.append("+");
+            }
+            nameBuilder.append(product.getName())
+                    .append("×")
+                    .append(item.getItemQuantity());
+        }
+
+        return nameBuilder.toString();
+    }
+
     /**
      * 同步组合产品项到 ES
      */
     private void syncItemToES(Long itemId) {
-        long startTime = System.currentTimeMillis();
-        ErpComboProductItemDO item = erpComboProductItemMapper.selectById(itemId);
-        System.out.println("查询关联项耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-        if (item == null ) {
-            comboProductItemESRepository.deleteById(itemId);
-            System.out.println("删除ES关联项耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-        } else {
-            ErpComboProductItemES es = new ErpComboProductItemES();
-            BeanUtils.copyProperties(item, es);
-            System.out.println("转换ES关联项耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-           // startTime = System.currentTimeMillis();
-            comboProductItemESRepository.save(es);
-            System.out.println("保存ES关联项ID: " + es.getId());
-
-            // 添加检测逻辑
-//            boolean indexExists = elasticsearchRestTemplate.indexOps(IndexCoordinates.of("erp_combo_product_items")).exists();
-//            System.out.println("索引erp_combo_product_items是否存在: " + indexExists);
-//
-//            ErpComboProductItemES savedItem = comboProductItemESRepository.findById(es.getId()).orElse(null);
-//            System.out.println("查询ES关联项结果: " + (savedItem != null ? "成功" : "失败"));
-//            System.out.println("保存ES关联项耗时: " + (System.currentTimeMillis() - startTime) + "ms");
+        try {
+            ErpComboProductItemDO item = erpComboProductItemMapper.selectById(itemId);
+            if (item == null) {
+                comboProductItemESRepository.deleteById(itemId);
+                System.out.println("删除ES关联项ID: " + itemId);
+            } else {
+                ErpComboProductItemES es = new ErpComboProductItemES();
+                BeanUtils.copyProperties(item, es);
+                comboProductItemESRepository.save(es);
+                System.out.println("保存ES关联项ID: " + es.getId() + ", 组合产品ID: " + es.getComboProductId());
+                
+                // 强制刷新ES索引，确保数据立即可见
+                try {
+                    elasticsearchRestTemplate.indexOps(ErpComboProductItemES.class).refresh();
+                } catch (Exception refreshException) {
+                    System.err.println("刷新ES关联项索引失败: " + refreshException.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("同步组合产品关联项到ES失败，ID: " + itemId + ", 错误: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -1054,11 +1104,44 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     .collect(Collectors.toList());
                 comboProductItemESRepository.saveAll(itemESList);
 
+                // 强制刷新ES索引
+                try {
+                    elasticsearchRestTemplate.indexOps(ErpComboProductES.class).refresh();
+                    elasticsearchRestTemplate.indexOps(ErpComboProductItemES.class).refresh();
+                } catch (Exception refreshException) {
+                    System.err.println("刷新ES索引失败: " + refreshException.getMessage());
+                }
+
                 System.out.println("全量同步ES数据完成，共同步" + comboESList.size() + "条组合产品和" + itemESList.size() + "条关联项");
             } catch (Exception e) {
                 System.err.println("全量同步ES数据失败: " + e.getMessage());
+                e.printStackTrace();
             }
         }
+
+    /**
+     * 手动同步单个组合产品到ES（包括主表和关联项）
+     */
+    @Override
+    public void manualSyncComboToES(Long comboId) {
+        try {
+            System.out.println("开始手动同步组合产品到ES，ID: " + comboId);
+            
+            // 同步主表
+            syncComboToES(comboId);
+            
+            // 同步关联项
+            List<ErpComboProductItemDO> items = erpComboProductItemMapper.selectByComboProductId(comboId);
+            for (ErpComboProductItemDO item : items) {
+                syncItemToES(item.getId());
+            }
+            
+            System.out.println("手动同步组合产品完成，ID: " + comboId);
+        } catch (Exception e) {
+            System.err.println("手动同步组合产品失败，ID: " + comboId + ", 错误: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 校验组合产品名称是否唯一
@@ -1287,90 +1370,6 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 //            // 同步到ES
 //            syncItemToES(itemDO.getId());
 //        }
-//    }
-
-
-//    @Override
-//    @Transactional(rollbackFor = Exception.class)
-//    public ErpComboImportRespVO importComboList(List<ErpComboImportExcelVO> importList, boolean isUpdateSupport) {
-//        if (CollUtil.isEmpty(importList)) {
-//            throw exception(COMBO_PRODUCT_IMPORT_LIST_IS_EMPTY);
-//        }
-//
-//        // 初始化返回结果
-//        ErpComboImportRespVO respVO = ErpComboImportRespVO.builder()
-//                .createNames(new ArrayList<>())
-//                .updateNames(new ArrayList<>())
-//                .failureNames(new LinkedHashMap<>())
-//                .build();
-//
-//        // 查询已存在的组合产品记录
-//        Set<String> noSet = importList.stream()
-//                .map(ErpComboImportExcelVO::getNo)
-//                .filter(StrUtil::isNotBlank)
-//                .collect(Collectors.toSet());
-//        List<ErpComboProductDO> existList = erpComboMapper.selectListByNoIn(noSet);
-//        Map<String, ErpComboProductDO> noComboMap = convertMap(existList, ErpComboProductDO::getNo);
-//
-//        // 遍历处理每个导入项
-//        for (int i = 0; i < importList.size(); i++) {
-//            ErpComboImportExcelVO importVO = importList.get(i);
-//            try {
-//                // 校验必填字段
-////                if (StrUtil.isEmpty(importVO.getShortName())) {
-////                    throw exception(COMBO_PRODUCT_IMPORT_SHORT_NAME_EMPTY);
-////                }
-//
-//                // 判断是否支持更新
-//                ErpComboProductDO existCombo = noComboMap.get(importVO.getNo());
-//                if (existCombo == null) {
-//                    // 创建
-//                    ErpComboProductDO comboProduct = BeanUtils.toBean(importVO, ErpComboProductDO.class);
-//                    if (StrUtil.isEmpty(comboProduct.getNo())) {
-//                        comboProduct.setNo(noRedisDAO.generate(ErpNoRedisDAO.COMBO_PRODUCT_NO_PREFIX));
-//                    }
-//                    erpComboMapper.insert(comboProduct);
-//
-//                    // 保存组品项
-//                    saveComboItems(importVO, comboProduct.getId());
-//
-//                    // 同步到ES
-//                    syncComboToES(comboProduct.getId());
-//
-//                    respVO.getCreateNames().add(comboProduct.getNo());
-//                } else if (isUpdateSupport) {
-//                    // 更新
-//                    ErpComboProductDO updateCombo = BeanUtils.toBean(importVO, ErpComboProductDO.class);
-//                    updateCombo.setId(existCombo.getId());
-//                    erpComboMapper.updateById(updateCombo);
-//
-//                    // 先删除旧的组品项
-//                    List<ErpComboProductItemDO> oldItems = erpComboProductItemMapper.selectByComboProductId(existCombo.getId());
-//                    for (ErpComboProductItemDO oldItem : oldItems) {
-//                        erpComboProductItemMapper.deleteById(oldItem.getId());
-//                        comboProductItemESRepository.deleteById(oldItem.getId());
-//                    }
-//
-//                    // 保存新的组品项
-//                    saveComboItems(importVO, existCombo.getId());
-//
-//                    // 同步到ES
-//                    syncComboToES(existCombo.getId());
-//
-//                    respVO.getUpdateNames().add(updateCombo.getNo());
-//                } else {
-//                    throw exception(COMBO_PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-//                }
-//            } catch (ServiceException ex) {
-//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知组合产品";
-//                respVO.getFailureNames().put(errorKey, ex.getMessage());
-//            } catch (Exception ex) {
-//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知组合产品";
-//                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
-//            }
-//        }
-//
-//        return respVO;
 //    }
 
 
