@@ -10,6 +10,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.Erp
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedDO;
+
 import java.math.BigDecimal;
 import javax.validation.Valid;
 import java.util.Collection;
@@ -28,13 +30,13 @@ public interface ErpDistributionService {
     void deleteDistribution(List<Long> ids);
 
     // 根据id查询
-    ErpDistributionBaseDO getDistribution(Long id);
+    //ErpDistributionBaseDO getDistribution(Long id);
 
     // 根据id列表查询
     List<ErpDistributionBaseDO> getDistributionList(Collection<Long> ids);
 
     // 校验有效性
-    ErpDistributionBaseDO validateDistribution(Long id);
+    ErpDistributionCombinedDO validateDistribution(Long id);
 
     // 获取 VO 列表
     List<ErpDistributionRespVO> getDistributionVOList(Collection<Long> ids);
@@ -92,4 +94,6 @@ public interface ErpDistributionService {
      * @return 导入结果
      */
     ErpDistributionImportRespVO importDistributionList(List<ErpDistributionImportExcelVO> importList, boolean updateSupport);
-  }
+
+     ErpDistributionRespVO getDistribution(Long id);
+}

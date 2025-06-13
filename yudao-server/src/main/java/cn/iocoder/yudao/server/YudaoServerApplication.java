@@ -19,7 +19,8 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
     "cn.iocoder.yudao.module.erp.service.product",
     "cn.iocoder.yudao.module.erp.service.distribution",
         "cn.iocoder.yudao.module.erp.service.sale",// 新增的包路径
-        "cn.iocoder.yudao.module.erp.service.wholesale"// 新增的包路径
+        "cn.iocoder.yudao.module.erp.service.wholesale",// 新增的包路径
+        "cn.iocoder.yudao.module.erp.service.dropship"// 新增的包路径
 })
 public class YudaoServerApplication {
 

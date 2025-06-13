@@ -353,4 +353,6 @@ public interface ErrorCodeConstants {
     ErrorCode DISTRIBUTION_SALESPERSON_NOT_EXISTS = new ErrorCode(1_030_104_016, "销售人员({})不存在"); // 新增
     ErrorCode DISTRIBUTION_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_104_017, "客户({})不存在"); // 新增
 
+    ErrorCode DISTRIBUTION_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_104_007, "代发记录({})采购已审核，无法修改");
+    ErrorCode DISTRIBUTION_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_104_008, "代发记录({})销售已审核，无法修改");
 }

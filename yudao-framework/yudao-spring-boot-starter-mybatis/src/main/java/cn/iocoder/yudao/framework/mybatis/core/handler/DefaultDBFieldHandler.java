@@ -61,84 +61,6 @@ public class DefaultDBFieldHandler implements MetaObjectHandler {
         }
     }
 
-    // ... 其他代码保持不变 ...
-
-//    @Override
-//    public void insertFill(MetaObject metaObject) {
-//        if (Objects.nonNull(metaObject) && metaObject.getOriginalObject() instanceof BaseDO) {
-//            BaseDO baseDO = (BaseDO) metaObject.getOriginalObject();
-//
-//            LocalDateTime current = LocalDateTime.now();
-//            // 创建时间为空，则以当前时间为插入时间
-//            if (Objects.isNull(baseDO.getCreateTime())) {
-//                baseDO.setCreateTime(current);
-//            }
-//            // 更新时间为空，则以当前时间为更新时间
-//            if (Objects.isNull(baseDO.getUpdateTime())) {
-//                baseDO.setUpdateTime(current);
-//            }
-//
-//            Long userId = WebFrameworkUtils.getLoginUserId();
-//            String username = SecurityFrameworkUtils.getLoginUser().getInfo().get();
-//            System.out.println("hhhhhh"+username);
-//
-//            if (Objects.nonNull(userId) && Objects.isNull(baseDO.getCreator())) {
-//                baseDO.setCreator(username);
-//            }
-//
-//
-//            // 当前登录用户不为空，更新人为空，则当前登录用户为更新人
-//            if (Objects.nonNull(userId) && Objects.isNull(baseDO.getUpdater())) {
-//                baseDO.setUpdater(username);
-//            }
-//
-//            // 设置创建人ID
-////            if (Objects.nonNull(userId) && Objects.isNull(baseDO.getCreator())) {
-////                //baseDO.setCreator(userId.toString());
-////                baseDO.setCreator("天才");
-////            }
-////            // 设置创建人用户名
-////            if (Objects.nonNull(username) && Objects.isNull(baseDO.getCreator())) {
-////                //baseDO.setCreator(username);
-////                baseDO.setCreator("天才");
-////            }
-//
-//            // 设置更新人ID
-////            if (Objects.nonNull(userId) && Objects.isNull(baseDO.getUpdater())) {
-////                baseDO.setUpdater(userId.toString());
-////                baseDO.setUpdater(userId.toString());
-////            }
-////            // 设置更新人用户名
-////            if (Objects.nonNull(username) && Objects.isNull(baseDO.getUpdater())) {
-////                baseDO.setUpdater(username);
-////                baseDO.setUpdater(username);
-////            }
-//        }
-//    }
-
-//    @Override
-//    public void insertFill(MetaObject metaObject) {
-//        if (Objects.nonNull(metaObject) && metaObject.getOriginalObject() instanceof BaseDO) {
-//            BaseDO baseDO = (BaseDO) metaObject.getOriginalObject();
-//
-//            LocalDateTime current = LocalDateTime.now();
-//            // ... 时间设置代码保持不变 ...
-//
-//            Long userId = WebFrameworkUtils.getLoginUserId();
-//            if (Objects.nonNull(userId)) {
-//                // 通过AdminUserApi获取username
-//                String username = adminUserApi.getUser(userId).getNickname();
-//
-//                if (Objects.isNull(baseDO.getCreator())) {
-//                    baseDO.setCreator(username);
-//                }
-//                if (Objects.isNull(baseDO.getUpdater())) {
-//                    baseDO.setUpdater(username);
-//                }
-//            }
-//        }
-//    }
-
 
 
 // ... 其他代码保持不变 ...
@@ -155,7 +77,8 @@ public class DefaultDBFieldHandler implements MetaObjectHandler {
         Object modifier = getFieldValByName("updater", metaObject);
         Long userId = WebFrameworkUtils.getLoginUserId();
         if (Objects.nonNull(userId) && Objects.isNull(modifier)) {
-            setFieldValByName("updater", userId.toString(), metaObject);
+            String username = WebFrameworkUtils.getUsernameById(userId);
+            setFieldValByName("updater",username, metaObject);
         }
     }
 }

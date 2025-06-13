@@ -49,8 +49,8 @@ public class ErpDistributionRespVO {
     @Schema(description = "备注信息", example = "备注")
     private String remark;
 
-    //@Schema(description = "组品编号", example = "1")
-    //private Long comboProductId;
+    @Schema(description = "组品编号", example = "1")
+    private Long comboProductId;
 
     @Schema(description = "组品编号", example = "CP20240001")
     private String comboProductNo;
