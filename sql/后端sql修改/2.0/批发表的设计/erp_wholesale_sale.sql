@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 25/05/2025 17:56:04
+ Date: 13/06/2025 16:29:10
 */
 
 SET NAMES utf8mb4;
@@ -50,15 +50,10 @@ CREATE TABLE `erp_wholesale_sale`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `sale_price_id`(`sale_price_id` ASC) USING BTREE,
   CONSTRAINT `erp_wholesale_sale_ibfk_1` FOREIGN KEY (`sale_price_id`) REFERENCES `erp_sale_price` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发销售表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发销售表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_sale
 -- ----------------------------
-INSERT INTO `erp_wholesale_sale` VALUES (17, 18, NULL, '帅哥', '帅哥', 1.00, 1.00, 15.00, 3.00, 15.00, 1, b'0', '1', '2025-05-22 00:53:28', '1', '2025-05-22 00:53:28', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_sale` VALUES (18, 19, NULL, '帅哥', '天才', 2.00, 1.00, 15.00, 1.00, 14.00, 1, b'0', '1', '2025-05-22 22:47:03', '1', '2025-05-22 22:47:03', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_sale` VALUES (19, 20, NULL, '帅哥', '天才', 2.00, 1.00, 45.00, 1.00, 18.00, 1, b'0', '1', '2025-05-22 23:06:31', '1', '2025-05-22 23:06:40', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_sale` VALUES (20, 21, NULL, '帅哥', '天才', 2.00, 1.00, 35.00, 3.00, 16.00, 1, b'0', '1', '2025-05-22 23:49:35', '1', '2025-05-22 23:49:35', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_sale` VALUES (21, 22, NULL, '帅哥', '天才', 2.00, 1.00, 35.00, 5.00, 16.00, 1, b'0', '1', '2025-05-22 23:55:05', '1', '2025-05-23 00:44:53', 30, NULL, NULL, NULL, 20, '出货备注2', '中转人员2', NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -54,8 +54,8 @@ public class ErpWholesaleRespVO {
     private String saleRemark;
 
     // 来自 ErpWholesalePurchaseDO
-//    @Schema(description = "组品编号", example = "1")
-//    private Long comboProductId;
+    @Schema(description = "组品编号", example = "1")
+    private Long comboProductId;
     @Schema(description = "组品编号", example = "CP20240001")
     private String comboProductNo;
 

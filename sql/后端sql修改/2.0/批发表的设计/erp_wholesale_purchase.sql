@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 25/05/2025 17:55:56
+ Date: 13/06/2025 16:29:00
 */
 
 SET NAMES utf8mb4;
@@ -47,17 +47,11 @@ CREATE TABLE `erp_wholesale_purchase`  (
   `purchase_approval_time` datetime NULL DEFAULT NULL COMMENT '批发采购审批时间',
   `purchase_unapprove_time` datetime NULL DEFAULT NULL COMMENT '批发采购反审批时间',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `combo_product_id`(`combo_product_id` ASC) USING BTREE,
-  CONSTRAINT `erp_wholesale_purchase_ibfk_1` FOREIGN KEY (`combo_product_id`) REFERENCES `erp_combo_product` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发采购表' ROW_FORMAT = DYNAMIC;
+  INDEX `combo_product_id`(`combo_product_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 36 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批发采购表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of erp_wholesale_purchase
 -- ----------------------------
-INSERT INTO `erp_wholesale_purchase` VALUES (18, 18, 35, '123', '123', 18.00, 1.00, 15.00, 6.00, 40.00, 1, b'0', '1', '2025-05-22 00:53:28', '1', '2025-05-22 00:53:28', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_purchase` VALUES (19, 19, 35, '123', '123', 18.00, 1.00, 15.00, 1.00, 35.00, 1, b'0', '1', '2025-05-22 22:47:03', '1', '2025-05-22 22:47:03', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_purchase` VALUES (20, 20, 35, '123', '123', 18.00, 1.00, 45.00, 1.00, 101.00, 1, b'0', '1', '2025-05-22 23:06:30', '1', '2025-05-22 23:06:40', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_purchase` VALUES (21, 21, 35, '123', '123', 18.00, 2.00, 35.00, 2.00, 75.00, 1, b'0', '1', '2025-05-22 23:49:35', '1', '2025-05-22 23:49:35', 30, NULL, NULL, NULL, 10, NULL, NULL, NULL);
-INSERT INTO `erp_wholesale_purchase` VALUES (22, 22, 35, '123', '123', 18.00, 1.00, 35.00, 2.00, 73.00, 1, b'0', '1', '2025-05-22 23:55:05', '1', '2025-05-23 00:44:24', 30, NULL, NULL, NULL, 20, '	\n采购备注2', NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

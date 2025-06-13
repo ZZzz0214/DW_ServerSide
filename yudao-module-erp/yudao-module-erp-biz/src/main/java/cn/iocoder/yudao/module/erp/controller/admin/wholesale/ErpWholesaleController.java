@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.common.pojo.*;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
@@ -21,17 +23,21 @@ import cn.iocoder.yudao.module.erp.service.wholesale.ErpWholesaleSaleESRepositor
 import cn.iocoder.yudao.module.erp.service.wholesale.ErpWholesaleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -95,205 +101,98 @@ public class ErpWholesaleController {
         return success(true);
     }
 
-    @GetMapping("/get2")
-    @Operation(summary = "获得批发")
-    @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
-    public CommonResult<ErpWholesaleRespVO> getWholesale2(@RequestParam("id") Long id) {
-        // 1. 获取基础信息
-        ErpWholesaleBaseDO wholesale = wholesaleService.getWholesale(id);
-        if (wholesale == null) {
-            return success(null);
-        }
-
-        // 2. 转换为RespVO
-        ErpWholesaleRespVO respVO = BeanUtils.toBean(wholesale, ErpWholesaleRespVO.class);
-
-        // 3. 获取并合并采购信息
-        ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
-        if (purchase != null) {
-            BeanUtils.copyProperties(purchase, respVO, "id");
-
-            // 通过组品ID获取组品信息并设置相关字段
-            if (purchase.getComboProductId() != null) {
-                ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
-                if (comboProduct != null) {
-                    System.out.println("组品信息: " + comboProduct);
-                    respVO.setProductName(comboProduct.getName());
-                    respVO.setShippingCode(comboProduct.getShippingCode());
-                    respVO.setPurchaser(comboProduct.getPurchaser());
-                    respVO.setSupplier(comboProduct.getSupplier());
-                    respVO.setPurchasePrice(comboProduct.getWholesalePrice());
-
-
-                    respVO.setLogisticsFee(purchase.getLogisticsFee());
-
-                    // 计算采购总额 = 出货单价（即组品表的`wholesalePrice`） * 产品数量 + 出货货拉拉费 + 出货物流费用 + 出货杂费
-                    BigDecimal totalAmount = comboProduct.getWholesalePrice()
-                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                            .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
-                            System.out.println("采购总额计算结果: " + totalAmount);
-                    respVO.setTotalPurchaseAmount(totalAmount);
-                }
-            }
-        }
-
-        // 4. 获取并合并销售信息
-        ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
-        if (sale != null) {
-            BeanUtils.copyProperties(sale, respVO, "id","otherFees","truckFee");
-            respVO.setSaleTruckFee(sale.getTruckFee());
-            respVO.setSaleLogisticsFee(sale.getLogisticsFee());
-            respVO.setSaleOtherFees(sale.getOtherFees());
-
-            // 根据客户名称和组品ID查询销售价格
-            if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
-                ErpSalePriceRespVO salePrice = salePriceService.getSalePriceByGroupProductIdAndCustomerName(
-                        purchase.getComboProductId(), sale.getCustomerName());
-                if (salePrice != null) {
-                    respVO.setSalePrice(salePrice.getWholesalePrice());
-
-                    // 计算销售总额 = 销售单价*数量 + 销售货拉拉费 + 销售物流费用 + 销售其他费用
-                    BigDecimal totalAmount = salePrice.getWholesalePrice()
-                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                            .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
-                            .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
-                    //System.out.println("销售总额计算结果: " + totalAmount);
-                    respVO.setTotalSaleAmount(totalAmount);
-                }
-            }
-        }
-
-        return success(respVO);
-    }
+//    @GetMapping("/get2")
+//    @Operation(summary = "获得批发")
+//    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+//    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+//    public CommonResult<ErpWholesaleRespVO> getWholesale2(@RequestParam("id") Long id) {
+//        // 1. 获取基础信息
+//        ErpWholesaleBaseDO wholesale = wholesaleService.getWholesale(id);
+//        if (wholesale == null) {
+//            return success(null);
+//        }
+//
+//        // 2. 转换为RespVO
+//        ErpWholesaleRespVO respVO = BeanUtils.toBean(wholesale, ErpWholesaleRespVO.class);
+//
+//        // 3. 获取并合并采购信息
+//        ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+//        if (purchase != null) {
+//            BeanUtils.copyProperties(purchase, respVO, "id");
+//
+//            // 通过组品ID获取组品信息并设置相关字段
+//            if (purchase.getComboProductId() != null) {
+//                ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+//                if (comboProduct != null) {
+//                    System.out.println("组品信息: " + comboProduct);
+//                    respVO.setProductName(comboProduct.getName());
+//                    respVO.setShippingCode(comboProduct.getShippingCode());
+//                    respVO.setPurchaser(comboProduct.getPurchaser());
+//                    respVO.setSupplier(comboProduct.getSupplier());
+//                    respVO.setPurchasePrice(comboProduct.getWholesalePrice());
+//
+//
+//                    respVO.setLogisticsFee(purchase.getLogisticsFee());
+//
+//                    // 计算采购总额 = 出货单价（即组品表的`wholesalePrice`） * 产品数量 + 出货货拉拉费 + 出货物流费用 + 出货杂费
+//                    BigDecimal totalAmount = comboProduct.getWholesalePrice()
+//                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
+//                            .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
+//                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
+//                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
+//                            System.out.println("采购总额计算结果: " + totalAmount);
+//                    respVO.setTotalPurchaseAmount(totalAmount);
+//                }
+//            }
+//        }
+//
+//        // 4. 获取并合并销售信息
+//        ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
+//        if (sale != null) {
+//            BeanUtils.copyProperties(sale, respVO, "id","otherFees","truckFee");
+//            respVO.setSaleTruckFee(sale.getTruckFee());
+//            respVO.setSaleLogisticsFee(sale.getLogisticsFee());
+//            respVO.setSaleOtherFees(sale.getOtherFees());
+//
+//            // 根据客户名称和组品ID查询销售价格
+//            if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
+//                ErpSalePriceRespVO salePrice = salePriceService.getSalePriceByGroupProductIdAndCustomerName(
+//                        purchase.getComboProductId(), sale.getCustomerName());
+//                if (salePrice != null) {
+//                    respVO.setSalePrice(salePrice.getWholesalePrice());
+//
+//                    // 计算销售总额 = 销售单价*数量 + 销售货拉拉费 + 销售物流费用 + 销售其他费用
+//                    BigDecimal totalAmount = salePrice.getWholesalePrice()
+//                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
+//                            .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
+//                            .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
+//                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+//                    //System.out.println("销售总额计算结果: " + totalAmount);
+//                    respVO.setTotalSaleAmount(totalAmount);
+//                }
+//            }
+//        }
+//
+//        return success(respVO);
+//    }
 
     @GetMapping("/get")
     @Operation(summary = "获得批发")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
     public CommonResult<ErpWholesaleRespVO> getWholesale(@RequestParam("id") Long id) {
-        // 1. 从ES获取基础信息
-        Optional<ErpWholesaleBaseESDO> baseOpt = wholesaleBaseESRepository.findById(id);
-        if (!baseOpt.isPresent()) {
+        ErpWholesaleRespVO wholesale = wholesaleService.getWholesale(id);
+        if (wholesale == null) {
             return success(null);
         }
-        ErpWholesaleBaseESDO baseES = baseOpt.get();
-
-        // 2. 转换为RespVO
-        ErpWholesaleRespVO respVO = BeanUtils.toBean(baseES, ErpWholesaleRespVO.class);
-        System.out.println("基础信息: " + baseES);
-        System.out.println("转换后的RespVO: " + respVO);
-        System.out.println("转换后的RespVO: " + respVO.getSaleAfterSalesSituation());
-
-        // 3. 从ES获取并合并采购信息
-        Optional<ErpWholesalePurchaseESDO> purchaseOpt = wholesalePurchaseESRepository.findByBaseId(id);
-        if (purchaseOpt.isPresent()) {
-            ErpWholesalePurchaseESDO purchaseES = purchaseOpt.get();
-            BeanUtils.copyProperties(purchaseES, respVO, "id");
-            System.out.println("采购转换后的RespVO: " + respVO.getSaleAfterSalesSituation());
-
-            // 通过组品ID获取组品信息并设置相关字段
-            if (purchaseES.getComboProductId() != null) {
-                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(purchaseES.getComboProductId());
-                if (comboProductOpt.isPresent()) {
-                    ErpComboProductES comboProduct = comboProductOpt.get();
-                    respVO.setProductName(comboProduct.getName());
-                    respVO.setShippingCode(comboProduct.getShippingCode());
-                    respVO.setPurchaser(comboProduct.getPurchaser());
-                    respVO.setSupplier(comboProduct.getSupplier());
-                    respVO.setPurchasePrice(comboProduct.getWholesalePrice());
-
-                    // 计算采购运费
-                    //BigDecimal shippingFee = calculateShippingFee(comboProduct, baseES.getProductQuantity());
-                    respVO.setLogisticsFee(purchaseES.getLogisticsFee());
-
-                    // 计算采购总额
-                    BigDecimal totalAmount = comboProduct.getWholesalePrice()
-                            .multiply(new BigDecimal(baseES.getProductQuantity()))
-                            .add(purchaseES.getTruckFee() != null ? purchaseES.getTruckFee() : BigDecimal.ZERO)
-                            .add(purchaseES.getLogisticsFee() != null ? purchaseES.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(purchaseES.getOtherFees() != null ? purchaseES.getOtherFees() : BigDecimal.ZERO);
-                    respVO.setTotalPurchaseAmount(totalAmount);
-                }
-            }
-        }
-
-        // 4. 从ES获取并合并销售信息
-        Optional<ErpWholesaleSaleESDO> saleOpt = wholesaleSaleESRepository.findByBaseId(id);
-        if (saleOpt.isPresent()) {
-            ErpWholesaleSaleESDO saleES = saleOpt.get();
-            BeanUtils.copyProperties(saleES, respVO, "id","otherFees","truckFee","logisticsFee");
-            System.out.println("销售转换后的RespVO: " + respVO.getSaleAfterSalesSituation());
-            respVO.setSaleTruckFee(saleES.getTruckFee());
-            respVO.setSaleLogisticsFee(saleES.getLogisticsFee());
-            respVO.setSaleOtherFees(saleES.getOtherFees());
-
-            // 根据客户名称和组品ID查询销售价格
-            Optional<ErpWholesalePurchaseESDO> purchaseOptForSale = wholesalePurchaseESRepository.findByBaseId(id);
-            if (saleES.getCustomerName() != null && purchaseOptForSale.isPresent() &&
-                purchaseOptForSale.get().getComboProductId() != null) {
-
-                Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                        purchaseOptForSale.get().getComboProductId(), saleES.getCustomerName());
-                if (salePriceOpt.isPresent()) {
-                    ErpSalePriceESDO salePrice = salePriceOpt.get();
-                    respVO.setSalePrice(salePrice.getWholesalePrice());
-
-                    // 计算销售总额
-                    BigDecimal totalAmount = salePrice.getWholesalePrice()
-                            .multiply(new BigDecimal(baseES.getProductQuantity()))
-                            .add(saleES.getTruckFee() != null ? saleES.getTruckFee() : BigDecimal.ZERO)
-                            .add(saleES.getLogisticsFee() != null ? saleES.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(saleES.getOtherFees() != null ? saleES.getOtherFees() : BigDecimal.ZERO);
-                    respVO.setTotalSaleAmount(totalAmount);
-                }
-            }
-        }
-
-        return success(respVO);
+        return success(wholesale);
     }
 
-    // 运费计算方法
-//    private BigDecimal calculateShippingFee(ErpComboProductES comboProduct, Integer quantity) {
-//        BigDecimal shippingFee = BigDecimal.ZERO;
-//        switch (comboProduct.getShippingFeeType()) {
-//            case 0: // 固定运费
-//                shippingFee = comboProduct.getFixedShippingFee();
-//                break;
-//            case 1: // 按件计费
-//                int additionalQuantity = comboProduct.getAdditionalItemQuantity();
-//                BigDecimal additionalPrice = comboProduct.getAdditionalItemPrice();
-//                if (additionalQuantity > 0) {
-//                    int additionalUnits = (int) Math.ceil((double) quantity / additionalQuantity);
-//                    shippingFee = additionalPrice.multiply(new BigDecimal(additionalUnits));
-//                }
-//                break;
-//            case 2: // 按重计费
-//                BigDecimal productWeight = comboProduct.getWeight();
-//                BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
-//                if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
-//                    shippingFee = comboProduct.getFirstWeightPrice();
-//                } else {
-//                    BigDecimal additionalWeight = totalWeight.subtract(comboProduct.getFirstWeight());
-//                    BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 0, BigDecimal.ROUND_UP);
-//                    shippingFee = comboProduct.getFirstWeightPrice().add(
-//                            comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
-//                    );
-//                }
-//                break;
-//        }
-//        return shippingFee;
-//    }
 
     @GetMapping("/page")
     @Operation(summary = "获得批发分页")
     @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
     public CommonResult<PageResult<ErpWholesaleRespVO>> getWholesalePage(@Valid ErpWholesalePageReqVO pageReqVO) {
-
-
         PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
         System.out.println("pageResult:" + pageResult);
         return success(pageResult);
@@ -506,98 +405,98 @@ public class ErpWholesaleController {
         return success(result);
     }
         // 获取采购详情
-    @GetMapping("/purchase/get2")
-    @Operation(summary = "获得批发采购详情")
-    @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
-    public CommonResult<ErpWholesalePurchaseAuditVO> getWholesalePurchase2(@RequestParam("id") Long id) {
-        // 1. 获取基础信息
-        ErpWholesaleBaseDO wholesale = wholesaleService.getWholesale(id);
-        if (wholesale == null) {
-            return success(null);
-        }
-
-        // 2. 转换为ErpWholesalePurchaseAuditVO
-        ErpWholesalePurchaseAuditVO vo = new ErpWholesalePurchaseAuditVO();
-        BeanUtils.copyProperties(wholesale, vo);
-
-        // 3. 获取并合并采购信息
-        ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
-        if (purchase != null) {
-            BeanUtils.copyProperties(purchase, vo, "id");
-
-            // 通过组品ID获取组品信息并设置相关字段
-            if (purchase.getComboProductId() != null) {
-                ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
-                if (comboProduct != null) {
-                    vo.setProductName(comboProduct.getName());
-                    vo.setShippingCode(comboProduct.getShippingCode());
-                    vo.setPurchaser(comboProduct.getPurchaser());
-                    vo.setSupplier(comboProduct.getSupplier());
-                    vo.setPurchasePrice(comboProduct.getWholesalePrice());
-
-
-                    vo.setLogisticsFee(purchase.getLogisticsFee());
-                    // 计算采购总额
-                    BigDecimal totalAmount = comboProduct.getWholesalePrice()
-                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                            .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
-                    vo.setTotalPurchaseAmount(totalAmount);
-                    System.out.println("成功设置采购总额："+vo.getTotalPurchaseAmount());
-                }
-            }
-        }
-
-        return success(vo);
-    }
-
-    // 获取销售详情
-    @GetMapping("/sale/get2")
-    @Operation(summary = "获得批发销售详情")
-    @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
-    public CommonResult<ErpWholesaleSaleAuditVO> getWholesaleSale2(@RequestParam("id") Long id) {
-        // 1. 获取基础信息
-        ErpWholesaleBaseDO wholesale = wholesaleService.getWholesale(id);
-        if (wholesale == null) {
-            return success(null);
-        }
-
-        // 2. 转换为ErpWholesaleSaleAuditVO
-        ErpWholesaleSaleAuditVO vo = new ErpWholesaleSaleAuditVO();
-        BeanUtils.copyProperties(wholesale, vo);
-
-        // 3. 获取并合并销售信息
-        ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
-        if (sale != null) {
-            BeanUtils.copyProperties(sale, vo, "id");
-            vo.setSaleTruckFee(sale.getTruckFee());
-            vo.setSaleOtherFees(sale.getOtherFees());
-
-            // 根据客户名称和组品ID查询销售价格
-            ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
-            if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
-                ErpSalePriceRespVO salePrice = salePriceService.getSalePriceByGroupProductIdAndCustomerName(
-                        purchase.getComboProductId(), sale.getCustomerName());
-                if (salePrice != null) {
-                    vo.setSalePrice(salePrice.getWholesalePrice());
-
-                    // 计算销售总额 = 销售单价*数量 + 销售货拉拉费 + 销售物流费用 + 销售其他费用
-                    BigDecimal totalAmount = salePrice.getWholesalePrice()
-                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                            .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
-                            .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
-                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
-                    System.out.println("销售总额计算结果: " + totalAmount);
-                    vo.setTotalSaleAmount(totalAmount);
-                }
-            }
-        }
-
-        return success(vo);
-    }
+//    @GetMapping("/purchase/get2")
+//    @Operation(summary = "获得批发采购详情")
+//    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+//    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+//    public CommonResult<ErpWholesalePurchaseAuditVO> getWholesalePurchase2(@RequestParam("id") Long id) {
+//        // 1. 获取基础信息
+//        ErpWholesaleRespVO wholesale = wholesaleService.getWholesale(id);
+//        if (wholesale == null) {
+//            return success(null);
+//        }
+//
+//        // 2. 转换为ErpWholesalePurchaseAuditVO
+//        ErpWholesalePurchaseAuditVO vo = new ErpWholesalePurchaseAuditVO();
+//        BeanUtils.copyProperties(wholesale, vo);
+//
+//        // 3. 获取并合并采购信息
+//        ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+//        if (purchase != null) {
+//            BeanUtils.copyProperties(purchase, vo, "id");
+//
+//            // 通过组品ID获取组品信息并设置相关字段
+//            if (purchase.getComboProductId() != null) {
+//                ErpComboProductDO comboProduct = comboProductService.getCombo(purchase.getComboProductId());
+//                if (comboProduct != null) {
+//                    vo.setProductName(comboProduct.getName());
+//                    vo.setShippingCode(comboProduct.getShippingCode());
+//                    vo.setPurchaser(comboProduct.getPurchaser());
+//                    vo.setSupplier(comboProduct.getSupplier());
+//                    vo.setPurchasePrice(comboProduct.getWholesalePrice());
+//
+//
+//                    vo.setLogisticsFee(purchase.getLogisticsFee());
+//                    // 计算采购总额
+//                    BigDecimal totalAmount = comboProduct.getWholesalePrice()
+//                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
+//                            .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
+//                            .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
+//                            .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
+//                    vo.setTotalPurchaseAmount(totalAmount);
+//                    System.out.println("成功设置采购总额："+vo.getTotalPurchaseAmount());
+//                }
+//            }
+//        }
+//
+//        return success(vo);
+//    }
+//
+//    // 获取销售详情
+//    @GetMapping("/sale/get2")
+//    @Operation(summary = "获得批发销售详情")
+//    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+//    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+//    public CommonResult<ErpWholesaleSaleAuditVO> getWholesaleSale2(@RequestParam("id") Long id) {
+//        // 1. 获取基础信息
+//        ErpWholesaleBaseDO wholesale = wholesaleService.getWholesale(id);
+//        if (wholesale == null) {
+//            return success(null);
+//        }
+//
+//        // 2. 转换为ErpWholesaleSaleAuditVO
+//        ErpWholesaleSaleAuditVO vo = new ErpWholesaleSaleAuditVO();
+//        BeanUtils.copyProperties(wholesale, vo);
+//
+//        // 3. 获取并合并销售信息
+//        ErpWholesaleSaleDO sale = saleMapper.selectByBaseId(id);
+//        if (sale != null) {
+//            BeanUtils.copyProperties(sale, vo, "id");
+//            vo.setSaleTruckFee(sale.getTruckFee());
+//            vo.setSaleOtherFees(sale.getOtherFees());
+//
+//            // 根据客户名称和组品ID查询销售价格
+//            ErpWholesalePurchaseDO purchase = purchaseMapper.selectByBaseId(id);
+//            if (sale.getCustomerName() != null && purchase != null && purchase.getComboProductId() != null) {
+//                ErpSalePriceRespVO salePrice = salePriceService.getSalePriceByGroupProductIdAndCustomerName(
+//                        purchase.getComboProductId(), sale.getCustomerName());
+//                if (salePrice != null) {
+//                    vo.setSalePrice(salePrice.getWholesalePrice());
+//
+//                    // 计算销售总额 = 销售单价*数量 + 销售货拉拉费 + 销售物流费用 + 销售其他费用
+//                    BigDecimal totalAmount = salePrice.getWholesalePrice()
+//                            .multiply(new BigDecimal(wholesale.getProductQuantity()))
+//                            .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
+//                            .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
+//                            .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+//                    System.out.println("销售总额计算结果: " + totalAmount);
+//                    vo.setTotalSaleAmount(totalAmount);
+//                }
+//            }
+//        }
+//
+//        return success(vo);
+//    }
 
 
     @GetMapping("/purchase/get")
@@ -606,53 +505,63 @@ public class ErpWholesaleController {
     @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
     public CommonResult<ErpWholesalePurchaseAuditVO> getWholesalePurchase(@RequestParam("id") Long id) {
         try {
-            // 1. 从ES获取基础信息
-            Optional<ErpWholesaleBaseESDO> baseOpt = wholesaleBaseESRepository.findById(id);
-            if (!baseOpt.isPresent()) {
-                return success(null);
-            }
-            ErpWholesaleBaseESDO wholesale = baseOpt.get();
 
-            // 2. 转换为VO对象
-            ErpWholesalePurchaseAuditVO vo = BeanUtils.toBean(wholesale, ErpWholesalePurchaseAuditVO.class);
+            ErpWholesaleRespVO wholesale = wholesaleService.getWholesale(id);
+            if (wholesale == null) {
+            return success(null);
+        }
 
-            // 3. 从ES获取并合并采购信息
-            Optional<ErpWholesalePurchaseESDO> purchaseOpt = wholesalePurchaseESRepository.findByBaseId(id);
+           //  2. 转换为ErpWholesalePurchaseAuditVO
+        ErpWholesalePurchaseAuditVO vo = new ErpWholesalePurchaseAuditVO();
+        BeanUtils.copyProperties(wholesale, vo);
 
-            if (purchaseOpt.isPresent()) {
-                ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
-                System.out.println("售后查看："+purchase);
-                BeanUtils.copyProperties(purchase, vo, "id");
-
-                // 通过组品ID从ES获取组品信息并设置相关字段
-                if (purchase.getComboProductId() != null) {
-                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(purchase.getComboProductId());
-                    if (comboProductOpt.isPresent()) {
-                        ErpComboProductES comboProduct = comboProductOpt.get();
-                        vo.setProductName(comboProduct.getName());
-                        vo.setShippingCode(comboProduct.getShippingCode());
-                        vo.setPurchaser(comboProduct.getPurchaser());
-                        vo.setSupplier(comboProduct.getSupplier());
-                        vo.setPurchasePrice(comboProduct.getWholesalePrice());
-
-
-                        vo.setLogisticsFee(purchase.getLogisticsFee());
-
-                        // 计算采购总额
-                        BigDecimal totalAmount = comboProduct.getWholesalePrice()
-                                .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                                .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
-                                .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
-                                .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
-                        vo.setTotalPurchaseAmount(totalAmount);
-                    }
-                }
-            }
+//            // 1. 从ES获取基础信息
+//            Optional<ErpWholesaleBaseESDO> baseOpt = wholesaleBaseESRepository.findById(id);
+//            if (!baseOpt.isPresent()) {
+//                return success(null);
+//            }
+//            ErpWholesaleBaseESDO wholesale = baseOpt.get();
+//
+//            // 2. 转换为VO对象
+//            ErpWholesalePurchaseAuditVO vo = BeanUtils.toBean(wholesale, ErpWholesalePurchaseAuditVO.class);
+//
+//            // 3. 从ES获取并合并采购信息
+//            Optional<ErpWholesalePurchaseESDO> purchaseOpt = wholesalePurchaseESRepository.findByBaseId(id);
+//
+//            if (purchaseOpt.isPresent()) {
+//                ErpWholesalePurchaseESDO purchase = purchaseOpt.get();
+//                System.out.println("售后查看："+purchase);
+//                BeanUtils.copyProperties(purchase, vo, "id");
+//
+//                // 通过组品ID从ES获取组品信息并设置相关字段
+//                if (purchase.getComboProductId() != null) {
+//                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(purchase.getComboProductId());
+//                    if (comboProductOpt.isPresent()) {
+//                        ErpComboProductES comboProduct = comboProductOpt.get();
+//                        vo.setProductName(comboProduct.getName());
+//                        vo.setShippingCode(comboProduct.getShippingCode());
+//                        vo.setPurchaser(comboProduct.getPurchaser());
+//                        vo.setSupplier(comboProduct.getSupplier());
+//                        vo.setPurchasePrice(comboProduct.getWholesalePrice());
+//
+//
+//                        vo.setLogisticsFee(purchase.getLogisticsFee());
+//
+//                        // 计算采购总额
+//                        BigDecimal totalAmount = comboProduct.getWholesalePrice()
+//                                .multiply(new BigDecimal(wholesale.getProductQuantity()))
+//                                .add(purchase.getTruckFee() != null ? purchase.getTruckFee() : BigDecimal.ZERO)
+//                                .add(purchase.getLogisticsFee() != null ? purchase.getLogisticsFee() : BigDecimal.ZERO)
+//                                .add(purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO);
+//                        vo.setTotalPurchaseAmount(totalAmount);
+//                    }
+//                }
+//            }
 
             return success(vo);
         } catch (Exception e) {
             System.out.println("ES查询失败，回退到数据库查询: " + e.getMessage());
-            return getWholesalePurchaseFromDB(id);
+            return null;
         }
     }
     @GetMapping("/sale/get")
@@ -661,63 +570,74 @@ public class ErpWholesaleController {
     @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
     public CommonResult<ErpWholesaleSaleAuditVO> getWholesaleSale(@RequestParam("id") Long id) {
         try {
-            // 1. 从ES获取基础信息
-            Optional<ErpWholesaleBaseESDO> baseOpt = wholesaleBaseESRepository.findById(id);
-            if (!baseOpt.isPresent()) {
-                return success(null);
-            }
-            ErpWholesaleBaseESDO wholesale = baseOpt.get();
 
-            // 2. 转换为VO对象
-            ErpWholesaleSaleAuditVO vo = BeanUtils.toBean(wholesale, ErpWholesaleSaleAuditVO.class);
+                    // 1. 获取基础信息
+            ErpWholesaleRespVO wholesale = wholesaleService.getWholesale(id);
+        if (wholesale == null) {
+            return success(null);
+        }
 
-            // 3. 从ES获取并合并销售信息
-            Optional<ErpWholesaleSaleESDO> saleOpt = wholesaleSaleESRepository.findByBaseId(id);
-            if (saleOpt.isPresent()) {
-                ErpWholesaleSaleESDO sale = saleOpt.get();
-                BeanUtils.copyProperties(sale, vo, "id");
-                vo.setSaleOtherFees(sale.getOtherFees());
-                vo.setSaleLogisticsFee(sale.getLogisticsFee());
-                vo.setSaleTruckFee(sale.getTruckFee());
-
-                // 根据客户名称和组品ID从ES查询销售价格
-                Optional<ErpWholesalePurchaseESDO> purchaseOpt = wholesalePurchaseESRepository.findByBaseId(id);
-                if (sale.getCustomerName() != null && purchaseOpt.isPresent() &&
-                    purchaseOpt.get().getComboProductId() != null) {
-
-                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                            purchaseOpt.get().getComboProductId(), sale.getCustomerName());
-                    if (salePriceOpt.isPresent()) {
-                        ErpSalePriceESDO salePrice = salePriceOpt.get();
-                        vo.setSalePrice(salePrice.getWholesalePrice());
-
-                        // 计算销售总额
-                        BigDecimal totalAmount = salePrice.getWholesalePrice()
-                                .multiply(new BigDecimal(wholesale.getProductQuantity()))
-                                .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
-                                .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
-                                .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
-                        vo.setTotalSaleAmount(totalAmount);
-                    }
-                }
-            }
+        // 2. 转换为ErpWholesaleSaleAuditVO
+        ErpWholesaleSaleAuditVO vo = new ErpWholesaleSaleAuditVO();
+        BeanUtils.copyProperties(wholesale, vo);
+//
+//            // 1. 从ES获取基础信息
+//            Optional<ErpWholesaleBaseESDO> baseOpt = wholesaleBaseESRepository.findById(id);
+//            if (!baseOpt.isPresent()) {
+//                return success(null);
+//            }
+//            ErpWholesaleBaseESDO wholesale = baseOpt.get();
+//
+//            // 2. 转换为VO对象
+//            ErpWholesaleSaleAuditVO vo = BeanUtils.toBean(wholesale, ErpWholesaleSaleAuditVO.class);
+//
+//            // 3. 从ES获取并合并销售信息
+//            Optional<ErpWholesaleSaleESDO> saleOpt = wholesaleSaleESRepository.findByBaseId(id);
+//            if (saleOpt.isPresent()) {
+//                ErpWholesaleSaleESDO sale = saleOpt.get();
+//                BeanUtils.copyProperties(sale, vo, "id");
+//                vo.setSaleOtherFees(sale.getOtherFees());
+//                vo.setSaleLogisticsFee(sale.getLogisticsFee());
+//                vo.setSaleTruckFee(sale.getTruckFee());
+//
+//                // 根据客户名称和组品ID从ES查询销售价格
+//                Optional<ErpWholesalePurchaseESDO> purchaseOpt = wholesalePurchaseESRepository.findByBaseId(id);
+//                if (sale.getCustomerName() != null && purchaseOpt.isPresent() &&
+//                    purchaseOpt.get().getComboProductId() != null) {
+//
+//                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+//                            purchaseOpt.get().getComboProductId(), sale.getCustomerName());
+//                    if (salePriceOpt.isPresent()) {
+//                        ErpSalePriceESDO salePrice = salePriceOpt.get();
+//                        vo.setSalePrice(salePrice.getWholesalePrice());
+//
+//                        // 计算销售总额
+//                        BigDecimal totalAmount = salePrice.getWholesalePrice()
+//                                .multiply(new BigDecimal(wholesale.getProductQuantity()))
+//                                .add(sale.getTruckFee() != null ? sale.getTruckFee() : BigDecimal.ZERO)
+//                                .add(sale.getLogisticsFee() != null ? sale.getLogisticsFee() : BigDecimal.ZERO)
+//                                .add(sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO);
+//                        vo.setTotalSaleAmount(totalAmount);
+//                    }
+//                }
+//            }
 
             return success(vo);
         } catch (Exception e) {
             System.out.println("ES查询失败，回退到数据库查询: " + e.getMessage());
-            return getWholesaleSaleFromDB(id);
+            return null;
         }
     }
 
-    private CommonResult<ErpWholesalePurchaseAuditVO> getWholesalePurchaseFromDB(Long id) {
-        // 原有数据库查询逻辑...
-        return getWholesalePurchase2(id);
-    }
-
-    private CommonResult<ErpWholesaleSaleAuditVO> getWholesaleSaleFromDB(Long id) {
-        // 原有数据库查询逻辑...
-        return getWholesaleSale2(id);
-    }
+//    private CommonResult<ErpWholesalePurchaseAuditVO> getWholesalePurchaseFromDB(Long id) {
+//        // 原有数据库查询逻辑...
+//        return getWholesalePurchase2(id);
+//    }
+//
+//    private CommonResult<ErpWholesaleSaleAuditVO> getWholesaleSaleFromDB(Long id) {
+//        // 原有数据库查询逻辑...
+//        return getWholesaleSale2(id);
+//    }
     // 更新采购审核状态
     @PutMapping("/update-purchase-audit-status")
     @Operation(summary = "更新采购审核状态")
@@ -847,5 +767,57 @@ public class ErpWholesaleController {
 
             ExcelUtils.write(response, "已反审核批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
         }
+// ... 其他已有代码 ...
+
+        @GetMapping("/get-import-template")
+        @Operation(summary = "获得导入批发模板")
+        public void importTemplate(HttpServletResponse response) throws IOException {
+            // 手动创建导出 demo
+            List<ErpWholesaleImportExcelVO> list = Arrays.asList(
+                    ErpWholesaleImportExcelVO.builder()
+                            .no("示例订单1")
+                            .logisticsNumber("LOG-001")
+                            .receiverName("张三")
+                            .receiverPhone("13800138000")
+                            .receiverAddress("北京市朝阳区")
+                            .comboProductNo("CP-001")
+                            .productName("示例产品1")
+                            .productQuantity(10)
+                            .build(),
+                    ErpWholesaleImportExcelVO.builder()
+                            .no("示例订单2")
+                            .logisticsNumber("LOG-002")
+                            .receiverName("李四")
+                            .receiverPhone("13900139000")
+                            .receiverAddress("上海市浦东新区")
+                            .comboProductNo("CP-002")
+                            .productName("示例产品2")
+                            .productQuantity(20)
+                            .build()
+            );
+            // 输出
+            ExcelUtils.write(response, "批发导入模板.xlsx", "批发列表", ErpWholesaleImportExcelVO.class, list);
+        }
+
+        @PostMapping("/import")
+        @Operation(summary = "导入批发")
+        @Parameters({
+                @Parameter(name = "file", description = "Excel 文件", required = true),
+                @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+        })
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:import')")
+        public CommonResult<ErpWholesaleImportRespVO> importExcel(
+                @RequestParam("file") MultipartFile file,
+                @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+            try (InputStream inputStream = file.getInputStream()) {
+                List<ErpWholesaleImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleImportExcelVO.class);
+                return success(wholesaleService.importWholesaleList(list, updateSupport));
+            } catch (Exception e) {
+                throw new RuntimeException("导入失败: " + e.getMessage());
+            }
+        }
+
+
+
 
 }

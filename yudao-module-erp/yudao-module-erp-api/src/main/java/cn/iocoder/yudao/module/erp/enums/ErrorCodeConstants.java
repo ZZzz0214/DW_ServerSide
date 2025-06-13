@@ -355,4 +355,18 @@ public interface ErrorCodeConstants {
 
     ErrorCode DISTRIBUTION_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_104_007, "代发记录({})采购已审核，无法修改");
     ErrorCode DISTRIBUTION_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_104_008, "代发记录({})销售已审核，无法修改");
+    // ========== ERP 批发（1-030-105-000） ==========
+  
+    ErrorCode WHOLESALE_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_105_006, "批发记录({})采购已审核，无法修改");
+    ErrorCode WHOLESALE_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_105_007, "批发记录({})销售已审核，无法修改");
+    // ... 其他已有错误码 ...
+
+    // ========== ERP 批发导入 (1-030-105-000) ==========
+    ErrorCode WHOLESALE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_105_008, "导入批发数据不能为空");
+    ErrorCode WHOLESALE_IMPORT_NO_EXISTS = new ErrorCode(1_030_105_009, "导入失败，第{}行的批发记录编号({})已存在");
+    ErrorCode WHOLESALE_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_105_010, "客户({})不存在");
+    ErrorCode WHOLESALE_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_105_011, "组品编号({})不存在");
+
+// ... 其他已有错误码 ...
+
 }

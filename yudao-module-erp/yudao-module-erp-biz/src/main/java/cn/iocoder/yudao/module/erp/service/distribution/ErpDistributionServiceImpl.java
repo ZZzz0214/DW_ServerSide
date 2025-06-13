@@ -10,6 +10,7 @@ import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
@@ -431,6 +432,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (ErpAuditStatus.APPROVE.getStatus().equals(combined.getSaleAuditStatus())) {
             throw exception(DISTRIBUTION_UPDATE_FAIL_SALE_APPROVE, combined.getNo());
         }
+        System.out.println("查看代发的组品编号"+updateReqVO.getComboProductId());
 
         // 1.4 校验数据
         validateDistributionForCreateOrUpdate(combined.getId(), updateReqVO);
@@ -447,7 +449,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 3. 更新ES记录
         ErpDistributionCombinedESDO combinedESDO = convertCombinedToES(updateDO);
         combinedESDO.setCreator(dbCombined.getCreator());
-    combinedESDO.setCreateTime(dbCombined.getCreateTime());
+         combinedESDO.setCreateTime(dbCombined.getCreateTime());
         distributionCombinedESRepository.save(combinedESDO);
     }
 
@@ -1694,7 +1696,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             for (int i = 0; i < importList.size(); i++) {
                 ErpDistributionImportExcelVO importVO = importList.get(i);
                 try {
-
+                    String username = SecurityFrameworkUtils.getLoginUsername();
+                    LocalDateTime now = LocalDateTime.now();
                                     // 校验销售人员是否存在
                 if (StrUtil.isNotBlank(importVO.getSalesperson())) {
                     List<ErpSalespersonRespVO> salespersons = salespersonService.searchSalespersons(
@@ -1726,13 +1729,14 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     ErpDistributionCombinedDO existDistribution = existMap.get(importVO.getNo());
                     if (existDistribution == null) {
                         // 创建逻辑
-                        ErpDistributionCombinedDO combined = BeanUtils.toBean(importVO, ErpDistributionCombinedDO.class).setId(IdUtil.getSnowflakeNextId()) ;
+                        ErpDistributionCombinedDO combined = BeanUtils.toBean(importVO, ErpDistributionCombinedDO.class).setId(IdUtil.getSnowflakeNextId()).setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())  // 设置采购审核状态
+                                .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus()).setPurchaseAfterSalesStatus(30).setSaleAfterSalesStatus(30);
                         combined.setComboProductId(comboProductId);
                         if (StrUtil.isEmpty(combined.getNo())) {
                             combined.setNo(noRedisDAO.generate(ErpNoRedisDAO.DISTRIBUTION_NO_PREFIX));
                         }
                         createList.add(combined);
-                        esCreateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class));
+                        esCreateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class).setCreator(username).setCreateTime(now));
                         respVO.getCreateNames().add(combined.getNo());
                     } else if (isUpdateSupport) {
                         // 更新逻辑
@@ -1742,7 +1746,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         updateList.add(combined);
                         esUpdateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class));
                         respVO.getUpdateNames().add(combined.getNo());
-                    } else {
+                    }
+                    else {
                         throw exception(DISTRIBUTION_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
                     }
                 } catch (ServiceException ex) {

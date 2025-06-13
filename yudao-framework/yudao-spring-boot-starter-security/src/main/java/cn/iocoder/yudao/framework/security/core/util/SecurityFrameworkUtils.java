@@ -79,6 +79,12 @@ public class SecurityFrameworkUtils {
         return authentication.getPrincipal() instanceof LoginUser ? (LoginUser) authentication.getPrincipal() : null;
     }
 
+    @Nullable
+    public static String getLoginUsername() {
+        LoginUser loginUser = getLoginUser();
+        return loginUser != null ? MapUtil.getStr(loginUser.getInfo(), LoginUser.INFO_KEY_NICKNAME) : null;
+    }
+
     /**
      * 获得当前用户的编号，从上下文中
      *

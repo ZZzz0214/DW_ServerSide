@@ -4,7 +4,11 @@ package cn.iocoder.yudao.module.erp.service.wholesale;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleCombinedDO;
+
 import java.math.BigDecimal;
 
 import javax.validation.Valid;
@@ -24,13 +28,13 @@ public interface ErpWholesaleService {
     void deleteWholesale(List<Long> ids);
 
     // 根据id查询
-    ErpWholesaleBaseDO getWholesale(Long id);
+    ErpWholesaleRespVO getWholesale(Long id);
 
     // 根据id列表查询
     List<ErpWholesaleBaseDO> getWholesaleList(Collection<Long> ids);
 
     // 校验有效性
-    ErpWholesaleBaseDO validateWholesale(Long id);
+    ErpWholesaleCombinedDO validateWholesale(Long id);
 
     // 获取 VO 列表
     List<ErpWholesaleRespVO> getWholesaleVOList(Collection<Long> ids);
@@ -72,4 +76,6 @@ public interface ErpWholesaleService {
      * @param reqVO 更新信息
      */
     void updateSaleAfterSales(@Valid ErpWholesaleSaleAfterSalesUpdateReqVO reqVO);
+
+    ErpWholesaleImportRespVO importWholesaleList(List<ErpWholesaleImportExcelVO> list, Boolean updateSupport);
 }
