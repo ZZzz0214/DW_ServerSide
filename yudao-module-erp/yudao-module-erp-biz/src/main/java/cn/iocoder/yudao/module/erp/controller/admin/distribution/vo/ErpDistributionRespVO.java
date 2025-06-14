@@ -109,6 +109,9 @@ public class ErpDistributionRespVO {
     @Schema(description = "采购审批时间", example = "2023-01-01 12:00:00")
     private LocalDateTime purchaseApprovalTime;
 
+    @Schema(description = "采购售后时间", example = "2023-01-01 12:00:00")
+    private LocalDateTime purchaseAfterSalesTime;
+
     // 来自 ErpDistributionSaleDO
     @Schema(description = "销售人员", example = "销售员A")
     private String salesperson;

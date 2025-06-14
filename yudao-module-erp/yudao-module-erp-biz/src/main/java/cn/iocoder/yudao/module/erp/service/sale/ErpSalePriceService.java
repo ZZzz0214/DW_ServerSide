@@ -150,4 +150,14 @@ public interface ErpSalePriceService {
      * @return 导入结果
      */
     ErpSalePriceImportRespVO importSalePriceList(List<ErpSalePriceImportExcelVO> importList, boolean isUpdateSupport);
+
+    /**
+     * 清理缓存
+     */
+    void clearCache();
+
+    /**
+     * 手动全量同步数据到ES
+     */
+    void manualFullSyncToES();
 }

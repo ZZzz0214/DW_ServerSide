@@ -14,6 +14,8 @@ import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionPurchaseAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonPageReqVO;
@@ -259,6 +261,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         .map(this::convertCombinedToES)
                         .collect(Collectors.toList());
                 elasticsearchRestTemplate.save(combinedESList);
+                // 刷新ES索引
+                elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
             }
             System.out.println("代发订单全量同步ES数据完成");
         } catch (Exception e) {
@@ -354,6 +358,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 5. 保存到ES
         ErpDistributionCombinedESDO combinedESDO = convertCombinedToES(combinedDO);
         distributionCombinedESRepository.save(combinedESDO);
+        
+        // 6. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
 
         return id;
     }
@@ -451,6 +458,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         combinedESDO.setCreator(dbCombined.getCreator());
          combinedESDO.setCreateTime(dbCombined.getCreateTime());
         distributionCombinedESRepository.save(combinedESDO);
+        
+        // 4. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
     }
 
 
@@ -509,7 +519,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionCombinedESDO combined = combinedOpt.get();
 
         // 2. 转换为RespVO
-        ErpDistributionRespVO respVO = BeanUtils.toBean(combined, ErpDistributionRespVO.class).setOtherFees(combined.getPurchaseOtherFees());
+        ErpDistributionRespVO respVO = BeanUtils.toBean(combined, ErpDistributionRespVO.class)
+                .setOtherFees(combined.getPurchaseOtherFees())
+                .setPurchaseAfterSalesTime(combined.getPurchaseAfterSalesTime());
 
         // 3. 查询组品信息并设置到respVO
         if (combined.getComboProductId() != null) {
@@ -835,29 +847,34 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     .withSort(Sort.by(Sort.Direction.DESC, "id"));
 
             // 3. 添加查询条件
-//            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-//            if (StringUtils.isNotBlank(pageReqVO.getNo())) {
-//                boolQuery.must(QueryBuilders.matchQuery("no", pageReqVO.getNo()));
-//            }
-//            if (StringUtils.isNotBlank(pageReqVO.getLogisticsCompany())) {
-//                boolQuery.must(QueryBuilders.matchQuery("logisticsCompany", pageReqVO.getLogisticsCompany()));
-//            }
-//            if (StringUtils.isNotBlank(pageReqVO.getTrackingNumber())) {
-//                boolQuery.must(QueryBuilders.matchQuery("trackingNumber", pageReqVO.getTrackingNumber()));
-//            }
-//            if (pageReqVO.getPurchaseAuditStatus() != null) {
-//                boolQuery.must(QueryBuilders.termQuery("purchaseAuditStatus", pageReqVO.getPurchaseAuditStatus()));
-//            }
-//            if (pageReqVO.getSaleAuditStatus() != null) {
-//                boolQuery.must(QueryBuilders.termQuery("saleAuditStatus", pageReqVO.getSaleAuditStatus()));
-//            }
-//            if (pageReqVO.getPurchaseAuditStatus() != null) {
-//                boolQuery.must(QueryBuilders.termQuery("purchaseAuditStatus", pageReqVO.getPurchaseAuditStatus()));
-//            }
-//            if (pageReqVO.getSaleAuditStatus() != null) {
-//                boolQuery.must(QueryBuilders.termQuery("saleAuditStatus", pageReqVO.getSaleAuditStatus()));
-//            }
-//            queryBuilder.withQuery(boolQuery);
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            if (StrUtil.isNotBlank(pageReqVO.getNo())) {
+                boolQuery.must(QueryBuilders.matchQuery("no", pageReqVO.getNo()));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
+                boolQuery.must(QueryBuilders.matchQuery("logistics_company", pageReqVO.getLogisticsCompany()));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
+                boolQuery.must(QueryBuilders.matchQuery("tracking_number", pageReqVO.getTrackingNumber()));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
+                boolQuery.must(QueryBuilders.matchQuery("receiver_name", pageReqVO.getReceiverName()));
+            }
+            if (pageReqVO.getStatus() != null) {
+                boolQuery.must(QueryBuilders.termQuery("status", pageReqVO.getStatus()));
+            }
+            if (pageReqVO.getPurchaseAuditStatus() != null) {
+                boolQuery.must(QueryBuilders.termQuery("purchase_audit_status", pageReqVO.getPurchaseAuditStatus()));
+            }
+            if (pageReqVO.getSaleAuditStatus() != null) {
+                boolQuery.must(QueryBuilders.termQuery("sale_audit_status", pageReqVO.getSaleAuditStatus()));
+            }
+            if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
+                boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                        .gte(pageReqVO.getCreateTime()[0])
+                        .lte(pageReqVO.getCreateTime()[1]));
+            }
+            queryBuilder.withQuery(boolQuery);
             if (pageReqVO.getPageNo() > 1) {
                 return handleDeepPagination(pageReqVO, queryBuilder);
             }
@@ -874,6 +891,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     .map(SearchHit::getContent)
                     .map(combined -> {
                         ErpDistributionRespVO vo = BeanUtils.toBean(combined, ErpDistributionRespVO.class);
+                        // 设置采购其他费用
+                        vo.setOtherFees(combined.getPurchaseOtherFees());
+                        // 设置销售相关的三个字段
+                        vo.setSaleUnapproveTime(combined.getSaleUnapproveTime());
+                        vo.setSaleAfterSalesAmount(combined.getSaleAfterSalesAmount());
+                        vo.setSaleAfterSalesTime(combined.getSaleAfterSalesTime());
                         //System.out.println("转换后的VO基础信息: " + vo);
                         // 查询组品信息
                         if (combined.getComboProductId() != null) {
@@ -1081,6 +1104,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .map(SearchHit::getContent)
                 .map(combined -> {
                     ErpDistributionRespVO vo = BeanUtils.toBean(combined, ErpDistributionRespVO.class);
+                    // 设置采购其他费用
+                    vo.setOtherFees(combined.getPurchaseOtherFees());
+                    // 设置销售相关的三个字段
+                    vo.setSaleUnapproveTime(combined.getSaleUnapproveTime());
+                    vo.setSaleAfterSalesAmount(combined.getSaleAfterSalesAmount());
+                    vo.setSaleAfterSalesTime(combined.getSaleAfterSalesTime());
 
                     // 查询组品信息
                     if (combined.getComboProductId() != null) {
@@ -1425,6 +1454,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 2. 解析时间
         LocalDateTime purchaseAfterSalesTime = parseDateTime(reqVO.getPurchaseAfterSalesTime());
         LocalDateTime afterSalesTime = parseDateTime(reqVO.getAfterSalesTime());
+        
+        System.out.println("更新采购售后信息 - 原始时间字符串: " + reqVO.getPurchaseAfterSalesTime());
+        System.out.println("更新采购售后信息 - 解析后时间: " + purchaseAfterSalesTime);
 
         // 3. 更新合并表信息
         ErpDistributionCombinedESDO combined = combinedOpt.get();
@@ -1435,7 +1467,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setPurchaseAfterSalesTime(purchaseAfterSalesTime);
         distributionCombinedESRepository.save(combined);
          // 4. 同步更新数据库
-         distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+         ErpDistributionCombinedDO updateDO = BeanUtils.toBean(combined, ErpDistributionCombinedDO.class);
+         System.out.println("更新数据库前的DO对象 - purchaseAfterSalesTime: " + updateDO.getPurchaseAfterSalesTime());
+         distributionCombinedMapper.updateById(updateDO);
+         
+         // 5. 刷新ES索引
+         elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
     }
 
     @Override
@@ -1461,6 +1498,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         distributionCombinedESRepository.save(combined);
         // 4. 同步更新数据库
         distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+        
+        // 5. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
     }
 
     @Override
@@ -1493,6 +1533,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         distributionCombinedESRepository.save(combined);
          // 4. 同步更新数据库
          distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+         
+         // 5. 刷新ES索引
+         elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
 
     }
 
@@ -1786,6 +1829,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             if (CollUtil.isNotEmpty(esUpdateList)) {
                 distributionCombinedESRepository.saveAll(esUpdateList);
             }
+            
+            // 刷新ES索引
+            if (CollUtil.isNotEmpty(esCreateList) || CollUtil.isNotEmpty(esUpdateList)) {
+                elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+            }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
         }
@@ -1820,4 +1868,152 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 //            }
 //        }
 //    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpDistributionImportRespVO importPurchaseAuditList(List<ErpDistributionPurchaseAuditImportExcelVO> importList) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(DISTRIBUTION_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpDistributionImportRespVO respVO = ErpDistributionImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpDistributionPurchaseAuditImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        
+        if (CollUtil.isEmpty(noSet)) {
+            respVO.getFailureNames().put("全部", "订单编号不能为空");
+            return respVO;
+        }
+
+        // 从ES查询已存在的记录
+        List<ErpDistributionCombinedESDO> existList = distributionCombinedESRepository.findByNoIn(new ArrayList<>(noSet));
+        Map<String, ErpDistributionCombinedESDO> existMap = convertMap(existList, ErpDistributionCombinedESDO::getNo);
+
+        // 批量更新数据
+        List<ErpDistributionCombinedDO> updateList = new ArrayList<>();
+        List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
+
+        for (ErpDistributionPurchaseAuditImportExcelVO importVO : importList) {
+            try {
+                // 校验订单是否存在
+                ErpDistributionCombinedESDO existDistribution = existMap.get(importVO.getNo());
+                if (existDistribution == null) {
+                    throw exception(DISTRIBUTION_NOT_EXISTS);
+                }
+
+                // 更新采购杂费、售后审核费用和售后状况
+                existDistribution.setPurchaseOtherFees(importVO.getOtherFees());
+                existDistribution.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
+                existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                
+                // 添加到更新列表
+                ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
+                updateList.add(updateDO);
+                esUpdateList.add(existDistribution);
+                
+                respVO.getUpdateNames().add(importVO.getNo());
+            } catch (ServiceException ex) {
+                respVO.getFailureNames().put(importVO.getNo(), ex.getMessage());
+            } catch (Exception ex) {
+                respVO.getFailureNames().put(importVO.getNo(), "系统异常: " + ex.getMessage());
+            }
+        }
+
+        // 批量更新数据库
+        if (CollUtil.isNotEmpty(updateList)) {
+            updateList.forEach(distributionCombinedMapper::updateById);
+        }
+
+        // 批量更新ES
+        if (CollUtil.isNotEmpty(esUpdateList)) {
+            distributionCombinedESRepository.saveAll(esUpdateList);
+            // 刷新ES索引
+            elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+        }
+
+        return respVO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpDistributionImportRespVO importSaleAuditList(List<ErpDistributionSaleAuditImportExcelVO> importList) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(DISTRIBUTION_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpDistributionImportRespVO respVO = ErpDistributionImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpDistributionSaleAuditImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        
+        if (CollUtil.isEmpty(noSet)) {
+            respVO.getFailureNames().put("全部", "订单编号不能为空");
+            return respVO;
+        }
+
+        // 从ES查询已存在的记录
+        List<ErpDistributionCombinedESDO> existList = distributionCombinedESRepository.findByNoIn(new ArrayList<>(noSet));
+        Map<String, ErpDistributionCombinedESDO> existMap = convertMap(existList, ErpDistributionCombinedESDO::getNo);
+
+        // 批量更新数据
+        List<ErpDistributionCombinedDO> updateList = new ArrayList<>();
+        List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
+
+        for (ErpDistributionSaleAuditImportExcelVO importVO : importList) {
+            try {
+                // 校验订单是否存在
+                ErpDistributionCombinedESDO existDistribution = existMap.get(importVO.getNo());
+                if (existDistribution == null) {
+                    throw exception(DISTRIBUTION_NOT_EXISTS);
+                }
+
+                // 更新销售杂费、销售售后金额和售后状况
+                existDistribution.setSaleOtherFees(importVO.getSaleOtherFees());
+                existDistribution.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                
+                // 添加到更新列表
+                ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
+                updateList.add(updateDO);
+                esUpdateList.add(existDistribution);
+                
+                respVO.getUpdateNames().add(importVO.getNo());
+            } catch (ServiceException ex) {
+                respVO.getFailureNames().put(importVO.getNo(), ex.getMessage());
+            } catch (Exception ex) {
+                respVO.getFailureNames().put(importVO.getNo(), "系统异常: " + ex.getMessage());
+            }
+        }
+
+        // 批量更新数据库
+        if (CollUtil.isNotEmpty(updateList)) {
+            updateList.forEach(distributionCombinedMapper::updateById);
+        }
+
+        // 批量更新ES
+        if (CollUtil.isNotEmpty(esUpdateList)) {
+            distributionCombinedESRepository.saveAll(esUpdateList);
+            // 刷新ES索引
+            elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+        }
+
+        return respVO;
+    }
 }

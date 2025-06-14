@@ -1,14 +1,12 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo;
 
-
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
 @Data
-public class ErpDistributionPurchaseAuditExportVO {
+public class ErpDistributionSaleAuditOutExportVO {
 
     @ExcelProperty("订单编号")
     private String no;
@@ -43,7 +41,6 @@ public class ErpDistributionPurchaseAuditExportVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-
     @ExcelProperty("组品编号")
     private String comboProductNo;
 
@@ -65,40 +62,42 @@ public class ErpDistributionPurchaseAuditExportVO {
     @ExcelProperty("售后时间")
     private LocalDateTime afterSalesTime;
 
-    @ExcelProperty("采购人员")
-    private String purchaser;
+    @ExcelProperty("销售人员")
+    private String salesperson;
 
-    @ExcelProperty("供应商名")
-    private String supplier;
+    @ExcelProperty("客户名称")
+    private String customerName;
 
-    @ExcelProperty("采购单价")
-    private BigDecimal purchasePrice;
+    @ExcelProperty("出货单价")
+    private BigDecimal salePrice;
 
-    @ExcelProperty("采购运费")
-    private BigDecimal shippingFee;
+    @ExcelProperty("出货运费")
+    private BigDecimal saleShippingFee;
 
-    @ExcelProperty("采购杂费")
-    private BigDecimal otherFees;
+    @ExcelProperty("出货杂费")
+    private BigDecimal saleOtherFees;
 
-    @ExcelProperty("采购总额")
-    private BigDecimal totalPurchaseAmount;
+    @ExcelProperty("出货总额")
+    private BigDecimal totalSaleAmount;
 
-    @ExcelProperty("采购备注")
-    private String purchaseRemark;
+    @ExcelProperty("出货备注")
+    private String saleRemark;
+
+    @ExcelProperty("中转人员")
+    private String transferPerson;
 
     @ExcelProperty("创建人员")
     private String creator;
 
-    @ExcelProperty("创建时间")
+    @ExcelProperty("创建日期")
     private LocalDateTime createTime;
 
-    @ExcelProperty("采购反审核时间")
-    private LocalDateTime purchaseUnapproveTime;
+    @ExcelProperty("出货审核时间")
+    private LocalDateTime saleApprovalTime;
 
-    @ExcelProperty("采购售后金额")
-    private BigDecimal purchaseAfterSalesAmount;
+    @ExcelProperty("出货售后金额")
+    private BigDecimal saleAfterSalesAmount;
 
-    @ExcelProperty("采购售后时间")
-    private LocalDateTime purchaseAfterSalesTime;
-
+    @ExcelProperty("出货售后时间")
+    private LocalDateTime saleAfterSalesTime;
 }

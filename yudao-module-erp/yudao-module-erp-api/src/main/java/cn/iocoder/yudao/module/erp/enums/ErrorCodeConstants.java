@@ -66,7 +66,7 @@ public interface ErrorCodeConstants {
     ErrorCode SALE_ORDER_PROCESS_FAIL_EXISTS_RETURN = new ErrorCode(1_020_201_010, "反审核失败，已存在对应的销售退货单");
     // ========== ERP 销售价格 (1-030-300-000) ==========
     ErrorCode SALE_PRICE_NOT_EXISTS = new ErrorCode(1_030_300_000, "销售价格记录不存在");
-    ErrorCode SALE_PRICE_GROUP_PRODUCT_ID_REQUIRED = new ErrorCode(1_030_300_001, "组品编号不能为空");
+    ErrorCode SALE_PRICE_GROUP_PRODUCT_ID_REQUIRED = new ErrorCode(1_030_300_001, "组品编号不存在");
     ErrorCode SALE_PRICE_CUSTOMER_NAME_REQUIRED = new ErrorCode(1_030_300_002, "客户名称不能为空");
     ErrorCode SALE_PRICE_DISTRIBUTION_PRICE_REQUIRED = new ErrorCode(1_030_300_003, "代发单价不能为空");
     ErrorCode SALE_PRICE_WHOLESALE_PRICE_REQUIRED = new ErrorCode(1_030_300_004, "批发单价不能为空");
@@ -183,7 +183,6 @@ public interface ErrorCodeConstants {
     ErrorCode DISTRIBUTION_DELETE_FAIL_APPROVE = new ErrorCode(1_030_104_003, "代发记录({})已审核，无法删除");
     ErrorCode DISTRIBUTION_NOT_APPROVE = new ErrorCode(1_030_104_004, "代发记录未审核，无法操作");
 
-    // ========== ERP 批发（1-030-105-000） ==========
     // ========== ERP 批发（1-030-105-000） ==========
     ErrorCode WHOLESALE_NOT_EXISTS = new ErrorCode(1_030_105_000, "批发记录不存在");
     ErrorCode WHOLESALE_NO_EXISTS = new ErrorCode(1_030_105_001, "批发订单号已存在");
@@ -356,7 +355,7 @@ public interface ErrorCodeConstants {
     ErrorCode DISTRIBUTION_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_104_007, "代发记录({})采购已审核，无法修改");
     ErrorCode DISTRIBUTION_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_104_008, "代发记录({})销售已审核，无法修改");
     // ========== ERP 批发（1-030-105-000） ==========
-  
+
     ErrorCode WHOLESALE_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_105_006, "批发记录({})采购已审核，无法修改");
     ErrorCode WHOLESALE_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_105_007, "批发记录({})销售已审核，无法修改");
     // ... 其他已有错误码 ...
@@ -368,5 +367,7 @@ public interface ErrorCodeConstants {
     ErrorCode WHOLESALE_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_105_011, "组品编号({})不存在");
 
 // ... 其他已有错误码 ...
+
+    ErrorCode SALE_PRICE_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_300_009, "客户不存在");
 
 }

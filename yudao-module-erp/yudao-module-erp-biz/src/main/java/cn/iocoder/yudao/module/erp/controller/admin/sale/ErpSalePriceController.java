@@ -147,4 +147,20 @@ public class ErpSalePriceController {
             throw new RuntimeException("导入失败: " + e.getMessage());
         }
     }
+
+    @PostMapping("/clear-cache")
+    @Operation(summary = "清理缓存")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:update')")
+    public CommonResult<Boolean> clearCache() {
+        salePriceService.clearCache();
+        return success(true);
+    }
+
+    @PostMapping("/sync-es")
+    @Operation(summary = "手动同步数据到ES")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:update')")
+    public CommonResult<Boolean> syncToES() {
+        salePriceService.manualFullSyncToES();
+        return success(true);
+    }
 }

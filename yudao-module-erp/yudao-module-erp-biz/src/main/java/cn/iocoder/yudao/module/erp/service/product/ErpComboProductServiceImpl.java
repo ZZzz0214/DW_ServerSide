@@ -157,7 +157,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     @Override
     public void updateCombo(@Valid ErpComboSaveReqVO updateReqVO) {
         validateComboExists(updateReqVO.getId());
-        // 校验名称唯一性
+            // 校验名称唯一性
         validateComboNameUnique(updateReqVO.getName(), updateReqVO.getId());
         ErpComboProductDO updateObj = BeanUtils.toBean(updateReqVO, ErpComboProductDO.class);
         erpComboMapper.updateById(updateObj);
@@ -917,13 +917,13 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
      */
     private void syncComboToES(Long comboId) {
         try {
-            ErpComboProductDO combo = erpComboMapper.selectById(comboId);
+        ErpComboProductDO combo = erpComboMapper.selectById(comboId);
             if (combo == null) {
-                comboProductESRepository.deleteById(comboId);
+            comboProductESRepository.deleteById(comboId);
                 System.out.println("删除ES组合产品ID: " + comboId);
-            } else {
-                ErpComboProductES es = convertComboToES(combo);
-                comboProductESRepository.save(es);
+        } else {
+            ErpComboProductES es = convertComboToES(combo);
+            comboProductESRepository.save(es);
                 System.out.println("保存ES组合产品ID: " + es.getId() + ", 组合名称: " + es.getComboName());
                 
                 // 强制刷新ES索引，确保数据立即可见
@@ -1012,14 +1012,14 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
      */
     private void syncItemToES(Long itemId) {
         try {
-            ErpComboProductItemDO item = erpComboProductItemMapper.selectById(itemId);
+        ErpComboProductItemDO item = erpComboProductItemMapper.selectById(itemId);
             if (item == null) {
-                comboProductItemESRepository.deleteById(itemId);
+            comboProductItemESRepository.deleteById(itemId);
                 System.out.println("删除ES关联项ID: " + itemId);
-            } else {
-                ErpComboProductItemES es = new ErpComboProductItemES();
-                BeanUtils.copyProperties(item, es);
-                comboProductItemESRepository.save(es);
+        } else {
+            ErpComboProductItemES es = new ErpComboProductItemES();
+            BeanUtils.copyProperties(item, es);
+            comboProductItemESRepository.save(es);
                 System.out.println("保存ES关联项ID: " + es.getId() + ", 组合产品ID: " + es.getComboProductId());
                 
                 // 强制刷新ES索引，确保数据立即可见
@@ -1140,8 +1140,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         } catch (Exception e) {
             System.err.println("手动同步组合产品失败，ID: " + comboId + ", 错误: " + e.getMessage());
             e.printStackTrace();
+            }
         }
-    }
 
     /**
      * 校验组合产品名称是否唯一

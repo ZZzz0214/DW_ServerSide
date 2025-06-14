@@ -7,6 +7,7 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Document(indexName = "erp_sale_price")
@@ -74,4 +75,16 @@ public class ErpSalePriceESDO {
 
     @Field(name = "tenant_id", type = FieldType.Long)
     private Long tenantId;
+    
+    @Field(name = "create_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime createTime;
+    
+    @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime updateTime;
+    
+    @Field(name = "creator", type = FieldType.Keyword)
+    private String creator;
+    
+    @Field(name = "updater", type = FieldType.Keyword)
+    private String updater;
 }

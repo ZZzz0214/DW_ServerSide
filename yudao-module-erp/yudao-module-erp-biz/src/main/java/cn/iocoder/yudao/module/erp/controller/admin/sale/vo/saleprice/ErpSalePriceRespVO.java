@@ -4,6 +4,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboR
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.write.style.HeadFontStyle;
+import com.alibaba.excel.annotation.write.style.HeadStyle;
+import com.alibaba.excel.enums.BooleanEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -33,17 +36,20 @@ public class ErpSalePriceRespVO {
 
     @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "产品A")
     @ExcelProperty("产品名称")
+    @HeadStyle(fillForegroundColor = 10) // 10是红色背景
+    @HeadFontStyle(fontHeightInPoints = 11, bold = BooleanEnum.TRUE, color = 8) // 8是黑色字体
     private String productName;
 
     @Schema(description = "产品简称", example = "产品A简称")
     @ExcelProperty("产品简称")
+    @HeadStyle(fillForegroundColor = 10) // 10是红色背景
+    @HeadFontStyle(fontHeightInPoints = 11, bold = BooleanEnum.TRUE, color = 8) // 8是黑色字体
     private String productShortName;
 
     @Schema(description = "客户名称", example = "客户A")
     @ExcelProperty("客户名称")
+    @HeadFontStyle(fontHeightInPoints = 11, bold = BooleanEnum.TRUE, color = 8) // 8是黑色，阻止红色继承
     private String customerName;
-
-
 
     @Schema(description = "代发单价（单位：元）", example = "100.00")
     @ExcelProperty("代发单价")
@@ -57,7 +63,6 @@ public class ErpSalePriceRespVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）", example = "0")
     @ExcelProperty("运费类型")
     private Integer shippingFeeType;
@@ -65,12 +70,6 @@ public class ErpSalePriceRespVO {
     @Schema(description = "固定运费（单位：元）", example = "10.00")
     @ExcelProperty("固定运费")
     private BigDecimal fixedShippingFee;
-
-//    @Schema(description = "首件数量", example = "1")
-//    private Integer firstItemQuantity;
-//
-//    @Schema(description = "首件价格（单位：元）", example = "100.00")
-//    private BigDecimal firstItemPrice;
 
     @Schema(description = "续件数量", example = "10")
     @ExcelProperty("按件数量")
@@ -98,28 +97,23 @@ public class ErpSalePriceRespVO {
 
     @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建人员")
+    @HeadStyle(fillForegroundColor = 10) // 10是红色背景
     private String creator;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
+    @HeadStyle(fillForegroundColor = 10) // 10是红色背景
     private LocalDateTime createTime;
-
 
     @Schema(description = "关联的组品列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<ErpComboRespVO> comboList;
 
-
     @Schema(description = "产品图片", example = "https://example.com/image.jpg")
     private String productImage;
-
-
-
 
     @Schema(description = "租户编号", example = "1")
     private Long tenantId;
 
-
-    //新增字段
     @Schema(description = "原表数量", example = "100")
     private Integer originalQuantity;
 
@@ -127,6 +121,5 @@ public class ErpSalePriceRespVO {
     private String shippingCode;
 
     @Schema(description = "产品重量（单位：kg）")
-    @ExcelProperty("产品重量（单位：g）")
     private BigDecimal weight;
 }

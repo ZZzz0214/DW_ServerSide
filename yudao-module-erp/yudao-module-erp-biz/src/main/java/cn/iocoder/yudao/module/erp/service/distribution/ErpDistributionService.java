@@ -8,6 +8,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistribut
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionPurchaseAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedDO;
@@ -94,6 +96,22 @@ public interface ErpDistributionService {
      * @return 导入结果
      */
     ErpDistributionImportRespVO importDistributionList(List<ErpDistributionImportExcelVO> importList, boolean updateSupport);
+
+    /**
+     * 导入代发采购审核
+     *
+     * @param importList 导入列表
+     * @return 导入结果
+     */
+    ErpDistributionImportRespVO importPurchaseAuditList(List<ErpDistributionPurchaseAuditImportExcelVO> importList);
+
+    /**
+     * 导入代发销售审核
+     *
+     * @param importList 导入列表
+     * @return 导入结果
+     */
+    ErpDistributionImportRespVO importSaleAuditList(List<ErpDistributionSaleAuditImportExcelVO> importList);
 
      ErpDistributionRespVO getDistribution(Long id);
 }

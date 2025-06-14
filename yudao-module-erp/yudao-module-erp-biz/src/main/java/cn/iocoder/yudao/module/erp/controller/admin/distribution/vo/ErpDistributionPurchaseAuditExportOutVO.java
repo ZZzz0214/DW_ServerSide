@@ -1,6 +1,5 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo;
 
-
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
@@ -8,8 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-public class ErpDistributionPurchaseAuditExportVO {
-
+public class ErpDistributionPurchaseAuditExportOutVO {
     @ExcelProperty("订单编号")
     private String no;
 
@@ -92,13 +90,12 @@ public class ErpDistributionPurchaseAuditExportVO {
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
-    @ExcelProperty("采购反审核时间")
-    private LocalDateTime purchaseUnapproveTime;
+    @ExcelProperty("采购审核时间")
+    private LocalDateTime purchaseApprovalTime;
 
     @ExcelProperty("采购售后金额")
     private BigDecimal purchaseAfterSalesAmount;
 
     @ExcelProperty("采购售后时间")
     private LocalDateTime purchaseAfterSalesTime;
-
 }
