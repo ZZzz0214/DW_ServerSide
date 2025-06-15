@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class ErpSampleRespVO {
 
     @Schema(description = "样品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty("样品编号")
     private Long id;
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "SP001")
@@ -41,6 +40,10 @@ public class ErpSampleRespVO {
     @ExcelProperty("详细地址")
     private String address;
 
+    @Schema(description = "备注信息", example = "备注内容")
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "CP001")
     @ExcelProperty("组品编号")
     private String comboProductId;
@@ -50,7 +53,7 @@ public class ErpSampleRespVO {
     private String shippingCode;
 
     @Schema(description = "组合产品名称", example = "组合产品A")
-    @ExcelProperty("组合产品名称")
+    @ExcelProperty("产品名称")
     private String comboProductName;
 
 
@@ -71,12 +74,12 @@ public class ErpSampleRespVO {
     private Integer sampleStatus;
 
     @Schema(description = "参考", example = "参考内容")
-    @ExcelProperty("参考")
     private String reference;
 
-    @Schema(description = "备注信息", example = "备注内容")
-    @ExcelProperty("备注信息")
-    private String remark;
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    @ExcelProperty("创建人员")
+    private String creator;
+
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")

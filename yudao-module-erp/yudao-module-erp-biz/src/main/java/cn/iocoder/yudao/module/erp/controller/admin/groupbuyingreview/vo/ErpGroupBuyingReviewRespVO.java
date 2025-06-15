@@ -32,7 +32,7 @@ public class ErpGroupBuyingReviewRespVO {
 
     @Schema(description = "产品规格", example = "500g/袋")
     @ExcelProperty("产品规格")
-    private String productSpecification;
+    private String productSpec;
 
     @Schema(description = "产品SKU", example = "SKU12345")
     @ExcelProperty("产品SKU")
@@ -58,6 +58,10 @@ public class ErpGroupBuyingReviewRespVO {
     @Schema(description = "开团机制", example = "满100人成团")
     @ExcelProperty("开团机制")
     private String groupMechanism;
+
+    @Schema(description = "货盘状态", example = "上架")
+    @ExcelProperty("货盘状态")
+    private String status;
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
@@ -90,9 +94,8 @@ public class ErpGroupBuyingReviewRespVO {
     @Schema(description = "团购货盘表ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long groupBuyingId;
 
-
-
-
+    @Schema(description = "团购货盘表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private String groupBuyingNo;
 
 
 }

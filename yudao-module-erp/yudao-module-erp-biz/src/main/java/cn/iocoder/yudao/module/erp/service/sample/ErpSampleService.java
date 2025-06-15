@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.erp.service.sample;
 
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSamplePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleSaveReqVO;
@@ -33,4 +35,6 @@ public interface ErpSampleService {
     Map<Long, ErpSampleRespVO> getSampleVOMap(Collection<Long> ids);
 
     PageResult<ErpSampleRespVO> getSampleVOPage(ErpSamplePageReqVO pageReqVO);
+
+    ErpSampleImportRespVO importSampleList(List<ErpSampleImportExcelVO> importList, boolean isUpdateSupport);
 }

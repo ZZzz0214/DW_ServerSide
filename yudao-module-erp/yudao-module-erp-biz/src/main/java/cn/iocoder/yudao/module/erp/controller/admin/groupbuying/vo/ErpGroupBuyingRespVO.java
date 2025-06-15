@@ -1,5 +1,8 @@
 package cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo;
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,7 +28,8 @@ public class ErpGroupBuyingRespVO {
     private String productImage;
 
     @Schema(description = "品牌名称", example = "品牌A")
-    @ExcelProperty("品牌名称")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
 
     @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "产品A")
@@ -119,6 +123,11 @@ public class ErpGroupBuyingRespVO {
     @Schema(description = "发货地区", example = "广东省深圳市")
     @ExcelProperty("发货地区")
     private String shippingArea;
+
+    @Schema(description = "货盘状态", example = "上架")
+    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_GROUP_BUYING_STATUS)
+    private String status;
 
     @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建人员")

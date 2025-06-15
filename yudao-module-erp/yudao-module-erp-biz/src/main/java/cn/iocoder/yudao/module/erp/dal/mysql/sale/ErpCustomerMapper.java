@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomer
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -27,6 +28,10 @@ public interface ErpCustomerMapper extends BaseMapperX<ErpCustomerDO> {
 
     default List<ErpCustomerDO> selectListByStatus(Integer status) {
         return selectList(ErpCustomerDO::getStatus, status);
+    }
+
+    default List<ErpCustomerDO> selectListByNameIn(Collection<String> names) {
+        return selectList(ErpCustomerDO::getName, names);
     }
 
 }

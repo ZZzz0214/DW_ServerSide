@@ -182,6 +182,8 @@ public interface ErrorCodeConstants {
     ErrorCode DISTRIBUTION_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_104_002, "代发记录({})已审核，无法修改");
     ErrorCode DISTRIBUTION_DELETE_FAIL_APPROVE = new ErrorCode(1_030_104_003, "代发记录({})已审核，无法删除");
     ErrorCode DISTRIBUTION_NOT_APPROVE = new ErrorCode(1_030_104_004, "代发记录未审核，无法操作");
+    ErrorCode DISTRIBUTION_APPROVE_FAIL = new ErrorCode(1_030_104_005, "审核失败，只有未审核的代发记录才能审核");
+    ErrorCode DISTRIBUTION_PROCESS_FAIL = new ErrorCode(1_030_104_006, "反审核失败，只有已审核的代发记录才能反审核");
 
     // ========== ERP 批发（1-030-105-000） ==========
     ErrorCode WHOLESALE_NOT_EXISTS = new ErrorCode(1_030_105_000, "批发记录不存在");
@@ -190,6 +192,9 @@ public interface ErrorCodeConstants {
     ErrorCode WHOLESALE_NOT_APPROVE = new ErrorCode(1_030_105_003, "批发记录未审核，无法操作");
     ErrorCode WHOLESALE_PROCESS_FAIL = new ErrorCode(1_030_105_004, "反审核失败，只有已审核的批发记录才能反审核");
     ErrorCode WHOLESALE_APPROVE_FAIL = new ErrorCode(1_030_105_005, "审核失败，只有未审核的批发记录才能审核");
+    ErrorCode WHOLESALE_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_105_006, "批发记录({})采购已审核，无法修改");
+    ErrorCode WHOLESALE_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_105_007, "批发记录({})销售已审核，无法修改");
+
     // ========== ERP 采购人员（1-030-106-000） ==========
     ErrorCode PURCHASER_NOT_EXISTS = new ErrorCode(1_030_106_000, "采购人员不存在");
     ErrorCode PURCHASER_NAME_DUPLICATE = new ErrorCode(1_030_106_001, "采购人员姓名已存在");
@@ -201,13 +206,14 @@ public interface ErrorCodeConstants {
     ErrorCode SALESPERSON_NAME_DUPLICATE = new ErrorCode(1_030_107_001, "销售人员姓名已存在");
     ErrorCode SALESPERSON_PHONE_DUPLICATE = new ErrorCode(1_030_107_002, "销售人员联系电话已存在");
     ErrorCode SALESPERSON_NOT_ENABLE = new ErrorCode(1_030_107_003, "销售人员({})未启用");
+
     // ========== ERP 库存（1-030-108-000） ==========
     ErrorCode INVENTORY_NOT_EXISTS = new ErrorCode(1_030_108_000, "库存记录不存在");
     ErrorCode INVENTORY_NO_EXISTS = new ErrorCode(1_030_108_001, "库存编号已存在");
     ErrorCode INVENTORY_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_108_002, "库存记录({})已审核，无法修改");
     ErrorCode INVENTORY_DELETE_FAIL_APPROVE = new ErrorCode(1_030_108_003, "库存记录({})已审核，无法删除");
     ErrorCode INVENTORY_NOT_APPROVE = new ErrorCode(1_030_108_004, "库存记录未审核，无法操作");
-    
+
     // ========== ERP 库存导入（1-030-108-005） ==========
     ErrorCode INVENTORY_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_108_005, "导入库存数据不能为空");
     ErrorCode INVENTORY_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_108_006, "第{}行的库存编号({})在Excel中重复");
@@ -215,14 +221,11 @@ public interface ErrorCodeConstants {
     ErrorCode INVENTORY_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_108_008, "第{}行的库存编号({})已存在，且不支持更新");
     ErrorCode INVENTORY_IMPORT_SPOT_INVENTORY_INVALID = new ErrorCode(1_030_108_009, "第{}行的现货库存必须大于等于0");
     ErrorCode INVENTORY_IMPORT_REMAINING_INVENTORY_INVALID = new ErrorCode(1_030_108_010, "第{}行的剩余库存必须大于等于0");
-        // ========== ERP 代发（1-030-104-000） ==========
-    // ... existing error codes ...
-    ErrorCode DISTRIBUTION_APPROVE_FAIL = new ErrorCode(1_030_104_005, "审核失败，只有未审核的代发记录才能审核");
-    ErrorCode DISTRIBUTION_PROCESS_FAIL = new ErrorCode(1_030_104_006, "反审核失败，只有已审核的代发记录才能反审核");
-// ========== ERP 记事本（1-030-109-000） ==========
+
+    // ========== ERP 记事本（1-030-109-000） ==========
     ErrorCode NOTEBOOK_NOT_EXISTS = new ErrorCode(1_030_109_000, "记事本不存在");
     ErrorCode NOTEBOOK_NO_EXISTS = new ErrorCode(1_030_109_001, "记事本编号已存在");
-    
+
     // ========== ERP 记事本导入（1-030-109-002） ==========
     ErrorCode NOTEBOOK_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_109_002, "导入记事本数据不能为空");
     ErrorCode NOTEBOOK_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_109_003, "第{}行的记事本编号({})在Excel中重复");
@@ -230,9 +233,29 @@ public interface ErrorCodeConstants {
     ErrorCode NOTEBOOK_IMPORT_TASK_STATUS_INVALID = new ErrorCode(1_030_109_005, "第{}行的任务状态无效");
     ErrorCode NOTEBOOK_IMPORT_TASK_PERSON_EMPTY = new ErrorCode(1_030_109_006, "第{}行的任务人员不能为空");
     ErrorCode NOTEBOOK_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_109_007, "第{}行的记事本编号({})已存在，且不支持更新");
+
     // ========== ERP 样品（1-030-110-000） ==========
     ErrorCode SAMPLE_NOT_EXISTS = new ErrorCode(1_030_110_000, "样品不存在");
     ErrorCode SAMPLE_NO_EXISTS = new ErrorCode(1_030_110_001, "样品编号已存在");
+    ErrorCode SAMPLE_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_110_017, "组品编号({})不存在");
+
+    // ========== ERP 样品导入（1-030-110-002） ==========
+    ErrorCode SAMPLE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_110_002, "导入样品数据不能为空");
+    ErrorCode SAMPLE_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_110_003, "第{}行的样品编号({})在Excel中重复");
+    ErrorCode SAMPLE_IMPORT_LOGISTICS_COMPANY_EMPTY = new ErrorCode(1_030_110_004, "第{}行的物流公司不能为空");
+    ErrorCode SAMPLE_IMPORT_LOGISTICS_NO_EMPTY = new ErrorCode(1_030_110_005, "第{}行的物流单号不能为空");
+    ErrorCode SAMPLE_IMPORT_RECEIVER_NAME_EMPTY = new ErrorCode(1_030_110_006, "第{}行的收件姓名不能为空");
+    ErrorCode SAMPLE_IMPORT_CONTACT_PHONE_EMPTY = new ErrorCode(1_030_110_007, "第{}行的联系电话不能为空");
+    ErrorCode SAMPLE_IMPORT_ADDRESS_EMPTY = new ErrorCode(1_030_110_008, "第{}行的详细地址不能为空");
+    ErrorCode SAMPLE_IMPORT_COMBO_PRODUCT_ID_EMPTY = new ErrorCode(1_030_110_009, "第{}行的组品编号不能为空");
+    ErrorCode SAMPLE_IMPORT_PRODUCT_SPEC_EMPTY = new ErrorCode(1_030_110_010, "第{}行的产品规格不能为空");
+    ErrorCode SAMPLE_IMPORT_PRODUCT_QUANTITY_INVALID = new ErrorCode(1_030_110_011, "第{}行的产品数量必须大于0");
+    ErrorCode SAMPLE_IMPORT_CUSTOMER_NAME_EMPTY = new ErrorCode(1_030_110_012, "第{}行的客户名称不能为空");
+    ErrorCode SAMPLE_IMPORT_SAMPLE_STATUS_INVALID = new ErrorCode(1_030_110_013, "第{}行的样品状态无效");
+    ErrorCode SAMPLE_IMPORT_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_110_014, "第{}行的组品编号({})不存在");
+    ErrorCode SAMPLE_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_110_015, "第{}行的样品编号({})已存在，且不支持更新");
+    ErrorCode SAMPLE_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_110_016, "第{}行的客户({})不存在");
+
     // ========== ERP 团购货盘（1-030-111-000） ==========
     ErrorCode GROUP_BUYING_NOT_EXISTS = new ErrorCode(1_030_111_000, "团购货盘不存在");
     ErrorCode GROUP_BUYING_NO_EXISTS = new ErrorCode(1_030_111_001, "团购货盘编号已存在");
@@ -241,6 +264,12 @@ public interface ErrorCodeConstants {
     ErrorCode GROUP_BUYING_NOT_APPROVE = new ErrorCode(1_030_111_004, "团购货盘未审核，无法操作");
     ErrorCode GROUP_BUYING_APPROVE_FAIL = new ErrorCode(1_030_111_005, "审核失败，只有未审核的团购货盘才能审核");
     ErrorCode GROUP_BUYING_PROCESS_FAIL = new ErrorCode(1_030_111_006, "反审核失败，只有已审核的团购货盘才能反审核");
+
+    // ========== ERP 团购货盘导入（1-030-111-007） ==========
+    ErrorCode GROUP_BUYING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_111_007, "导入团购货盘数据不能为空");
+    ErrorCode GROUP_BUYING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_111_008, "第{}行的团购货盘编号({})在Excel中重复");
+    ErrorCode GROUP_BUYING_IMPORT_PRODUCT_NAME_EMPTY = new ErrorCode(1_030_111_009, "第{}行的产品名称不能为空");
+    ErrorCode GROUP_BUYING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_111_010, "第{}行的团购货盘编号({})已存在，且不支持更新");
 
     // ========== ERP 团购复盘（1-030-112-000） ==========
     ErrorCode GROUP_BUYING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_112_000, "团购复盘不存在");
@@ -251,6 +280,13 @@ public interface ErrorCodeConstants {
     ErrorCode GROUP_BUYING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_112_005, "审核失败，只有未审核的团购复盘才能审核");
     ErrorCode GROUP_BUYING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_112_006, "反审核失败，只有已审核的团购复盘才能反审核");
 
+    // ========== ERP 团购复盘导入（1-030-112-007） ==========
+    ErrorCode GROUP_BUYING_REVIEW_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_112_007, "导入团购复盘数据不能为空");
+    ErrorCode GROUP_BUYING_REVIEW_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_112_008, "第{}行的团购复盘编号({})在Excel中重复");
+    ErrorCode GROUP_BUYING_REVIEW_IMPORT_GROUP_BUYING_NOT_EXISTS = new ErrorCode(1_030_112_009, "第{}行的团购货盘编号({})不存在");
+    ErrorCode GROUP_BUYING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_112_010, "第{}行的客户名称({})不存在");
+    ErrorCode GROUP_BUYING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_112_011, "第{}行的团购复盘编号({})已存在，且不支持更新");
+
     // ========== ERP 团购信息（1-030-113-000） ==========
     ErrorCode GROUP_BUYING_INFO_NOT_EXISTS = new ErrorCode(1_030_113_000, "团购信息不存在");
     ErrorCode GROUP_BUYING_INFO_NO_EXISTS = new ErrorCode(1_030_113_001, "团购信息编号已存在");
@@ -259,6 +295,13 @@ public interface ErrorCodeConstants {
     ErrorCode GROUP_BUYING_INFO_NOT_APPROVE = new ErrorCode(1_030_113_004, "团购信息未审核，无法操作");
     ErrorCode GROUP_BUYING_INFO_APPROVE_FAIL = new ErrorCode(1_030_113_005, "审核失败，只有未审核的团购信息才能审核");
     ErrorCode GROUP_BUYING_INFO_PROCESS_FAIL = new ErrorCode(1_030_113_006, "反审核失败，只有已审核的团购信息才能反审核");
+
+    // ========== ERP 团购信息导入（1-030-113-007） ==========
+    ErrorCode GROUP_BUYING_INFO_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_113_007, "导入团购信息数据不能为空");
+    ErrorCode GROUP_BUYING_INFO_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_113_008, "第{}行的团购信息编号({})在Excel中重复");
+    ErrorCode GROUP_BUYING_INFO_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_113_009, "第{}行的团购信息编号({})已存在，且不支持更新");
+    ErrorCode GROUP_BUYING_INFO_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_113_010, "第{}行的客户名称({})不存在");
+    ErrorCode GROUP_BUYING_INFO_DICT_DATA_INVALID = new ErrorCode(1_030_113_011, "第{}行的{}字段值({})无效");
 
     // ========== ERP 私播货盘（1-030-114-000） ==========
     ErrorCode PRIVATE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_114_000, "私播货盘不存在");
@@ -375,8 +418,6 @@ public interface ErrorCodeConstants {
     ErrorCode DISTRIBUTION_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_104_008, "代发记录({})销售已审核，无法修改");
     // ========== ERP 批发（1-030-105-000） ==========
 
-    ErrorCode WHOLESALE_UPDATE_FAIL_PURCHASE_APPROVE = new ErrorCode(1_030_105_006, "批发记录({})采购已审核，无法修改");
-    ErrorCode WHOLESALE_UPDATE_FAIL_SALE_APPROVE = new ErrorCode(1_030_105_007, "批发记录({})销售已审核，无法修改");
     // ... 其他已有错误码 ...
 
     // ========== ERP 批发导入 (1-030-105-000) ==========

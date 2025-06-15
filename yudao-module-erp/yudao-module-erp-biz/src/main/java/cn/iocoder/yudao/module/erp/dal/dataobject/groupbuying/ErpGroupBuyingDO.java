@@ -160,6 +160,11 @@ public class ErpGroupBuyingDO extends BaseDO {
     private String shippingArea;
 
     /**
+     * 货盘状态
+     */
+    private String status;
+
+    /**
      * 租户编号
      */
     private Long tenantId;

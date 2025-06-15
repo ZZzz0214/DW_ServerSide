@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.erp.service.groupbuying;
 
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingSaveReqVO;
@@ -33,4 +35,13 @@ public interface ErpGroupBuyingService {
     Map<Long, ErpGroupBuyingRespVO> getGroupBuyingVOMap(Collection<Long> ids);
 
     PageResult<ErpGroupBuyingRespVO> getGroupBuyingVOPage(ErpGroupBuyingPageReqVO pageReqVO);
+
+    /**
+     * 导入团购货盘列表
+     *
+     * @param importList 导入列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpGroupBuyingImportRespVO importGroupBuyingList(List<ErpGroupBuyingImportExcelVO> importList, boolean isUpdateSupport);
 }

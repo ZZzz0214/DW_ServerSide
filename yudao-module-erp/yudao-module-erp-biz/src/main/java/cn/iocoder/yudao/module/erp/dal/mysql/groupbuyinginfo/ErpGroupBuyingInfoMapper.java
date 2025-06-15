@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.groupbuyinginfo.vo.ErpGroupB
 import cn.iocoder.yudao.module.erp.dal.dataobject.groupbuyinginfo.ErpGroupBuyingInfoDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpGroupBuyingInfoMapper extends BaseMapperX<ErpGroupBuyingInfoDO> {
 
@@ -34,6 +37,7 @@ public interface ErpGroupBuyingInfoMapper extends BaseMapperX<ErpGroupBuyingInfo
                 .selectAs(ErpGroupBuyingInfoDO::getRecruitmentCategory, ErpGroupBuyingInfoRespVO::getRecruitmentCategory)
                 .selectAs(ErpGroupBuyingInfoDO::getSelectionCriteria, ErpGroupBuyingInfoRespVO::getSelectionCriteria)
                 .selectAs(ErpGroupBuyingInfoDO::getRemark, ErpGroupBuyingInfoRespVO::getRemark)
+                .selectAs(ErpGroupBuyingInfoDO::getCreator, ErpGroupBuyingInfoRespVO::getCreator)
                 .selectAs(ErpGroupBuyingInfoDO::getCreateTime, ErpGroupBuyingInfoRespVO::getCreateTime);
 
         return selectJoinPage(reqVO, ErpGroupBuyingInfoRespVO.class, query);
@@ -41,5 +45,13 @@ public interface ErpGroupBuyingInfoMapper extends BaseMapperX<ErpGroupBuyingInfo
 
     default ErpGroupBuyingInfoDO selectByNo(String no) {
         return selectOne(ErpGroupBuyingInfoDO::getNo, no);
+    }
+
+    default List<ErpGroupBuyingInfoDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpGroupBuyingInfoDO::getNo, nos);
+    }
+
+    default void insertBatch(List<ErpGroupBuyingInfoDO> list) {
+        list.forEach(this::insert);
     }
 }

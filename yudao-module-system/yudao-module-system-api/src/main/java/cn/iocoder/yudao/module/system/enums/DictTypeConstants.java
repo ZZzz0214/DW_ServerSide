@@ -28,13 +28,21 @@ public interface DictTypeConstants {
      String ERP_PRODUCT_CATEGORY = "erp_product_category"; // ERP产品品类
      String ERP_PRODUCT_STATUS = "erp_product_status"; // ERP产品状态
 
-
-     String ERP_TRANSIT_PERSON = "erp_transit_person"; // ERP产品状态
+     String ERP_TRANSIT_PERSON = "erp_transit_person"; // ERP中转人员
 
     String SYSTEM_USER_LIST = "system_user_list";
 
     String ERP_NOTEBOOK_STATUS="erp_notebook_status";
 
+    String ERP_SAMPLE_STATUS = "erp_sample_status";
 
+    String ERP_GROUP_BUYING_STATUS = "status";
+
+    // 团购信息相关字典类型
+    String ERP_CUSTOMER_POSITION = "erp_customer_position"; // 客户职位
+    String ERP_PLATFORM_NAME = "erp_platform_name"; // 平台名称
+    String ERP_CUSTOMER_ATTRIBUTE = "erp_customer_attribute"; // 客户属性
+    String ERP_CUSTOMER_CITY = "erp_customer_city"; // 客户城市
+    String ERP_CUSTOMER_DISTRICT = "erp_customer_district"; // 客户区县
 
 }

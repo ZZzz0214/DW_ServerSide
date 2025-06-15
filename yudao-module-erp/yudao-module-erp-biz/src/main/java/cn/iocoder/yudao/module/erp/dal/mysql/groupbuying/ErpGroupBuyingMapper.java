@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyin
 import cn.iocoder.yudao.module.erp.dal.dataobject.groupbuying.ErpGroupBuyingDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
 
@@ -17,6 +20,7 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
                 .likeIfPresent(ErpGroupBuyingDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName())
                 .likeIfPresent(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName())
+                .eqIfPresent(ErpGroupBuyingDO::getStatus, reqVO.getStatus())
                 .betweenIfPresent(ErpGroupBuyingDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpGroupBuyingDO::getId)
                 // 团购货盘表字段映射
@@ -47,6 +51,8 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
                 .selectAs(ErpGroupBuyingDO::getExpressCompany, ErpGroupBuyingRespVO::getExpressCompany)
                 .selectAs(ErpGroupBuyingDO::getShippingTime, ErpGroupBuyingRespVO::getShippingTime)
                 .selectAs(ErpGroupBuyingDO::getShippingArea, ErpGroupBuyingRespVO::getShippingArea)
+                .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingRespVO::getStatus)
+                .selectAs(ErpGroupBuyingDO::getCreator, ErpGroupBuyingRespVO::getCreator)
                 .selectAs(ErpGroupBuyingDO::getCreateTime, ErpGroupBuyingRespVO::getCreateTime);
 
         return selectJoinPage(reqVO, ErpGroupBuyingRespVO.class, query);
@@ -54,5 +60,13 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
 
     default ErpGroupBuyingDO selectByNo(String no) {
         return selectOne(ErpGroupBuyingDO::getNo, no);
+    }
+
+    default List<ErpGroupBuyingDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpGroupBuyingDO::getNo, nos);
+    }
+
+    default void insertBatch(List<ErpGroupBuyingDO> list) {
+        list.forEach(this::insert);
     }
 }
