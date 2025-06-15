@@ -222,6 +222,14 @@ public interface ErrorCodeConstants {
 // ========== ERP 记事本（1-030-109-000） ==========
     ErrorCode NOTEBOOK_NOT_EXISTS = new ErrorCode(1_030_109_000, "记事本不存在");
     ErrorCode NOTEBOOK_NO_EXISTS = new ErrorCode(1_030_109_001, "记事本编号已存在");
+    
+    // ========== ERP 记事本导入（1-030-109-002） ==========
+    ErrorCode NOTEBOOK_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_109_002, "导入记事本数据不能为空");
+    ErrorCode NOTEBOOK_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_109_003, "第{}行的记事本编号({})在Excel中重复");
+    ErrorCode NOTEBOOK_IMPORT_TASK_NAME_EMPTY = new ErrorCode(1_030_109_004, "第{}行的任务名称不能为空");
+    ErrorCode NOTEBOOK_IMPORT_TASK_STATUS_INVALID = new ErrorCode(1_030_109_005, "第{}行的任务状态无效");
+    ErrorCode NOTEBOOK_IMPORT_TASK_PERSON_EMPTY = new ErrorCode(1_030_109_006, "第{}行的任务人员不能为空");
+    ErrorCode NOTEBOOK_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_109_007, "第{}行的记事本编号({})已存在，且不支持更新");
     // ========== ERP 样品（1-030-110-000） ==========
     ErrorCode SAMPLE_NOT_EXISTS = new ErrorCode(1_030_110_000, "样品不存在");
     ErrorCode SAMPLE_NO_EXISTS = new ErrorCode(1_030_110_001, "样品编号已存在");

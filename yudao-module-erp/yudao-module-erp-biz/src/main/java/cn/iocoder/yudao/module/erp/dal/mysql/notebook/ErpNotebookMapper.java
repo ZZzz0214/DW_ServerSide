@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.ErpNotebookRespV
 import cn.iocoder.yudao.module.erp.dal.dataobject.notebook.ErpNotebookDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpNotebookMapper extends BaseMapperX<ErpNotebookDO> {
 
@@ -28,6 +31,7 @@ public interface ErpNotebookMapper extends BaseMapperX<ErpNotebookDO> {
                 .selectAs(ErpNotebookDO::getTaskStatus, ErpNotebookRespVO::getTaskStatus)
                 .selectAs(ErpNotebookDO::getTaskPerson, ErpNotebookRespVO::getTaskPerson)
                 .selectAs(ErpNotebookDO::getRemark, ErpNotebookRespVO::getRemark)
+                .selectAs(ErpNotebookDO::getCreator, ErpNotebookRespVO::getCreator)
                 .selectAs(ErpNotebookDO::getCreateTime, ErpNotebookRespVO::getCreateTime);
 
         return selectJoinPage(reqVO, ErpNotebookRespVO.class, query);
@@ -35,5 +39,13 @@ public interface ErpNotebookMapper extends BaseMapperX<ErpNotebookDO> {
 
     default ErpNotebookDO selectByNo(String no) {
         return selectOne(ErpNotebookDO::getNo, no);
+    }
+
+    default List<ErpNotebookDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpNotebookDO::getNo, nos);
+    }
+
+    default void insertBatch(List<ErpNotebookDO> list) {
+        list.forEach(this::insert);
     }
 }

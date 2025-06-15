@@ -31,5 +31,10 @@ public interface DictTypeConstants {
 
      String ERP_TRANSIT_PERSON = "erp_transit_person"; // ERP产品状态
 
+    String SYSTEM_USER_LIST = "system_user_list";
+
+    String ERP_NOTEBOOK_STATUS="erp_notebook_status";
+
+
 
 }

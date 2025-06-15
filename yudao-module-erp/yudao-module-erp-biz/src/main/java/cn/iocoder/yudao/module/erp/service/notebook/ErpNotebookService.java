@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.service.notebook;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.ErpNotebookImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.ErpNotebookImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.ErpNotebookPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.ErpNotebookRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.ErpNotebookSaveReqVO;
@@ -32,4 +34,6 @@ public interface ErpNotebookService {
     Map<Long, ErpNotebookRespVO> getNotebookVOMap(Collection<Long> ids);
 
     PageResult<ErpNotebookRespVO> getNotebookVOPage(ErpNotebookPageReqVO pageReqVO);
+
+    ErpNotebookImportRespVO importNotebookList(List<ErpNotebookImportExcelVO> importList, boolean isUpdateSupport);
 }
