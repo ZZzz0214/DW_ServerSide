@@ -278,7 +278,6 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        //return convertMap(getDropshipAssistVOList(ids), ErpDropshipAssistRespVO::getId);
         return null;
     }
 
@@ -298,6 +297,9 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         }
     }
 
+
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ErpDropshipAssistImportRespVO importDropshipAssistList(List<ErpDropshipAssistImportExcelVO> importList, boolean isUpdateSupport) {
@@ -312,332 +314,90 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 查询已存在的代发辅助记录
-        Set<String> noSet = importList.stream()
-                .map(ErpDropshipAssistImportExcelVO::getNo)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toSet());
-        List<ErpDropshipAssistDO> existList = dropshipAssistMapper.selectListByNoIn(noSet);
-        Map<String, ErpDropshipAssistDO> noDropshipAssistMap = convertMap(existList, ErpDropshipAssistDO::getNo);
+        // 批量处理组品ID转换
+        List<ErpDropshipAssistDO> createList = new ArrayList<>();
+        List<ErpDropshipAssistDO> updateList = new ArrayList<>();
 
-        // 遍历处理每个导入项
-        for (int i = 0; i < importList.size(); i++) {
-            ErpDropshipAssistImportExcelVO importVO = importList.get(i);
-            try {
-                // 将组品业务编号转换为组品ID
-                if (StrUtil.isNotBlank(importVO.getComboProductId())) {
-                    ErpComboProductDO comboProduct = erpComboMapper.selectByNo(importVO.getComboProductId());
-                    if (comboProduct == null) {
-                        throw exception(COMBO_PRODUCT_NOT_EXISTS);
+        try {
+            // 批量查询组品信息
+            Set<String> comboProductNos = importList.stream()
+                    .map(ErpDropshipAssistImportExcelVO::getComboProductId)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+            Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
+                    convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
+
+            // 批量查询已存在的记录
+            Set<String> noSet = importList.stream()
+                    .map(ErpDropshipAssistImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+            Map<String, ErpDropshipAssistDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                    convertMap(dropshipAssistMapper.selectListByNoIn(noSet), ErpDropshipAssistDO::getNo);
+
+            // 用于跟踪Excel内部重复的编号
+            Set<String> processedNos = new HashSet<>();
+            
+            // 批量转换数据
+            for (int i = 0; i < importList.size(); i++) {
+                ErpDropshipAssistImportExcelVO importVO = importList.get(i);
+                try {
+                    // 检查Excel内部编号重复
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        if (processedNos.contains(importVO.getNo())) {
+                            throw exception(DROPSHIP_ASSIST_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
+                        }
+                        processedNos.add(importVO.getNo());
                     }
-                    importVO.setComboProductId(comboProduct.getId().toString());
-                }
-                // 判断是否支持更新
-                ErpDropshipAssistDO existDropshipAssist = noDropshipAssistMap.get(importVO.getNo());
-                if (existDropshipAssist == null) {
-                    // 创建
-                    ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-                    if (StrUtil.isEmpty(dropshipAssist.getNo())) {
-                        dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
+                    
+                    // 将组品业务编号转换为组品ID
+                    if (StrUtil.isNotBlank(importVO.getComboProductId())) {
+                        Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
+                        if (comboProductId == null) {
+                            throw exception(DROPSHIP_ASSIST_IMPORT_COMBO_PRODUCT_NOT_EXISTS, i + 1, importVO.getComboProductId());
+                        }
+                        importVO.setComboProductId(comboProductId.toString());
                     }
-                    dropshipAssistMapper.insert(dropshipAssist);
-                    respVO.getCreateNames().add(dropshipAssist.getNo());
-                } else if (isUpdateSupport) {
-                    // 更新
-                    ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-                    updateDropshipAssist.setId(existDropshipAssist.getId());
-                    dropshipAssistMapper.updateById(updateDropshipAssist);
-                    respVO.getUpdateNames().add(updateDropshipAssist.getNo());
-                } else {
-                    throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+
+                    // 判断是否支持更新
+                    ErpDropshipAssistDO existDropshipAssist = existMap.get(importVO.getNo());
+                    if (existDropshipAssist == null) {
+                       // 创建 - 自动生成新的no编号
+                       ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
+                       dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
+                        createList.add(dropshipAssist);
+                        respVO.getCreateNames().add(dropshipAssist.getNo());
+                    } else if (isUpdateSupport) {
+                        // 更新
+                        ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
+                        updateDropshipAssist.setId(existDropshipAssist.getId());
+                        updateList.add(updateDropshipAssist);
+                        respVO.getUpdateNames().add(updateDropshipAssist.getNo());
+                    } else {
+                        throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importVO.getNo());
+                    }
+                } catch (ServiceException ex) {
+                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
+                    respVO.getFailureNames().put(errorKey, ex.getMessage());
+                } catch (Exception ex) {
+                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
                 }
-            } catch (ServiceException ex) {
-                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-                respVO.getFailureNames().put(errorKey, ex.getMessage());
-            } catch (Exception ex) {
-                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
             }
+
+            // 批量保存到数据库
+            if (CollUtil.isNotEmpty(createList)) {
+                dropshipAssistMapper.insertBatch(createList);
+            }
+            if (CollUtil.isNotEmpty(updateList)) {
+                updateList.forEach(dropshipAssistMapper::updateById);
+            }
+        } catch (Exception ex) {
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
         }
 
         return respVO;
     }
 
-//    @Override
-//    @Transactional(rollbackFor = Exception.class)
-//    public ErpDropshipAssistImportRespVO importDropshipAssistList(List<ErpDropshipAssistImportExcelVO> importList, boolean isUpdateSupport) {
-//        if (CollUtil.isEmpty(importList)) {
-//            throw exception(DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY);
-//        }
-//
-//        // 初始化返回结果
-//        ErpDropshipAssistImportRespVO respVO = ErpDropshipAssistImportRespVO.builder()
-//                .createNames(new ArrayList<>())
-//                .updateNames(new ArrayList<>())
-//                .failureNames(new LinkedHashMap<>())
-//                .build();
-//
-//        // 批量处理组品ID转换
-//        List<ErpDropshipAssistESDO> esCreateList = new ArrayList<>();
-//        List<ErpDropshipAssistESDO> esUpdateList = new ArrayList<>();
-//
-//        try {
-//            // 批量查询组品信息
-//            Set<String> comboProductNos = importList.stream()
-//                    .map(ErpDropshipAssistImportExcelVO::getComboProductId)
-//                    .filter(StrUtil::isNotBlank)
-//                    .collect(Collectors.toSet());
-//            Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
-//                    convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
-//
-//            // 批量查询已存在的记录
-//            Set<String> noSet = importList.stream()
-//                    .map(ErpDropshipAssistImportExcelVO::getNo)
-//                    .filter(StrUtil::isNotBlank)
-//                    .collect(Collectors.toSet());
-//            Map<String, ErpDropshipAssistESDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
-//                    convertMap(dropshipAssistESRepository.findByNoIn(noSet), ErpDropshipAssistESDO::getNo);
-//
-//            // 批量转换数据
-//            for (ErpDropshipAssistImportExcelVO importVO : importList) {
-//                try {
-//                    ErpDropshipAssistESDO esDO = BeanUtils.toBean(importVO, ErpDropshipAssistESDO.class);
-//
-//                    // 设置组品ID
-//                    if (StrUtil.isNotBlank(importVO.getComboProductId())) {
-//                        Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
-//                        if (comboProductId == null) {
-//                            throw exception(COMBO_PRODUCT_NOT_EXISTS);
-//                        }
-//                        esDO.setComboProductId(comboProductId.toString());
-//                    }
-//
-//                    // 生成编号
-//                    if (StrUtil.isEmpty(esDO.getNo())) {
-//                        esDO.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
-//                    }
-//
-//                    // 判断是否已存在
-//                    ErpDropshipAssistESDO existDO = existMap.get(esDO.getNo());
-//                    if (existDO == null) {
-//                        esCreateList.add(esDO);
-//                        respVO.getCreateNames().add(esDO.getNo());
-//                    } else if (isUpdateSupport) {
-//                        esDO.setId(existDO.getId()); // 保留原ID
-//                        esUpdateList.add(esDO);
-//                        respVO.getUpdateNames().add(esDO.getNo());
-//                    } else {
-//                        throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS, esDO.getNo());
-//                    }
-//                } catch (ServiceException ex) {
-//                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-//                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-//                }
-//            }
-//
-//            // 批量保存到ES
-//            if (CollUtil.isNotEmpty(esCreateList)) {
-//                dropshipAssistESRepository.saveAll(esCreateList);
-//            }
-//            if (CollUtil.isNotEmpty(esUpdateList)) {
-//                dropshipAssistESRepository.saveAll(esUpdateList);
-//            }
-//        } catch (Exception ex) {
-//            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
-//        }
-//
-//        return respVO;
-//    }
 
-
-//@Override
-//@Transactional(rollbackFor = Exception.class)
-//public ErpDropshipAssistImportRespVO importDropshipAssistList(List<ErpDropshipAssistImportExcelVO> importList, boolean isUpdateSupport) {
-//    if (CollUtil.isEmpty(importList)) {
-//        throw exception(DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY);
-//    }
-//
-//    // 初始化返回结果
-//    ErpDropshipAssistImportRespVO respVO = ErpDropshipAssistImportRespVO.builder()
-//            .createNames(new ArrayList<>())
-//            .updateNames(new ArrayList<>())
-//            .failureNames(new LinkedHashMap<>())
-//            .build();
-//
-//    // 批量处理组品ID转换
-//    List<ErpDropshipAssistDO> createList = new ArrayList<>();
-//    List<ErpDropshipAssistDO> updateList = new ArrayList<>();
-//
-//    try {
-//        // 批量查询组品信息
-//        Set<String> comboProductNos = importList.stream()
-//                .map(ErpDropshipAssistImportExcelVO::getComboProductId)
-//                .filter(StrUtil::isNotBlank)
-//                .collect(Collectors.toSet());
-//        Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
-//                convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
-//
-//        // 批量查询已存在的记录
-//        Set<String> noSet = importList.stream()
-//                .map(ErpDropshipAssistImportExcelVO::getNo)
-//                .filter(StrUtil::isNotBlank)
-//                .collect(Collectors.toSet());
-//        Map<String, ErpDropshipAssistDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
-//                convertMap(dropshipAssistMapper.selectListByNoIn(noSet), ErpDropshipAssistDO::getNo);
-//
-//        // 批量转换数据
-//        for (int i = 0; i < importList.size(); i++) {
-//            ErpDropshipAssistImportExcelVO importVO = importList.get(i);
-//            try {
-//                // 将组品业务编号转换为组品ID
-//                if (StrUtil.isNotBlank(importVO.getComboProductId())) {
-//                    Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
-//                    if (comboProductId == null) {
-//                        throw exception(COMBO_PRODUCT_NOT_EXISTS);
-//                    }
-//                    importVO.setComboProductId(comboProductId.toString());
-//                }
-//
-//                // 判断是否支持更新
-//                ErpDropshipAssistDO existDropshipAssist = existMap.get(importVO.getNo());
-//                if (existDropshipAssist == null) {
-//                   // 创建 - 自动生成新的no编号
-//                   ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-//                   dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
-//                    if (StrUtil.isEmpty(dropshipAssist.getNo())) {
-//                        dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
-//                    }
-//                    createList.add(dropshipAssist);
-//                    respVO.getCreateNames().add(dropshipAssist.getNo());
-//                } else if (isUpdateSupport) {
-//                    // 更新
-//                    ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-//                    updateDropshipAssist.setId(existDropshipAssist.getId());
-//                    updateList.add(updateDropshipAssist);
-//                    respVO.getUpdateNames().add(updateDropshipAssist.getNo());
-//                } else {
-//                    throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-//                }
-//            } catch (ServiceException ex) {
-//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-//                respVO.getFailureNames().put(errorKey, ex.getMessage());
-//            } catch (Exception ex) {
-//                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-//                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
-//            }
-//        }
-//
-//        // 批量保存到数据库
-//        if (CollUtil.isNotEmpty(createList)) {
-//            dropshipAssistMapper.insertBatch(createList);
-//        }
-//        if (CollUtil.isNotEmpty(updateList)) {
-//            updateList.forEach(dropshipAssistMapper::updateById);
-//        }
-//    } catch (Exception ex) {
-//        respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
-//    }
-//
-//    return respVO;
-//}
-
-//    @Override
-//    @Transactional(rollbackFor = Exception.class)
-//    public ErpDropshipAssistImportRespVO importDropshipAssistList(List<ErpDropshipAssistImportExcelVO> importList, boolean isUpdateSupport) {
-//        if (CollUtil.isEmpty(importList)) {
-//            throw exception(DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY);
-//        }
-//
-//        // 初始化返回结果
-//        ErpDropshipAssistImportRespVO respVO = ErpDropshipAssistImportRespVO.builder()
-//                .createNames(new ArrayList<>())
-//                .updateNames(new ArrayList<>())
-//                .failureNames(new LinkedHashMap<>())
-//                .build();
-//
-//        // 批量处理组品ID转换
-//        List<ErpDropshipAssistDO> createList = new ArrayList<>();
-//        List<ErpDropshipAssistDO> updateList = new ArrayList<>();
-//        List<ErpDropshipAssistESDO> esCreateList = new ArrayList<>();
-//        List<ErpDropshipAssistESDO> esUpdateList = new ArrayList<>();
-//
-//        try {
-//            // 批量查询组品信息
-//            Set<String> comboProductNos = importList.stream()
-//                    .map(ErpDropshipAssistImportExcelVO::getComboProductId)
-//                    .filter(StrUtil::isNotBlank)
-//                    .collect(Collectors.toSet());
-//            Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
-//                    convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
-//
-//            // 批量查询已存在的记录
-//            Set<String> noSet = importList.stream()
-//                    .map(ErpDropshipAssistImportExcelVO::getNo)
-//                    .filter(StrUtil::isNotBlank)
-//                    .collect(Collectors.toSet());
-//            Map<String, ErpDropshipAssistDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
-//                    convertMap(dropshipAssistMapper.selectListByNoIn(noSet), ErpDropshipAssistDO::getNo);
-//
-//            // 批量转换数据
-//            for (int i = 0; i < importList.size(); i++) {
-//                ErpDropshipAssistImportExcelVO importVO = importList.get(i);
-//                try {
-//                    // 将组品业务编号转换为组品ID
-//                    if (StrUtil.isNotBlank(importVO.getComboProductId())) {
-//                        Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
-//                        if (comboProductId == null) {
-//                            throw exception(COMBO_PRODUCT_NOT_EXISTS);
-//                        }
-//                        importVO.setComboProductId(comboProductId.toString());
-//                    }
-//
-//                    // 判断是否支持更新
-//                    ErpDropshipAssistDO existDropshipAssist = existMap.get(importVO.getNo());
-//                    if (existDropshipAssist == null) {
-//                        // 创建 - 自动生成新的no编号
-//                        ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-//                        dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
-//                        createList.add(dropshipAssist);
-//                        esCreateList.add(BeanUtils.toBean(dropshipAssist, ErpDropshipAssistESDO.class));
-//                        respVO.getCreateNames().add(dropshipAssist.getNo());
-//                    } else if (isUpdateSupport) {
-//                        // 更新
-//                        ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-//                        updateDropshipAssist.setId(existDropshipAssist.getId());
-//                        updateList.add(updateDropshipAssist);
-//                        esUpdateList.add(BeanUtils.toBean(updateDropshipAssist, ErpDropshipAssistESDO.class));
-//                        respVO.getUpdateNames().add(updateDropshipAssist.getNo());
-//                    } else {
-//                        throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-//                    }
-//                } catch (ServiceException ex) {
-//                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-//                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-//                } catch (Exception ex) {
-//                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知代发辅助";
-//                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
-//                }
-//            }
-//
-//            // 批量保存到数据库
-//            if (CollUtil.isNotEmpty(createList)) {
-//                dropshipAssistMapper.insertBatch(createList);
-//            }
-//            if (CollUtil.isNotEmpty(updateList)) {
-//                updateList.forEach(dropshipAssistMapper::updateById);
-//            }
-//
-//            // 批量保存到ES
-//            if (CollUtil.isNotEmpty(esCreateList)) {
-//                dropshipAssistESRepository.saveAll(esCreateList);
-//            }
-//            if (CollUtil.isNotEmpty(esUpdateList)) {
-//                dropshipAssistESRepository.saveAll(esUpdateList);
-//            }
-//        } catch (Exception ex) {
-//            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
-//        }
-//
-//        return respVO;
-//    }
 }

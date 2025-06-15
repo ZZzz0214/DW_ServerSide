@@ -1,9 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.inventory;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.erp.controller.admin.inventory.vo.ErpInventoryPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.inventory.vo.ErpInventoryRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.inventory.vo.ErpInventorySaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.inventory.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.inventory.ErpInventoryDO;
 
 import javax.validation.Valid;
@@ -25,13 +23,16 @@ public interface ErpInventoryService {
     // 根据id查询库存
     ErpInventoryDO getInventory(Long id);
 
+    // 根据id查询库存VO（包含产品信息）
+    ErpInventoryRespVO getInventoryVO(Long id);
+
     // 根据id列表查询库存
     List<ErpInventoryDO> getInventoryList(Collection<Long> ids);
 
     // 校验库存有效性
     ErpInventoryDO validateInventory(Long id);
 
-    // 获取库存VO列表
+    // 获取库存VO列表（包含产品信息）
     List<ErpInventoryRespVO> getInventoryVOList(Collection<Long> ids);
 
     // 获取库存VO Map
@@ -39,4 +40,7 @@ public interface ErpInventoryService {
 
     // 获取库存VO分页
     PageResult<ErpInventoryRespVO> getInventoryVOPage(ErpInventoryPageReqVO pageReqVO);
+
+    // 导入库存
+    ErpInventoryImportRespVO importInventoryList(List<ErpInventoryImportExcelVO> importList, boolean isUpdateSupport);
 }

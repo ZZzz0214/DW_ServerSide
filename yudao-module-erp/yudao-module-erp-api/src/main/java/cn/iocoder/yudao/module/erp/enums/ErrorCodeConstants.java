@@ -207,6 +207,14 @@ public interface ErrorCodeConstants {
     ErrorCode INVENTORY_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_108_002, "库存记录({})已审核，无法修改");
     ErrorCode INVENTORY_DELETE_FAIL_APPROVE = new ErrorCode(1_030_108_003, "库存记录({})已审核，无法删除");
     ErrorCode INVENTORY_NOT_APPROVE = new ErrorCode(1_030_108_004, "库存记录未审核，无法操作");
+    
+    // ========== ERP 库存导入（1-030-108-005） ==========
+    ErrorCode INVENTORY_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_108_005, "导入库存数据不能为空");
+    ErrorCode INVENTORY_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_108_006, "第{}行的库存编号({})在Excel中重复");
+    ErrorCode INVENTORY_IMPORT_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_108_007, "第{}行的产品编号({})不存在");
+    ErrorCode INVENTORY_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_108_008, "第{}行的库存编号({})已存在，且不支持更新");
+    ErrorCode INVENTORY_IMPORT_SPOT_INVENTORY_INVALID = new ErrorCode(1_030_108_009, "第{}行的现货库存必须大于等于0");
+    ErrorCode INVENTORY_IMPORT_REMAINING_INVENTORY_INVALID = new ErrorCode(1_030_108_010, "第{}行的剩余库存必须大于等于0");
         // ========== ERP 代发（1-030-104-000） ==========
     // ... existing error codes ...
     ErrorCode DISTRIBUTION_APPROVE_FAIL = new ErrorCode(1_030_104_005, "审核失败，只有未审核的代发记录才能审核");
@@ -317,6 +325,9 @@ public interface ErrorCodeConstants {
     // ========== ERP 代发辅助导入 1-030-111-000 ==========
     ErrorCode DROPSHIP_ASSIST_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_111_000, "导入代发辅助数据不能为空");
     ErrorCode DROPSHIP_ASSIST_IMPORT_NO_EXISTS = new ErrorCode(1_030_111_001, "第{}行的代发辅助编号({})已存在");
+    ErrorCode DROPSHIP_ASSIST_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_111_002, "第{}行的代发辅助编号({})在Excel中重复");
+    ErrorCode DROPSHIP_ASSIST_IMPORT_COMBO_PRODUCT_NOT_EXISTS = new ErrorCode(1_030_111_003, "第{}行的组品编号({})不存在");
+    ErrorCode DROPSHIP_ASSIST_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_111_004, "第{}行的代发辅助编号({})已存在，且不支持更新");
 
     ErrorCode SALE_PRICE_CUSTOMER_PRODUCT_DUPLICATE = new ErrorCode(1_030_300_006, "客户名称和产品名称组合已存在");
 

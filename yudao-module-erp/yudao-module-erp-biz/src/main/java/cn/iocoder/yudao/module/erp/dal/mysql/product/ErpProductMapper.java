@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProduc
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -38,6 +39,10 @@ public interface ErpProductMapper extends BaseMapperX<ErpProductDO> {
     }
     default ErpProductDO selectByNo(String no) {
         return selectOne(ErpProductDO::getNo, no);
+    }
+
+    default List<ErpProductDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpProductDO::getNo, nos);
     }
 
 }

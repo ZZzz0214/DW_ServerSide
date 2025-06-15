@@ -3,12 +3,14 @@ package cn.iocoder.yudao.module.erp.controller.admin.dropship.vo;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 代发辅助导出 VO")
 @Data
+@Builder
 public class ErpDropshipAssistExportVO {
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "DF202403250001")

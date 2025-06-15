@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionExportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.dropship.ErpDropshipAssistDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
@@ -122,7 +123,7 @@ public class ErpDropshipAssistController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportDropshipAssistExcel(@Valid ErpDropshipAssistPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
-        //pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpDropshipAssistRespVO> pageResult = dropshipAssistService.getDropshipAssistVOPage(pageReqVO);
         System.out.println("查看代发辅助"+pageResult.getList());
         // 转换为导出VO
@@ -131,7 +132,6 @@ public class ErpDropshipAssistController {
         ExcelUtils.write(response, "代发辅助信息.xlsx", "数据", ErpDropshipAssistExportVO.class,
         exportList);
     }
-    // ... 其他代码保持不变 ...
 
     @PostMapping("/import")
     @Operation(summary = "导入代发辅助")
@@ -152,15 +152,15 @@ public class ErpDropshipAssistController {
         }
     }
 
-//    @GetMapping("/get-import-template")
-//    @Operation(summary = "获得导入代发辅助模板")
-//    public void importTemplate(HttpServletResponse response) throws IOException {
-//        // 手动创建导出 demo
-//        List<ErpDropshipAssistImportExcelVO> list = Arrays.asList(
-//            new ErpDropshipAssistImportExcelVO().setOriginalSpec("示例代发辅助1"),
-//            new ErpDropshipAssistImportExcelVO().setProductName("示例代发辅助2");
-//        );
-//        // 输出
-//        ExcelUtils.write(response, "代发辅助导入模板.xls", "代发辅助列表", ErpDropshipAssistImportExcelVO.class, list);
-//    }
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得导入代发辅助模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpDropshipAssistExportVO> list = Arrays.asList(
+                ErpDropshipAssistExportVO.builder()
+                        .no("示例订单1").build()
+        );
+        // 输出
+        ExcelUtils.write(response, "代发辅助导入模板.xls", "代发辅助列表", ErpDropshipAssistExportVO.class, list);
+    }
 }

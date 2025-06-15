@@ -25,9 +25,9 @@ public class ErpInventoryRespVO {
     @ExcelProperty("单品ID")
     private Long productId;
 
-    @Schema(description = "产品图片", example = "https://example.com/image.jpg")
-    @ExcelProperty("产品图片")
-    private String productImage;
+    @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "SP001")
+    @ExcelProperty("产品编号")
+    private String productNo;
 
     @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "产品A")
     @ExcelProperty("产品名称")
@@ -57,7 +57,13 @@ public class ErpInventoryRespVO {
     @ExcelProperty("备注信息")
     private String remark;
 
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    @ExcelProperty("创建人员")
+    private String creator;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
+
+
 }
