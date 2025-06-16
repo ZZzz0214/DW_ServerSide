@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.service.livebroadcasting;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingSaveReqVO;
@@ -32,4 +34,13 @@ public interface ErpLiveBroadcastingService {
     Map<Long, ErpLiveBroadcastingRespVO> getLiveBroadcastingVOMap(Collection<Long> ids);
 
     PageResult<ErpLiveBroadcastingRespVO> getLiveBroadcastingVOPage(ErpLiveBroadcastingPageReqVO pageReqVO);
+
+    /**
+     * 导入直播货盘
+     *
+     * @param importList 导入数据列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpLiveBroadcastingImportRespVO importLiveBroadcastingList(List<ErpLiveBroadcastingImportExcelVO> importList, boolean isUpdateSupport);
 }

@@ -1,34 +1,59 @@
 package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo;
 
-
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Schema(description = "管理后台 - ERP 私播复盘 Response VO")
+@Schema(description = "管理后台 - ERP 私播复盘导出 VO")
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @ExcelIgnoreUnannotated
-public class ErpPrivateBroadcastingReviewRespVO {
-
-    @Schema(description = "私播复盘编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty("私播复盘编号")
-    private Long id;
+public class ErpPrivateBroadcastingReviewExportVO {
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "SBF001")
     @ExcelProperty("编号")
     private String no;
 
-    @Schema(description = "私播货盘表ID", example = "1")
-    @ExcelProperty("私播货盘表ID")
-    private Long privateBroadcastingId;
+    @Schema(description = "私播货盘编号", example = "PB001")
+    @ExcelProperty("私播货盘编号")
+    private String privateBroadcastingNo;
 
-    @Schema(description = "客户ID", example = "1")
-    @ExcelProperty("客户ID")
-    private Long customerId;
+    @Schema(description = "客户名称", example = "张三")
+    @ExcelProperty("客户名称")
+    private String customerName;
+
+    @Schema(description = "产品名称", example = "产品A")
+    @ExcelProperty("产品名称")
+    private String productName;
+
+    @Schema(description = "品牌名称", example = "品牌A")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
+    private String brandName;
+
+    @Schema(description = "产品规格", example = "标准规格")
+    @ExcelProperty("产品规格")
+    private String productSpec;
+
+    @Schema(description = "产品SKU", example = "SKU001")
+    @ExcelProperty("产品SKU")
+    private String productSku;
+
+    @Schema(description = "直播价格", example = "100.00")
+    @ExcelProperty("直播价格")
+    private BigDecimal livePrice;
 
     @Schema(description = "产品裸价", example = "50.00")
     @ExcelProperty("产品裸价")
@@ -62,6 +87,11 @@ public class ErpPrivateBroadcastingReviewRespVO {
     @ExcelProperty("复团销量")
     private Integer repeatGroupSales;
 
+    @Schema(description = "货盘状态", example = "已审核")
+    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRIVATE_STATUS)
+    private String privateStatus;
+
     @Schema(description = "备注信息", example = "备注内容")
     @ExcelProperty("备注信息")
     private String remark;
@@ -69,38 +99,4 @@ public class ErpPrivateBroadcastingReviewRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-
-    @Schema(description = "产品名称", example = "产品A")
-    @ExcelProperty("产品名称")
-    private String productName;
-
-    @Schema(description = "品牌名称", example = "品牌A")
-    @ExcelProperty("品牌名称")
-    private String brandName;
-
-
-
-    @Schema(description = "产品规格", example = "标准规格")
-    @ExcelProperty("产品规格")
-    private String productSpec;
-
-    @Schema(description = "产品SKU", example = "SKU001")
-    @ExcelProperty("产品SKU")
-    private String productSku;
-
-    @Schema(description = "直播价格", example = "100.00")
-    @ExcelProperty("直播价格")
-    private BigDecimal livePrice;
-
-    @Schema(description = "货盘编号", example = "PB001")
-    @ExcelProperty("货盘编号")
-    private String privateBroadcastingNo;
-
-    @Schema(description = "客户名称", example = "张三")
-    @ExcelProperty("客户名称")
-    private String customerName;
-
-    @Schema(description = "货盘状态", example = "已审核")
-    @ExcelProperty("货盘状态")
-    private String privateStatus;
-}
+} 

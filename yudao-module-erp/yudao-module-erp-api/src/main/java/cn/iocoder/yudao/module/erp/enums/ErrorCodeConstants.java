@@ -311,7 +311,9 @@ public interface ErrorCodeConstants {
     ErrorCode PRIVATE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_114_004, "私播货盘未审核，无法操作");
     ErrorCode PRIVATE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_114_005, "审核失败，只有未审核的私播货盘才能审核");
     ErrorCode PRIVATE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_114_006, "反审核失败，只有已审核的私播货盘才能反审核");
-
+    ErrorCode PRIVATE_BROADCASTING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_114_002, "导入私播货盘数据不能为空");
+    ErrorCode PRIVATE_BROADCASTING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_114_003, "第{}行的私播货盘编号({})在Excel中重复");
+    ErrorCode PRIVATE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_114_004, "第{}行的私播货盘编号({})已存在，且不支持更新");
 
     // ========== ERP 私播复盘（1-030-115-000） ==========
     ErrorCode PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_115_000, "私播复盘不存在");
@@ -321,6 +323,14 @@ public interface ErrorCodeConstants {
     ErrorCode PRIVATE_BROADCASTING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_115_004, "私播复盘未审核，无法操作");
     ErrorCode PRIVATE_BROADCASTING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_115_005, "审核失败，只有未审核的私播复盘才能审核");
     ErrorCode PRIVATE_BROADCASTING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_115_006, "反审核失败，只有已审核的私播复盘才能反审核");
+
+    // ========== ERP 私播复盘导入（1-030-115-007） ==========
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_115_007, "导入私播复盘数据不能为空");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_115_008, "第{}行的私播复盘编号({})在Excel中重复");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_PRIVATE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_115_009, "第{}行的私播货盘编号({})不存在");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_115_010, "第{}行的客户名称({})不存在");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_115_011, "第{}行的私播复盘编号({})已存在，且不支持更新");
+
     // ========== ERP 私播信息（1-030-116-000） ==========
     ErrorCode PRIVATE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_116_000, "私播信息不存在");
     ErrorCode PRIVATE_BROADCASTING_INFO_NO_EXISTS = new ErrorCode(1_030_116_001, "私播信息编号已存在");
@@ -330,6 +340,11 @@ public interface ErrorCodeConstants {
     ErrorCode PRIVATE_BROADCASTING_INFO_APPROVE_FAIL = new ErrorCode(1_030_116_005, "审核失败，只有未审核的私播信息才能审核");
     ErrorCode PRIVATE_BROADCASTING_INFO_PROCESS_FAIL = new ErrorCode(1_030_116_006, "反审核失败，只有已审核的私播信息才能反审核");
 
+    // ========== ERP 私播信息导入（1-030-116-007） ==========
+    ErrorCode PRIVATE_BROADCASTING_INFO_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_116_007, "导入私播信息数据不能为空");
+    ErrorCode PRIVATE_BROADCASTING_INFO_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_116_008, "第{}行的私播信息编号({})在Excel中重复");
+    ErrorCode PRIVATE_BROADCASTING_INFO_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_116_009, "第{}行的私播信息编号({})已存在，且不支持更新");
+    ErrorCode PRIVATE_BROADCASTING_INFO_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_116_010, "第{}行的客户名称({})不存在");
 
     // ========== ERP 直播货盘（1-030-117-000） ==========
     ErrorCode LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_117_000, "直播货盘不存在");
@@ -339,6 +354,17 @@ public interface ErrorCodeConstants {
     ErrorCode LIVE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_117_004, "直播货盘未审核，无法操作");
     ErrorCode LIVE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_117_005, "审核失败，只有未审核的直播货盘才能审核");
     ErrorCode LIVE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_117_006, "反审核失败，只有已审核的直播货盘才能反审核");
+
+    // ========== ERP 直播货盘导入（1-030-117-007） ==========
+    ErrorCode LIVE_BROADCASTING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_117_007, "导入直播货盘数据不能为空");
+    ErrorCode LIVE_BROADCASTING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_117_008, "第{}行的直播货盘编号({})在Excel中重复");
+    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_NAME_EMPTY = new ErrorCode(1_030_117_009, "第{}行的产品名称不能为空");
+    ErrorCode LIVE_BROADCASTING_IMPORT_MARKET_PRICE_INVALID = new ErrorCode(1_030_117_010, "第{}行的市场价格必须大于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_LIVE_PRICE_INVALID = new ErrorCode(1_030_117_011, "第{}行的直播价格必须大于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_LIVE_COMMISSION_INVALID = new ErrorCode(1_030_117_012, "第{}行的直播佣金必须大于等于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_STOCK_INVALID = new ErrorCode(1_030_117_013, "第{}行的产品库存必须大于等于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_117_014, "第{}行的直播货盘编号({})已存在，且不支持更新");
+
     // ========== ERP 直播复盘（1-030-118-000） ==========
     ErrorCode LIVE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_118_000, "直播复盘不存在");
     ErrorCode LIVE_BROADCASTING_REVIEW_NO_EXISTS = new ErrorCode(1_030_118_001, "直播复盘编号已存在");
@@ -356,6 +382,13 @@ public interface ErrorCodeConstants {
     ErrorCode LIVE_BROADCASTING_INFO_NOT_APPROVE = new ErrorCode(1_030_119_004, "直播信息未审核，无法操作");
     ErrorCode LIVE_BROADCASTING_INFO_APPROVE_FAIL = new ErrorCode(1_030_119_005, "审核失败，只有未审核的直播信息才能审核");
     ErrorCode LIVE_BROADCASTING_INFO_PROCESS_FAIL = new ErrorCode(1_030_119_006, "反审核失败，只有已审核的直播信息才能反审核");
+
+    // ========== ERP 直播信息导入（1-030-119-007） ==========
+    ErrorCode LIVE_BROADCASTING_INFO_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_119_007, "导入直播信息数据不能为空");
+    ErrorCode LIVE_BROADCASTING_INFO_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_119_008, "第{}行的直播信息编号({})在Excel中重复");
+    ErrorCode LIVE_BROADCASTING_INFO_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_119_009, "第{}行的直播信息编号({})已存在，且不支持更新");
+    ErrorCode LIVE_BROADCASTING_INFO_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_119_010, "第{}行的客户名称({})不存在");
+
     // ========== ERP 代发辅助（1-030-110-000） ==========
     ErrorCode DROPSHIP_ASSIST_NOT_EXISTS = new ErrorCode(1_030_110_000, "代发辅助记录不存在");
     ErrorCode DROPSHIP_ASSIST_NO_EXISTS = new ErrorCode(1_030_110_001, "代发辅助编号已存在");
@@ -364,6 +397,7 @@ public interface ErrorCodeConstants {
     ErrorCode DROPSHIP_ASSIST_NOT_APPROVE = new ErrorCode(1_030_110_004, "代发辅助记录未审核，无法操作");
     ErrorCode DROPSHIP_ASSIST_APPROVE_FAIL = new ErrorCode(1_030_110_005, "审核失败，只有未审核的代发辅助记录才能审核");
     ErrorCode DROPSHIP_ASSIST_PROCESS_FAIL = new ErrorCode(1_030_110_006, "反审核失败，只有已审核的代发辅助记录才能反审核");
+
     // ========== ERP 产品导入 1-030-503-000 ==========
     ErrorCode PRODUCT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_503_000, "导入产品数据不能为空");
     ErrorCode PRODUCT_IMPORT_NAME_EMPTY = new ErrorCode(1_030_503_001, "第{}行的产品名称为空");
@@ -429,5 +463,24 @@ public interface ErrorCodeConstants {
 // ... 其他已有错误码 ...
 
     ErrorCode SALE_PRICE_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_300_009, "客户不存在");
+
+    // ========== ERP 直播复盘（1-030-118-000） ==========
+    //ErrorCode LIVE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_118_000, "直播复盘不存在");
+//    ErrorCode LIVE_BROADCASTING_REVIEW_NO_EXISTS = new ErrorCode(1_030_118_001, "直播复盘编号已存在");
+//    ErrorCode LIVE_BROADCASTING_REVIEW_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_118_002, "直播复盘({})已审核，无法修改");
+//    ErrorCode LIVE_BROADCASTING_REVIEW_DELETE_FAIL_APPROVE = new ErrorCode(1_030_118_003, "直播复盘({})已审核，无法删除");
+//    ErrorCode LIVE_BROADCASTING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_118_004, "直播复盘未审核，无法操作");
+//    ErrorCode LIVE_BROADCASTING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_118_005, "审核失败，只有未审核的直播复盘才能审核");
+//    ErrorCode LIVE_BROADCASTING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_118_006, "反审核失败，只有已审核的直播复盘才能反审核");
+
+    // ========== ERP 直播复盘导入（1-030-118-007） ==========
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_118_007, "导入直播复盘数据不能为空");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_118_008, "第{}行的直播复盘编号({})在Excel中重复");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_118_009, "第{}行的直播货盘编号({})不存在");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_118_010, "第{}行的客户名称({})不存在");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_118_011, "第{}行的直播复盘编号({})已存在，且不支持更新");
+
+
+    ErrorCode PRIVATE_BROADCASTING_INFO_DICT_DATA_INVALID = new ErrorCode(1_030_118_099, "第{}行的私播信息的编号({})的字典不存在");
 
 }

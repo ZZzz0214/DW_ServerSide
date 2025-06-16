@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastingreview.ErpLiveBroadcastingReviewDO;
 
 import javax.validation.Valid;
@@ -33,4 +35,13 @@ public interface ErpLiveBroadcastingReviewService {
     Map<Long, ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOMap(Collection<Long> ids);
 
     PageResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOPage(ErpLiveBroadcastingReviewPageReqVO pageReqVO);
+
+    /**
+     * 导入直播复盘列表
+     *
+     * @param importList 导入列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpLiveBroadcastingReviewImportRespVO importLiveBroadcastingReviewList(List<ErpLiveBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport);
 }

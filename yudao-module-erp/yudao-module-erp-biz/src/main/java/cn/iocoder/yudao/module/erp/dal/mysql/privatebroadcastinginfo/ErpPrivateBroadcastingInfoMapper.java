@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.E
 import cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastinginfo.ErpPrivateBroadcastingInfoDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpPrivateBroadcastingInfoMapper extends BaseMapperX<ErpPrivateBroadcastingInfoDO> {
 
@@ -34,6 +37,7 @@ public interface ErpPrivateBroadcastingInfoMapper extends BaseMapperX<ErpPrivate
                 .selectAs(ErpPrivateBroadcastingInfoDO::getRecruitmentCategory, ErpPrivateBroadcastingInfoRespVO::getRecruitmentCategory)
                 .selectAs(ErpPrivateBroadcastingInfoDO::getSelectionCriteria, ErpPrivateBroadcastingInfoRespVO::getSelectionCriteria)
                 .selectAs(ErpPrivateBroadcastingInfoDO::getRemark, ErpPrivateBroadcastingInfoRespVO::getRemark)
+                .selectAs(ErpPrivateBroadcastingInfoDO::getCreator, ErpPrivateBroadcastingInfoRespVO::getCreator)
                 .selectAs(ErpPrivateBroadcastingInfoDO::getCreateTime, ErpPrivateBroadcastingInfoRespVO::getCreateTime);
 
         return selectJoinPage(reqVO, ErpPrivateBroadcastingInfoRespVO.class, query);
@@ -41,5 +45,9 @@ public interface ErpPrivateBroadcastingInfoMapper extends BaseMapperX<ErpPrivate
 
     default ErpPrivateBroadcastingInfoDO selectByNo(String no) {
         return selectOne(ErpPrivateBroadcastingInfoDO::getNo, no);
+    }
+
+    default List<ErpPrivateBroadcastingInfoDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpPrivateBroadcastingInfoDO::getNo, nos);
     }
 }

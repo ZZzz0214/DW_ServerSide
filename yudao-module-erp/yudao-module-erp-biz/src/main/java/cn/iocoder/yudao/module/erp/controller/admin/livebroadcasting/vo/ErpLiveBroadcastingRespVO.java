@@ -91,6 +91,14 @@ public class ErpLiveBroadcastingRespVO {
     @ExcelProperty("发货地区")
     private String shippingArea;
 
+    @Schema(description = "直播货盘状态", example = "未设置")
+    @ExcelProperty("直播货盘状态")
+    private String liveStatus;
+
+    @Schema(description = "创建者")
+    @ExcelProperty("创建人员")
+    private String creator;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;

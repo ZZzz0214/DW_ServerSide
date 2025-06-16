@@ -125,6 +125,11 @@ public class ErpPrivateBroadcastingDO extends BaseDO {
     private String remark;
 
     /**
+     * 私播货盘状态
+     */
+    private String privateStatus;
+
+    /**
      * 租户编号
      */
     private Long tenantId;

@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.erp.service.privatebroadcastingreview;
 
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewSaveReqVO;
@@ -33,4 +35,13 @@ public interface ErpPrivateBroadcastingReviewService {
     Map<Long, ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOMap(Collection<Long> ids);
 
     PageResult<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOPage(ErpPrivateBroadcastingReviewPageReqVO pageReqVO);
+
+    /**
+     * 导入私播复盘
+     *
+     * @param importList 导入数据列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpPrivateBroadcastingReviewImportRespVO importPrivateBroadcastingReviewList(List<ErpPrivateBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport);
 }

@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveB
 import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcasting.ErpLiveBroadcastingDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcastingDO> {
 
@@ -17,6 +20,7 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
                 .likeIfPresent(ErpLiveBroadcastingDO::getNo, reqVO.getNo())
                 .eqIfPresent(ErpLiveBroadcastingDO::getBrandId, reqVO.getBrandId())
                 .likeIfPresent(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName())
+                .eqIfPresent(ErpLiveBroadcastingDO::getLiveStatus, reqVO.getLiveStatus())
                 .betweenIfPresent(ErpLiveBroadcastingDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpLiveBroadcastingDO::getId)
                 // 直播货盘表字段映射
@@ -39,6 +43,8 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
                 .selectAs(ErpLiveBroadcastingDO::getExpressCompany, ErpLiveBroadcastingRespVO::getExpressCompany)
                 .selectAs(ErpLiveBroadcastingDO::getShippingTime, ErpLiveBroadcastingRespVO::getShippingTime)
                 .selectAs(ErpLiveBroadcastingDO::getShippingArea, ErpLiveBroadcastingRespVO::getShippingArea)
+                .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingRespVO::getLiveStatus)
+                .selectAs(ErpLiveBroadcastingDO::getCreator, ErpLiveBroadcastingRespVO::getCreator)
                 .selectAs(ErpLiveBroadcastingDO::getCreateTime, ErpLiveBroadcastingRespVO::getCreateTime);
 
         return selectJoinPage(reqVO, ErpLiveBroadcastingRespVO.class, query);
@@ -46,5 +52,9 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
 
     default ErpLiveBroadcastingDO selectByNo(String no) {
         return selectOne(ErpLiveBroadcastingDO::getNo, no);
+    }
+
+    default List<ErpLiveBroadcastingDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpLiveBroadcastingDO::getNo, nos);
     }
 }

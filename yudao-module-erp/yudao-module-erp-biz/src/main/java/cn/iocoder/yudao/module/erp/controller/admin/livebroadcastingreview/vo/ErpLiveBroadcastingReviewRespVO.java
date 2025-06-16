@@ -27,6 +27,10 @@ public class ErpLiveBroadcastingReviewRespVO {
     @ExcelProperty("直播货盘表ID")
     private Long liveBroadcastingId;
 
+    @Schema(description = "货盘编号", example = "LP001")
+    @ExcelProperty("货盘编号")
+    private String liveBroadcastingNo;
+
     @Schema(description = "备注信息", example = "备注内容")
     @ExcelProperty("备注信息")
     private String remark;
@@ -79,9 +83,9 @@ public class ErpLiveBroadcastingReviewRespVO {
     @ExcelProperty("产品图片")
     private String productImage;
 
-    @Schema(description = "品牌名称", example = "品牌A")
-    @ExcelProperty("品牌名称")
-    private String brandName;
+    @Schema(description = "品牌ID", example = "1")
+    @ExcelProperty("品牌ID")
+    private Long brandId;
 
     @Schema(description = "产品名称", example = "产品A")
     @ExcelProperty("产品名称")
@@ -98,8 +102,17 @@ public class ErpLiveBroadcastingReviewRespVO {
     @Schema(description = "直播价格", example = "100.00")
     @ExcelProperty("直播价格")
     private BigDecimal livePrice;
+
+    @Schema(description = "货盘状态", example = "上架")
+    @ExcelProperty("货盘状态")
+    private String liveStatus;
+
     @Schema(description = "客户名称", example = "客户A")
     @ExcelProperty("客户名称")
     private String customerName;
+
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    @ExcelProperty("创建人员")
+    private String creator;
 
 }

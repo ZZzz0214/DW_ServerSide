@@ -3,6 +3,8 @@ package cn.iocoder.yudao.module.erp.service.privatebroadcastinginfo;
 
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.ErpPrivateBroadcastingInfoImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.ErpPrivateBroadcastingInfoImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.ErpPrivateBroadcastingInfoPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.ErpPrivateBroadcastingInfoRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.ErpPrivateBroadcastingInfoSaveReqVO;
@@ -34,4 +36,6 @@ public interface ErpPrivateBroadcastingInfoService {
     Map<Long, ErpPrivateBroadcastingInfoRespVO> getPrivateBroadcastingInfoVOMap(Collection<Long> ids);
 
     PageResult<ErpPrivateBroadcastingInfoRespVO> getPrivateBroadcastingInfoVOPage(ErpPrivateBroadcastingInfoPageReqVO pageReqVO);
+
+    ErpPrivateBroadcastingInfoImportRespVO importPrivateBroadcastingInfoList(List<ErpPrivateBroadcastingInfoImportExcelVO> importList, boolean isUpdateSupport);
 }

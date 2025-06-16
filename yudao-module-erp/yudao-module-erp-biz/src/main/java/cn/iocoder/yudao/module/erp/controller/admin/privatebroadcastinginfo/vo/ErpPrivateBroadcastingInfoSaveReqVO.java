@@ -14,7 +14,6 @@ public class ErpPrivateBroadcastingInfoSaveReqVO {
     private Long id;
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "SBXX001")
-    @NotEmpty(message = "编号不能为空")
     private String no;
 
     @Schema(description = "客户姓名", example = "张三")

@@ -121,6 +121,11 @@ public class ErpLiveBroadcastingDO extends BaseDO {
     private String shippingArea;
 
     /**
+     * 直播货盘状态
+     */
+    private String liveStatus;
+
+    /**
      * 租户编号
      */
     private Long tenantId;

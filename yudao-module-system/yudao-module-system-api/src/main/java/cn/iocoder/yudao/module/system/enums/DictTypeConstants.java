@@ -45,4 +45,24 @@ public interface DictTypeConstants {
     String ERP_CUSTOMER_CITY = "erp_customer_city"; // 客户城市
     String ERP_CUSTOMER_DISTRICT = "erp_customer_district"; // 客户区县
 
+    // 私播信息相关字典类型（如果与团购信息不同，可以使用专用的字典类型）
+    String ERP_PRIVATE_CUSTOMER_POSITION = "erp_private_customer_position"; // 私播信息客户职位
+    String ERP_PRIVATE_PLATFORM_NAME = "erp_private_platform_name"; // 私播信息平台名称
+    String ERP_PRIVATE_CUSTOMER_ATTRIBUTE = "erp_private_customer_attribute"; // 私播信息客户属性
+    String ERP_PRIVATE_CUSTOMER_CITY = "erp_private_customer_city"; // 私播信息客户城市
+    String ERP_PRIVATE_CUSTOMER_DISTRICT = "erp_private_customer_district"; // 私播信息客户区县
+
+    // 私播货盘相关字典类型
+    String ERP_PRIVATE_STATUS = "erp_privateStatus"; // 私播货盘状态
+
+    // 直播货盘相关字典类型
+    String ERP_LIVE_STATUS = "erp_live_status"; // 直播货盘状态
+
+    // 直播信息相关字典类型
+    String ERP_LIVE_CUSTOMER_POSITION = "erp_live_customer_position"; // 直播信息客户职位
+    String ERP_LIVE_PLATFORM_NAME = "erp_live_platform_name"; // 直播信息平台名称
+    String ERP_LIVE_CUSTOMER_ATTRIBUTE = "erp_live_customer_attribute"; // 直播信息客户属性
+    String ERP_LIVE_CUSTOMER_CITY = "erp_live_customer_city"; // 直播信息客户城市
+    String ERP_LIVE_CUSTOMER_DISTRICT = "erp_live_customer_district"; // 直播信息客户区县
+
 }

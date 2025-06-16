@@ -26,6 +26,9 @@ public class ErpLiveBroadcastingPageReqVO extends PageParam {
     @Schema(description = "产品名称", example = "产品A")
     private String productName;
 
+    @Schema(description = "直播货盘状态", example = "未设置")
+    private String liveStatus;
+
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     private LocalDateTime[] createTime;

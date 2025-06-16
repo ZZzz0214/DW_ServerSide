@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo.ErpPr
 import cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcasting.ErpPrivateBroadcastingDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroadcastingDO> {
 
@@ -40,6 +43,8 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
                 .selectAs(ErpPrivateBroadcastingDO::getShippingTime, ErpPrivateBroadcastingRespVO::getShippingTime)
                 .selectAs(ErpPrivateBroadcastingDO::getShippingArea, ErpPrivateBroadcastingRespVO::getShippingArea)
                 .selectAs(ErpPrivateBroadcastingDO::getRemark, ErpPrivateBroadcastingRespVO::getRemark)
+                .selectAs(ErpPrivateBroadcastingDO::getPrivateStatus, ErpPrivateBroadcastingRespVO::getPrivateStatus)
+                .selectAs(ErpPrivateBroadcastingDO::getCreator, ErpPrivateBroadcastingRespVO::getCreator)
                 .selectAs(ErpPrivateBroadcastingDO::getCreateTime, ErpPrivateBroadcastingRespVO::getCreateTime);
 
         return selectJoinPage(reqVO, ErpPrivateBroadcastingRespVO.class, query);
@@ -47,5 +52,9 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
 
     default ErpPrivateBroadcastingDO selectByNo(String no) {
         return selectOne(ErpPrivateBroadcastingDO::getNo, no);
+    }
+
+    default List<ErpPrivateBroadcastingDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpPrivateBroadcastingDO::getNo, nos);
     }
 }

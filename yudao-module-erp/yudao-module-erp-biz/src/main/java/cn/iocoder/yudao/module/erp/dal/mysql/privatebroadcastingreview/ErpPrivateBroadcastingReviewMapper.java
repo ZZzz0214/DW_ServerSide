@@ -8,7 +8,11 @@ import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcasting.ErpPrivateBroadcastingDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastingreview.ErpPrivateBroadcastingReviewDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.Collection;
+import java.util.List;
 
 @Mapper
 public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPrivateBroadcastingReviewDO> {
@@ -35,17 +39,32 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupSales, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupSales)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRemark, ErpPrivateBroadcastingReviewRespVO::getRemark)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getCreateTime, ErpPrivateBroadcastingReviewRespVO::getCreateTime);
-                // 联表查询私播货盘信息
-                query.leftJoin(ErpPrivateBroadcastingDO.class, ErpPrivateBroadcastingDO::getId, ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId)
+                
+        // 联表查询私播货盘信息
+        query.leftJoin(ErpPrivateBroadcastingDO.class, ErpPrivateBroadcastingDO::getId, ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId)
+                .selectAs(ErpPrivateBroadcastingDO::getNo, ErpPrivateBroadcastingReviewRespVO::getPrivateBroadcastingNo)
                 .selectAs(ErpPrivateBroadcastingDO::getProductName, ErpPrivateBroadcastingReviewRespVO::getProductName)
-                .selectAs(ErpPrivateBroadcastingDO::getBrandId, ErpPrivateBroadcastingReviewRespVO::getBrandName)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSpec, ErpPrivateBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSku, ErpPrivateBroadcastingReviewRespVO::getProductSku)
-                .selectAs(ErpPrivateBroadcastingDO::getLivePrice, ErpPrivateBroadcastingReviewRespVO::getLivePrice);
+                .selectAs(ErpPrivateBroadcastingDO::getLivePrice, ErpPrivateBroadcastingReviewRespVO::getLivePrice)
+                .selectAs(ErpPrivateBroadcastingDO::getPrivateStatus, ErpPrivateBroadcastingReviewRespVO::getPrivateStatus);
+                
+        // 联表查询客户信息
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpPrivateBroadcastingReviewDO::getCustomerId)
+                .selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName);
+                
         return selectJoinPage(reqVO, ErpPrivateBroadcastingReviewRespVO.class, query);
     }
 
     default ErpPrivateBroadcastingReviewDO selectByNo(String no) {
         return selectOne(ErpPrivateBroadcastingReviewDO::getNo, no);
+    }
+
+    default List<ErpPrivateBroadcastingReviewDO> selectListByNoIn(Collection<String> nos) {
+        return selectList(ErpPrivateBroadcastingReviewDO::getNo, nos);
+    }
+
+    default void insertBatch(List<ErpPrivateBroadcastingReviewDO> list) {
+        list.forEach(this::insert);
     }
 }

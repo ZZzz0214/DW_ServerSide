@@ -1,5 +1,8 @@
 package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo;
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,7 +29,8 @@ public class ErpPrivateBroadcastingRespVO {
     private String productImage;
 
     @Schema(description = "品牌ID", example = "1")
-    @ExcelProperty("品牌ID")
+//    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+//    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private Long brandId;
 
     @Schema(description = "产品名称", example = "产品A")
@@ -92,6 +96,15 @@ public class ErpPrivateBroadcastingRespVO {
     @Schema(description = "备注信息", example = "备注内容")
     @ExcelProperty("备注信息")
     private String remark;
+
+    @Schema(description = "私播货盘状态", example = "未设置")
+    @ExcelProperty(value = "私播货盘状态", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRIVATE_STATUS)
+    private String privateStatus;
+
+    @Schema(description = "创建者")
+    @ExcelProperty("创建人员")
+    private String creator;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
