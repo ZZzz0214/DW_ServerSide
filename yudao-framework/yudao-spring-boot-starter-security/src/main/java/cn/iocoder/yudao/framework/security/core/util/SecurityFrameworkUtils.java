@@ -81,8 +81,8 @@ public class SecurityFrameworkUtils {
 
     @Nullable
     public static String getLoginUsername() {
-        LoginUser loginUser = getLoginUser();
-        return loginUser != null ? MapUtil.getStr(loginUser.getInfo(), LoginUser.INFO_KEY_NICKNAME) : null;
+        Authentication authentication = getAuthentication();
+        return authentication != null ? authentication.getName() : null;
     }
 
     /**

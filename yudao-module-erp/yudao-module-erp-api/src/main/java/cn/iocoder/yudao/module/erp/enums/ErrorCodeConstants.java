@@ -345,6 +345,7 @@ public interface ErrorCodeConstants {
     ErrorCode PRIVATE_BROADCASTING_INFO_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_116_008, "第{}行的私播信息编号({})在Excel中重复");
     ErrorCode PRIVATE_BROADCASTING_INFO_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_116_009, "第{}行的私播信息编号({})已存在，且不支持更新");
     ErrorCode PRIVATE_BROADCASTING_INFO_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_116_010, "第{}行的客户名称({})不存在");
+    ErrorCode PRIVATE_BROADCASTING_INFO_DICT_DATA_INVALID = new ErrorCode(1_030_116_011, "第{}行的{}字段值({})无效");
 
     // ========== ERP 直播货盘（1-030-117-000） ==========
     ErrorCode LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_117_000, "直播货盘不存在");
@@ -373,6 +374,13 @@ public interface ErrorCodeConstants {
     ErrorCode LIVE_BROADCASTING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_118_004, "直播复盘未审核，无法操作");
     ErrorCode LIVE_BROADCASTING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_118_005, "审核失败，只有未审核的直播复盘才能审核");
     ErrorCode LIVE_BROADCASTING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_118_006, "反审核失败，只有已审核的直播复盘才能反审核");
+
+    // ========== ERP 直播复盘导入（1-030-118-007） ==========
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_118_007, "导入直播复盘数据不能为空");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_118_008, "第{}行的直播复盘编号({})在Excel中重复");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_118_009, "第{}行的直播货盘编号({})不存在");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_118_010, "第{}行的客户名称({})不存在");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_118_011, "第{}行的直播复盘编号({})已存在，且不支持更新");
 
     // ========== ERP 直播信息（1-030-119-000） ==========
     ErrorCode LIVE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_119_000, "直播信息不存在");
@@ -464,23 +472,35 @@ public interface ErrorCodeConstants {
 
     ErrorCode SALE_PRICE_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_300_009, "客户不存在");
 
-    // ========== ERP 直播复盘（1-030-118-000） ==========
-    //ErrorCode LIVE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_118_000, "直播复盘不存在");
-//    ErrorCode LIVE_BROADCASTING_REVIEW_NO_EXISTS = new ErrorCode(1_030_118_001, "直播复盘编号已存在");
-//    ErrorCode LIVE_BROADCASTING_REVIEW_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_118_002, "直播复盘({})已审核，无法修改");
-//    ErrorCode LIVE_BROADCASTING_REVIEW_DELETE_FAIL_APPROVE = new ErrorCode(1_030_118_003, "直播复盘({})已审核，无法删除");
-//    ErrorCode LIVE_BROADCASTING_REVIEW_NOT_APPROVE = new ErrorCode(1_030_118_004, "直播复盘未审核，无法操作");
-//    ErrorCode LIVE_BROADCASTING_REVIEW_APPROVE_FAIL = new ErrorCode(1_030_118_005, "审核失败，只有未审核的直播复盘才能审核");
-//    ErrorCode LIVE_BROADCASTING_REVIEW_PROCESS_FAIL = new ErrorCode(1_030_118_006, "反审核失败，只有已审核的直播复盘才能反审核");
+    // ========== ERP 财务（1-030-121-000） ==========
+    ErrorCode FINANCE_NOT_EXISTS = new ErrorCode(1_030_121_000, "财务记录不存在");
+    ErrorCode FINANCE_NO_EXISTS = new ErrorCode(1_030_121_001, "财务编号已存在");
+    ErrorCode FINANCE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_121_002, "导入财务数据不能为空");
+    ErrorCode FINANCE_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_121_003, "第{}行的财务编号({})在Excel中重复");
+    ErrorCode FINANCE_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_121_004, "第{}行的财务编号({})已存在，且不支持更新");
 
-    // ========== ERP 直播复盘导入（1-030-118-007） ==========
-    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_118_007, "导入直播复盘数据不能为空");
-    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_118_008, "第{}行的直播复盘编号({})在Excel中重复");
-    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_118_009, "第{}行的直播货盘编号({})不存在");
-    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_118_010, "第{}行的客户名称({})不存在");
-    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_118_011, "第{}行的直播复盘编号({})已存在，且不支持更新");
+    // ========== ERP 财务金额（1-030-122-000） ==========
+    ErrorCode FINANCE_AMOUNT_NOT_EXISTS = new ErrorCode(1_030_122_000, "财务金额记录不存在");
+    ErrorCode FINANCE_AMOUNT_NO_EXISTS = new ErrorCode(1_030_122_001, "财务金额编号已存在");
+    ErrorCode FINANCE_AMOUNT_BALANCE_INSUFFICIENT = new ErrorCode(1_030_122_003, "余额不足，无法完成操作");
+    ErrorCode FINANCE_AMOUNT_ACCOUNT_TYPE_INVALID = new ErrorCode(1_030_122_004, "账户类型无效");
+    ErrorCode FINANCE_AMOUNT_CHANNEL_TYPE_INVALID = new ErrorCode(1_030_122_005, "渠道类型无效");
+    
+    // 财务金额导入错误码
+    ErrorCode FINANCE_AMOUNT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_122_006, "导入财务金额数据不能为空");
+    ErrorCode FINANCE_AMOUNT_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_122_007, "第{}行的财务金额编号({})在Excel中重复");
+    ErrorCode FINANCE_AMOUNT_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_122_008, "第{}行的财务金额编号({})已存在，且不支持更新");
 
+    // 财务审核状态错误码
+    ErrorCode FINANCE_AUDIT_STATUS_NOT_ALLOW_UPDATE = new ErrorCode(1_030_121_010, "财务记录已审核，无法修改");
+    ErrorCode FINANCE_AUDIT_STATUS_NOT_ALLOW_DELETE = new ErrorCode(1_030_121_011, "财务记录已审核，无法删除");
+    ErrorCode FINANCE_AUDIT_STATUS_NOT_ALLOW_AUDIT = new ErrorCode(1_030_121_012, "财务记录状态不允许审核");
+    ErrorCode FINANCE_AUDIT_STATUS_NOT_ALLOW_UNAUDIT = new ErrorCode(1_030_121_013, "财务记录状态不允许反审核");
 
-    ErrorCode PRIVATE_BROADCASTING_INFO_DICT_DATA_INVALID = new ErrorCode(1_030_118_099, "第{}行的私播信息的编号({})的字典不存在");
+    // 财务金额审核状态错误码
+    ErrorCode FINANCE_AMOUNT_AUDIT_STATUS_NOT_ALLOW_UPDATE = new ErrorCode(1_030_122_010, "财务金额记录已审核，无法修改");
+    ErrorCode FINANCE_AMOUNT_AUDIT_STATUS_NOT_ALLOW_DELETE = new ErrorCode(1_030_122_011, "财务金额记录已审核，无法删除");
+    ErrorCode FINANCE_AMOUNT_AUDIT_STATUS_NOT_ALLOW_AUDIT = new ErrorCode(1_030_122_012, "财务金额记录状态不允许审核");
+    ErrorCode FINANCE_AMOUNT_AUDIT_STATUS_NOT_ALLOW_UNAUDIT = new ErrorCode(1_030_122_013, "财务金额记录状态不允许反审核");
 
 }

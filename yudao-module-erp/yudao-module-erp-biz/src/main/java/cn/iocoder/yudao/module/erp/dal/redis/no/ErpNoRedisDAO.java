@@ -156,6 +156,16 @@ public class ErpNoRedisDAO {
      */
     public static final String TRANSIT_SALE_NO_PREFIX = "ZZXS";
 
+    /**
+     * 财务编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO}
+     */
+    public static final String FINANCE_NO_PREFIX = "CWJL";
+
+    /**
+     * 财务金额编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAmountDO}
+     */
+    public static final String FINANCE_AMOUNT_NO_PREFIX = "CWJE";
+
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
