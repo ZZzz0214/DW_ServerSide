@@ -19,6 +19,7 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -73,8 +74,37 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         // 1.3 校验数据
         validateFinanceAmountForCreateOrUpdate(updateReqVO.getId(), updateReqVO, currentUsername);
 
-        // 2. 更新财务金额记录
+        // 2. 重新计算余额（如果金额、操作类型或渠道类型发生变化）
         ErpFinanceAmountDO updateObj = BeanUtils.toBean(updateReqVO, ErpFinanceAmountDO.class);
+        
+        boolean needRecalculateBalance = false;
+        // 检查是否需要重新计算余额
+        if (!Objects.equals(oldFinanceAmount.getAmount(), updateReqVO.getAmount()) ||
+            !Objects.equals(oldFinanceAmount.getOperationType(), updateReqVO.getOperationType()) ||
+            !Objects.equals(oldFinanceAmount.getChannelType(), updateReqVO.getChannelType())) {
+            needRecalculateBalance = true;
+        }
+        
+        if (needRecalculateBalance) {
+            // 重新计算操作前余额和操作后余额
+            BigDecimal beforeBalance = calculateBeforeBalanceForUpdate(updateReqVO.getId(), updateReqVO.getChannelType(), currentUsername);
+            BigDecimal afterBalance;
+            
+            if (updateReqVO.getOperationType() == 1) { // 充值
+                afterBalance = beforeBalance.add(updateReqVO.getAmount());
+            } else { // 消费
+                afterBalance = beforeBalance.subtract(updateReqVO.getAmount());
+                // 检查余额是否足够
+                if (afterBalance.compareTo(BigDecimal.ZERO) < 0) {
+                    throw exception(FINANCE_AMOUNT_BALANCE_INSUFFICIENT);
+                }
+            }
+            
+            updateObj.setBeforeBalance(beforeBalance);
+            updateObj.setAfterBalance(afterBalance);
+        }
+
+        // 3. 更新财务金额记录
         financeAmountMapper.updateById(updateObj);
     }
 
@@ -398,6 +428,30 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             return latestRecord.getAfterBalance() != null ? latestRecord.getAfterBalance() : BigDecimal.ZERO;
         }
         
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * 计算更新记录时的操作前余额
+     * 需要排除当前正在更新的记录，获取该记录之前的最新余额
+     */
+    private BigDecimal calculateBeforeBalanceForUpdate(Long currentRecordId, String channelType, String creator) {
+        // 查询该渠道的所有记录，按创建时间排序，排除当前正在更新的记录
+        List<ErpFinanceAmountDO> amountRecords = financeAmountMapper.selectList(
+            new MPJLambdaWrapperX<ErpFinanceAmountDO>()
+                .eq(ErpFinanceAmountDO::getCreator, creator)
+                .eq(ErpFinanceAmountDO::getChannelType, channelType)
+                .ne(ErpFinanceAmountDO::getId, currentRecordId)
+                .orderByDesc(ErpFinanceAmountDO::getCreateTime)
+        );
+        
+        if (!CollUtil.isEmpty(amountRecords)) {
+            // 获取最新的一条记录的操作后余额作为当前记录的操作前余额
+            ErpFinanceAmountDO latestRecord = amountRecords.get(0);
+            return latestRecord.getAfterBalance() != null ? latestRecord.getAfterBalance() : BigDecimal.ZERO;
+        }
+        
+        // 如果没有其他记录，则操作前余额为0
         return BigDecimal.ZERO;
     }
 
