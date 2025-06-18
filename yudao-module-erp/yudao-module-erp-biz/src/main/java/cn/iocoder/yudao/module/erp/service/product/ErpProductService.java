@@ -123,4 +123,9 @@ public interface ErpProductService {
      */
     ErpProductImportRespVO importProductList(List<ErpProductImportExcelVO> importProducts, boolean isUpdateSupport);
 
+    /**
+     * 全量同步产品数据到ES
+     */
+    void fullSyncToES();
+
 }

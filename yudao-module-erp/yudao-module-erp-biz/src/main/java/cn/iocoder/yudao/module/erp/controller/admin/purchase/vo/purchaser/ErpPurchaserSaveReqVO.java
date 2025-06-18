@@ -15,6 +15,9 @@ public class ErpPurchaserSaveReqVO {
     @Schema(description = "编号", example = "1")
     private Long id;
 
+    @Schema(description = "采购人员编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "P001")
+    private String no;
+
     @Schema(description = "采购人员姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
     @NotEmpty(message = "采购人员姓名不能为空")
     private String purchaserName;

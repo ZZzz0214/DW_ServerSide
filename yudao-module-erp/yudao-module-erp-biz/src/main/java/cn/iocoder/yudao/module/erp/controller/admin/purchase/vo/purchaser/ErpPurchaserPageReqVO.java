@@ -16,11 +16,17 @@ import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_
 @ToString(callSuper = true)
 public class ErpPurchaserPageReqVO extends PageParam {
 
+    @Schema(description = "采购人员编号", example = "P001")
+    private String no;
+
     @Schema(description = "采购人员姓名", example = "张三")
     private String purchaserName;
 
     @Schema(description = "联系电话", example = "13800138000")
     private String contactPhone;
+
+    @Schema(description = "详细地址", example = "北京市朝阳区")
+    private String address;
 
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)

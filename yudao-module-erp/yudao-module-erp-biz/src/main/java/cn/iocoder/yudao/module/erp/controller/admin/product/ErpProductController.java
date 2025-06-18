@@ -79,7 +79,16 @@ public class ErpProductController {
     @Operation(summary = "获得产品分页")
     @PreAuthorize("@ss.hasPermission('erp:product:query')")
     public CommonResult<PageResult<ErpProductRespVO>> getProductPage(@Valid ErpProductPageReqVO pageReqVO) {
-        System.out.println("调用产品分页"+pageReqVO);
+        System.out.println("产品分页查询参数: " + pageReqVO);
+        System.out.println("查询条件详情: 产品名称=" + pageReqVO.getName() + 
+                          ", 产品简称=" + pageReqVO.getProductShortName() + 
+                          ", 发货编码=" + pageReqVO.getShippingCode() + 
+                          ", 品牌=" + pageReqVO.getBrand() + 
+                          ", 分类ID=" + pageReqVO.getCategoryId() + 
+                          ", 状态=" + pageReqVO.getStatus() + 
+                          ", 采购人员=" + pageReqVO.getPurchaser() + 
+                          ", 供应商=" + pageReqVO.getSupplier() + 
+                          ", 关键词=" + pageReqVO.getKeyword());
         return success(productService.getProductVOPage(pageReqVO));
     }
 
@@ -146,54 +155,6 @@ public class ErpProductController {
         ExcelUtils.write(response, "产品导入模板.xls", "产品列表", ErpProductRespVO.class, list);
     }
 
-//    @PostMapping("/import")
-//    @Operation(summary = "导入产品")
-//    @Parameters({
-//            @Parameter(name = "file", description = "Excel 文件", required = true),
-//            @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
-//    })
-//    @PreAuthorize("@ss.hasPermission('erp:product:import')")
-//    public CommonResult<ErpProductImportRespVO> importExcel(@RequestParam("file") MultipartFile file,
-//                                                            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
-//        List<ErpProductImportExcelVO> list = ExcelUtils.read(file, ErpProductImportExcelVO.class);
-//        return success(productService.importProductList(list, updateSupport));
-//    }
-
-//    @PostMapping("/import")
-//    @Operation(summary = "导入产品")
-//    @Parameters({
-//            @Parameter(name = "file", description = "Excel 文件", required = true),
-//            @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
-//    })
-//    @PreAuthorize("@ss.hasPermission('erp:product:import')")
-//    public CommonResult<ErpProductImportRespVO> importExcel(
-//            @RequestParam("file") MultipartFile file,
-//            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
-//        try (InputStream inputStream = file.getInputStream()) {
-//            List<ErpProductImportExcelVO> list = ExcelUtils.read(inputStream, ErpProductImportExcelVO.class);
-//            return success(productService.importProductList(list, updateSupport));
-//        } catch (Exception e) {
-//            throw new RuntimeException("导入失败: " + e.getMessage());
-//        }
-//    }
-//    @PostMapping("/import")
-//    @Operation(summary = "导入产品")
-//    @Parameters({
-//            @Parameter(name = "file", description = "Excel 文件", required = true),
-//            @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
-//    })
-//    @PreAuthorize("@ss.hasPermission('erp:product:import')")
-//    public CommonResult<ErpProductImportRespVO> importExcel(
-//            @RequestParam("file") MultipartFile file,
-//            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception{
-//            InputStream inputStream = file.getInputStream();
-//            // 修改为使用MultipartFile直接读取
-//            List<ErpProductImportExcelVO> list = ExcelUtils.read(file, ErpProductImportExcelVO.class);
-//            inputStream.close();
-//            return success(productService.importProductList(list, updateSupport));
-//
-//    }
-
     @PostMapping("/import")
     @Operation(summary = "导入产品")
     @Parameters({
@@ -212,5 +173,16 @@ public class ErpProductController {
         }
     }
 
+    @PostMapping("/sync-es")
+    @Operation(summary = "手动同步产品数据到ES")
+    @PreAuthorize("@ss.hasPermission('erp:product:update')")
+    public CommonResult<Boolean> syncProductsToES() {
+        try {
+            productService.fullSyncToES();
+            return success(true);
+        } catch (Exception e) {
+            throw new RuntimeException("同步ES失败: " + e.getMessage());
+        }
+    }
 
 }

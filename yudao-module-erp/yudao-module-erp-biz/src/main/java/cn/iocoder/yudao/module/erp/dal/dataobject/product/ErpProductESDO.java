@@ -22,8 +22,11 @@ public class ErpProductESDO {
     @Field(name = "no", type = FieldType.Keyword)
     private String no;
 
-    @Field(name = "name", type = FieldType.Keyword)
+    @Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word")
     private String name;
+
+    @Field(name = "name_keyword", type = FieldType.Keyword)
+    private String nameKeyword;
 
     @Field(name = "image", type = FieldType.Keyword)
     private String image;
@@ -31,8 +34,14 @@ public class ErpProductESDO {
     @Field(name = "product_short_name", type = FieldType.Text, analyzer = "ik_max_word")
     private String productShortName;
 
-    @Field(name = "shipping_code", type = FieldType.Keyword)
+    @Field(name = "product_short_name_keyword", type = FieldType.Keyword)
+    private String productShortNameKeyword;
+
+    @Field(name = "shipping_code", type = FieldType.Text, analyzer = "ik_max_word")
     private String shippingCode;
+
+    @Field(name = "shipping_code_keyword", type = FieldType.Keyword)
+    private String shippingCodeKeyword;
 
     @Field(name = "unit_id", type = FieldType.Long)
     private Long unitId;
@@ -46,16 +55,17 @@ public class ErpProductESDO {
     @Field(name = "weight", type = FieldType.Double)
     private BigDecimal weight;
 
-    @Field(name = "production_date", type = FieldType.Date,
-    format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime productionDate;
+    @Field(name = "production_date", type = FieldType.Keyword)
+    private String productionDate;
 
     @Field(name = "expiry_day", type = FieldType.Integer)
     private Integer expiryDay;
 
-    @Field(name = "brand", type = FieldType.Keyword)
+    @Field(name = "brand", type = FieldType.Text, analyzer = "ik_max_word")
     private String brand;
+
+    @Field(name = "brand_keyword", type = FieldType.Keyword)
+    private String brandKeyword;
 
     @Field(name = "category_id", type = FieldType.Long)
     private Long categoryId;
@@ -87,7 +97,7 @@ public class ErpProductESDO {
     @Field(name = "packaging_material_quantity", type = FieldType.Integer)
     private Integer packagingMaterialQuantity;
 
-    @Field(name = "production_date", type = FieldType.Text)
+    @Field(name = "order_replenishment_lead_time", type = FieldType.Text)
     private String orderReplenishmentLeadTime;
 
     @Field(name = "product_dimensions", type = FieldType.Keyword)
@@ -180,11 +190,17 @@ public class ErpProductESDO {
     @Field(name = "weight_unit", type = FieldType.Keyword)
     private String weightUnit;
 
-    @Field(name = "purchaser", type = FieldType.Keyword)
+    @Field(name = "purchaser", type = FieldType.Text, analyzer = "ik_max_word")
     private String purchaser;
 
-    @Field(name = "supplier", type = FieldType.Keyword)
+    @Field(name = "purchaser_keyword", type = FieldType.Keyword)
+    private String purchaserKeyword;
+
+    @Field(name = "supplier", type = FieldType.Text, analyzer = "ik_max_word")
     private String supplier;
+
+    @Field(name = "supplier_keyword", type = FieldType.Keyword)
+    private String supplierKeyword;
 
     @Field(name = "purchase_price", type = FieldType.Double)
     private BigDecimal purchasePrice;
@@ -225,10 +241,8 @@ public class ErpProductESDO {
     @Field(name = "additional_weight_price", type = FieldType.Double)
     private BigDecimal additionalWeightPrice;
 
-    @Field(name = "production_date", type = FieldType.Date,
-            format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime createTime;
+    @Field(name = "create_time", type = FieldType.Keyword)
+    private String createTime;
 
     @Field(name = "count", type = FieldType.Integer)
     private Integer count;

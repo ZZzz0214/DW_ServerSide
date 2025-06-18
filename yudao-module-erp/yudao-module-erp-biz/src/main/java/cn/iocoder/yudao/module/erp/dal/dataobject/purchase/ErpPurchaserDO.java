@@ -29,6 +29,10 @@ public class ErpPurchaserDO extends BaseDO {
     @TableId
     private Long id;
     /**
+     * 采购人员编号（业务编号）
+     */
+    private String no;
+    /**
      * 采购人员姓名
      */
     private String purchaserName;

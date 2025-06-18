@@ -29,6 +29,10 @@ public class ErpSupplierDO extends BaseDO {
     @TableId
     private Long id;
     /**
+     * 供应商编号（业务编号）
+     */
+    private String no;
+    /**
      * 供应商名称
      */
     private String name;

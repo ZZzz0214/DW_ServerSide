@@ -17,6 +17,10 @@ public class ErpPurchaserRespVO {
     @ExcelProperty("编号")
     private Long id;
 
+    @Schema(description = "采购人员编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "P001")
+    @ExcelProperty("采购人员编号")
+    private String no;
+
     @Schema(description = "采购人员姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
     @ExcelProperty("采购人员姓名")
     private String purchaserName;

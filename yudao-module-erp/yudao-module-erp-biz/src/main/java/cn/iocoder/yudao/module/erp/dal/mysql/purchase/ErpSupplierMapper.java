@@ -19,6 +19,7 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
 
     default PageResult<ErpSupplierDO> selectPage(ErpSupplierPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpSupplierDO>()
+                .likeIfPresent(ErpSupplierDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpSupplierDO::getName, reqVO.getName())
                 .likeIfPresent(ErpSupplierDO::getMobile, reqVO.getMobile())
                 .likeIfPresent(ErpSupplierDO::getTelephone, reqVO.getTelephone())
@@ -27,6 +28,11 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
 
     default List<ErpSupplierDO> selectListByStatus(Integer status) {
         return selectList(ErpSupplierDO::getStatus, status);
+    }
+    
+    default ErpSupplierDO selectByNo(String no) {
+        return selectOne(new LambdaQueryWrapperX<ErpSupplierDO>()
+                .eq(ErpSupplierDO::getNo, no));
     }
 
 }

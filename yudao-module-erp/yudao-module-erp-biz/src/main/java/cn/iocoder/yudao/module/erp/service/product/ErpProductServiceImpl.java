@@ -36,6 +36,7 @@ import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,20 +75,35 @@ public class ErpProductServiceImpl implements ErpProductService {
 
     @Resource
     private DictDataApi dictDataApi;
+    
+    // 用于存储当前搜索条件的ThreadLocal
+    private static final ThreadLocal<String> CURRENT_SEARCH_NAME = new ThreadLocal<>();
 
     @EventListener(ApplicationReadyEvent.class)
     public void initESIndex() {
         System.out.println("开始初始化ES索引...");
-    try {
-        IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
-        if (!indexOps.exists()) {
+        try {
+            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
+            
+            // 检查索引是否存在，如果存在则删除重建（确保字段映射更新）
+            if (indexOps.exists()) {
+                System.out.println("删除现有索引以更新字段映射...");
+                indexOps.delete();
+            }
+            
+            // 创建新索引
             indexOps.create();
             indexOps.putMapping(indexOps.createMapping(ErpProductESDO.class));
             System.out.println("ERP产品索引创建成功");
+            
+            // 注意：不在启动时进行全量同步，避免租户上下文问题
+            // 数据会在实际使用时自动同步
+            System.out.println("ES索引初始化完成，数据将在使用时自动同步");
+            
+        } catch (Exception e) {
+            System.err.println("ERP产品索引创建失败: " + e.getMessage());
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        System.err.println("ERP产品索引创建失败: " + e.getMessage());
-    }
     }
 
     @Override
@@ -182,153 +198,607 @@ public class ErpProductServiceImpl implements ErpProductService {
         return buildProductVOList(list);
     }
 
-//    @Override
-//    public PageResult<ErpProductRespVO> getProductVOPage(ErpProductPageReqVO pageReqVO) {
-//        PageResult<ErpProductDO> pageResult = productMapper.selectPage(pageReqVO);
-//        return new PageResult<>(buildProductVOList(pageResult.getList()), pageResult.getTotal());
-//    }
-
-//    @Override
-//    public PageResult<ErpProductRespVO> getProductVOPage(ErpProductPageReqVO pageReqVO) {
-//        // 1. 构建ES查询条件
-//        NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
-//                .withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()))
-//                // 设置track_total_hits为true以获取准确的总命中数
-//                .withTrackTotalHits(true);
-//
-//        // 添加查询条件
-//        if (StringUtils.isNotBlank(pageReqVO.getName())) {
-//            queryBuilder.withQuery(QueryBuilders.matchQuery("name", pageReqVO.getName()));
-//        }
-//        if (pageReqVO.getCategoryId() != null) {
-//            queryBuilder.withQuery(QueryBuilders.termQuery("categoryId", pageReqVO.getCategoryId()));
-//        }
-//        if (pageReqVO.getCreateTime() != null) {
-//            queryBuilder.withQuery(QueryBuilders.rangeQuery("createTime")
-//                    .gte(pageReqVO.getCreateTime()[0])
-//                    .lte(pageReqVO.getCreateTime()[1]));
-//        }
-//
-//        // 2. 执行ES查询并直接获取完整数据
-//        SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(queryBuilder.build(), ErpProductESDO.class);
-//        // 3. 转换为VO并返回
-//        List<ErpProductRespVO> voList = searchHits.stream()
-//                .map(SearchHit::getContent)
-//                .map(esDO -> BeanUtils.toBean(esDO, ErpProductRespVO.class))
-//                .collect(Collectors.toList());
-//        System.out.println("返回的数量"+searchHits.getTotalHits());
-//
-//        return new PageResult<>(voList, searchHits.getTotalHits());
-//    }
     @Override
     public PageResult<ErpProductRespVO> getProductVOPage(ErpProductPageReqVO pageReqVO) {
-
         try {
-         // 1. 检查数据库是否有数据
-         long dbCount = productMapper.selectCount(null);
+            // 1. 确保ES索引存在并同步数据
+            ensureESIndexAndSync();
 
-         // 2. 检查ES索引是否存在
-         IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
-         boolean indexExists = indexOps.exists();
-
-         // 3. 检查ES数据量
-         long esCount = 0;
-         if (indexExists) {
-             esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpProductESDO.class);
-         }
-
-         // 4. 处理数据库和ES数据不一致的情况
-         if (dbCount == 0) {
-             if (indexExists && esCount > 0) {
-                 // 数据库为空但ES有数据，清空ES
-                 productESRepository.deleteAll();
-                 System.out.println("检测到数据库为空但ES有数据，已清空ES索引");
-             }
-             return new PageResult<>(Collections.emptyList(), 0L);
-         }
-
-         if (!indexExists) {
-             initESIndex();
-             fullSyncToES();
-             return getProductVOPageFromDB(pageReqVO);
-         }
-
-         if (esCount == 0 || dbCount != esCount) {
-             fullSyncToES();
-             if (esCount == 0) {
-                 return getProductVOPageFromDB(pageReqVO);
-             }
-         }
-        // 1. 构建基础查询条件
-        NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
-                //.withPageable(PageRequest.of(0, pageReqVO.getPageSize()))
-                .withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()))
-                .withTrackTotalHits(true)
-                .withSort(Sort.by(Sort.Direction.DESC, "id")); // 必须包含唯一字段排序
-
-//        // 添加查询条件
-//        if (StringUtils.isNotBlank(pageReqVO.getName())) {
-//            queryBuilder.withQuery(QueryBuilders.matchQuery("name", pageReqVO.getName()));
-//        }
-//        if (pageReqVO.getCategoryId() != null) {
-//            queryBuilder.withQuery(QueryBuilders.termQuery("categoryId", pageReqVO.getCategoryId()));
-//        }
-//        if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) { // 添加数组长度校验
-//            queryBuilder.withQuery(QueryBuilders.rangeQuery("createTime")
-//                    .gte(pageReqVO.getCreateTime()[0])
-//                    .lte(pageReqVO.getCreateTime()[1]));
-//        }
-
-        // 替换原有条件构建逻辑
-        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-
-        if (StringUtils.isNotBlank(pageReqVO.getName())) {
-            boolQuery.must(QueryBuilders.matchQuery("name", pageReqVO.getName()));
+            // 2. 构建ES查询
+            return searchProductsFromES(pageReqVO);
+            
+        } catch (Exception e) {
+            System.err.println("ES查询失败，回退到数据库查询: " + e.getMessage());
+            e.printStackTrace();
+            return getProductVOPageFromDB(pageReqVO);
         }
-        if (pageReqVO.getCategoryId() != null) {
-            boolQuery.must(QueryBuilders.termQuery("categoryId", pageReqVO.getCategoryId()));
-        }
-        if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
-            boolQuery.must(QueryBuilders.rangeQuery("createTime")
-                    .gte(pageReqVO.getCreateTime()[0])
-                    .lte(pageReqVO.getCreateTime()[1]));
-        }
+    }
 
-// 设置组合查询
-        queryBuilder.withQuery(boolQuery); // 统一设置所有条件
-
-        // 2. 如果是深度分页(超过10000条)，使用search_after
-        if (pageReqVO.getPageNo() > 1) {
-            return handleDeepPagination(pageReqVO, queryBuilder);
+    /**
+     * 确保ES索引存在，仅在必要时同步数据
+     */
+    private void ensureESIndexAndSync() {
+        try {
+            // 检查ES索引是否存在
+            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
+            boolean indexExists = indexOps.exists();
+            
+            if (!indexExists) {
+                // 索引不存在，创建索引并同步数据
+                System.out.println("ES索引不存在，开始创建索引...");
+                indexOps.create();
+                indexOps.putMapping(indexOps.createMapping(ErpProductESDO.class));
+                System.out.println("ES索引创建成功");
+                
+                // 索引不存在时需要全量同步
+                syncAllDataToES();
+                return;
+            }
+            
+            // 索引存在，检查数据量是否匹配
+            long dbCount = productMapper.selectCount(null);
+            long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpProductESDO.class);
+            
+            // 数据量不匹配时才需要同步（允许10条的差异）
+            if (Math.abs(dbCount - esCount) > 10) {
+                System.out.println("检测到数据量不匹配。数据库:" + dbCount + ", ES:" + esCount + "，开始同步数据...");
+                syncAllDataToES();
+            } else {
+                System.out.println("ES索引和数据都正常。数据库:" + dbCount + ", ES:" + esCount);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ES索引检查失败: " + e.getMessage());
+            // 检查失败时不抛出异常，让查询降级到数据库
         }
+    }
 
-        // 3. 普通分页处理
+    /**
+     * 同步所有数据到ES
+     */
+    private void syncAllDataToES() {
+        try {
+            System.out.println("开始全量同步数据到ES...");
+            
+            List<ErpProductDO> products = productMapper.selectList(null);
+            if (CollUtil.isEmpty(products)) {
+                System.out.println("数据库中没有产品数据，跳过同步");
+                return;
+            }
+
+            // 先清空ES数据
+            productESRepository.deleteAll();
+            
+            // 批量同步数据
+            List<ErpProductESDO> esList = products.stream()
+                .map(this::convertProductToES)
+                .collect(Collectors.toList());
+
+            productESRepository.saveAll(esList);
+            System.out.println("全量同步完成，共同步" + esList.size() + "条记录");
+            
+        } catch (Exception e) {
+            System.err.println("全量同步数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 从ES搜索产品（支持智能精确/模糊查询和深度分页）
+     * 
+     * 查询策略说明：
+     * 1. 精确查询：使用双引号包围搜索词，如 "产品名称2" 只会匹配完全相同的产品
+     * 2. 智能模糊查询：不使用引号时，按权重优先级进行多层匹配：
+     *    - 完全精确匹配（权重1000）：产品名称完全相同
+     *    - 精确短语匹配（权重500）：包含完整搜索短语
+     *    - 前缀匹配（权重100）：以搜索词开头
+     *    - 分词完全匹配（权重50）：所有分词都匹配
+     *    - 包含匹配（权重10）：包含搜索词，但排除完全匹配和前缀匹配的情况
+     *    - 分词部分匹配（权重1）：部分分词匹配
+     * 
+     * 关键改进：
+     * - 使用mustNot排除已经被高权重匹配的情况，避免重复匹配
+     * - 搜索"产品名称2"时，不会匹配到"产品名称"（因为"产品名称"不包含"产品名称2"）
+     * - 搜索"产品名称"时，会匹配到"产品名称"和"产品名称2"（因为"产品名称2"包含"产品名称"）
+     * 
+     * 示例：
+     * - 搜索 "产品名称2" → 只返回名称为 "产品名称2" 的产品
+     * - 搜索 产品名称2 → 优先返回 "产品名称2"，不会返回 "产品名称"
+     * - 搜索 产品名称 → 返回 "产品名称" 和 "产品名称2"（按权重排序）
+     * 
+     * 深度分页：
+     * - offset < 10000：使用普通分页
+     * - offset >= 10000：自动切换到search_after机制，支持无限深度分页
+     */
+    private PageResult<ErpProductRespVO> searchProductsFromES(ErpProductPageReqVO pageReqVO) {
+        try {
+            // 设置当前搜索条件到ThreadLocal
+            if (StringUtils.isNotBlank(pageReqVO.getName())) {
+                CURRENT_SEARCH_NAME.set(pageReqVO.getName().trim());
+            }
+            
+            // 1. 构建ES查询
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            
+            // 全文搜索（优先级最高）
+            if (StringUtils.isNotBlank(pageReqVO.getKeyword())) {
+                BoolQueryBuilder keywordQuery = QueryBuilders.boolQuery();
+                String keyword = pageReqVO.getKeyword().trim();
+                
+                // 多字段搜索，使用should表示OR关系，优先精确匹配
+                keywordQuery
+                        // 1. 精确词匹配
+                        .should(QueryBuilders.termQuery("name_keyword", keyword).boost(8.0f))
+                        // 3. 分词匹配（要求所有词都匹配）
+                        .should(QueryBuilders.matchQuery("name", keyword).operator(Operator.AND).boost(6.0f))
+                        // 4. 包含匹配（降低权重）
+                        .should(QueryBuilders.matchQuery("name", keyword).operator(Operator.OR).boost(2.0f))
+                        // 5. 其他字段精确匹配
+                        .should(QueryBuilders.matchPhraseQuery("product_short_name", keyword).boost(5.0f))
+                        .should(QueryBuilders.matchPhraseQuery("brand", keyword).boost(4.0f))
+                        .should(QueryBuilders.matchPhraseQuery("shipping_code", keyword).boost(4.0f))
+                        .should(QueryBuilders.matchPhraseQuery("purchaser", keyword).boost(3.0f))
+                        .should(QueryBuilders.matchPhraseQuery("supplier", keyword).boost(3.0f))
+                        // 6. 其他字段分词匹配
+                        .should(QueryBuilders.matchQuery("product_short_name", keyword).operator(Operator.AND).boost(2.0f))
+                        .should(QueryBuilders.matchQuery("standard", keyword).operator(Operator.AND).boost(1.5f))
+                        .should(QueryBuilders.matchQuery("product_selling_points", keyword).operator(Operator.AND).boost(1.0f))
+                        .minimumShouldMatch(1);
+                
+                boolQuery.must(keywordQuery);
+            } else {
+                // 产品名称查询 - 智能精确优先策略
+                if (StringUtils.isNotBlank(pageReqVO.getName())) {
+                    BoolQueryBuilder nameQuery = QueryBuilders.boolQuery();
+                    String name = pageReqVO.getName().trim();
+                    
+                    // 先检查是否有精确匹配，如果有则只使用keyword匹配
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+                    
+                    // 第一优先级：完全精确匹配
+                    multiMatchQuery.should(QueryBuilders.termQuery("name_keyword", name).boost(1000000.0f));
+                    
+                    // 第二优先级：前缀匹配
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("name_keyword", name).boost(100000.0f));
+                    
+                    // 第三优先级：通配符包含匹配（支持中间字符搜索）
+                    if (name.length() > 1) {
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(10000.0f));
+                    }
+                    
+                    // 注意：完全移除分词匹配，避免类似"产品名称2"匹配到"产品名称"的问题
+                    // 如果需要更宽松的搜索，用户可以使用关键词搜索功能
+                    
+                    multiMatchQuery.minimumShouldMatch(1);
+                    nameQuery.must(multiMatchQuery);
+                    boolQuery.must(nameQuery);
+                }
+                
+                // 产品简称查询 - 智能精确优先策略
+                if (StringUtils.isNotBlank(pageReqVO.getProductShortName())) {
+                    BoolQueryBuilder shortNameQuery = QueryBuilders.boolQuery();
+                    String shortName = pageReqVO.getProductShortName().trim();
+                    
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+                    multiMatchQuery.should(QueryBuilders.termQuery("product_short_name_keyword", shortName).boost(1000000.0f));
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("product_short_name_keyword", shortName).boost(100000.0f));
+                    
+                    if (shortName.length() > 1) {
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("product_short_name_keyword", "*" + shortName + "*").boost(10000.0f));
+                    }
+                    
+                    multiMatchQuery.minimumShouldMatch(1);
+                    shortNameQuery.must(multiMatchQuery);
+                    boolQuery.must(shortNameQuery);
+                }
+                
+                // 发货编码查询 - 智能精确优先策略
+                if (StringUtils.isNotBlank(pageReqVO.getShippingCode())) {
+                    BoolQueryBuilder codeQuery = QueryBuilders.boolQuery();
+                    String code = pageReqVO.getShippingCode().trim();
+                    
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+                    multiMatchQuery.should(QueryBuilders.termQuery("shipping_code_keyword", code).boost(1000000.0f));
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("shipping_code_keyword", code).boost(100000.0f));
+                    
+                    if (code.length() > 1) {
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(10000.0f));
+                    }
+                    
+                    multiMatchQuery.minimumShouldMatch(1);
+                    codeQuery.must(multiMatchQuery);
+                    boolQuery.must(codeQuery);
+                }
+                
+                // 品牌名称查询 - 智能精确优先策略
+                if (StringUtils.isNotBlank(pageReqVO.getBrand())) {
+                    BoolQueryBuilder brandQuery = QueryBuilders.boolQuery();
+                    String brand = pageReqVO.getBrand().trim();
+                    
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+                    multiMatchQuery.should(QueryBuilders.termQuery("brand_keyword", brand).boost(1000000.0f));
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("brand_keyword", brand).boost(100000.0f));
+                    
+                    if (brand.length() > 1) {
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("brand_keyword", "*" + brand + "*").boost(10000.0f));
+                    }
+                    
+                    multiMatchQuery.minimumShouldMatch(1);
+                    brandQuery.must(multiMatchQuery);
+                    boolQuery.must(brandQuery);
+                }
+                
+                // 采购人员查询 - 智能精确优先策略
+                if (StringUtils.isNotBlank(pageReqVO.getPurchaser())) {
+                    BoolQueryBuilder purchaserQuery = QueryBuilders.boolQuery();
+                    String purchaser = pageReqVO.getPurchaser().trim();
+                    
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+                    multiMatchQuery.should(QueryBuilders.termQuery("purchaser_keyword", purchaser).boost(1000000.0f));
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("purchaser_keyword", purchaser).boost(100000.0f));
+                    
+                    if (purchaser.length() > 1) {
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + purchaser + "*").boost(10000.0f));
+                    }
+                    
+                    multiMatchQuery.minimumShouldMatch(1);
+                    purchaserQuery.must(multiMatchQuery);
+                    boolQuery.must(purchaserQuery);
+                }
+                
+                // 供应商名查询 - 智能精确优先策略
+                if (StringUtils.isNotBlank(pageReqVO.getSupplier())) {
+                    BoolQueryBuilder supplierQuery = QueryBuilders.boolQuery();
+                    String supplier = pageReqVO.getSupplier().trim();
+                    
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+                    multiMatchQuery.should(QueryBuilders.termQuery("supplier_keyword", supplier).boost(1000000.0f));
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("supplier_keyword", supplier).boost(100000.0f));
+                    
+                    if (supplier.length() > 1) {
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + supplier + "*").boost(10000.0f));
+                    }
+                    
+                    multiMatchQuery.minimumShouldMatch(1);
+                    supplierQuery.must(multiMatchQuery);
+                    boolQuery.must(supplierQuery);
+                }
+            }
+            
+            // 产品分类精确查询
+            if (pageReqVO.getCategoryId() != null) {
+                boolQuery.must(QueryBuilders.termQuery("category_id", pageReqVO.getCategoryId()));
+            }
+            
+            // 产品状态精确查询
+            if (pageReqVO.getStatus() != null) {
+                boolQuery.must(QueryBuilders.termQuery("status", pageReqVO.getStatus()));
+            }
+            
+            // 创建时间范围查询
+            if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
+                boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                        .gte(pageReqVO.getCreateTime()[0].toString())
+                        .lte(pageReqVO.getCreateTime()[1].toString()));
+            }
+            
+            // 如果没有任何查询条件，使用match_all
+            if (!boolQuery.hasClauses()) {
+                boolQuery.must(QueryBuilders.matchAllQuery());
+            }
+            
+            // 2. 构建查询请求
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withTrackTotalHits(true)
+                    .withSort(Sort.by(Sort.Direction.DESC, "_score"))  // 按相关性排序
+                    .withSort(Sort.by(Sort.Direction.DESC, "id"));     // 相关性相同时按ID排序
+            
+            // 3. 判断是否需要深度分页
+            int offset = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
+            if (offset >= 10000) {
+                // 使用深度分页
+                return handleDeepPagination(pageReqVO, queryBuilder, boolQuery);
+            } else {
+                // 普通分页
+                queryBuilder.withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()));
+            }
+            
+            // 4. 执行查询
+            NativeSearchQuery finalQuery = queryBuilder.build();
+            
+            // 添加调试日志
+            System.out.println("=== ES查询调试信息 ===");
+            System.out.println("查询参数: " + pageReqVO.getName());
+            System.out.println("查询语句: " + finalQuery.getQuery().toString());
+            System.out.println("==================");
+            
+            SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
+                    finalQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+            
+            // 添加结果调试日志
+            System.out.println("=== ES查询结果 ===");
+            System.out.println("总命中数: " + searchHits.getTotalHits());
+            searchHits.getSearchHits().forEach(hit -> {
+                ErpProductESDO content = hit.getContent();
+                System.out.println("命中产品: ID=" + content.getId() + 
+                                 ", 名称=" + content.getName() + 
+                                 ", name_keyword=" + content.getNameKeyword() +
+                                 ", 得分=" + hit.getScore());
+            });
+            System.out.println("================");
+            
+            // 5. 转换结果
+            return convertSearchHitsToPageResult(searchHits);
+            
+        } catch (Exception e) {
+            System.err.println("ES查询执行失败: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        } finally {
+            // 清理ThreadLocal
+            CURRENT_SEARCH_NAME.remove();
+        }
+    }
+
+    /**
+     * 处理深度分页（offset >= 10000时使用search_after）
+     */
+    private PageResult<ErpProductRespVO> handleDeepPagination(ErpProductPageReqVO pageReqVO, 
+                                                            NativeSearchQueryBuilder queryBuilder,
+                                                            BoolQueryBuilder boolQuery) {
+        try {
+            // 1. 如果有lastId，使用search_after
+            if (pageReqVO.getLastId() != null) {
+                return searchAfterPagination(pageReqVO, queryBuilder);
+            }
+            
+            // 2. 没有lastId时，需要先获取到目标位置的最后一条记录的ID
+            int targetOffset = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
+            Long searchAfterValue = findSearchAfterValue(boolQuery, targetOffset);
+            
+            if (searchAfterValue == null) {
+                // 如果找不到search_after值，返回空结果
+                return new PageResult<>(Collections.emptyList(), 0L);
+            }
+            
+            // 3. 使用找到的search_after值进行查询
+            queryBuilder.withPageable(PageRequest.of(0, pageReqVO.getPageSize()));
+            
+            NativeSearchQuery query = queryBuilder.build();
+            query.setSearchAfter(Arrays.asList(searchAfterValue));
+            
+            SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
+                    query,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+            
+            return convertSearchHitsToPageResult(searchHits);
+            
+        } catch (Exception e) {
+            System.err.println("深度分页查询失败: " + e.getMessage());
+            // 降级到普通分页（可能会有性能问题，但保证功能可用）
+            queryBuilder.withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()));
+            SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+            return convertSearchHitsToPageResult(searchHits);
+        }
+    }
+
+    /**
+     * 使用search_after进行分页查询
+     */
+    private PageResult<ErpProductRespVO> searchAfterPagination(ErpProductPageReqVO pageReqVO, 
+                                                             NativeSearchQueryBuilder queryBuilder) {
+        queryBuilder.withPageable(PageRequest.of(0, pageReqVO.getPageSize()));
+        
+        NativeSearchQuery query = queryBuilder.build();
+        query.setSearchAfter(Arrays.asList(pageReqVO.getLastId()));
+        
         SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
-                queryBuilder.build(),
+                query,
                 ErpProductESDO.class,
                 IndexCoordinates.of("erp_products"));
-                // 调试日志：打印ES查询结果
-//        searchHits.forEach(hit -> {
-//            System.out.println("ES数据内容: " + hit.getContent());
-//            System.out.println("productShortName值: " + hit.getContent().getProductShortName());
-//        });
+        
+        return convertSearchHitsToPageResult(searchHits);
+    }
 
+    /**
+     * 查找指定偏移位置的search_after值
+     */
+    private Long findSearchAfterValue(BoolQueryBuilder boolQuery, int targetOffset) {
+        try {
+            // 分批获取，避免一次性获取过多数据
+            int batchSize = Math.min(1000, targetOffset);
+            int batches = (targetOffset + batchSize - 1) / batchSize;
+            
+            List<Object> lastSortValues = null;
+            
+            for (int i = 0; i < batches; i++) {
+                NativeSearchQueryBuilder batchQueryBuilder = new NativeSearchQueryBuilder()
+                        .withQuery(boolQuery)
+                        .withPageable(PageRequest.of(0, batchSize))
+                        .withSort(Sort.by(Sort.Direction.DESC, "id"))
+                        .withTrackTotalHits(false); // 提高性能
+                
+                NativeSearchQuery batchQuery = batchQueryBuilder.build();
+                if (lastSortValues != null) {
+                    batchQuery.setSearchAfter(lastSortValues);
+                }
+                
+                SearchHits<ErpProductESDO> batchHits = elasticsearchRestTemplate.search(
+                        batchQuery,
+                        ErpProductESDO.class,
+                        IndexCoordinates.of("erp_products"));
+                
+                if (batchHits.isEmpty()) {
+                    break;
+                }
+                
+                // 获取最后一条记录的排序值
+                SearchHit<ErpProductESDO> lastHit = batchHits.getSearchHits().get(batchHits.getSearchHits().size() - 1);
+                List<Object> sortValuesList = lastHit.getSortValues();
+                if (sortValuesList != null && !sortValuesList.isEmpty()) {
+                    lastSortValues = new ArrayList<>(sortValuesList);
+                }
+            }
+            
+            return lastSortValues != null && !lastSortValues.isEmpty() ? (Long) lastSortValues.get(0) : null;
+            
+        } catch (Exception e) {
+            System.err.println("查找search_after值失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 转换搜索结果为分页结果
+     */
+    private PageResult<ErpProductRespVO> convertSearchHitsToPageResult(SearchHits<ErpProductESDO> searchHits) {
         List<ErpProductRespVO> voList = searchHits.stream()
                 .map(SearchHit::getContent)
                 .map(esDO -> {
+                    // 先进行基础转换
                     ErpProductRespVO vo = BeanUtils.toBean(esDO, ErpProductRespVO.class);
-                    // 调试日志：打印映射前后的值
-                    //System.out.println("映射前productShortName: " + esDO.getProductShortName());
-                    //System.out.println("映射后productShortName: " + vo.getProductShortName());
+                    
+                    // 手动处理日期字段转换
+                    if (StrUtil.isNotBlank(esDO.getProductionDate())) {
+                        try {
+                            vo.setProductionDate(LocalDateTime.parse(esDO.getProductionDate()));
+                        } catch (Exception e) {
+                            System.err.println("解析生产日期失败: " + esDO.getProductionDate());
+                            vo.setProductionDate(null);
+                        }
+                    } else {
+                        vo.setProductionDate(null);
+                    }
+                    
+                    if (StrUtil.isNotBlank(esDO.getCreateTime())) {
+                        try {
+                            vo.setCreateTime(LocalDateTime.parse(esDO.getCreateTime()));
+                        } catch (Exception e) {
+                            System.err.println("解析创建时间失败: " + esDO.getCreateTime());
+                            vo.setCreateTime(null);
+                        }
+                    } else {
+                        vo.setCreateTime(null);
+                    }
+                    
+                    // 确保关键字段不为空
+                    if (vo.getCategoryName() == null && vo.getCategoryId() != null) {
+                        vo.setCategoryName(getCategoryNameById(vo.getCategoryId()));
+                    }
+                    if (vo.getUnitName() == null && vo.getUnitId() != null) {
+                        vo.setUnitName(getUnitNameById(vo.getUnitId()));
+                    }
+                    
+                    // 设置lastId用于下一页的search_after
+                    vo.setLastId(vo.getId());
+                    
                     return vo;
                 })
                 .collect(Collectors.toList());
+        
+        // 应用层二次排序 - 确保精确匹配优先
+        voList = applySecondarySort(voList);
+        
         return new PageResult<>(voList, searchHits.getTotalHits());
-
-    } catch (Exception e) {
-        System.out.println("ES查询失败，回退到数据库查询: " + e.getMessage());
-        return getProductVOPageFromDB(pageReqVO);
     }
+    
+    /**
+     * 应用层二次排序 - 确保精确匹配优先
+     */
+    private List<ErpProductRespVO> applySecondarySort(List<ErpProductRespVO> voList) {
+        // 如果列表为空或只有一个元素，直接返回
+        if (voList == null || voList.size() <= 1) {
+            return voList;
+        }
+        
+        // 获取当前搜索条件
+        String searchName = CURRENT_SEARCH_NAME.get();
+        if (StrUtil.isBlank(searchName)) {
+            return voList;
+        }
+        
+        // 去掉引号（如果有）
+        if (searchName.startsWith("\"") && searchName.endsWith("\"")) {
+            searchName = searchName.substring(1, searchName.length() - 1);
+        }
+        
+        final String finalSearchName = searchName;
+        
+        return voList.stream()
+                .sorted((a, b) -> {
+                    String nameA = a.getName();
+                    String nameB = b.getName();
+                    
+                    if (nameA == null && nameB == null) return 0;
+                    if (nameA == null) return 1;
+                    if (nameB == null) return -1;
+                    
+                    // 1. 完全精确匹配优先（最高优先级）
+                    boolean exactMatchA = finalSearchName.equals(nameA);
+                    boolean exactMatchB = finalSearchName.equals(nameB);
+                    
+                    if (exactMatchA && !exactMatchB) return -1;
+                    if (!exactMatchA && exactMatchB) return 1;
+                    if (exactMatchA && exactMatchB) return 0;
+                    
+                    // 2. 前缀匹配优先
+                    boolean prefixMatchA = nameA.startsWith(finalSearchName);
+                    boolean prefixMatchB = nameB.startsWith(finalSearchName);
+                    
+                    if (prefixMatchA && !prefixMatchB) return -1;
+                    if (!prefixMatchA && prefixMatchB) return 1;
+                    
+                    // 3. 包含匹配，但名称越短越靠前
+                    boolean containsA = nameA.contains(finalSearchName);
+                    boolean containsB = nameB.contains(finalSearchName);
+                    
+                    if (containsA && !containsB) return -1;
+                    if (!containsA && containsB) return 1;
+                    
+                    if (containsA && containsB) {
+                        // 都包含的情况下，名称越短越靠前
+                        int lengthCompare = Integer.compare(nameA.length(), nameB.length());
+                        if (lengthCompare != 0) return lengthCompare;
+                    }
+                    
+                    // 4. 最后按ID排序保证稳定性
+                    return Long.compare(
+                        a.getId() != null ? a.getId() : 0L,
+                        b.getId() != null ? b.getId() : 0L
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据分类ID获取分类名称
+     */
+    private String getCategoryNameById(Long categoryId) {
+        try {
+            ErpProductCategoryDO category = productCategoryService.getProductCategory(categoryId);
+            return category != null ? category.getName() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 根据单位ID获取单位名称
+     */
+    private String getUnitNameById(Long unitId) {
+        try {
+            ErpProductUnitDO unit = productUnitService.getProductUnit(unitId);
+            return unit != null ? unit.getName() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // 添加数据库查询方法
@@ -336,98 +806,6 @@ public class ErpProductServiceImpl implements ErpProductService {
         PageResult<ErpProductDO> pageResult = productMapper.selectPage(pageReqVO);
         return new PageResult<>(buildProductVOList(pageResult.getList()), pageResult.getTotal());
     }
-
-//    private PageResult<ErpProductRespVO> handleDeepPagination(ErpProductPageReqVO pageReqVO,
-//                                                              NativeSearchQueryBuilder queryBuilder) {
-//        // 1. 计算需要跳过的记录数
-//        int skip = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
-//
-//        // 2. 使用search_after直接获取目标页
-//        NativeSearchQuery query = queryBuilder.build();
-//
-//        // 设置分页参数
-//        query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
-//
-//        // 如果是深度分页，使用search_after
-//        if (skip > 0) {
-//            // 先获取前一页的最后一条记录
-//            NativeSearchQuery prevQuery = queryBuilder.build();
-//            prevQuery.setPageable(PageRequest.of(pageReqVO.getPageNo() - 2, 1));
-//
-//            SearchHits<ErpProductESDO> prevHits = elasticsearchRestTemplate.search(
-//                    prevQuery,
-//                    ErpProductESDO.class,
-//                    IndexCoordinates.of("erp_products"));
-//
-//            if (prevHits.isEmpty()) {
-//                return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
-//            }
-//
-//            // 设置search_after参数
-//            SearchHit<ErpProductESDO> lastHit = prevHits.getSearchHits().get(0);
-//            query.setSearchAfter(lastHit.getSortValues());
-//        }
-//
-//        // 3. 执行查询
-//        SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
-//                query,
-//                ErpProductESDO.class,
-//                IndexCoordinates.of("erp_products"));
-//
-//        List<ErpProductRespVO> voList = searchHits.stream()
-//                .map(SearchHit::getContent)
-//                .map(esDO -> BeanUtils.toBean(esDO, ErpProductRespVO.class))
-//                .collect(Collectors.toList());
-//        return new PageResult<>(voList, searchHits.getTotalHits());
-//    }
-
-     private PageResult<ErpProductRespVO> handleDeepPagination(ErpProductPageReqVO pageReqVO,
-                                                            NativeSearchQueryBuilder queryBuilder) {
-        // 1. 计算需要跳过的记录数
-        int skip = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
-
-        // 2. 使用search_after直接获取目标页
-        NativeSearchQuery query = queryBuilder.build();
-        query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
-        query.addSort(Sort.by(Sort.Direction.DESC, "id")); // 保持一致的排序方式
-
-        // 如果是深度分页，使用search_after
-        if (skip > 0) {
-            // 先获取前一页的最后一条记录
-            NativeSearchQuery prevQuery = new NativeSearchQueryBuilder()
-                    .withQuery(queryBuilder.build().getQuery())
-                    .withPageable(PageRequest.of(0, skip)) // 获取前skip条记录
-                    .withSort(Sort.by(Sort.Direction.DESC, "id"))
-                    .build();
-
-            SearchHits<ErpProductESDO> prevHits = elasticsearchRestTemplate.search(
-                    prevQuery,
-                    ErpProductESDO.class,
-                    IndexCoordinates.of("erp_products"));
-
-            if (prevHits.isEmpty()) {
-                return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
-            }
-
-            // 获取最后一条记录作为search_after的起点
-            SearchHit<ErpProductESDO> lastHit = prevHits.getSearchHits().get(prevHits.getSearchHits().size() - 1);
-            query.setSearchAfter(lastHit.getSortValues());
-        }
-
-        // 3. 执行查询
-        SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
-                query,
-                ErpProductESDO.class,
-                IndexCoordinates.of("erp_products"));
-
-        List<ErpProductRespVO> voList = searchHits.stream()
-                .map(SearchHit::getContent)
-                .map(esDO -> BeanUtils.toBean(esDO, ErpProductRespVO.class))
-                .collect(Collectors.toList());
-        return new PageResult<>(voList, searchHits.getTotalHits());
-    }
-
-
 
 
 
@@ -481,76 +859,6 @@ public class ErpProductServiceImpl implements ErpProductService {
         return CollectionUtils.convertList(productDOList, product -> BeanUtils.toBean(product, ErpProductRespVO.class));
     }
 
-
-
-
-// ========== ES 同步方法 ==========
-
-/**
- * 同步产品到ES
- */
-private void syncProductToES(Long productId) {
-    ErpProductDO product = productMapper.selectById(productId);
-    if (product == null) {
-        productESRepository.deleteById(productId);
-    } else {
-        ErpProductESDO es = convertProductToES(product);
-        productESRepository.save(es);
-    }
-}
-
-/**
- * 转换产品DO为ES对象
- */
-private ErpProductESDO convertProductToES(ErpProductDO product) {
-    ErpProductESDO es = new ErpProductESDO();
-    BeanUtils.copyProperties(product, es);
-    return es;
-}
-
-/**
- * 全量同步到ES（每天凌晨执行）
- */
-//@Scheduled(cron = "0 0 2 * * ?") // 每天凌晨2点执行
-//@Async
-//public void fullSyncToES() {
-//    // 查询所有有效产品
-//    List<ErpProductDO> products = productMapper.selectList(
-//            new LambdaQueryWrapper<ErpProductDO>()
-//                    .eq(ErpProductDO::getDeleted, false)
-//    );
-//
-//    // 转换为ES对象并批量保存
-//    List<ErpProductESDO> esList = products.stream()
-//            .map(this::convertProductToES)
-//            .collect(Collectors.toList());
-//
-//    productESRepository.saveAll(esList);
-//}
-
-    @Async
-    public void fullSyncToES() {
-        try {
-            List<ErpProductDO> products = productMapper.selectList(
-                new LambdaQueryWrapper<ErpProductDO>()
-            );
-
-            if (CollUtil.isEmpty(products)) {
-                System.out.println("数据库中没有产品数据，跳过ES同步");
-                return;
-            }
-
-            List<ErpProductESDO> esList = products.stream()
-                .map(this::convertProductToES)
-                .collect(Collectors.toList());
-
-            productESRepository.saveAll(esList);
-            System.out.println("全量同步ES数据完成，共同步" + esList.size() + "条记录");
-        } catch (Exception e) {
-            System.err.println("全量同步ES数据失败: " + e.getMessage());
-        }
-    }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ErpProductImportRespVO importProductList(List<ErpProductImportExcelVO> importProducts, boolean isUpdateSupport) {
@@ -565,63 +873,220 @@ private ErpProductESDO convertProductToES(ErpProductDO product) {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 2. 查询已存在的产品
-        Set<String> noSet = importProducts.stream()
-                .map(ErpProductImportExcelVO::getNo)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toSet());
-    // 使用ES查询代替数据库查询
-    List<ErpProductESDO> esList = productESRepository.findAllByNoIn(noSet);
-    Map<String, ErpProductESDO> noProductMap = convertMap(esList, ErpProductESDO::getNo);
+        // 2. 批量处理列表
+        List<ErpProductDO> createList = new ArrayList<>();
+        List<ErpProductDO> updateList = new ArrayList<>();
 
-        // 3. 遍历处理每个导入项
-        for (int i = 0; i < importProducts.size(); i++) {
-            ErpProductImportExcelVO importVO = importProducts.get(i);
-            try {
-                // 3.1 校验产品名称
-                if (StrUtil.isEmpty(importVO.getName())) {
-                    throw exception(PRODUCT_IMPORT_NAME_EMPTY, i + 1);
-                }
-                           // 校验产品名称唯一性（对于新增的产品）
-            if (noProductMap.get(importVO.getNo()) == null) {
-                validateProductNameUnique(importVO.getName(), null);
-            }
-                // 3.2 判断是否支持更新
-                ErpProductESDO existProduct = noProductMap.get(importVO.getNo());
-                if (existProduct == null) {
-                    // 创建产品
-                    ErpProductDO product = BeanUtils.toBean(importVO, ErpProductDO.class);
-                    if (StrUtil.isEmpty(product.getNo())) {
-                        product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
+        try {
+            // 3. 批量查询已存在的产品
+            Set<String> noSet = importProducts.stream()
+                    .map(ErpProductImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            // 使用数据库查询替代ES查询，确保数据一致性
+            Map<String, ErpProductDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                    convertMap(productMapper.selectListByNoIn(noSet), ErpProductDO::getNo);
+
+            // 用于跟踪Excel内部重复的编号
+            Set<String> processedNos = new HashSet<>();
+
+            // 4. 批量转换数据
+            for (int i = 0; i < importProducts.size(); i++) {
+                ErpProductImportExcelVO importVO = importProducts.get(i);
+                try {
+                    // 4.1 基础数据校验
+                    if (StrUtil.isEmpty(importVO.getName())) {
+                        throw exception(PRODUCT_IMPORT_NAME_EMPTY, i + 1);
                     }
-                    productMapper.insert(product);
-                    syncProductToES(product.getId());
-                    respVO.getCreateNames().add(product.getName());
-                } else if (isUpdateSupport) {
-                    // 更新产品
-                    ErpProductDO updateProduct = BeanUtils.toBean(importVO, ErpProductDO.class);
-                    updateProduct.setId(existProduct.getId());
-                    productMapper.updateById(updateProduct);
-                    syncProductToES(updateProduct.getId());
-                    respVO.getUpdateNames().add(updateProduct.getName());
-                } else {
-                    throw exception(PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+
+                    // 4.2 检查Excel内部编号重复
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        if (processedNos.contains(importVO.getNo())) {
+                            throw exception(PRODUCT_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
+                        }
+                        processedNos.add(importVO.getNo());
+                    }
+
+                    // 4.3 判断是否支持更新
+                    ErpProductDO existProduct = existMap.get(importVO.getNo());
+                    if (existProduct == null) {
+                        // 创建产品
+                        ErpProductDO product = BeanUtils.toBean(importVO, ErpProductDO.class);
+                        if (StrUtil.isEmpty(product.getNo())) {
+                            product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
+                        }
+
+                        // 校验产品名称唯一性（对于新增的产品）
+                        validateProductNameUniqueForImport(product.getName(), null, createList, updateList);
+
+                        createList.add(product);
+                        respVO.getCreateNames().add(product.getName());
+                    } else if (isUpdateSupport) {
+                        // 更新产品
+                        ErpProductDO updateProduct = BeanUtils.toBean(importVO, ErpProductDO.class);
+                        updateProduct.setId(existProduct.getId());
+
+                        // 校验产品名称唯一性（对于更新的产品）
+                        validateProductNameUniqueForImport(updateProduct.getName(), updateProduct.getId(), createList, updateList);
+
+                        updateList.add(updateProduct);
+                        respVO.getUpdateNames().add(updateProduct.getName());
+                    } else {
+                        throw exception(PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    }
+                } catch (ServiceException ex) {
+                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
+                    respVO.getFailureNames().put(errorKey, ex.getMessage());
+                } catch (Exception ex) {
+                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
                 }
-            } catch (ServiceException ex) {
-                String errorKey = StrUtil.isNotBlank(importVO.getName()) ? importVO.getName() : "未知产品";
-                respVO.getFailureNames().put(errorKey, ex.getMessage());
-            } catch (Exception ex) {
-                String errorKey = StrUtil.isNotBlank(importVO.getName()) ? importVO.getName() : "未知产品";
-                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
             }
+
+            // 5. 批量保存到数据库
+            if (CollUtil.isNotEmpty(createList)) {
+                // 批量插入新产品
+                for (ErpProductDO product : createList) {
+                    productMapper.insert(product);
+                    // 同步到ES
+                    syncProductToES(product.getId());
+                }
+            }
+            if (CollUtil.isNotEmpty(updateList)) {
+                // 批量更新产品
+                for (ErpProductDO product : updateList) {
+                    productMapper.updateById(product);
+                    // 同步到ES
+                    syncProductToES(product.getId());
+                }
+            }
+        } catch (Exception ex) {
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
         }
-        System.out.println("产品靠腰：~~~~~~~~~~~~~~~~~~~~~");
-        System.out.println(respVO);
+
 
         return respVO;
     }
 
-        /**
+    /**
+     * 校验产品名称是否唯一（导入专用）
+     */
+    private void validateProductNameUniqueForImport(String name, Long excludeId,
+                                                   List<ErpProductDO> createList, List<ErpProductDO> updateList) {
+        if (StrUtil.isEmpty(name)) {
+            return;
+        }
+
+        // 检查当前批次中是否有重复名称
+        boolean duplicateInBatch = false;
+
+        // 检查创建列表中的重复
+        for (ErpProductDO product : createList) {
+            if (name.equals(product.getName())) {
+                duplicateInBatch = true;
+                break;
+            }
+        }
+
+        // 检查更新列表中的重复
+        if (!duplicateInBatch) {
+            for (ErpProductDO product : updateList) {
+                if (name.equals(product.getName()) && !product.getId().equals(excludeId)) {
+                    duplicateInBatch = true;
+                    break;
+                }
+            }
+        }
+
+        if (duplicateInBatch) {
+            throw exception(PRODUCT_NAME_DUPLICATE, name);
+        }
+
+        // 检查数据库中的重复
+        validateProductNameUnique(name, excludeId);
+    }
+
+    /**
+     * 同步产品到ES
+     */
+    private void syncProductToES(Long productId) {
+        ErpProductDO product = productMapper.selectById(productId);
+        if (product == null) {
+            productESRepository.deleteById(productId);
+        } else {
+            ErpProductESDO es = convertProductToES(product);
+            productESRepository.save(es);
+        }
+    }
+
+    /**
+     * 转换产品DO为ES对象
+     */
+    private ErpProductESDO convertProductToES(ErpProductDO product) {
+        ErpProductESDO es = new ErpProductESDO();
+        
+        try {
+            // 复制基础属性（排除日期字段）
+            BeanUtils.copyProperties(product, es, "productionDate", "createTime");
+            
+            // 安全处理日期字段 - 转换为字符串
+            if (product.getProductionDate() != null) {
+                es.setProductionDate(product.getProductionDate().toString());
+            }
+            if (product.getCreateTime() != null) {
+                es.setCreateTime(product.getCreateTime().toString());
+            }
+            
+            // 设置keyword字段（用于精确匹配和通配符查询）
+            es.setNameKeyword(product.getName());
+            es.setProductShortNameKeyword(product.getProductShortName());
+            es.setShippingCodeKeyword(product.getShippingCode());
+            es.setBrandKeyword(product.getBrand());
+            es.setPurchaserKeyword(product.getPurchaser());
+            es.setSupplierKeyword(product.getSupplier());
+            
+            // 设置分类名称
+            if (product.getCategoryId() != null) {
+                try {
+                    ErpProductCategoryDO category = productCategoryService.getProductCategory(product.getCategoryId());
+                    if (category != null) {
+                        es.setCategoryName(category.getName());
+                    }
+                } catch (Exception e) {
+                    System.err.println("获取分类名称失败: " + e.getMessage());
+                }
+            }
+            
+            // 设置单位名称
+            if (product.getUnitId() != null) {
+                try {
+                    ErpProductUnitDO unit = productUnitService.getProductUnit(product.getUnitId());
+                    if (unit != null) {
+                        es.setUnitName(unit.getName());
+                    }
+                } catch (Exception e) {
+                    System.err.println("获取单位名称失败: " + e.getMessage());
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("转换产品到ES对象失败，产品ID: " + product.getId() + ", 错误: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return es;
+    }
+
+    /**
+     * 全量同步到ES（手动触发）
+     */
+    public void fullSyncToES() {
+        syncAllDataToES();
+    }
+
+    /**
      * 校验产品名称是否唯一（使用ES查询）
      */
     private void validateProductNameUnique(String name, Long excludeId) {
@@ -629,18 +1094,9 @@ private ErpProductESDO convertProductToES(ErpProductDO product) {
             return;
         }
 
-
-//        // 构建ES查询 - 修改为使用matchPhraseQuery进行短语匹配
         NativeSearchQuery query = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.matchPhraseQuery("name", name))
                 .build();
-//        NativeSearchQuery query = new NativeSearchQueryBuilder()
-//        .withQuery(QueryBuilders.termQuery("name.keyword", name))
-//        .build();
-
-//    NativeSearchQuery query = new NativeSearchQueryBuilder()
-//    .withQuery(QueryBuilders.queryStringQuery("\"" + name + "\"").field("name"))
-//    .build();
 
         SearchHits<ErpProductESDO> hits = elasticsearchRestTemplate.search(
                 query,

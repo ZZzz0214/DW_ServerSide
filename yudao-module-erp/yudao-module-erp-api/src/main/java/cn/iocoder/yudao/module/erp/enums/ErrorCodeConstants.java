@@ -11,7 +11,8 @@ public interface ErrorCodeConstants {
 
     // ========== ERP 供应商（1-030-100-000） ==========
     ErrorCode SUPPLIER_NOT_EXISTS = new ErrorCode(1_030_100_000, "供应商不存在");
-    ErrorCode SUPPLIER_NOT_ENABLE = new ErrorCode(1_030_100_000, "供应商({})未启用");
+    ErrorCode SUPPLIER_NOT_ENABLE = new ErrorCode(1_030_100_001, "供应商({})未启用");
+    ErrorCode SUPPLIER_NO_DUPLICATE = new ErrorCode(1_030_100_002, "供应商编号({})已存在");
 
     // ========== ERP 采购订单（1-030-101-000） ==========
     ErrorCode PURCHASE_ORDER_NOT_EXISTS = new ErrorCode(1_030_101_000, "采购订单不存在");
@@ -198,8 +199,9 @@ public interface ErrorCodeConstants {
     // ========== ERP 采购人员（1-030-106-000） ==========
     ErrorCode PURCHASER_NOT_EXISTS = new ErrorCode(1_030_106_000, "采购人员不存在");
     ErrorCode PURCHASER_NAME_DUPLICATE = new ErrorCode(1_030_106_001, "采购人员姓名已存在");
-    ErrorCode PURCHASER_PHONE_DUPLICATE = new ErrorCode(1_030_106_002, "采购人员联系电话已存在");
-    ErrorCode PURCHASER_NOT_ENABLE = new ErrorCode(1_030_106_003, "采购人员({})未启用");
+    ErrorCode PURCHASER_NO_DUPLICATE = new ErrorCode(1_030_106_002, "采购人员编号({})已存在");
+    ErrorCode PURCHASER_PHONE_DUPLICATE = new ErrorCode(1_030_106_003, "采购人员联系电话已存在");
+    ErrorCode PURCHASER_NOT_ENABLE = new ErrorCode(1_030_106_004, "采购人员({})未启用");
 
     // ========== ERP 销售人员（1-030-107-000） ==========
     ErrorCode SALESPERSON_NOT_EXISTS = new ErrorCode(1_030_107_000, "销售人员不存在");
@@ -410,6 +412,8 @@ public interface ErrorCodeConstants {
     ErrorCode PRODUCT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_503_000, "导入产品数据不能为空");
     ErrorCode PRODUCT_IMPORT_NAME_EMPTY = new ErrorCode(1_030_503_001, "第{}行的产品名称为空");
     ErrorCode PRODUCT_IMPORT_NO_EXISTS = new ErrorCode(1_030_503_002, "第{}行的产品编号({})已存在");
+    ErrorCode PRODUCT_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_503_003, "第{}行的产品编号({})在Excel中重复");
+    ErrorCode PRODUCT_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_503_004, "第{}行的产品编号({})已存在，且不支持更新");
 
     // ========== ERP 产品 1-030-500-000 ==========
 

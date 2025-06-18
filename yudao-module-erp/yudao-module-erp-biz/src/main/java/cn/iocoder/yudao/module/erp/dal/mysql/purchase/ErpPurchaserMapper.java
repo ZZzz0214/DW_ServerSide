@@ -21,11 +21,13 @@ public interface ErpPurchaserMapper extends BaseMapperX<ErpPurchaserDO> {
 
     default PageResult<ErpPurchaserRespVO> selectPage(ErpPurchaserPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpPurchaserDO> query = new MPJLambdaWrapperX<ErpPurchaserDO>()
+                .likeIfPresent(ErpPurchaserDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpPurchaserDO::getPurchaserName, reqVO.getPurchaserName())
                 .eqIfPresent(ErpPurchaserDO::getContactPhone, reqVO.getContactPhone())
                 .betweenIfPresent(ErpPurchaserDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpPurchaserDO::getId)
                 .selectAs(ErpPurchaserDO::getId, ErpPurchaserRespVO::getId)
+                .selectAs(ErpPurchaserDO::getNo, ErpPurchaserRespVO::getNo)
                 .selectAs(ErpPurchaserDO::getPurchaserName, ErpPurchaserRespVO::getPurchaserName)
                 .selectAs(ErpPurchaserDO::getReceiverName, ErpPurchaserRespVO::getReceiverName)
                 .selectAs(ErpPurchaserDO::getContactPhone, ErpPurchaserRespVO::getContactPhone)
@@ -33,6 +35,7 @@ public interface ErpPurchaserMapper extends BaseMapperX<ErpPurchaserDO> {
                 .selectAs(ErpPurchaserDO::getWechatAccount, ErpPurchaserRespVO::getWechatAccount)
                 .selectAs(ErpPurchaserDO::getAlipayAccount, ErpPurchaserRespVO::getAlipayAccount)
                 .selectAs(ErpPurchaserDO::getBankAccount, ErpPurchaserRespVO::getBankAccount)
+                .selectAs(ErpPurchaserDO::getRemark, ErpPurchaserRespVO::getRemark)
                 .selectAs(ErpPurchaserDO::getCreateTime, ErpPurchaserRespVO::getCreateTime);
         return selectJoinPage(reqVO, ErpPurchaserRespVO.class, query);
     }
@@ -41,5 +44,10 @@ public interface ErpPurchaserMapper extends BaseMapperX<ErpPurchaserDO> {
         return selectList(new LambdaQueryWrapperX<ErpPurchaserDO>()
                 .likeIfPresent(ErpPurchaserDO::getPurchaserName, purchaserName)
                 .orderByDesc(ErpPurchaserDO::getId));
+    }
+
+    default ErpPurchaserDO selectByNo(String no) {
+        return selectOne(new LambdaQueryWrapperX<ErpPurchaserDO>()
+                .eq(ErpPurchaserDO::getNo, no));
     }
 }

@@ -165,6 +165,16 @@ public class ErpNoRedisDAO {
      * 财务金额编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAmountDO}
      */
     public static final String FINANCE_AMOUNT_NO_PREFIX = "CWJE";
+    
+    /**
+     * 采购人员编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaserDO}
+     */
+    public static final String PURCHASER_NO_PREFIX = "CGRY";
+    
+    /**
+     * 供应商编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO}
+     */
+    public static final String SUPPLIER_NO_PREFIX = "GYS";
 
 
     @Resource
