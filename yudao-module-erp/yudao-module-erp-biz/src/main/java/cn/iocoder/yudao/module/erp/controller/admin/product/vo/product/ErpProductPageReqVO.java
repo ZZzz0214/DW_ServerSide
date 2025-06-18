@@ -1,5 +1,9 @@
 package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
@@ -24,13 +28,16 @@ public class ErpProductPageReqVO extends PageParam {
     @Schema(description = "发货编码", example = "SH001")
     private String shippingCode;
 
-    @Schema(description = "品牌名称", example = "品牌A")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brand;
 
-    @Schema(description = "产品分类编号", example = "11161")
+    @ExcelProperty(value = "产品品类", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
     private Long categoryId;
 
-    @Schema(description = "产品状态", example = "1")
+    @ExcelProperty(value = "产品状态", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_STATUS)
     private Integer status;
 
     @Schema(description = "采购人员", example = "张三")

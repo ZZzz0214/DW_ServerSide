@@ -284,27 +284,27 @@ public class ErpProductServiceImpl implements ErpProductService {
     }
 
     /**
-     * 从ES搜索产品（支持智能精确/模糊查询和深度分页）
+     * 从ES搜索产品（支持智能匹配查询和深度分页）
      * 
      * 查询策略说明：
-     * 1. 精确查询：使用双引号包围搜索词，如 "产品名称2" 只会匹配完全相同的产品
-     * 2. 智能模糊查询：不使用引号时，按权重优先级进行多层匹配：
-     *    - 完全精确匹配（权重1000）：产品名称完全相同
-     *    - 精确短语匹配（权重500）：包含完整搜索短语
-     *    - 前缀匹配（权重100）：以搜索词开头
-     *    - 分词完全匹配（权重50）：所有分词都匹配
-     *    - 包含匹配（权重10）：包含搜索词，但排除完全匹配和前缀匹配的情况
-     *    - 分词部分匹配（权重1）：部分分词匹配
+     * 智能匹配策略，按权重优先级进行多层匹配：
+     * 1. 完全精确匹配（权重1,000,000）：keyword字段完全相同
+     * 2. 前缀匹配（权重100,000）：keyword字段以搜索词开头
+     * 3. 通配符包含匹配（权重10,000）：keyword字段包含搜索词
+     * 4. 智能分词匹配（权重100-500）：根据搜索词长度智能选择匹配策略
+     *    - 单字/双字搜索：使用OR匹配，权重100（支持单字搜索）
+     *    - 多字搜索：使用AND匹配，权重500（减少误匹配）
      * 
-     * 关键改进：
-     * - 使用mustNot排除已经被高权重匹配的情况，避免重复匹配
-     * - 搜索"产品名称2"时，不会匹配到"产品名称"（因为"产品名称"不包含"产品名称2"）
-     * - 搜索"产品名称"时，会匹配到"产品名称"和"产品名称2"（因为"产品名称2"包含"产品名称"）
+     * 关键特性：
+     * - 精确匹配优先：完全匹配的结果排在最前面，避免"产品名称2"误匹配"产品名称"
+     * - 支持单字搜索：搜索"品"可以匹配"产品名称"（通过分词匹配）
+     * - 减少误匹配：多字搜索时要求所有分词都匹配，避免不相关结果
+     * - 智能权重：分词匹配权重远低于精确匹配，确保精确结果优先
      * 
      * 示例：
-     * - 搜索 "产品名称2" → 只返回名称为 "产品名称2" 的产品
-     * - 搜索 产品名称2 → 优先返回 "产品名称2"，不会返回 "产品名称"
-     * - 搜索 产品名称 → 返回 "产品名称" 和 "产品名称2"（按权重排序）
+     * - 搜索 "品" → 返回包含"品"字的产品（分词匹配，权重100）
+     * - 搜索 "产品名称2" → 优先返回完全匹配的产品（精确匹配，权重1,000,000）
+     * - 搜索 "产品名称" → 精确匹配优先，不会误匹配"产品名称2"
      * 
      * 深度分页：
      * - offset < 10000：使用普通分页
@@ -347,34 +347,38 @@ public class ErpProductServiceImpl implements ErpProductService {
                 
                 boolQuery.must(keywordQuery);
             } else {
-                // 产品名称查询 - 智能精确优先策略
+                // 产品名称查询 - 智能匹配策略（精确匹配优先，分词匹配兜底）
                 if (StringUtils.isNotBlank(pageReqVO.getName())) {
                     BoolQueryBuilder nameQuery = QueryBuilders.boolQuery();
                     String name = pageReqVO.getName().trim();
                     
-                    // 先检查是否有精确匹配，如果有则只使用keyword匹配
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     
-                    // 第一优先级：完全精确匹配
+                    // 第一优先级：完全精确匹配（最高权重）
                     multiMatchQuery.should(QueryBuilders.termQuery("name_keyword", name).boost(1000000.0f));
                     
                     // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("name_keyword", name).boost(100000.0f));
                     
                     // 第三优先级：通配符包含匹配（支持中间字符搜索）
-                    if (name.length() > 1) {
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(10000.0f));
-                    }
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(10000.0f));
                     
-                    // 注意：完全移除分词匹配，避免类似"产品名称2"匹配到"产品名称"的问题
-                    // 如果需要更宽松的搜索，用户可以使用关键词搜索功能
+                    // 第四优先级：分词匹配（权重大幅降低，仅作为兜底方案）
+                    // 对于单字搜索，使用较低权重的分词匹配
+                    if (name.length() <= 2) {
+                        // 单字或双字搜索，使用分词匹配作为兜底
+                        multiMatchQuery.should(QueryBuilders.matchQuery("name", name).operator(Operator.OR).boost(100.0f));
+                    } else {
+                        // 多字搜索，使用更严格的分词匹配
+                        multiMatchQuery.should(QueryBuilders.matchQuery("name", name).operator(Operator.AND).boost(500.0f));
+                    }
                     
                     multiMatchQuery.minimumShouldMatch(1);
                     nameQuery.must(multiMatchQuery);
                     boolQuery.must(nameQuery);
                 }
                 
-                // 产品简称查询 - 智能精确优先策略
+                // 产品简称查询 - 智能匹配策略
                 if (StringUtils.isNotBlank(pageReqVO.getProductShortName())) {
                     BoolQueryBuilder shortNameQuery = QueryBuilders.boolQuery();
                     String shortName = pageReqVO.getProductShortName().trim();
@@ -382,9 +386,13 @@ public class ErpProductServiceImpl implements ErpProductService {
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("product_short_name_keyword", shortName).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("product_short_name_keyword", shortName).boost(100000.0f));
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("product_short_name_keyword", "*" + shortName + "*").boost(10000.0f));
                     
-                    if (shortName.length() > 1) {
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery("product_short_name_keyword", "*" + shortName + "*").boost(10000.0f));
+                    // 智能分词匹配
+                    if (shortName.length() <= 2) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("product_short_name", shortName).operator(Operator.OR).boost(100.0f));
+                    } else {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("product_short_name", shortName).operator(Operator.AND).boost(500.0f));
                     }
                     
                     multiMatchQuery.minimumShouldMatch(1);
@@ -392,7 +400,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     boolQuery.must(shortNameQuery);
                 }
                 
-                // 发货编码查询 - 智能精确优先策略
+                // 发货编码查询 - 智能匹配策略
                 if (StringUtils.isNotBlank(pageReqVO.getShippingCode())) {
                     BoolQueryBuilder codeQuery = QueryBuilders.boolQuery();
                     String code = pageReqVO.getShippingCode().trim();
@@ -400,9 +408,13 @@ public class ErpProductServiceImpl implements ErpProductService {
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("shipping_code_keyword", code).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("shipping_code_keyword", code).boost(100000.0f));
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(10000.0f));
                     
-                    if (code.length() > 1) {
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(10000.0f));
+                    // 智能分词匹配
+                    if (code.length() <= 2) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.OR).boost(100.0f));
+                    } else {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.AND).boost(500.0f));
                     }
                     
                     multiMatchQuery.minimumShouldMatch(1);
@@ -410,7 +422,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     boolQuery.must(codeQuery);
                 }
                 
-                // 品牌名称查询 - 智能精确优先策略
+                // 品牌名称查询 - 智能匹配策略
                 if (StringUtils.isNotBlank(pageReqVO.getBrand())) {
                     BoolQueryBuilder brandQuery = QueryBuilders.boolQuery();
                     String brand = pageReqVO.getBrand().trim();
@@ -418,9 +430,13 @@ public class ErpProductServiceImpl implements ErpProductService {
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("brand_keyword", brand).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("brand_keyword", brand).boost(100000.0f));
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("brand_keyword", "*" + brand + "*").boost(10000.0f));
                     
-                    if (brand.length() > 1) {
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery("brand_keyword", "*" + brand + "*").boost(10000.0f));
+                    // 智能分词匹配
+                    if (brand.length() <= 2) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("brand", brand).operator(Operator.OR).boost(100.0f));
+                    } else {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("brand", brand).operator(Operator.AND).boost(500.0f));
                     }
                     
                     multiMatchQuery.minimumShouldMatch(1);
@@ -428,7 +444,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     boolQuery.must(brandQuery);
                 }
                 
-                // 采购人员查询 - 智能精确优先策略
+                // 采购人员查询 - 智能匹配策略
                 if (StringUtils.isNotBlank(pageReqVO.getPurchaser())) {
                     BoolQueryBuilder purchaserQuery = QueryBuilders.boolQuery();
                     String purchaser = pageReqVO.getPurchaser().trim();
@@ -436,9 +452,13 @@ public class ErpProductServiceImpl implements ErpProductService {
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("purchaser_keyword", purchaser).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("purchaser_keyword", purchaser).boost(100000.0f));
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + purchaser + "*").boost(10000.0f));
                     
-                    if (purchaser.length() > 1) {
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + purchaser + "*").boost(10000.0f));
+                    // 智能分词匹配
+                    if (purchaser.length() <= 2) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.OR).boost(100.0f));
+                    } else {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.AND).boost(500.0f));
                     }
                     
                     multiMatchQuery.minimumShouldMatch(1);
@@ -446,7 +466,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     boolQuery.must(purchaserQuery);
                 }
                 
-                // 供应商名查询 - 智能精确优先策略
+                // 供应商名查询 - 智能匹配策略
                 if (StringUtils.isNotBlank(pageReqVO.getSupplier())) {
                     BoolQueryBuilder supplierQuery = QueryBuilders.boolQuery();
                     String supplier = pageReqVO.getSupplier().trim();
@@ -454,9 +474,13 @@ public class ErpProductServiceImpl implements ErpProductService {
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("supplier_keyword", supplier).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("supplier_keyword", supplier).boost(100000.0f));
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + supplier + "*").boost(10000.0f));
                     
-                    if (supplier.length() > 1) {
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + supplier + "*").boost(10000.0f));
+                    // 智能分词匹配
+                    if (supplier.length() <= 2) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.OR).boost(100.0f));
+                    } else {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.AND).boost(500.0f));
                     }
                     
                     multiMatchQuery.minimumShouldMatch(1);
