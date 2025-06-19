@@ -22,7 +22,7 @@ public interface ErpSalespersonMapper extends BaseMapperX<ErpSalespersonDO> {
     default PageResult<ErpSalespersonRespVO> selectPage(ErpSalespersonPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpSalespersonDO> query = new MPJLambdaWrapperX<ErpSalespersonDO>()
                 .likeIfPresent(ErpSalespersonDO::getSalespersonName, reqVO.getSalespersonName())
-                .eqIfPresent(ErpSalespersonDO::getContactPhone, reqVO.getContactPhone())
+                .likeIfPresent(ErpSalespersonDO::getContactPhone, reqVO.getContactPhone())
                 .betweenIfPresent(ErpSalespersonDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpSalespersonDO::getId)
                 .selectAs(ErpSalespersonDO::getId, ErpSalespersonRespVO::getId)

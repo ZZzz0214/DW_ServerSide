@@ -20,14 +20,15 @@ public interface ErpCustomerMapper extends BaseMapperX<ErpCustomerDO> {
 
     default PageResult<ErpCustomerDO> selectPage(ErpCustomerPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpCustomerDO>()
+                .likeIfPresent(ErpCustomerDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpCustomerDO::getName, reqVO.getName())
-                .eqIfPresent(ErpCustomerDO::getMobile, reqVO.getMobile())
-                .eqIfPresent(ErpCustomerDO::getTelephone, reqVO.getTelephone())
+                .likeIfPresent(ErpCustomerDO::getReceiverName, reqVO.getReceiverName())
+                .likeIfPresent(ErpCustomerDO::getTelephone, reqVO.getTelephone())
+                .likeIfPresent(ErpCustomerDO::getAddress, reqVO.getAddress())
+                .likeIfPresent(ErpCustomerDO::getWechatAccount, reqVO.getWechatAccount())
+                .likeIfPresent(ErpCustomerDO::getAlipayAccount, reqVO.getAlipayAccount())
+                .likeIfPresent(ErpCustomerDO::getBankAccount, reqVO.getBankAccount())
                 .orderByDesc(ErpCustomerDO::getId));
-    }
-
-    default List<ErpCustomerDO> selectListByStatus(Integer status) {
-        return selectList(ErpCustomerDO::getStatus, status);
     }
 
     default List<ErpCustomerDO> selectListByNameIn(Collection<String> names) {

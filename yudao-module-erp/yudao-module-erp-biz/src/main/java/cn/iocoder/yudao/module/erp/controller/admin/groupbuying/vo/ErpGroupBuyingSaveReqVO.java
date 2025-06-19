@@ -20,7 +20,7 @@ public class ErpGroupBuyingSaveReqVO {
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "GB001")
     private String no;
 
-    @Schema(description = "产品图片", example = "https://example.com/image.jpg")
+    @Schema(description = "产品图片（多张，逗号分隔）", example = "https://example.com/image1.jpg,https://example.com/image2.jpg")
     private String productImage;
 
     @Schema(description = "品牌名称", example = "品牌A")

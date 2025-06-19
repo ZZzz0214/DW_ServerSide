@@ -25,11 +25,20 @@ public class ErpPrivateBroadcastingInfoPageReqVO extends PageParam {
     @Schema(description = "客户姓名", example = "张三")
     private String customerName;
 
+    @Schema(description = "客户职位", example = "采购经理")
+    private String customerPosition;
+
     @Schema(description = "平台名称", example = "抖音")
     private String platformName;
 
+    @Schema(description = "客户属性", example = "KA客户")
+    private String customerAttribute;
+
     @Schema(description = "客户城市", example = "北京")
     private String customerCity;
+
+    @Schema(description = "创建人员", example = "张三")
+    private String creator;
 
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)

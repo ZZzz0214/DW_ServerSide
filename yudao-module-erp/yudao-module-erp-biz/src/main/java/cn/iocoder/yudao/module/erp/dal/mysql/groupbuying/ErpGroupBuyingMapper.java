@@ -20,7 +20,13 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
                 .likeIfPresent(ErpGroupBuyingDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName())
                 .likeIfPresent(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName())
+                .likeIfPresent(ErpGroupBuyingDO::getProductSpec, reqVO.getProductSpec())
+                .betweenIfPresent(ErpGroupBuyingDO::getShelfLife, reqVO.getShelfLife())
+                .likeIfPresent(ErpGroupBuyingDO::getSupplyGroupPrice, reqVO.getSupplyGroupPrice())
+                .likeIfPresent(ErpGroupBuyingDO::getSellingCommission, reqVO.getSellingCommission())
+                .likeIfPresent(ErpGroupBuyingDO::getGroupPrice, reqVO.getGroupPrice())
                 .eqIfPresent(ErpGroupBuyingDO::getStatus, reqVO.getStatus())
+                .likeIfPresent(ErpGroupBuyingDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpGroupBuyingDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpGroupBuyingDO::getId)
                 // 团购货盘表字段映射

@@ -136,4 +136,9 @@ public interface ErpComboProductService {
      */
     void manualSyncComboToES(Long comboId);
 
+    /**
+     * 手动全量同步所有组合产品到ES
+     */
+    void fullSyncToES();
+
 }

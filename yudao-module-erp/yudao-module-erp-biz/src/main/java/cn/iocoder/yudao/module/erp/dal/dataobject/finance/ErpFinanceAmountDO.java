@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -87,6 +88,11 @@ public class ErpFinanceAmountDO extends BaseDO {
      * 审核备注
      */
     private String auditRemark;
+
+    /**
+     * 订单日期
+     */
+    private LocalDate orderDate;
 
     /**
      * 租户编号

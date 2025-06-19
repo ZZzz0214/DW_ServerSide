@@ -21,10 +21,30 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
     default PageResult<ErpDropshipAssistRespVO> selectPage(ErpDropshipAssistPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpDropshipAssistDO> query = new MPJLambdaWrapperX<ErpDropshipAssistDO>()
                 .likeIfPresent(ErpDropshipAssistDO::getNo, reqVO.getNo())
-//                .eqIfPresent(ErpDropshipAssistDO::getTenantId, reqVO.getTenantId())
-                .orderByDesc(ErpDropshipAssistDO::getId)
-                // 字段映射
-                .selectAs(ErpDropshipAssistDO::getId, ErpDropshipAssistRespVO::getId)
+                .likeIfPresent(ErpDropshipAssistDO::getOriginalProduct, reqVO.getOriginalProduct())
+                .likeIfPresent(ErpDropshipAssistDO::getOriginalSpec, reqVO.getOriginalSpec())
+                .likeIfPresent(ErpDropshipAssistDO::getProductSpec, reqVO.getProductSpec())
+                .likeIfPresent(ErpDropshipAssistDO::getStatus, reqVO.getStatus())
+                .likeIfPresent(ErpDropshipAssistDO::getCreator, reqVO.getCreator())
+                .betweenIfPresent(ErpDropshipAssistDO::getCreateTime, reqVO.getCreateTime())
+                .orderByDesc(ErpDropshipAssistDO::getId);
+
+        // 联表查询组品信息
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId);
+
+        // 添加组品相关的查询条件
+        if (reqVO.getComboProductId() != null && !reqVO.getComboProductId().isEmpty()) {
+            query.like(ErpComboProductDO::getNo, reqVO.getComboProductId());
+        }
+        if (reqVO.getShippingCode() != null && !reqVO.getShippingCode().isEmpty()) {
+            query.like(ErpComboProductDO::getShippingCode, reqVO.getShippingCode());
+        }
+        if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
+            query.like(ErpComboProductDO::getName, reqVO.getProductName());
+        }
+
+        // 字段映射
+        query.selectAs(ErpDropshipAssistDO::getId, ErpDropshipAssistRespVO::getId)
                 .selectAs(ErpDropshipAssistDO::getNo, ErpDropshipAssistRespVO::getNo)
                 .selectAs(ErpDropshipAssistDO::getOriginalProduct, ErpDropshipAssistRespVO::getOriginalProduct)
                 .selectAs(ErpDropshipAssistDO::getOriginalSpec, ErpDropshipAssistRespVO::getOriginalSpec)
@@ -32,16 +52,14 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .selectAs(ErpDropshipAssistDO::getComboProductId, ErpDropshipAssistRespVO::getComboProductId)
                 .selectAs(ErpDropshipAssistDO::getProductSpec, ErpDropshipAssistRespVO::getProductSpec)
                 .selectAs(ErpDropshipAssistDO::getProductQuantity, ErpDropshipAssistRespVO::getProductQuantity)
+                .selectAs(ErpDropshipAssistDO::getRemark, ErpDropshipAssistRespVO::getRemark)
+                .selectAs(ErpDropshipAssistDO::getStatus, ErpDropshipAssistRespVO::getStatus)
                 .selectAs(ErpDropshipAssistDO::getCreator, ErpDropshipAssistRespVO::getCreator)
-                .selectAs(ErpDropshipAssistDO::getCreateTime, ErpDropshipAssistRespVO::getCreateTime);
-
-                query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId)
-               .selectAs(ErpComboProductDO::getName, ErpDropshipAssistRespVO::getProductName)
-               .selectAs(ErpComboProductDO::getNo, ErpDropshipAssistRespVO::getComboProductNo)
-               .selectAs(ErpComboProductDO::getShortName, ErpDropshipAssistRespVO::getProductShortName)
-               .selectAs(ErpComboProductDO::getShippingCode, ErpDropshipAssistRespVO::getShippingCode)
-               .selectAs(ErpComboProductDO::getName, ErpDropshipAssistRespVO::getProductName);
-
+                .selectAs(ErpDropshipAssistDO::getCreateTime, ErpDropshipAssistRespVO::getCreateTime)
+                .selectAs(ErpComboProductDO::getName, ErpDropshipAssistRespVO::getProductName)
+                .selectAs(ErpComboProductDO::getNo, ErpDropshipAssistRespVO::getComboProductNo)
+                .selectAs(ErpComboProductDO::getShortName, ErpDropshipAssistRespVO::getProductShortName)
+                .selectAs(ErpComboProductDO::getShippingCode, ErpDropshipAssistRespVO::getShippingCode);
 
         return selectJoinPage(reqVO, ErpDropshipAssistRespVO.class, query);
     }
@@ -52,6 +70,7 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
         }
         return selectList(ErpDropshipAssistDO::getNo, nos);
     }
+    
     default ErpDropshipAssistDO selectByNo(String no) {
         return selectOne(ErpDropshipAssistDO::getNo, no);
     }

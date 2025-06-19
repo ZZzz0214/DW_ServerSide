@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Objects;
@@ -254,9 +255,9 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void rechargeWithImages(String creator, String channelType, BigDecimal amount, String carouselImages, String remark) {
+    public void rechargeWithImages(String creator, String channelType, BigDecimal amount, String carouselImages, String remark, String orderDate) {
         // 使用新的记录方式创建充值记录，包含图片和备注
-        createRechargeRecordWithImages(creator, channelType, amount, carouselImages, remark != null ? remark : "用户充值");
+        createRechargeRecordWithImages(creator, channelType, amount, carouselImages, remark != null ? remark : "用户充值", orderDate);
     }
 
     @Override
@@ -352,8 +353,8 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
      * 创建充值记录（带图片和备注）
      */
     @Transactional(rollbackFor = Exception.class)
-    public Long createRechargeRecordWithImages(String creator, String channelType, BigDecimal amount, String carouselImages, String remark) {
-        return createFinanceRecordWithImages(creator, channelType, amount, 1, carouselImages, remark);
+    public Long createRechargeRecordWithImages(String creator, String channelType, BigDecimal amount, String carouselImages, String remark, String orderDate) {
+        return createFinanceRecordWithImages(creator, channelType, amount, 1, carouselImages, remark, orderDate);
     }
 
     @Override
@@ -367,14 +368,14 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
      */
     @Transactional(rollbackFor = Exception.class)
     private Long createFinanceRecord(String creator, String channelType, BigDecimal amount, Integer operationType, String remark) {
-        return createFinanceRecordWithImages(creator, channelType, amount, operationType, null, remark);
+        return createFinanceRecordWithImages(creator, channelType, amount, operationType, null, remark, null);
     }
 
     /**
      * 创建财务记录（充值或消费，带图片）
      */
     @Transactional(rollbackFor = Exception.class)
-    private Long createFinanceRecordWithImages(String creator, String channelType, BigDecimal amount, Integer operationType, String carouselImages, String remark) {
+    private Long createFinanceRecordWithImages(String creator, String channelType, BigDecimal amount, Integer operationType, String carouselImages, String remark, String orderDate) {
         // 获取当前余额（包含财务表和财务金额表的综合余额）
         BigDecimal currentBalance = getCurrentBalanceForNewRecord(creator, channelType);
         
@@ -403,6 +404,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .afterBalance(afterBalance)
                 .carouselImages(carouselImages)
                 .remark(remark)
+                .orderDate(orderDate != null ? LocalDate.parse(orderDate) : LocalDate.now())
                 .auditStatus(10) // 默认待审核
                 .build();
         

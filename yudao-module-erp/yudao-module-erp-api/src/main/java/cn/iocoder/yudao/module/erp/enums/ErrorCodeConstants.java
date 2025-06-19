@@ -52,6 +52,12 @@ public interface ErrorCodeConstants {
     // ========== ERP 客户（1-030-200-000）==========
     ErrorCode CUSTOMER_NOT_EXISTS = new ErrorCode(1_020_200_000, "客户不存在");
     ErrorCode CUSTOMER_NOT_ENABLE = new ErrorCode(1_020_200_001, "客户({})未启用");
+    
+    // ========== ERP 客户导入（1-030-200-002） ==========
+    ErrorCode CUSTOMER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_200_002, "导入客户数据不能为空");
+    ErrorCode CUSTOMER_IMPORT_NAME_EMPTY = new ErrorCode(1_030_200_003, "第{}行的客户名称不能为空");
+    ErrorCode CUSTOMER_IMPORT_NAME_DUPLICATE = new ErrorCode(1_030_200_004, "第{}行的客户名称({})在Excel中重复");
+    ErrorCode CUSTOMER_IMPORT_NAME_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_200_005, "第{}行的客户名称({})已存在，且不支持更新");
 
     // ========== ERP 销售订单（1-030-201-000） ==========
     ErrorCode SALE_ORDER_NOT_EXISTS = new ErrorCode(1_020_201_000, "销售订单不存在");

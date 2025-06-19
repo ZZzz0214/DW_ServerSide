@@ -28,7 +28,7 @@ public class ErpPrivateBroadcastingImportExcelVO {
 
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
-    private Long brandId;
+    private String brandName;
 
     @ExcelProperty("产品名称")
     private String productName;

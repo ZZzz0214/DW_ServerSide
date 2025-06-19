@@ -20,8 +20,8 @@ public class ErpPrivateBroadcastingSaveReqVO {
     @Schema(description = "产品图片", example = "https://example.com/image.jpg")
     private String productImage;
 
-    @Schema(description = "品牌ID", example = "1")
-    private Long brandId;
+    @Schema(description = "品牌名称", example = "品牌A")
+    private String brandName;
 
     @Schema(description = "产品名称", example = "产品A")
     @NotNull(message = "产品名称不能为空")

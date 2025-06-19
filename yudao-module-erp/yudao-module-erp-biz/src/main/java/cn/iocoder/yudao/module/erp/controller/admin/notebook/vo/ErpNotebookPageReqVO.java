@@ -30,6 +30,9 @@ public class ErpNotebookPageReqVO extends PageParam {
     @Schema(description = "任务人员", example = "张三")
     private String taskPerson;
 
+    @Schema(description = "创建人员", example = "李四")
+    private String creator;
+
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     private LocalDateTime[] createTime;

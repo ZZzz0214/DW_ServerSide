@@ -14,19 +14,16 @@ public class ErpSalespersonSaveReqVO {
     private Long id;
 
     @Schema(description = "销售人员姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
-    @NotEmpty(message = "销售人员姓名不能为空")
+    @NotEmpty(message = "销售人员不能为空")
     private String salespersonName;
 
     @Schema(description = "收件姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "李四")
-    @NotEmpty(message = "收件姓名不能为空")
     private String receiverName;
 
     @Schema(description = "联系电话", requiredMode = Schema.RequiredMode.REQUIRED, example = "13800138000")
-    @NotEmpty(message = "联系电话不能为空")
     private String contactPhone;
 
     @Schema(description = "详细地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "北京市朝阳区")
-    @NotEmpty(message = "详细地址不能为空")
     private String address;
 
     @Schema(description = "微信账号", example = "wx123456")

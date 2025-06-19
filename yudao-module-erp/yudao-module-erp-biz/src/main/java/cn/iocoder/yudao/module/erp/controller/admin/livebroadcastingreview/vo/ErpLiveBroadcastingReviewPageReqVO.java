@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
@@ -21,14 +22,40 @@ public class ErpLiveBroadcastingReviewPageReqVO extends PageParam {
     @Schema(description = "编号", example = "FPDD001")
     private String no;
 
-    @Schema(description = "直播货盘表ID", example = "1")
-    private Long liveBroadcastingId;
+    @Schema(description = "品牌名称", example = "品牌A")
+    private String brandName;
 
-    @Schema(description = "客户ID", example = "1")
-    private Long customerId;
+    @Schema(description = "产品名称", example = "产品A")
+    private String productName;
 
-    @Schema(description = "直播平台", example = "抖音")
-    private String livePlatform;
+    @Schema(description = "产品规格", example = "500ml")
+    private String productSpec;
+
+    @Schema(description = "客户名称", example = "张三")
+    private String customerName;
+
+    @Schema(description = "直播价格", example = "100.00")
+    private String livePrice;
+
+    @Schema(description = "直播佣金", example = "10.00")
+    private String liveCommission;
+
+    @Schema(description = "公开佣金", example = "5.00")
+    private String publicCommission;
+
+    @Schema(description = "寄样日期")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate[] sampleSendDate;
+
+    @Schema(description = "开播日期")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate[] liveStartDate;
+
+    @Schema(description = "货盘状态", example = "未设置")
+    private String liveStatus;
+
+    @Schema(description = "创建人员", example = "张三")
+    private String creator;
 
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)

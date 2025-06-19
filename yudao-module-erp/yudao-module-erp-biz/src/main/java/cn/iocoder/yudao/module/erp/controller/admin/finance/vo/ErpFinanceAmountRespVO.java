@@ -1,10 +1,13 @@
 package cn.iocoder.yudao.module.erp.controller.admin.finance.vo;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 财务金额 Response VO")
@@ -41,6 +44,12 @@ public class ErpFinanceAmountRespVO {
     @Schema(description = "操作后余额", example = "600.00")
     @ExcelProperty("操作后余额")
     private BigDecimal afterBalance;
+
+    @Schema(description = "订单日期")
+    @ExcelProperty("订单日期")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate orderDate;
 
     // 兼容字段（已废弃，用于向后兼容）
     @Schema(description = "微信充值金额", example = "1000.00")

@@ -33,6 +33,15 @@ public class ErpFinancePageReqVO extends PageParam {
     @Schema(description = "账单状态", example = "1")
     private Integer status;
 
+    @Schema(description = "审核状态", example = "10")
+    private Integer auditStatus;
+
+    @Schema(description = "创建人员", example = "admin")
+    private String creator;
+
+    @Schema(description = "审核人员", example = "admin")
+    private String auditor;
+
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY)
     @Schema(description = "下单日期")
     private LocalDate[] orderDate;
@@ -40,4 +49,8 @@ public class ErpFinancePageReqVO extends PageParam {
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     @Schema(description = "创建时间")
     private LocalDateTime[] createTime;
+
+    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
+    @Schema(description = "审核时间")
+    private LocalDateTime[] auditTime;
 } 

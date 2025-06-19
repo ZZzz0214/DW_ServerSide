@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.MultiField;
+import org.springframework.data.elasticsearch.annotations.InnerField;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,7 +18,12 @@ public class ErpSalePriceESDO {
     @Id
     private Long id;
 
-    @Field(name = "no", type = FieldType.Keyword)
+    @MultiField(
+        mainField = @Field(name = "no", type = FieldType.Text, analyzer = "ik_max_word"),
+        otherFields = {
+            @InnerField(suffix = "keyword", type = FieldType.Keyword)
+        }
+    )
     private String no;
 
     @Field(name = "group_product_id", type = FieldType.Long)
@@ -25,13 +32,28 @@ public class ErpSalePriceESDO {
     @Field(name = "product_image", type = FieldType.Keyword, index = false)
     private String productImage;
 
-    @Field(name = "product_name", type = FieldType.Text, analyzer = "ik_max_word")
+    @MultiField(
+        mainField = @Field(name = "product_name", type = FieldType.Text, analyzer = "ik_max_word"),
+        otherFields = {
+            @InnerField(suffix = "keyword", type = FieldType.Keyword)
+        }
+    )
     private String productName;
 
-    @Field(name = "product_short_name", type = FieldType.Text, analyzer = "ik_smart")
+    @MultiField(
+        mainField = @Field(name = "product_short_name", type = FieldType.Text, analyzer = "ik_max_word"),
+        otherFields = {
+            @InnerField(suffix = "keyword", type = FieldType.Keyword)
+        }
+    )
     private String productShortName;
 
-    @Field(name = "customer_name", type = FieldType.Keyword)
+    @MultiField(
+        mainField = @Field(name = "customer_name", type = FieldType.Text, analyzer = "ik_max_word"),
+        otherFields = {
+            @InnerField(suffix = "keyword", type = FieldType.Keyword)
+        }
+    )
     private String customerName;
 
     @Field(name = "distribution_price", type = FieldType.Double)
@@ -82,7 +104,12 @@ public class ErpSalePriceESDO {
     @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updateTime;
     
-    @Field(name = "creator", type = FieldType.Keyword)
+    @MultiField(
+        mainField = @Field(name = "creator", type = FieldType.Text, analyzer = "ik_max_word"),
+        otherFields = {
+            @InnerField(suffix = "keyword", type = FieldType.Keyword)
+        }
+    )
     private String creator;
     
     @Field(name = "updater", type = FieldType.Keyword)

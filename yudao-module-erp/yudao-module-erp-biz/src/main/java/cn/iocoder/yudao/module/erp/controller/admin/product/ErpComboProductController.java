@@ -85,6 +85,14 @@ public class ErpComboProductController {
     @Operation(summary = "获得组合产品分页")
     @PreAuthorize("@ss.hasPermission('erp:combo-product:query')")
     public CommonResult<PageResult<ErpComboRespVO>> getComboProductPage(@Valid ErpComboPageReqVO pageReqVO) {
+        System.out.println("组品查询条件详情: 组品编码=" + pageReqVO.getNo() + 
+                          ", 产品名称=" + pageReqVO.getName() + 
+                          ", 产品简称=" + pageReqVO.getShortName() + 
+                          ", 发货编码=" + pageReqVO.getShippingCode() + 
+                          ", 采购人员=" + pageReqVO.getPurchaser() + 
+                          ", 供应商=" + pageReqVO.getSupplier() + 
+                          ", 创建人员=" + pageReqVO.getCreator() + 
+                          ", 关键词=" + pageReqVO.getKeyword());
         return success(comboProductService.getComboVOPage(pageReqVO));
     }
 
@@ -184,6 +192,14 @@ public class ErpComboProductController {
     @PreAuthorize("@ss.hasPermission('erp:combo-product:update')")
     public CommonResult<Boolean> syncComboToES(@PathVariable("id") Long id) {
         comboProductService.manualSyncComboToES(id);
+        return success(true);
+    }
+
+    @PostMapping("/sync-all-es")
+    @Operation(summary = "手动全量同步组合产品到ES")
+    @PreAuthorize("@ss.hasPermission('erp:combo-product:update')")
+    public CommonResult<Boolean> syncAllComboToES() {
+        comboProductService.fullSyncToES();
         return success(true);
     }
 

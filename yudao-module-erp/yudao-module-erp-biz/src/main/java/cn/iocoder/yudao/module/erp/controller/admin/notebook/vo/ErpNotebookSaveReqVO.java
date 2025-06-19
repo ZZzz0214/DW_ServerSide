@@ -15,8 +15,8 @@ public class ErpNotebookSaveReqVO {
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "NB001")
     private String no;
 
-    @Schema(description = "轮播图片", example = "https://example.com/image.jpg")
-    private String carouselImage;
+    @Schema(description = "图片列表", example = "https://example.com/image1.jpg,https://example.com/image2.jpg")
+    private String images;
 
     @Schema(description = "任务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "开发任务")
     @NotNull(message = "任务名称不能为空")

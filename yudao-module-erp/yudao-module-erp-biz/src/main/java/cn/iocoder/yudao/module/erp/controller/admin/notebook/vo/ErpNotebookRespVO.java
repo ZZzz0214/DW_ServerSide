@@ -20,9 +20,9 @@ public class ErpNotebookRespVO {
     @ExcelProperty("编号")
     private String no;
 
-    @Schema(description = "轮播图片", example = "https://example.com/image.jpg")
-    @ExcelProperty("轮播图片")
-    private String carouselImage;
+    @Schema(description = "图片列表", example = "https://example.com/image1.jpg,https://example.com/image2.jpg")
+    @ExcelProperty("图片列表")
+    private String images;
 
     @Schema(description = "任务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "开发任务")
     @ExcelProperty("任务名称")

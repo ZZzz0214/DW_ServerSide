@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import javax.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,12 +25,13 @@ public class ErpLiveBroadcastingImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
+    @Schema(description = "产品图片", example = "https://example.com/image.jpg")
     @ExcelProperty("产品图片")
     private String productImage;
 
-    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
-    private Long brandId;
+    @Schema(description = "品牌名称", example = "品牌A")
+    @ExcelProperty("品牌名称")
+    private String brandName;
 
     @ExcelProperty("产品名称")
     private String productName;

@@ -31,9 +31,9 @@ public class ErpNotebookDO extends BaseDO {
     private String no;
 
     /**
-     * 轮播图片
+     * 图片列表
      */
-    private String carouselImage;
+    private String images;
 
     /**
      * 任务名称

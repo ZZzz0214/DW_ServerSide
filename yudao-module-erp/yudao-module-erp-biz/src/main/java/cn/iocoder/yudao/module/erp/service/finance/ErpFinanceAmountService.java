@@ -129,8 +129,9 @@ public interface ErpFinanceAmountService {
      * @param amount 金额
      * @param carouselImages 轮播图片
      * @param remark 备注
+     * @param orderDate 订单日期
      */
-    void rechargeWithImages(String creator, String channelType, BigDecimal amount, String carouselImages, String remark);
+    void rechargeWithImages(String creator, String channelType, BigDecimal amount, String carouselImages, String remark, String orderDate);
 
     /**
      * 获取用户余额汇总

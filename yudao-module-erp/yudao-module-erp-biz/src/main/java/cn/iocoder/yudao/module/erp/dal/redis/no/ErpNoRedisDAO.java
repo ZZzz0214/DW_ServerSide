@@ -176,6 +176,11 @@ public class ErpNoRedisDAO {
      */
     public static final String SUPPLIER_NO_PREFIX = "GYS";
 
+    /**
+     * 客户编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO}
+     */
+    public static final String CUSTOMER_NO_PREFIX = "KH";
+
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;

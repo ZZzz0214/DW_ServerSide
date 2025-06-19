@@ -52,6 +52,14 @@ public class ErpDropshipAssistRespVO {
     @ExcelProperty("产品数量")
     private Integer productQuantity;
 
+    @Schema(description = "备注信息", example = "备注内容")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+    @Schema(description = "状态信息", example = "pending")
+    @ExcelProperty("状态信息")
+    private String status;
+
     @Schema(description = "创建者")
     @ExcelProperty("创建人员")
     private String creator;
@@ -65,6 +73,5 @@ public class ErpDropshipAssistRespVO {
 
     @Schema(description = "产品名称", example = "组合A")
     private String name;
-
 
 }

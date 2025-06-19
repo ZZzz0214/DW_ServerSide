@@ -35,7 +35,7 @@ public class ErpGroupBuyingDO extends BaseDO {
     private String no;
 
     /**
-     * 产品图片
+     * 产品图片（多张，逗号分隔）
      */
     private String productImage;
 

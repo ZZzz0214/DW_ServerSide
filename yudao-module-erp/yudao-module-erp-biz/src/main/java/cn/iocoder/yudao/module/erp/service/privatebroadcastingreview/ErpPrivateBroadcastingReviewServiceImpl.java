@@ -170,8 +170,8 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                     respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
                     respVO.setPrivateStatus(privateBroadcastingDO.getPrivateStatus());
                     // 设置品牌ID（用于导出时的字典转换）
-                    if (privateBroadcastingDO.getBrandId() != null) {
-                        respVO.setBrandName(privateBroadcastingDO.getBrandId().toString());
+                    if (privateBroadcastingDO.getBrandName() != null) {
+                        respVO.setBrandName(privateBroadcastingDO.getBrandName());
                     }
                 }
             }
@@ -255,8 +255,8 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                     respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
                     respVO.setPrivateStatus(privateBroadcastingDO.getPrivateStatus());
                     // 直接设置品牌ID，不进行字典转换（前端处理）
-                    if (privateBroadcastingDO.getBrandId() != null) {
-                        respVO.setBrandName(privateBroadcastingDO.getBrandId().toString());
+                    if (privateBroadcastingDO.getBrandName() != null) {
+                        respVO.setBrandName(privateBroadcastingDO.getBrandName());
                     }
                 }
             }

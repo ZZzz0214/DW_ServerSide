@@ -23,7 +23,7 @@ public class ErpGroupBuyingRespVO {
     @ExcelProperty("编号")
     private String no;
 
-    @Schema(description = "产品图片", example = "https://example.com/image.jpg")
+    @Schema(description = "产品图片（多张，逗号分隔）", example = "https://example.com/image1.jpg,https://example.com/image2.jpg")
     @ExcelProperty("产品图片")
     private String productImage;
 

@@ -36,4 +36,10 @@ public class ErpDropshipAssistSaveReqVO {
     @Schema(description = "产品数量", example = "100")
     private Integer productQuantity;
 
+    @Schema(description = "备注信息", example = "备注内容")
+    private String remark;
+
+    @Schema(description = "状态信息", example = "pending")
+    private String status;
+
 }

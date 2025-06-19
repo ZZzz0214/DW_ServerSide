@@ -88,6 +88,7 @@ public class ErpProductController {
                           ", 状态=" + pageReqVO.getStatus() + 
                           ", 采购人员=" + pageReqVO.getPurchaser() + 
                           ", 供应商=" + pageReqVO.getSupplier() + 
+                          ", 创建人员=" + pageReqVO.getCreator() + 
                           ", 关键词=" + pageReqVO.getKeyword());
         return success(productService.getProductVOPage(pageReqVO));
     }
@@ -174,7 +175,7 @@ public class ErpProductController {
     }
 
     @PostMapping("/sync-es")
-    @Operation(summary = "手动同步产品数据到ES")
+    @Operation(summary = "手动全量同步产品数据到ES")
     @PreAuthorize("@ss.hasPermission('erp:product:update')")
     public CommonResult<Boolean> syncProductsToES() {
         try {
@@ -182,6 +183,30 @@ public class ErpProductController {
             return success(true);
         } catch (Exception e) {
             throw new RuntimeException("同步ES失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/check-sync-es")
+    @Operation(summary = "检查并智能同步产品数据到ES")
+    @PreAuthorize("@ss.hasPermission('erp:product:update')")
+    public CommonResult<Boolean> checkAndSyncProductsToES() {
+        try {
+            productService.checkAndSyncES();
+            return success(true);
+        } catch (Exception e) {
+            throw new RuntimeException("检查同步ES失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/rebuild-es-index")
+    @Operation(summary = "重建ES索引（删除重建）")
+    @PreAuthorize("@ss.hasPermission('erp:product:update')")
+    public CommonResult<Boolean> rebuildESIndex() {
+        try {
+            productService.rebuildESIndex();
+            return success(true);
+        } catch (Exception e) {
+            throw new RuntimeException("重建ES索引失败: " + e.getMessage());
         }
     }
 

@@ -17,65 +17,47 @@ import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 public class ErpCustomerRespVO {
 
     @Schema(description = "客户编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "27520")
-    @ExcelProperty("客户编号")
     private Long id;
+
+    @Schema(description = "客户业务编号", example = "KH20241201000001")
+    @ExcelProperty("客户编号")
+    private String no;
 
     @Schema(description = "客户名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
     @ExcelProperty("客户名称")
     private String name;
 
-    @Schema(description = "联系人", example = "老王")
-    @ExcelProperty("联系人")
-    private String contact;
-
-    @Schema(description = "手机号码", example = "15601691300")
-    @ExcelProperty("手机号码")
-    private String mobile;
+    @Schema(description = "收件姓名", example = "李四")
+    @ExcelProperty("收件姓名")
+    private String receiverName;
 
     @Schema(description = "联系电话", example = "15601691300")
     @ExcelProperty("联系电话")
     private String telephone;
 
-    @Schema(description = "电子邮箱", example = "7685323@qq.com")
-    @ExcelProperty("电子邮箱")
-    private String email;
+    @Schema(description = "详细地址", example = "北京市朝阳区xxx街道xxx号")
+    @ExcelProperty("详细地址")
+    private String address;
 
-    @Schema(description = "传真", example = "20 7123 4567")
-    @ExcelProperty("传真")
-    private String fax;
+    @Schema(description = "微信账号", example = "wechat123")
+    @ExcelProperty("微信账号")
+    private String wechatAccount;
 
-    @Schema(description = "备注", example = "你猜")
-    @ExcelProperty("备注")
-    private String remark;
+    @Schema(description = "支付宝号", example = "alipay@example.com")
+    @ExcelProperty("支付宝号")
+    private String alipayAccount;
 
-    @Schema(description = "开启状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @ExcelProperty(value = "开启状态", converter = DictConvert.class)
-    @DictFormat("common_status") // TODO 代码优化：建议设置到对应的 DictTypeConstants 枚举类中
-    private Integer status;
-
-    @Schema(description = "排序", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
-    @ExcelProperty("排序")
-    private Integer sort;
-
-    @Schema(description = "纳税人识别号", example = "91130803MA098BY05W")
-    @ExcelProperty("纳税人识别号")
-    private String taxNo;
-
-    @Schema(description = "税率", example = "10")
-    @ExcelProperty("税率")
-    private BigDecimal taxPercent;
-
-    @Schema(description = "开户行", example = "芋艿")
-    @ExcelProperty("开户行")
-    private String bankName;
-
-    @Schema(description = "开户账号", example = "622908212277228617")
-    @ExcelProperty("开户账号")
+    @Schema(description = "银行账号", example = "622908212277228617")
+    @ExcelProperty("银行账号")
     private String bankAccount;
 
-    @Schema(description = "开户地址", example = "兴业银行浦东支行")
-    @ExcelProperty("开户地址")
-    private String bankAddress;
+    @Schema(description = "备注信息", example = "重要客户")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+    @Schema(description = "创建人员", example = "admin")
+    @ExcelProperty("创建人员")
+    private String creator;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")

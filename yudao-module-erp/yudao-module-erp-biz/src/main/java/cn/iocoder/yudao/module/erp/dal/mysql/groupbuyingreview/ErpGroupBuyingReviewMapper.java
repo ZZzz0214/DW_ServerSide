@@ -20,8 +20,11 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
     default PageResult<ErpGroupBuyingReviewRespVO> selectPage(ErpGroupBuyingReviewPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpGroupBuyingReviewDO> query = new MPJLambdaWrapperX<ErpGroupBuyingReviewDO>()
                 .likeIfPresent(ErpGroupBuyingReviewDO::getNo, reqVO.getNo())
-                .eqIfPresent(ErpGroupBuyingReviewDO::getCustomerId, reqVO.getCustomerId())
-                .eqIfPresent(ErpGroupBuyingReviewDO::getGroupBuyingId, reqVO.getGroupBuyingId())
+                .likeIfPresent(ErpGroupBuyingReviewDO::getSupplyGroupPrice, reqVO.getSupplyGroupPrice())
+                .likeIfPresent(ErpGroupBuyingReviewDO::getExpressFee, reqVO.getExpressFee())
+                .betweenIfPresent(ErpGroupBuyingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
+                .betweenIfPresent(ErpGroupBuyingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
+                .likeIfPresent(ErpGroupBuyingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpGroupBuyingReviewDO::getId)
                 // 团购复盘表字段映射
@@ -29,6 +32,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getNo, ErpGroupBuyingReviewRespVO::getNo)
                 .selectAs(ErpGroupBuyingReviewDO::getRemark, ErpGroupBuyingReviewRespVO::getRemark)
                 .selectAs(ErpGroupBuyingReviewDO::getSupplyGroupPrice, ErpGroupBuyingReviewRespVO::getSupplyGroupPrice)
+                .selectAs(ErpGroupBuyingReviewDO::getExpressFee, ErpGroupBuyingReviewRespVO::getExpressFee)
                 .selectAs(ErpGroupBuyingReviewDO::getSampleSendDate, ErpGroupBuyingReviewRespVO::getSampleSendDate)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupStartDate, ErpGroupBuyingReviewRespVO::getGroupStartDate)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupSales, ErpGroupBuyingReviewRespVO::getGroupSales)
@@ -39,19 +43,39 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getCreateTime, ErpGroupBuyingReviewRespVO::getCreateTime);
 
         // 联表查询团购货盘信息
-        query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getId, ErpGroupBuyingReviewDO::getGroupBuyingId)
-                .selectAs(ErpGroupBuyingDO::getBrandName, ErpGroupBuyingReviewRespVO::getBrandName)
+        query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getId, ErpGroupBuyingReviewDO::getGroupBuyingId);
+        
+        // 团购货盘搜索条件
+        if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
+            query.like(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName());
+        }
+        if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
+            query.like(ErpGroupBuyingDO::getProductName, reqVO.getProductName());
+        }
+        if (reqVO.getProductSpec() != null && !reqVO.getProductSpec().isEmpty()) {
+            query.like(ErpGroupBuyingDO::getProductSpec, reqVO.getProductSpec());
+        }
+        if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
+            query.eq(ErpGroupBuyingDO::getStatus, reqVO.getStatus());
+        }
+        
+        query.selectAs(ErpGroupBuyingDO::getBrandName, ErpGroupBuyingReviewRespVO::getBrandName)
                 .selectAs(ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewRespVO::getGroupBuyingNo)
                 .selectAs(ErpGroupBuyingDO::getProductName, ErpGroupBuyingReviewRespVO::getProductName)
                 .selectAs(ErpGroupBuyingDO::getProductSpec, ErpGroupBuyingReviewRespVO::getProductSpec)
-                .selectAs(ErpGroupBuyingDO::getProductSku, ErpGroupBuyingReviewRespVO::getProductSku)
+                .selectAs(ErpGroupBuyingDO::getSupplyGroupPrice, ErpGroupBuyingReviewRespVO::getSupplyGroupPrice)
                 .selectAs(ErpGroupBuyingDO::getGroupMechanism, ErpGroupBuyingReviewRespVO::getGroupMechanism)
-                .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus)
-                .selectAs(ErpGroupBuyingDO::getExpressFee, ErpGroupBuyingReviewRespVO::getExpressFee);
+                .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus);
 
         // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpGroupBuyingReviewDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpGroupBuyingReviewRespVO::getCustomerName);
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpGroupBuyingReviewDO::getCustomerId);
+        
+        // 客户名称搜索条件
+        if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
+            query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
+        }
+        
+        query.selectAs(ErpCustomerDO::getName, ErpGroupBuyingReviewRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpGroupBuyingReviewRespVO.class, query);
     }

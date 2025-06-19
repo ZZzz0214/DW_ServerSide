@@ -21,9 +21,11 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
     default PageResult<ErpLiveBroadcastingReviewRespVO> selectPage(ErpLiveBroadcastingReviewPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpLiveBroadcastingReviewDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingReviewDO>()
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getNo, reqVO.getNo())
-                .eqIfPresent(ErpLiveBroadcastingReviewDO::getLiveBroadcastingId, reqVO.getLiveBroadcastingId())
-                .eqIfPresent(ErpLiveBroadcastingReviewDO::getCustomerId, reqVO.getCustomerId())
-                .likeIfPresent(ErpLiveBroadcastingReviewDO::getLivePlatform, reqVO.getLivePlatform())
+                .likeIfPresent(ErpLiveBroadcastingReviewDO::getLiveCommission, reqVO.getLiveCommission())
+                .likeIfPresent(ErpLiveBroadcastingReviewDO::getPublicCommission, reqVO.getPublicCommission())
+                .betweenIfPresent(ErpLiveBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
+                .betweenIfPresent(ErpLiveBroadcastingReviewDO::getLiveStartDate, reqVO.getLiveStartDate())
+                .likeIfPresent(ErpLiveBroadcastingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpLiveBroadcastingReviewDO::getId)
                 // 直播复盘表字段映射
@@ -46,19 +48,41 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreateTime, ErpLiveBroadcastingReviewRespVO::getCreateTime);
 
         // 联表查询直播货盘信息
-        query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId)
-                .selectAs(ErpLiveBroadcastingDO::getNo, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingNo)
-                .selectAs(ErpLiveBroadcastingDO::getProductImage, ErpLiveBroadcastingReviewRespVO::getProductImage)
-                .selectAs(ErpLiveBroadcastingDO::getBrandId, ErpLiveBroadcastingReviewRespVO::getBrandId)  // 直接映射品牌ID到brandName字段
+        query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId);
+        
+        // 添加联表查询条件（需要在leftJoin之后单独处理）
+        if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
+            query.like(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName());
+        }
+        if (reqVO.getProductSpec() != null && !reqVO.getProductSpec().isEmpty()) {
+            query.like(ErpLiveBroadcastingDO::getProductSpec, reqVO.getProductSpec());
+        }
+        if (reqVO.getLiveStatus() != null && !reqVO.getLiveStatus().isEmpty()) {
+            query.eq(ErpLiveBroadcastingDO::getLiveStatus, reqVO.getLiveStatus());
+        }
+        if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
+            query.like(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName());
+        }
+        
+        query.selectAs(ErpLiveBroadcastingDO::getNo, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingNo)
+                .selectAs(ErpLiveBroadcastingDO::getBrandName, ErpLiveBroadcastingReviewRespVO::getBrandName)
                 .selectAs(ErpLiveBroadcastingDO::getProductName, ErpLiveBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpLiveBroadcastingDO::getProductSpec, ErpLiveBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpLiveBroadcastingDO::getProductSku, ErpLiveBroadcastingReviewRespVO::getProductSku)
                 .selectAs(ErpLiveBroadcastingDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
-                .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingReviewRespVO::getLiveStatus);  // 直接映射货盘状态
+                .selectAs(ErpLiveBroadcastingDO::getLiveCommission, ErpLiveBroadcastingReviewRespVO::getLiveCommission)
+                .selectAs(ErpLiveBroadcastingDO::getPublicCommission, ErpLiveBroadcastingReviewRespVO::getPublicCommission)
+                .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingReviewRespVO::getLiveStatus);
 
         // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingReviewDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingReviewDO::getCustomerId);
+        
+        // 添加客户查询条件
+        if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
+            query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
+        }
+        
+        query.selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpLiveBroadcastingReviewRespVO.class, query);
     }
@@ -96,7 +120,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
         query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId)
                 .selectAs(ErpLiveBroadcastingDO::getNo, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingNo)
                 .selectAs(ErpLiveBroadcastingDO::getProductImage, ErpLiveBroadcastingReviewRespVO::getProductImage)
-                .selectAs(ErpLiveBroadcastingDO::getBrandId, ErpLiveBroadcastingReviewRespVO::getBrandId)  // 直接映射品牌ID到brandName字段
+                .selectAs(ErpLiveBroadcastingDO::getBrandName, ErpLiveBroadcastingReviewRespVO::getBrandName)
                 .selectAs(ErpLiveBroadcastingDO::getProductName, ErpLiveBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpLiveBroadcastingDO::getProductSpec, ErpLiveBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpLiveBroadcastingDO::getProductSku, ErpLiveBroadcastingReviewRespVO::getProductSku)

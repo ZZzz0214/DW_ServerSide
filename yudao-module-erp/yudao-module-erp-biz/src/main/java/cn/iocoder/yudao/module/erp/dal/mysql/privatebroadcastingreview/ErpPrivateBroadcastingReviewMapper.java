@@ -20,8 +20,12 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
     default PageResult<ErpPrivateBroadcastingReviewRespVO> selectPage(ErpPrivateBroadcastingReviewPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpPrivateBroadcastingReviewDO> query = new MPJLambdaWrapperX<ErpPrivateBroadcastingReviewDO>()
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getNo, reqVO.getNo())
-                .eqIfPresent(ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId, reqVO.getPrivateBroadcastingId())
-                .eqIfPresent(ErpPrivateBroadcastingReviewDO::getCustomerId, reqVO.getCustomerId())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getProductNakedPrice, reqVO.getNakedPrice())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getExpressFee, reqVO.getExpressFee())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getDropshipPrice, reqVO.getDropshippingPrice())
+                .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
+                .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpPrivateBroadcastingReviewDO::getId)
                 // 私播复盘表字段映射
@@ -38,11 +42,28 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupDate, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupDate)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupSales, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupSales)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRemark, ErpPrivateBroadcastingReviewRespVO::getRemark)
+                .selectAs(ErpPrivateBroadcastingReviewDO::getCreator, ErpPrivateBroadcastingReviewRespVO::getCreator)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getCreateTime, ErpPrivateBroadcastingReviewRespVO::getCreateTime);
                 
         // 联表查询私播货盘信息
-        query.leftJoin(ErpPrivateBroadcastingDO.class, ErpPrivateBroadcastingDO::getId, ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId)
-                .selectAs(ErpPrivateBroadcastingDO::getNo, ErpPrivateBroadcastingReviewRespVO::getPrivateBroadcastingNo)
+        query.leftJoin(ErpPrivateBroadcastingDO.class, ErpPrivateBroadcastingDO::getId, ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId);
+        
+        // 添加联表查询条件（需要在leftJoin之后单独处理）
+        if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
+            query.like(ErpPrivateBroadcastingDO::getProductName, reqVO.getProductName());
+        }
+        if (reqVO.getProductSpec() != null && !reqVO.getProductSpec().isEmpty()) {
+            query.like(ErpPrivateBroadcastingDO::getProductSpec, reqVO.getProductSpec());
+        }
+        if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
+            query.eq(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getStatus());
+        }
+        if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
+            query.like(ErpPrivateBroadcastingDO::getBrandName, reqVO.getBrandName());
+        }
+        
+        query.selectAs(ErpPrivateBroadcastingDO::getNo, ErpPrivateBroadcastingReviewRespVO::getPrivateBroadcastingNo)
+                .selectAs(ErpPrivateBroadcastingDO::getBrandName, ErpPrivateBroadcastingReviewRespVO::getBrandName)
                 .selectAs(ErpPrivateBroadcastingDO::getProductName, ErpPrivateBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSpec, ErpPrivateBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSku, ErpPrivateBroadcastingReviewRespVO::getProductSku)
@@ -50,8 +71,14 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingDO::getPrivateStatus, ErpPrivateBroadcastingReviewRespVO::getPrivateStatus);
                 
         // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpPrivateBroadcastingReviewDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName);
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpPrivateBroadcastingReviewDO::getCustomerId);
+        
+        // 添加客户查询条件
+        if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
+            query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
+        }
+        
+        query.selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName);
                 
         return selectJoinPage(reqVO, ErpPrivateBroadcastingReviewRespVO.class, query);
     }

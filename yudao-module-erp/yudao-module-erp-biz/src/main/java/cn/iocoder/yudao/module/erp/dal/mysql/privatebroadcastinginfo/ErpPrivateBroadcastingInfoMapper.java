@@ -19,8 +19,11 @@ public interface ErpPrivateBroadcastingInfoMapper extends BaseMapperX<ErpPrivate
         MPJLambdaWrapperX<ErpPrivateBroadcastingInfoDO> query = new MPJLambdaWrapperX<ErpPrivateBroadcastingInfoDO>()
                 .likeIfPresent(ErpPrivateBroadcastingInfoDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpPrivateBroadcastingInfoDO::getCustomerName, reqVO.getCustomerName())
+                .likeIfPresent(ErpPrivateBroadcastingInfoDO::getCustomerPosition, reqVO.getCustomerPosition())
                 .likeIfPresent(ErpPrivateBroadcastingInfoDO::getPlatformName, reqVO.getPlatformName())
+                .likeIfPresent(ErpPrivateBroadcastingInfoDO::getCustomerAttribute, reqVO.getCustomerAttribute())
                 .likeIfPresent(ErpPrivateBroadcastingInfoDO::getCustomerCity, reqVO.getCustomerCity())
+                .likeIfPresent(ErpPrivateBroadcastingInfoDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpPrivateBroadcastingInfoDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpPrivateBroadcastingInfoDO::getId)
                 // 私播信息表字段映射

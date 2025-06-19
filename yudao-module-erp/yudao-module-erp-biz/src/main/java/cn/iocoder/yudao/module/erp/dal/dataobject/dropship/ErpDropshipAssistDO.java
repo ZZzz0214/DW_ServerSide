@@ -63,6 +63,16 @@ public class ErpDropshipAssistDO extends BaseDO {
     private Integer productQuantity;
 
     /**
+     * 备注信息
+     */
+    private String remark;
+
+    /**
+     * 状态信息
+     */
+    private String status;
+
+    /**
      * 租户编号
      */
     private Long tenantId;

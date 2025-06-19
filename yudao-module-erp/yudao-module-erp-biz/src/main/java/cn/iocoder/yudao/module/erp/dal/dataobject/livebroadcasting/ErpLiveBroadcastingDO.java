@@ -36,14 +36,14 @@ public class ErpLiveBroadcastingDO extends BaseDO {
     private String no;
 
     /**
-     * 产品图片
+     * 产品图片（多张，逗号分隔）
      */
     private String productImage;
 
     /**
-     * 品牌ID
+     * 品牌名称
      */
-    private Long brandId;
+    private String brandName;
 
     /**
      * 产品名称

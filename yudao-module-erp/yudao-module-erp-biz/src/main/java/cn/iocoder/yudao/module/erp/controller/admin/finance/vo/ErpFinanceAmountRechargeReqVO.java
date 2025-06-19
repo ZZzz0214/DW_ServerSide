@@ -26,4 +26,7 @@ public class ErpFinanceAmountRechargeReqVO {
 
     @Schema(description = "备注信息", example = "充值记录")
     private String remark;
+
+    @Schema(description = "订单日期", example = "2024-03-25")
+    private String orderDate;
 } 

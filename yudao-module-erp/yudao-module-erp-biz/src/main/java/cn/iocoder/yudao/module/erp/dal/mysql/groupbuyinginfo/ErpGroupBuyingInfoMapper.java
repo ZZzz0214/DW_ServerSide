@@ -19,8 +19,11 @@ public interface ErpGroupBuyingInfoMapper extends BaseMapperX<ErpGroupBuyingInfo
         MPJLambdaWrapperX<ErpGroupBuyingInfoDO> query = new MPJLambdaWrapperX<ErpGroupBuyingInfoDO>()
                 .likeIfPresent(ErpGroupBuyingInfoDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpGroupBuyingInfoDO::getCustomerName, reqVO.getCustomerName())
+                .likeIfPresent(ErpGroupBuyingInfoDO::getCustomerPosition, reqVO.getCustomerPosition())
                 .likeIfPresent(ErpGroupBuyingInfoDO::getPlatformName, reqVO.getPlatformName())
+                .likeIfPresent(ErpGroupBuyingInfoDO::getCustomerAttribute, reqVO.getCustomerAttribute())
                 .likeIfPresent(ErpGroupBuyingInfoDO::getCustomerCity, reqVO.getCustomerCity())
+                .likeIfPresent(ErpGroupBuyingInfoDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpGroupBuyingInfoDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpGroupBuyingInfoDO::getId)
                 // 团购信息表字段映射

@@ -21,12 +21,21 @@ public class ErpComboProductES {
     @Field(name = "no", type = FieldType.Keyword)
     private String no;
 
+    @Field(name = "no_keyword", type = FieldType.Keyword)
+    private String noKeyword;
+
     //@Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     @Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word")
     private String name;
 
+    @Field(name = "name_keyword", type = FieldType.Keyword)
+    private String nameKeyword;
+
     @Field(name = "short_name", type = FieldType.Text, analyzer = "ik_smart")
     private String shortName;
+
+    @Field(name = "short_name_keyword", type = FieldType.Keyword)
+    private String shortNameKeyword;
 
     @Field(name = "image", type = FieldType.Keyword, index = false)
     private String image;
@@ -34,14 +43,23 @@ public class ErpComboProductES {
     @Field(name = "shipping_code", type = FieldType.Keyword)
     private String shippingCode;
 
+    @Field(name = "shipping_code_keyword", type = FieldType.Keyword)
+    private String shippingCodeKeyword;
+
     @Field(name = "weight", type = FieldType.Double)
     private BigDecimal weight;
 
-    @Field(name = "purchaser", type = FieldType.Keyword)
+    @Field(name = "purchaser", type = FieldType.Text, analyzer = "ik_max_word")
     private String purchaser;
 
-    @Field(name = "supplier", type = FieldType.Keyword)
+    @Field(name = "purchaser_keyword", type = FieldType.Keyword)
+    private String purchaserKeyword;
+
+    @Field(name = "supplier", type = FieldType.Text, analyzer = "ik_max_word")
     private String supplier;
+
+    @Field(name = "supplier_keyword", type = FieldType.Keyword)
+    private String supplierKeyword;
 
     @Field(name = "purchase_price", type = FieldType.Double)
     private BigDecimal purchasePrice;
@@ -82,10 +100,6 @@ public class ErpComboProductES {
     @Field(name = "status", type = FieldType.Integer)
     private Integer status;
 
-    // 组合名称（用于搜索）
-    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
-    private String comboName;
-
     // 租户ID（用于多租户隔离）
     @Field(name = "tenant_id", type = FieldType.Long)
     private Long tenantId;
@@ -97,8 +111,11 @@ public class ErpComboProductES {
     @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updateTime;
 
-    @Field(name = "creator", type = FieldType.Keyword)
+    @Field(name = "creator", type = FieldType.Text, analyzer = "ik_max_word")
     private String creator;
+
+    @Field(name = "creator_keyword", type = FieldType.Keyword)
+    private String creatorKeyword;
 
     @Field(name = "updater", type = FieldType.Keyword)
     private String updater;

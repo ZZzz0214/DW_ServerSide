@@ -36,17 +36,31 @@ public interface ErpSalePriceMapper extends BaseMapperX<ErpSalePriceDO> {
 
     default PageResult<ErpSalePriceDO> selectPage(ErpSalePricePageReqVO reqVO) {
         MPJLambdaWrapperX<ErpSalePriceDO> query = new MPJLambdaWrapperX<ErpSalePriceDO>()
+                .likeIfPresent(ErpSalePriceDO::getNo, reqVO.getNo())
+                .eqIfPresent(ErpSalePriceDO::getGroupProductId, reqVO.getGroupProductId())
+                .likeIfPresent(ErpSalePriceDO::getProductName, reqVO.getProductName())
+                .likeIfPresent(ErpSalePriceDO::getProductShortName, reqVO.getProductShortName())
                 .likeIfPresent(ErpSalePriceDO::getCustomerName, reqVO.getCustomerName())
+                .eqIfPresent(ErpSalePriceDO::getDistributionPrice, reqVO.getDistributionPrice())
+                .eqIfPresent(ErpSalePriceDO::getWholesalePrice, reqVO.getWholesalePrice())
+                .likeIfPresent(ErpSalePriceDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpSalePriceDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpSalePriceDO::getId);
 
-        // 代发单价范围
+        // 处理组品编号搜索
+        if (cn.hutool.core.util.StrUtil.isNotBlank(reqVO.getGroupProductNo())) {
+            // 通过关联查询支持组品编号搜索
+            query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpSalePriceDO::getGroupProductId)
+                 .eq(ErpComboProductDO::getNo, reqVO.getGroupProductNo());
+        }
+
+        // 代发单价范围（兼容旧字段）
         if (reqVO.getDistributionPriceRange() != null && reqVO.getDistributionPriceRange().length == 2) {
             query.ge(ErpSalePriceDO::getDistributionPrice, reqVO.getDistributionPriceRange()[0])
                     .le(ErpSalePriceDO::getDistributionPrice, reqVO.getDistributionPriceRange()[1]);
         }
 
-        // 批发单价范围
+        // 批发单价范围（兼容旧字段）
         if (reqVO.getWholesalePriceRange() != null && reqVO.getWholesalePriceRange().length == 2) {
             query.ge(ErpSalePriceDO::getWholesalePrice, reqVO.getWholesalePriceRange()[0])
                     .le(ErpSalePriceDO::getWholesalePrice, reqVO.getWholesalePriceRange()[1]);

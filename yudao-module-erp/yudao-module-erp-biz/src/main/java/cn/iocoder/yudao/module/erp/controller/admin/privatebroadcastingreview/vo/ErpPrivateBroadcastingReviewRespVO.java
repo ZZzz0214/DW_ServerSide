@@ -66,6 +66,10 @@ public class ErpPrivateBroadcastingReviewRespVO {
     @ExcelProperty("备注信息")
     private String remark;
 
+    @Schema(description = "创建人员", example = "张三")
+    @ExcelProperty("创建人员")
+    private String creator;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
@@ -77,8 +81,6 @@ public class ErpPrivateBroadcastingReviewRespVO {
     @Schema(description = "品牌名称", example = "品牌A")
     @ExcelProperty("品牌名称")
     private String brandName;
-
-
 
     @Schema(description = "产品规格", example = "标准规格")
     @ExcelProperty("产品规格")

@@ -3,14 +3,14 @@ package cn.iocoder.yudao.module.erp.service.sale;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 
 import javax.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 
 /**
  * ERP 客户 Service 接口
@@ -71,9 +71,7 @@ public interface ErpCustomerService {
      * @param ids 编号列表
      * @return 客户 Map
      */
-    default Map<Long, ErpCustomerDO> getCustomerMap(Collection<Long> ids) {
-        return convertMap(getCustomerList(ids), ErpCustomerDO::getId);
-    }
+    Map<Long, ErpCustomerDO> getCustomerMap(Collection<Long> ids);
 
     /**
      * 获得客户分页
@@ -84,19 +82,20 @@ public interface ErpCustomerService {
     PageResult<ErpCustomerDO> getCustomerPage(ErpCustomerPageReqVO pageReqVO);
 
     /**
-     * 获得指定状态的客户列表
-     *
-     * @param status 状态
-     * @return 客户列表
-     */
-    List<ErpCustomerDO> getCustomerListByStatus(Integer status);
-
-    /**
      * 搜索客户
      *
      * @param searchReqVO 搜索条件
      * @return 客户列表
      */
     List<ErpCustomerSaveReqVO> searchCustomers(ErpCustomerPageReqVO searchReqVO);
+
+    /**
+     * 导入客户
+     *
+     * @param importCustomers 导入客户列表
+     * @param isUpdateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpCustomerImportRespVO importCustomers(List<ErpCustomerImportExcelVO> importCustomers, boolean isUpdateSupport);
 
 }

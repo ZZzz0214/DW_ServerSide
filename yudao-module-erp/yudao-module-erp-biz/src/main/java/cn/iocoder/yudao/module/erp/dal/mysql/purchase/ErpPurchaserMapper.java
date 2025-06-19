@@ -23,7 +23,7 @@ public interface ErpPurchaserMapper extends BaseMapperX<ErpPurchaserDO> {
         MPJLambdaWrapperX<ErpPurchaserDO> query = new MPJLambdaWrapperX<ErpPurchaserDO>()
                 .likeIfPresent(ErpPurchaserDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpPurchaserDO::getPurchaserName, reqVO.getPurchaserName())
-                .eqIfPresent(ErpPurchaserDO::getContactPhone, reqVO.getContactPhone())
+                .likeIfPresent(ErpPurchaserDO::getContactPhone, reqVO.getContactPhone())
                 .betweenIfPresent(ErpPurchaserDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpPurchaserDO::getId)
                 .selectAs(ErpPurchaserDO::getId, ErpPurchaserRespVO::getId)

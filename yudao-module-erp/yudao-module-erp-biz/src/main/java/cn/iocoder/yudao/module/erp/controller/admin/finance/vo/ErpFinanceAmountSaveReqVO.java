@@ -3,9 +3,13 @@ package cn.iocoder.yudao.module.erp.controller.admin.finance.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 财务金额保存 Request VO")
@@ -39,6 +43,11 @@ public class ErpFinanceAmountSaveReqVO {
 
     @Schema(description = "操作后余额", example = "600.00")
     private BigDecimal afterBalance;
+
+    @Schema(description = "订单日期", example = "2024-03-25")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate orderDate;
 
     @Schema(description = "备注信息", example = "充值记录")
     private String remark;

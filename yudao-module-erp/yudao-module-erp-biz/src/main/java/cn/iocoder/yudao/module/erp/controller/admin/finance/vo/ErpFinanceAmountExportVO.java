@@ -18,7 +18,7 @@ public class ErpFinanceAmountExportVO {
     private String no;
 
     @Schema(description = "轮播图片", example = "http://example.com/image1.jpg,http://example.com/image2.jpg")
-    @ExcelProperty("轮播图片")
+    @ExcelProperty("图片")
     private String carouselImages;
 
     @Schema(description = "渠道类型", example = "微信")
@@ -33,13 +33,13 @@ public class ErpFinanceAmountExportVO {
     @ExcelProperty("操作类型")
     private Integer operationType;
 
-    @Schema(description = "操作前余额", example = "500.00")
-    @ExcelProperty("操作前余额")
-    private BigDecimal beforeBalance;
-
-    @Schema(description = "操作后余额", example = "600.00")
-    @ExcelProperty("操作后余额")
-    private BigDecimal afterBalance;
+//    @Schema(description = "操作前余额", example = "500.00")
+//    @ExcelProperty("操作前余额")
+//    private BigDecimal beforeBalance;
+//
+//    @Schema(description = "操作后余额", example = "600.00")
+//    @ExcelProperty("操作后余额")
+//    private BigDecimal afterBalance;
 
     @Schema(description = "备注信息", example = "充值记录")
     @ExcelProperty("备注信息")
@@ -68,4 +68,4 @@ public class ErpFinanceAmountExportVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}

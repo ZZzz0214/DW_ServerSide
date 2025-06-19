@@ -23,6 +23,9 @@ public interface ErpTransitSaleMapper extends BaseMapperX<ErpTransitSaleDO> {
         .likeIfPresent(ErpTransitSaleDO::getNo, reqVO.getNo())
         .eqIfPresent(ErpTransitSaleDO::getGroupProductId, reqVO.getGroupProductId())
         .likeIfPresent(ErpTransitSaleDO::getTransitPerson, reqVO.getTransitPerson())
+        .eqIfPresent(ErpTransitSaleDO::getDistributionPrice, reqVO.getDistributionPrice())
+        .eqIfPresent(ErpTransitSaleDO::getWholesalePrice, reqVO.getWholesalePrice())
+        .likeIfPresent(ErpTransitSaleDO::getCreator, reqVO.getCreator())
         .betweenIfPresent(ErpTransitSaleDO::getCreateTime, reqVO.getCreateTime())
         .orderByDesc(ErpTransitSaleDO::getId)
         // 中转销售表字段映射
@@ -50,6 +53,14 @@ public interface ErpTransitSaleMapper extends BaseMapperX<ErpTransitSaleDO> {
         .selectAs(ErpComboProductDO::getName, ErpTransitSaleRespVO::getProductName)
         .selectAs(ErpComboProductDO::getShortName, ErpTransitSaleRespVO::getProductShortName)
         .selectAs(ErpComboProductDO::getNo, ErpTransitSaleRespVO::getGroupProductNo);
+        
+        // 添加关联表字段的搜索条件
+        if (reqVO.getProductName() != null) {
+            query.like(ErpComboProductDO::getName, reqVO.getProductName());
+        }
+        if (reqVO.getProductShortName() != null) {
+            query.like(ErpComboProductDO::getShortName, reqVO.getProductShortName());
+        }
 
         return selectJoinPage(reqVO, ErpTransitSaleRespVO.class, query);
     }

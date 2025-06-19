@@ -15,4 +15,11 @@ public interface DictTypeConstants {
     String FINANCE_INCOME_EXPENSE = "erp_finance_income_expense"; // 财务收入支出
     String FINANCE_BILL_STATUS = "erp_finance_bill_status"; // 财务账单状态
 
+    // ========== 代发辅助模块 ==========
+    String ERP_DROPSHIP_STATUS = "erp_dropship_status"; // 代发辅助状态
+
+    // ========== 产品模块 ==========
+    String ERP_PRODUCT_BRAND = "erp_product_brand"; // 产品品牌
+    String ERP_PRODUCT_CATEGORY = "erp_product_category"; // 产品品类
+
 }

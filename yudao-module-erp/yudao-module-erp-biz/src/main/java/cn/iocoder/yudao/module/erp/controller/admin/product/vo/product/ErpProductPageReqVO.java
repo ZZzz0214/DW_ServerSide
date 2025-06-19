@@ -46,6 +46,10 @@ public class ErpProductPageReqVO extends PageParam {
     @Schema(description = "供应商名", example = "供应商A")
     private String supplier;
 
+
+    @ExcelProperty(value = "创建人员")
+    private String creator;
+
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     private LocalDateTime[] createTime;

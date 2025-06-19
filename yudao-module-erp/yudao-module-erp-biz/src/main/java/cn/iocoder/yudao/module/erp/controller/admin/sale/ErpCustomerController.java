@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.sale;
 
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
-import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
@@ -10,24 +9,30 @@ import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.IMPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
-import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertList;
 
 @Tag(name = "管理后台 - ERP 客户")
 @RestController
@@ -79,13 +84,6 @@ public class ErpCustomerController {
         return success(BeanUtils.toBean(pageResult, ErpCustomerRespVO.class));
     }
 
-    @GetMapping("/simple-list")
-    @Operation(summary = "获得客户精简列表", description = "只包含被开启的客户，主要用于前端的下拉选项")
-    public CommonResult<List<ErpCustomerRespVO>> getCustomerSimpleList() {
-        List<ErpCustomerDO> list = customerService.getCustomerListByStatus(CommonStatusEnum.ENABLE.getStatus());
-        return success(convertList(list, customer -> new ErpCustomerRespVO().setId(customer.getId()).setName(customer.getName())));
-    }
-
     @GetMapping("/export-excel")
     @Operation(summary = "导出客户 Excel")
     @PreAuthorize("@ss.hasPermission('erp:customer:export')")
@@ -97,6 +95,46 @@ public class ErpCustomerController {
         // 导出 Excel
         ExcelUtils.write(response, "客户.xls", "数据", ErpCustomerRespVO.class,
                         BeanUtils.toBean(list, ErpCustomerRespVO.class));
+    }
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得客户导入模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpCustomerImportExcelVO> list = Arrays.asList(
+            ErpCustomerImportExcelVO.builder()
+                .no("KH20241201000001")
+                .name("张三")
+                .receiverName("李四")
+                .telephone("13800138000")
+                .address("北京市朝阳区xxx街道xxx号")
+                .wechatAccount("wechat123")
+                .alipayAccount("alipay@example.com")
+                .bankAccount("622908212277228617")
+                .remark("重要客户")
+                .build()
+        );
+        // 输出
+        ExcelUtils.write(response, "客户导入模板.xls", "客户列表", ErpCustomerImportExcelVO.class, list);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "导入客户")
+    @Parameters({
+        @Parameter(name = "file", description = "Excel 文件", required = true),
+        @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+    })
+    @PreAuthorize("@ss.hasPermission('erp:customer:import')")
+    @ApiAccessLog(operateType = IMPORT)
+    public CommonResult<ErpCustomerImportRespVO> importExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpCustomerImportExcelVO> list = ExcelUtils.read(inputStream, ErpCustomerImportExcelVO.class);
+            return success(customerService.importCustomers(list, updateSupport));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search")

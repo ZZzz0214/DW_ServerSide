@@ -21,8 +21,11 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
     default PageResult<ErpLiveBroadcastingInfoRespVO> selectPage(ErpLiveBroadcastingInfoPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpLiveBroadcastingInfoDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingInfoDO>()
                 .likeIfPresent(ErpLiveBroadcastingInfoDO::getNo, reqVO.getNo())
-                .eqIfPresent(ErpLiveBroadcastingInfoDO::getCustomerId, reqVO.getCustomerId())
+                .likeIfPresent(ErpLiveBroadcastingInfoDO::getCustomerPosition, reqVO.getCustomerPosition())
                 .likeIfPresent(ErpLiveBroadcastingInfoDO::getPlatformName, reqVO.getPlatformName())
+                .likeIfPresent(ErpLiveBroadcastingInfoDO::getCustomerAttribute, reqVO.getCustomerAttribute())
+                .likeIfPresent(ErpLiveBroadcastingInfoDO::getCustomerCity, reqVO.getCustomerCity())
+                .likeIfPresent(ErpLiveBroadcastingInfoDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpLiveBroadcastingInfoDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpLiveBroadcastingInfoDO::getId)
                 // 直播信息表字段映射
@@ -43,8 +46,14 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
                 .selectAs(ErpLiveBroadcastingInfoDO::getCreateTime, ErpLiveBroadcastingInfoRespVO::getCreateTime);
 
         // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingInfoDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingInfoRespVO::getCustomerName);
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingInfoDO::getCustomerId);
+        
+        // 客户名称搜索条件
+        if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
+            query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
+        }
+        
+        query.selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingInfoRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpLiveBroadcastingInfoRespVO.class, query);
     }

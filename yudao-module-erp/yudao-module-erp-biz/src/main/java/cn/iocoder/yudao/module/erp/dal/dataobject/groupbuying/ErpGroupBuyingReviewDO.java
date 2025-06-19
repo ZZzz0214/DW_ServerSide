@@ -56,6 +56,11 @@ public class ErpGroupBuyingReviewDO extends BaseDO {
     private BigDecimal supplyGroupPrice;
 
     /**
+     * 快递费用
+     */
+    private BigDecimal expressFee;
+
+    /**
      * 寄样日期
      */
     private LocalDate sampleSendDate;

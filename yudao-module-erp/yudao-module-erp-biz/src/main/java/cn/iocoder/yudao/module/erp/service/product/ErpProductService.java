@@ -128,4 +128,14 @@ public interface ErpProductService {
      */
     void fullSyncToES();
 
+    /**
+     * 检查并同步ES数据（智能同步）
+     */
+    void checkAndSyncES();
+
+    /**
+     * 重建ES索引（删除重建）
+     */
+    void rebuildESIndex();
+
 }

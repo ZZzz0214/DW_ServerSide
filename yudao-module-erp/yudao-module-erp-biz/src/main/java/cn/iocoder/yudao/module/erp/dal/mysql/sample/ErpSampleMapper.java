@@ -18,12 +18,33 @@ public interface ErpSampleMapper extends BaseMapperX<ErpSampleDO> {
     default PageResult<ErpSampleRespVO> selectPage(ErpSamplePageReqVO reqVO) {
         MPJLambdaWrapperX<ErpSampleDO> query = new MPJLambdaWrapperX<ErpSampleDO>()
                 .likeIfPresent(ErpSampleDO::getNo, reqVO.getNo())
+                .likeIfPresent(ErpSampleDO::getLogisticsCompany, reqVO.getLogisticsCompany())
+                .likeIfPresent(ErpSampleDO::getLogisticsNo, reqVO.getLogisticsNo())
+                .likeIfPresent(ErpSampleDO::getReceiverName, reqVO.getReceiverName())
+                .likeIfPresent(ErpSampleDO::getContactPhone, reqVO.getContactPhone())
+                .likeIfPresent(ErpSampleDO::getProductSpec, reqVO.getProductSpec())
                 .likeIfPresent(ErpSampleDO::getCustomerName, reqVO.getCustomerName())
                 .eqIfPresent(ErpSampleDO::getSampleStatus, reqVO.getSampleStatus())
+                .likeIfPresent(ErpSampleDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpSampleDO::getCreateTime, reqVO.getCreateTime())
-                .orderByDesc(ErpSampleDO::getId)
-                // 样品表字段映射
-                .selectAs(ErpSampleDO::getId, ErpSampleRespVO::getId)
+                .orderByDesc(ErpSampleDO::getId);
+
+        // 联表查询组品信息
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpSampleDO::getComboProductId);
+
+        // 添加组品相关的查询条件
+        if (reqVO.getComboProductId() != null && !reqVO.getComboProductId().isEmpty()) {
+            query.like(ErpComboProductDO::getNo, reqVO.getComboProductId());
+        }
+        if (reqVO.getShippingCode() != null && !reqVO.getShippingCode().isEmpty()) {
+            query.like(ErpComboProductDO::getShippingCode, reqVO.getShippingCode());
+        }
+        if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
+            query.like(ErpComboProductDO::getName, reqVO.getProductName());
+        }
+
+        // 字段映射
+        query.selectAs(ErpSampleDO::getId, ErpSampleRespVO::getId)
                 .selectAs(ErpSampleDO::getNo, ErpSampleRespVO::getNo)
                 .selectAs(ErpSampleDO::getLogisticsCompany, ErpSampleRespVO::getLogisticsCompany)
                 .selectAs(ErpSampleDO::getLogisticsNo, ErpSampleRespVO::getLogisticsNo)
@@ -31,18 +52,17 @@ public interface ErpSampleMapper extends BaseMapperX<ErpSampleDO> {
                 .selectAs(ErpSampleDO::getContactPhone, ErpSampleRespVO::getContactPhone)
                 .selectAs(ErpSampleDO::getAddress, ErpSampleRespVO::getAddress)
                 .selectAs(ErpSampleDO::getRemark, ErpSampleRespVO::getRemark)
-                //.selectAs(ErpSampleDO::getComboProductId, ErpSampleRespVO::getComboProductId)
                 .selectAs(ErpSampleDO::getProductSpec, ErpSampleRespVO::getProductSpec)
                 .selectAs(ErpSampleDO::getProductQuantity, ErpSampleRespVO::getProductQuantity)
                 .selectAs(ErpSampleDO::getCustomerName, ErpSampleRespVO::getCustomerName)
                 .selectAs(ErpSampleDO::getSampleStatus, ErpSampleRespVO::getSampleStatus)
                 .selectAs(ErpSampleDO::getReference, ErpSampleRespVO::getReference)
                 .selectAs(ErpSampleDO::getCreator, ErpSampleRespVO::getCreator)
-                .selectAs(ErpSampleDO::getCreateTime, ErpSampleRespVO::getCreateTime);
-        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId,ErpSampleDO::getComboProductId) // 左连接组合产品表
-                .selectAs(ErpComboProductDO::getShippingCode, ErpSampleRespVO::getShippingCode) // 选择组合产品表的发货编码字段
-                .selectAs(ErpComboProductDO::getNo, ErpSampleRespVO::getComboProductId) // 选择组合产品表的发货编码字段
-                .selectAs(ErpComboProductDO::getName, ErpSampleRespVO::getComboProductName); // 选择组合产品表的名称字段作为组合产品名称字段的映射值。
+                .selectAs(ErpSampleDO::getCreateTime, ErpSampleRespVO::getCreateTime)
+                .selectAs(ErpComboProductDO::getShippingCode, ErpSampleRespVO::getShippingCode)
+                .selectAs(ErpComboProductDO::getNo, ErpSampleRespVO::getComboProductId)
+                .selectAs(ErpComboProductDO::getName, ErpSampleRespVO::getComboProductName);
+
         return selectJoinPage(reqVO, ErpSampleRespVO.class, query);
     }
 

@@ -24,10 +24,9 @@ public class ErpPrivateBroadcastingExportVO {
     @ExcelProperty("产品图片")
     private String productImage;
 
-    @Schema(description = "品牌ID", example = "1")
-    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
-    private Long brandId;
+    @Schema(description = "品牌名称", example = "品牌A")
+    @ExcelProperty("品牌名称")
+    private String brandName;
 
     @Schema(description = "产品名称", example = "产品A")
     @ExcelProperty("产品名称")

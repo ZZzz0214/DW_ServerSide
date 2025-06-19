@@ -241,6 +241,13 @@ public class ErpProductESDO {
     @Field(name = "additional_weight_price", type = FieldType.Double)
     private BigDecimal additionalWeightPrice;
 
+
+    @Field(name = "creator", type = FieldType.Text, analyzer = "ik_max_word")
+    private String creator;
+
+    @Field(name = "creator_keyword", type = FieldType.Keyword)
+    private String creatorKeyword;
+
     @Field(name = "create_time", type = FieldType.Keyword)
     private String createTime;
 

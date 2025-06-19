@@ -23,6 +23,7 @@ import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -138,7 +139,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         }
     }
 
-    // 转换方法
+    // 转换方法 - 支持keyword字段，参考组品表实现
     private ErpSalePriceESDO convertToES(ErpSalePriceDO salePrice) {
         ErpSalePriceESDO es = new ErpSalePriceESDO();
         BeanUtils.copyProperties(salePrice, es);
@@ -147,6 +148,37 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         if (salePrice.getId() != null) {
             es.setId(salePrice.getId());
         }
+        
+        // 处理产品名称 - 确保ES中存储的是完整的组品名称
+        try {
+            if (salePrice.getGroupProductId() != null) {
+                // 获取组品的完整名称（类似组品表的buildComboName方法）
+                ErpComboRespVO comboInfo = getComboRespVOFromCache(salePrice.getGroupProductId());
+                if (comboInfo != null && StrUtil.isNotBlank(comboInfo.getName())) {
+                    // 使用组品的完整名称
+                    es.setProductName(comboInfo.getName());
+                    System.out.println("销售价格ES转换 - 设置产品名称: " + comboInfo.getName());
+                } else if (StrUtil.isNotBlank(salePrice.getProductName())) {
+                    // 如果获取组品信息失败，使用数据库中的产品名称
+                    es.setProductName(salePrice.getProductName());
+                    System.out.println("销售价格ES转换 - 使用数据库产品名称: " + salePrice.getProductName());
+                } else {
+                    es.setProductName("");
+                }
+            } else if (StrUtil.isNotBlank(salePrice.getProductName())) {
+                // 没有组品ID时，直接使用数据库中的产品名称
+                es.setProductName(salePrice.getProductName());
+            } else {
+                es.setProductName("");
+            }
+        } catch (Exception e) {
+            System.err.println("获取组品名称失败，销售价格ID: " + salePrice.getId() + ", 错误: " + e.getMessage());
+            // 如果获取失败，使用数据库中的产品名称
+            es.setProductName(salePrice.getProductName() != null ? salePrice.getProductName() : "");
+        }
+        
+        // 设置keyword字段用于精确匹配和通配符查询（通过MultiField自动处理）
+        // ES的MultiField注解会自动创建 field.keyword 字段，无需手动设置
         
         return es;
     }
@@ -213,6 +245,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             salePriceDO.setProductName(comboInfo.getName());
             salePriceDO.setProductShortName(comboInfo.getShortName());
             salePriceDO.setProductImage(comboInfo.getImage());
+            System.out.println("创建销售价格 - 设置产品名称: " + comboInfo.getName());
         }
 
         erpSalePriceMapper.insert(salePriceDO);
@@ -251,6 +284,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             updateObj.setProductName(comboInfo.getName());
             updateObj.setProductShortName(comboInfo.getShortName());
             updateObj.setProductImage(comboInfo.getImage());
+            System.out.println("更新销售价格 - 设置产品名称: " + comboInfo.getName());
         }
 
         erpSalePriceMapper.updateById(updateObj);
@@ -353,7 +387,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     }
 
     /**
-     * 优化的ES分页查询
+     * 优化的ES分页查询 - 参考产品表的智能搜索策略
      */
     private PageResult<ErpSalePriceRespVO> getSalePriceVOPageFromES(ErpSalePricePageReqVO pageReqVO) {
         // 验证分页参数
@@ -364,16 +398,208 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             pageReqVO.setPageNo(1); // 设置默认页码
         }
         
-        // 构建ES查询
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        // 构建ES查询 - 参考产品表的智能搜索策略
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
         
-        // 添加查询条件
-            if (StringUtils.isNotBlank(pageReqVO.getCustomerName())) {
-                boolQuery.must(QueryBuilders.matchQuery("customerName", pageReqVO.getCustomerName()));
+        // 编号搜索 - 智能匹配策略
+        if (StringUtils.isNotBlank(pageReqVO.getNo())) {
+            BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
+            String no = pageReqVO.getNo().trim();
+            
+            // 完全精确匹配（最高权重）
+            noQuery.should(QueryBuilders.termQuery("no_keyword", no).boost(1000000.0f));
+            // 前缀匹配
+            noQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(100000.0f));
+            // 通配符包含匹配
+            noQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(10000.0f));
+            // 分词匹配（根据长度智能选择策略）
+            noQuery.should(createIntelligentMatchQuery("no", no, 800.0f, 600.0f, 500.0f));
+            
+            noQuery.minimumShouldMatch(1);
+            boolQuery.must(noQuery);
+        }
+        
+        // 产品名称搜索 - 智能匹配策略（参考组品表实现）
+        if (StringUtils.isNotBlank(pageReqVO.getProductName())) {
+            BoolQueryBuilder nameQuery = QueryBuilders.boolQuery();
+            String name = pageReqVO.getProductName().trim();
+            
+            System.out.println("=== 销售价格产品名称搜索调试信息 ===");
+            System.out.println("搜索产品名称: " + name);
+            System.out.println("名称长度: " + name.length());
+
+            // 先查看ES中所有数据，用于调试
+            try {
+                NativeSearchQuery debugQuery = new NativeSearchQueryBuilder()
+                        .withQuery(QueryBuilders.matchAllQuery())
+                        .withPageable(PageRequest.of(0, 10))
+                        .build();
+                SearchHits<ErpSalePriceESDO> debugHits = elasticsearchRestTemplate.search(
+                        debugQuery,
+                        ErpSalePriceESDO.class,
+                        IndexCoordinates.of("erp_sale_price"));
+                
+                System.out.println("=== ES中的销售价格数据 ===");
+                debugHits.getSearchHits().forEach(hit -> {
+                    ErpSalePriceESDO content = hit.getContent();
+                    System.out.println("销售价格ID: " + content.getId());
+                    System.out.println("product_name: " + content.getProductName());
+                    System.out.println("customer_name: " + content.getCustomerName());
+                    System.out.println("---");
+                });
+                System.out.println("========================");
+            } catch (Exception debugEx) {
+                System.err.println("调试查询失败: " + debugEx.getMessage());
             }
-            if (pageReqVO.getGroupProductId() != null) {
-                boolQuery.must(QueryBuilders.termQuery("groupProductId", pageReqVO.getGroupProductId()));
+            
+            BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+            
+            // 第一优先级：完全精确匹配（最高权重）
+            multiMatchQuery.should(QueryBuilders.termQuery("product_name.keyword", name).boost(1000000.0f));
+            
+            // 第二优先级：前缀匹配
+            multiMatchQuery.should(QueryBuilders.prefixQuery("product_name.keyword", name).boost(100000.0f));
+            
+            // 第三优先级：通配符包含匹配（支持中间字符搜索）
+            multiMatchQuery.should(QueryBuilders.wildcardQuery("product_name.keyword", "*" + name + "*").boost(10000.0f));
+
+            // 第四优先级：对于多字搜索，添加子字符串通配符匹配（支持"色口红"匹配"变色口红"）
+            if (name.length() >= 2) {
+                // 添加从第二个字符开始的子字符串匹配，如"色口红"可以匹配"变色口红"
+                for (int i = 1; i < name.length(); i++) {
+                    String substring = name.substring(i);
+                    if (substring.length() >= 2) { // 至少2个字符才有意义
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("product_name.keyword", "*" + substring + "*").boost(3000.0f));
+                        System.out.println("添加子字符串通配符匹配: *" + substring + "*");
+                    }
+                }
             }
+
+            // 第五优先级：智能分词匹配
+            if (name.length() == 1) {
+                // 单字搜索
+                multiMatchQuery.should(QueryBuilders.matchQuery("product_name", name).operator(Operator.OR).boost(800.0f));
+                System.out.println("单字搜索查询: " + QueryBuilders.matchQuery("product_name", name).operator(Operator.OR).boost(800.0f));
+            } else if (name.length() == 2) {
+                // 双字搜索，使用AND匹配避免误匹配，但也添加OR匹配作为兜底
+                multiMatchQuery.should(QueryBuilders.matchQuery("product_name", name).operator(Operator.AND).boost(600.0f));
+                multiMatchQuery.should(QueryBuilders.matchPhraseQuery("product_name", name).boost(1200.0f));
+                // 添加OR匹配作为兜底，权重较低
+                multiMatchQuery.should(QueryBuilders.matchQuery("product_name", name).operator(Operator.OR).boost(400.0f));
+                System.out.println("双字搜索AND查询: " + QueryBuilders.matchQuery("product_name", name).operator(Operator.AND).boost(600.0f));
+                System.out.println("双字搜索短语查询: " + QueryBuilders.matchPhraseQuery("product_name", name).boost(1200.0f));
+                System.out.println("双字搜索OR兜底查询: " + QueryBuilders.matchQuery("product_name", name).operator(Operator.OR).boost(400.0f));
+            } else {
+                // 多字搜索
+                multiMatchQuery.should(QueryBuilders.matchQuery("product_name", name).operator(Operator.AND).boost(500.0f));
+                multiMatchQuery.should(QueryBuilders.matchPhraseQuery("product_name", name).boost(1000.0f));
+            }
+            
+            multiMatchQuery.minimumShouldMatch(1);
+            nameQuery.must(multiMatchQuery);
+            boolQuery.must(nameQuery);
+
+            System.out.println("产品名称ES查询语句: " + multiMatchQuery.toString());
+            System.out.println("==================================");
+        }
+        
+        // 产品简称搜索 - 智能匹配策略
+        if (StringUtils.isNotBlank(pageReqVO.getProductShortName())) {
+            BoolQueryBuilder shortNameQuery = QueryBuilders.boolQuery();
+            String shortName = pageReqVO.getProductShortName().trim();
+            
+            shortNameQuery.should(QueryBuilders.termQuery("product_short_name.keyword", shortName).boost(1000000.0f));
+            shortNameQuery.should(QueryBuilders.prefixQuery("product_short_name.keyword", shortName).boost(100000.0f));
+            shortNameQuery.should(QueryBuilders.wildcardQuery("product_short_name.keyword", "*" + shortName + "*").boost(10000.0f));
+            shortNameQuery.should(createIntelligentMatchQuery("product_short_name", shortName, 800.0f, 600.0f, 500.0f));
+            
+            shortNameQuery.minimumShouldMatch(1);
+            boolQuery.must(shortNameQuery);
+        }
+        
+        // 客户名称搜索 - 智能匹配策略
+        if (StringUtils.isNotBlank(pageReqVO.getCustomerName())) {
+            BoolQueryBuilder customerQuery = QueryBuilders.boolQuery();
+            String customer = pageReqVO.getCustomerName().trim();
+            
+            customerQuery.should(QueryBuilders.termQuery("customer_name.keyword", customer).boost(1000000.0f));
+            customerQuery.should(QueryBuilders.prefixQuery("customer_name.keyword", customer).boost(100000.0f));
+            customerQuery.should(QueryBuilders.wildcardQuery("customer_name.keyword", "*" + customer + "*").boost(10000.0f));
+            customerQuery.should(createIntelligentMatchQuery("customer_name", customer, 800.0f, 600.0f, 500.0f));
+            
+            customerQuery.minimumShouldMatch(1);
+            boolQuery.must(customerQuery);
+        }
+        
+        // 创建人员搜索 - 智能匹配策略
+        if (StringUtils.isNotBlank(pageReqVO.getCreator())) {
+            BoolQueryBuilder creatorQuery = QueryBuilders.boolQuery();
+            String creator = pageReqVO.getCreator().trim();
+            
+            creatorQuery.should(QueryBuilders.termQuery("creator.keyword", creator).boost(1000000.0f));
+            creatorQuery.should(QueryBuilders.prefixQuery("creator.keyword", creator).boost(100000.0f));
+            creatorQuery.should(QueryBuilders.wildcardQuery("creator.keyword", "*" + creator + "*").boost(10000.0f));
+            creatorQuery.should(createIntelligentMatchQuery("creator", creator, 800.0f, 600.0f, 500.0f));
+            
+            creatorQuery.minimumShouldMatch(1);
+            boolQuery.must(creatorQuery);
+        }
+        
+        // 组品ID精确查询
+        if (pageReqVO.getGroupProductId() != null) {
+            boolQuery.must(QueryBuilders.termQuery("group_product_id", pageReqVO.getGroupProductId()));
+        }
+        
+        // 组品编号搜索 - 智能匹配策略
+        if (StringUtils.isNotBlank(pageReqVO.getGroupProductNo())) {
+            BoolQueryBuilder groupNoQuery = QueryBuilders.boolQuery();
+            String groupNo = pageReqVO.getGroupProductNo().trim();
+            
+            System.out.println("=== 销售价格组品编号搜索调试信息 ===");
+            System.out.println("搜索组品编号: " + groupNo);
+            
+            // 由于需要根据组品编号查找对应的组品ID，然后用ID进行搜索
+            // 这里我们需要先通过组品编号查找组品ID
+            try {
+                // 查找对应的组品ID
+                ErpComboProductDO combo = erpComboMapper.selectByNo(groupNo);
+                if (combo != null) {
+                    // 如果找到了对应的组品，使用组品ID进行搜索
+                    boolQuery.must(QueryBuilders.termQuery("group_product_id", combo.getId()));
+                    System.out.println("找到组品ID: " + combo.getId() + " 对应编号: " + groupNo);
+                } else {
+                    // 如果没找到对应的组品，设置一个不可能的条件，让搜索结果为空
+                    boolQuery.must(QueryBuilders.termQuery("group_product_id", -1L));
+                    System.out.println("未找到组品编号: " + groupNo);
+                }
+            } catch (Exception e) {
+                System.err.println("查找组品编号失败: " + e.getMessage());
+                // 查找失败时，设置一个不可能的条件
+                boolQuery.must(QueryBuilders.termQuery("group_product_id", -1L));
+            }
+        }
+        
+        // 代发单价精确查询
+        if (pageReqVO.getDistributionPrice() != null) {
+            boolQuery.must(QueryBuilders.termQuery("distribution_price", pageReqVO.getDistributionPrice()));
+        }
+        
+        // 批发单价精确查询
+        if (pageReqVO.getWholesalePrice() != null) {
+            boolQuery.must(QueryBuilders.termQuery("wholesale_price", pageReqVO.getWholesalePrice()));
+        }
+        
+        // 创建时间范围查询
+        if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
+            boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                    .gte(pageReqVO.getCreateTime()[0].toString())
+                    .lte(pageReqVO.getCreateTime()[1].toString()));
+        }
+        
+        // 如果没有任何查询条件，使用match_all
+        if (!boolQuery.hasClauses()) {
+            boolQuery.must(QueryBuilders.matchAllQuery());
+        }
 
         // 处理深度分页问题
         if (pageReqVO.getPageNo() > 100) { // 超过100页使用scroll
@@ -385,17 +611,30 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
                 .withQuery(boolQuery)
                 .withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()))
                 .withTrackTotalHits(true)
-                .withSort(Sort.by(Sort.Direction.DESC, "id"));
+                .withSort(Sort.by(Sort.Direction.DESC, "_score"))  // 按相关性排序
+                .withSort(Sort.by(Sort.Direction.DESC, "id"));     // 相关性相同时按ID排序
 
-            SearchHits<ErpSalePriceESDO> searchHits = elasticsearchRestTemplate.search(
-                    queryBuilder.build(),
-                    ErpSalePriceESDO.class,
-                    IndexCoordinates.of("erp_sale_price"));
+        SearchHits<ErpSalePriceESDO> searchHits = elasticsearchRestTemplate.search(
+                queryBuilder.build(),
+                ErpSalePriceESDO.class,
+                IndexCoordinates.of("erp_sale_price"));
+
+        // 添加查询结果调试日志
+        System.out.println("=== 销售价格ES查询结果 ===");
+        System.out.println("总命中数: " + searchHits.getTotalHits());
+        searchHits.getSearchHits().forEach(hit -> {
+            ErpSalePriceESDO content = hit.getContent();
+            System.out.println("命中销售价格: ID=" + content.getId() +
+                             ", 产品名称=" + content.getProductName() +
+                             ", 客户名称=" + content.getCustomerName() +
+                             ", 得分=" + hit.getScore());
+        });
+        System.out.println("==========================");
 
         // 批量获取组合产品信息，减少重复查询
         List<ErpSalePriceRespVO> voList = convertESToVO(searchHits);
 
-            return new PageResult<>(voList, searchHits.getTotalHits());
+        return new PageResult<>(voList, searchHits.getTotalHits());
     }
 
     /**
@@ -1029,6 +1268,51 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
      */
     @Override
     public void manualFullSyncToES() {
+        System.out.println("开始手动全量同步销售价格数据到ES...");
+        
+        // 先清空ES索引
+        try {
+            salePriceESRepository.deleteAll();
+            System.out.println("已清空ES索引");
+        } catch (Exception e) {
+            System.err.println("清空ES索引失败: " + e.getMessage());
+        }
+        
+        // 重新全量同步
         fullSyncToES();
+        
+        System.out.println("手动全量同步完成");
+    }
+
+    /**
+     * 创建智能匹配查询
+     * 根据关键词长度智能选择匹配策略
+     * 
+     * @param fieldName 字段名
+     * @param keyword 关键词
+     * @param singleCharBoost 单字搜索权重
+     * @param doubleCharBoost 双字搜索权重
+     * @param multiCharBoost 多字搜索权重
+     * @return 智能匹配查询
+     */
+    private BoolQueryBuilder createIntelligentMatchQuery(String fieldName, String keyword, 
+                                                        float singleCharBoost, float doubleCharBoost, float multiCharBoost) {
+        BoolQueryBuilder intelligentQuery = QueryBuilders.boolQuery();
+        
+        if (keyword.length() == 1) {
+            // 单字搜索，使用OR匹配，确保能找到包含该字的结果
+            intelligentQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.OR).boost(singleCharBoost));
+        } else if (keyword.length() == 2) {
+            // 双字搜索，使用AND匹配避免误匹配，同时添加短语匹配提高精确度
+            intelligentQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.AND).boost(doubleCharBoost));
+            intelligentQuery.should(QueryBuilders.matchPhraseQuery(fieldName, keyword).boost(doubleCharBoost * 1.5f));
+        } else {
+            // 多字搜索，使用严格的AND匹配和短语匹配
+            intelligentQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.AND).boost(multiCharBoost));
+            intelligentQuery.should(QueryBuilders.matchPhraseQuery(fieldName, keyword).boost(multiCharBoost * 1.5f));
+        }
+        
+        intelligentQuery.minimumShouldMatch(1);
+        return intelligentQuery;
     }
 }

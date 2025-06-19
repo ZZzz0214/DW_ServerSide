@@ -133,7 +133,7 @@ public class ErpFinanceAmountController {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
         financeAmountService.rechargeWithImages(currentUsername, reqVO.getChannelType(), reqVO.getAmount(),
-                reqVO.getCarouselImages(), reqVO.getRemark());
+                reqVO.getCarouselImages(), reqVO.getRemark(), reqVO.getOrderDate());
         return success(true);
     }
 

@@ -24,9 +24,12 @@ public interface ErpFinanceMapper extends BaseMapperX<ErpFinanceDO> {
                 .likeIfPresent(ErpFinanceDO::getCategory, reqVO.getCategory())
                 .likeIfPresent(ErpFinanceDO::getAccount, reqVO.getAccount())
                 .eqIfPresent(ErpFinanceDO::getStatus, reqVO.getStatus())
+                .eqIfPresent(ErpFinanceDO::getAuditStatus, reqVO.getAuditStatus())
+                .likeIfPresent(ErpFinanceDO::getCreator, reqVO.getCreator())
+                .likeIfPresent(ErpFinanceDO::getAuditor, reqVO.getAuditor())
                 .betweenIfPresent(ErpFinanceDO::getOrderDate, reqVO.getOrderDate())
                 .betweenIfPresent(ErpFinanceDO::getCreateTime, reqVO.getCreateTime())
-                .eq(ErpFinanceDO::getCreator, currentUsername) // 只查询当前登录用户创建的数据
+                .betweenIfPresent(ErpFinanceDO::getAuditTime, reqVO.getAuditTime())
                 .orderByDesc(ErpFinanceDO::getId)
                 // 字段映射
                 .selectAs(ErpFinanceDO::getId, ErpFinanceRespVO::getId)
