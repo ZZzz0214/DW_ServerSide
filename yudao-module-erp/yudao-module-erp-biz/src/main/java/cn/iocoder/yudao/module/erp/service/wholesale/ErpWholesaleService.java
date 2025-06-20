@@ -6,6 +6,8 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesalePurchaseAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleSaleAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleCombinedDO;
 
@@ -55,6 +57,14 @@ public interface ErpWholesaleService {
     void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees);
 
     /**
+     * 批量更新采购审核状态
+     *
+     * @param ids 编号列表
+     * @param purchaseAuditStatus 采购审核状态
+     */
+    void batchUpdatePurchaseAuditStatus(List<Long> ids, Integer purchaseAuditStatus);
+
+    /**
      * 更新销售审核状态
      *
      * @param id 编号
@@ -62,6 +72,14 @@ public interface ErpWholesaleService {
      * @param otherFees 其他费用
      */
     void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees);
+
+    /**
+     * 批量更新销售审核状态
+     *
+     * @param ids 编号列表
+     * @param saleAuditStatus 销售审核状态
+     */
+    void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus);
 
     /**
      * 更新采购售后信息
@@ -78,4 +96,22 @@ public interface ErpWholesaleService {
     void updateSaleAfterSales(@Valid ErpWholesaleSaleAfterSalesUpdateReqVO reqVO);
 
     ErpWholesaleImportRespVO importWholesaleList(List<ErpWholesaleImportExcelVO> list, Boolean updateSupport);
+
+    /**
+     * 导入批发采购审核列表
+     *
+     * @param list 导入数据列表
+     * @param updateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpWholesaleImportRespVO importWholesalePurchaseAuditList(List<ErpWholesalePurchaseAuditImportExcelVO> list, Boolean updateSupport);
+
+    /**
+     * 导入批发销售审核列表
+     *
+     * @param list 导入数据列表
+     * @param updateSupport 是否支持更新
+     * @return 导入结果
+     */
+    ErpWholesaleImportRespVO importWholesaleSaleAuditList(List<ErpWholesaleSaleAuditImportExcelVO> list, Boolean updateSupport);
 }

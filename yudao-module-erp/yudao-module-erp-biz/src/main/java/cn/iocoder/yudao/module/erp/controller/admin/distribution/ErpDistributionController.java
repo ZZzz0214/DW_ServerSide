@@ -407,6 +407,15 @@ public class ErpDistributionController {
         return success(true);
     }
 
+    @PutMapping("/batch-update-purchase-audit-status")
+    @Operation(summary = "批量更新采购审核状态")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status')")
+    public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestParam("ids") List<Long> ids,
+                                                                @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus) {
+        distributionService.batchUpdatePurchaseAuditStatus(ids, purchaseAuditStatus);
+        return success(true);
+    }
+
     @PutMapping("/update-sale-audit-status")
     @Operation(summary = "更新销售审核状态")
     @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status')")
@@ -417,6 +426,15 @@ public class ErpDistributionController {
         System.out.println("更改的销售审核状态为 " + saleAuditStatus);
         System.out.println("其他费用为 " + otherFees);
         distributionService.updateSaleAuditStatus(id, saleAuditStatus, otherFees);
+        return success(true);
+    }
+
+    @PutMapping("/batch-update-sale-audit-status")
+    @Operation(summary = "批量更新销售审核状态")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status')")
+    public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestParam("ids") List<Long> ids,
+                                                            @RequestParam("saleAuditStatus") Integer saleAuditStatus) {
+        distributionService.batchUpdateSaleAuditStatus(ids, saleAuditStatus);
         return success(true);
     }
 

@@ -35,6 +35,9 @@ public class ErpWholesaleSaleAuditVO {
     @Schema(description = "组品编号", example = "1")
     private Long comboProductId;
 
+    @Schema(description = "组品编号", example = "CP20240001")
+    private String comboProductNo;
+
     @Schema(description = "发货编码", example = "SH202403250001")
     private String shippingCode;
 

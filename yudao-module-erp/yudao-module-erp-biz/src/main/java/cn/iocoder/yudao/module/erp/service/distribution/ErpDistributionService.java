@@ -73,6 +73,14 @@ public interface ErpDistributionService {
     void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees);
 
     /**
+     * 批量更新采购审核状态
+     *
+     * @param ids 编号列表
+     * @param purchaseAuditStatus 采购审核状态
+     */
+    void batchUpdatePurchaseAuditStatus(List<Long> ids, Integer purchaseAuditStatus);
+
+    /**
      * 更新销售售后信息
      *
      * @param reqVO 更新信息
@@ -87,6 +95,14 @@ public interface ErpDistributionService {
      * @param otherFees 其他费用
      */
     void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees);
+
+    /**
+     * 批量更新销售审核状态
+     *
+     * @param ids 编号列表
+     * @param saleAuditStatus 销售审核状态
+     */
+    void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus);
 
    /**
      * 导入代发订单

@@ -17,6 +17,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSales
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesalePurchaseAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleSaleAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
@@ -227,10 +229,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     // 转换方法
     private ErpWholesaleCombinedESDO convertCombinedToES(ErpWholesaleCombinedDO combined) {
         ErpWholesaleCombinedESDO esDO = new ErpWholesaleCombinedESDO();
-        
+
         // 先复制基础字段
         BeanUtils.copyProperties(combined, esDO);
-        
+
         // 填充keyword字段（与代发表保持一致）- 确保所有Text字段都有对应的keyword字段
         esDO.setNoKeyword(combined.getNo());
         esDO.setLogisticsNumberKeyword(combined.getLogisticsNumber());
@@ -243,10 +245,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         esDO.setTransferPersonKeyword(combined.getTransferPerson());
         esDO.setCreatorKeyword(combined.getCreator());
         esDO.setUpdaterKeyword(combined.getUpdater());
-        
+
         // 设置产品规格的keyword字段（从批发表本身的数据获取）
         esDO.setProductSpecificationKeyword(combined.getProductSpecification());
-        
+
         // 如果有组品ID，从组品表获取相关信息并填充到ES对象中
         if (combined.getComboProductId() != null) {
             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
@@ -265,7 +267,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 esDO.setSupplierKeyword(comboProduct.getSupplier());
             }
         }
-        
+
         return esDO;
     }
 
@@ -867,7 +869,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         debugQuery,
                         ErpWholesaleCombinedESDO.class,
                         IndexCoordinates.of("erp_wholesale_combined"));
-                
+
                 for (SearchHit<ErpWholesaleCombinedESDO> hit : debugHits) {
                     ErpWholesaleCombinedESDO content = hit.getContent();
                     System.out.println("ES记录 - ID: " + content.getId() + ", no: '" + content.getNo() + "'");
@@ -881,7 +883,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             if (!indexExists || esCount != dbCount) {
                 System.out.println("检测到ES索引不存在或数据不一致，开始重建索引...");
                 System.out.println("数据库记录数: " + dbCount + ", ES记录数: " + esCount);
-                
+
                 // 删除现有索引（如果存在）
                 if (indexExists) {
                     combinedIndexOps.delete();
@@ -905,7 +907,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
             // 3. 添加查询条件 - 完全使用代发表搜索策略
             BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-            
+
             // 订单编号搜索 - 超智能搜索策略，精确控制匹配范围
             if (StrUtil.isNotBlank(pageReqVO.getNo())) {
                 BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
@@ -916,15 +918,15 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 System.out.println("查询关键词: '" + no + "', 长度: " + no.length());
 
                 BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                
+
                 // 第一优先级：完全精确匹配（权重最高，确保精确查询优先）
                 multiMatchQuery.should(QueryBuilders.termQuery("no_keyword", no).boost(1000000.0f));
                 System.out.println("添加精确匹配: no_keyword = '" + no + "', 权重: 1000000");
-                
+
                 // 第二优先级：前缀匹配（支持"PFJL"匹配"PFJL20250614..."）
                 multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(100000.0f));
                 System.out.println("添加前缀匹配: no_keyword 前缀 = '" + no + "', 权重: 100000");
-                
+
                 // 第三优先级：通配符包含匹配
                 multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(10000.0f));
                 System.out.println("添加通配符匹配: *" + no + "*, 权重: 10000");
@@ -934,18 +936,18 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     if (no.length() <= 6) {
                         // 短查询词：优化子字符串匹配，避免过短子字符串的误匹配
                         System.out.println("使用短查询词策略（≤6字符）");
-                        
+
                         // 后缀子字符串匹配 - 只保留长度>=4且不包含太多重复字符的有意义子字符串，避免误匹配
                         for (int i = 1; i < no.length(); i++) {
                             String substring = no.substring(i);
-                            if (substring.length() >= 4 && !containsTooManyRepeatedChars(substring)) { 
+                            if (substring.length() >= 4 && !containsTooManyRepeatedChars(substring)) {
                                 multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + substring + "*").boost(5000.0f));
                                 System.out.println("  添加后缀子字符串: *" + substring + "*, 权重: 5000");
                             } else if (substring.length() >= 4) {
                                 System.out.println("  跳过重复字符过多的后缀: *" + substring + "*");
                             }
                         }
-                        
+
                         // 前缀子字符串匹配 - 只保留长度>=4的有意义子字符串，避免误匹配
                         for (int i = 0; i < no.length() - 1; i++) {
                             String prefix = no.substring(0, no.length() - i);
@@ -957,7 +959,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     } else if (no.length() <= 10) {
                         // 中等长度：主要使用前缀匹配，减少后缀匹配的误匹配
                         System.out.println("使用中等长度策略（7-10字符）");
-                        
+
                         // 前缀匹配（去掉最后几位）- 这是相对安全的匹配方式
                         for (int i = 1; i <= 2 && i < no.length(); i++) { // 减少前缀匹配的数量
                             String prefix = no.substring(0, no.length() - i);
@@ -966,7 +968,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                                 System.out.println("  添加部分前缀: " + prefix + ", 权重: 4000");
                             }
                         }
-                        
+
                         // 后缀匹配 - 只在查询词较短且不包含太多重复数字时使用
                         if (no.length() <= 8 && !containsTooManyRepeatedDigits(no)) {
                             for (int i = Math.max(0, no.length() - 4); i < no.length() - 1; i++) { // 减少后缀匹配范围
@@ -984,7 +986,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         System.out.println("使用较长查询词策略（11-15字符）");
                         multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(50000.0f));
                         System.out.println("  添加完整前缀: " + no + ", 权重: 50000");
-                        
+
                         // 非常有限的后缀匹配（只匹配最后4位）
                         if (no.length() >= 4) {
                             String lastFour = no.substring(no.length() - 4);
@@ -996,7 +998,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         System.out.println("使用很长查询词策略（>15字符）");
                         multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(90000.0f));
                         System.out.println("  添加完整前缀: " + no + ", 权重: 90000");
-                        
+
                         // 对于完整订单号长度（22字符），完全禁用后缀匹配
                         if (no.length() < 20) {
                             // 只对不完整的长查询词添加后缀匹配
@@ -1027,10 +1029,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 multiMatchQuery.minimumShouldMatch(1);
                 noQuery.must(multiMatchQuery);
                 boolQuery.must(noQuery);
-                
+
                 System.out.println("=== 订单编号搜索调试结束 ===");
             }
-            
+
             // 物流单号搜索 - 使用代发表策略并优化长字符串匹配
             if (StrUtil.isNotBlank(pageReqVO.getLogisticsNumber())) {
                 BoolQueryBuilder logisticsNumberQuery = QueryBuilders.boolQuery();
@@ -1073,72 +1075,72 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 logisticsNumberQuery.must(multiMatchQuery);
                 boolQuery.must(logisticsNumberQuery);
             }
-            
+
             // 收件人姓名搜索
             if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
                 boolQuery.must(createComboStyleMatchQuery("receiver_name", "receiver_name_keyword", pageReqVO.getReceiverName().trim()));
             }
-            
+
             // 联系电话搜索
             if (StrUtil.isNotBlank(pageReqVO.getReceiverPhone())) {
                 boolQuery.must(createComboStyleMatchQuery("receiver_phone", "receiver_phone_keyword", pageReqVO.getReceiverPhone().trim()));
             }
-            
+
             // 详细地址搜索
             if (StrUtil.isNotBlank(pageReqVO.getReceiverAddress())) {
                 boolQuery.must(createComboStyleMatchQuery("receiver_address", "receiver_address_keyword", pageReqVO.getReceiverAddress().trim()));
             }
-            
+
             // 组品编号搜索 - 使用智能编号搜索策略
             if (StrUtil.isNotBlank(pageReqVO.getComboProductNo())) {
                 boolQuery.must(createIntelligentNumberMatchQuery("combo_product_no", "combo_product_no_keyword", pageReqVO.getComboProductNo().trim()));
             }
-            
+
             // 发货编码搜索 - 使用智能编号搜索策略
             if (StrUtil.isNotBlank(pageReqVO.getShippingCode())) {
                 boolQuery.must(createIntelligentNumberMatchQuery("shipping_code", "shipping_code_keyword", pageReqVO.getShippingCode().trim()));
             }
-            
+
             // 产品名称搜索
             if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
                 boolQuery.must(createComboStyleMatchQuery("product_name", "product_name_keyword", pageReqVO.getProductName().trim()));
             }
-            
+
             // 产品规格搜索
             if (StrUtil.isNotBlank(pageReqVO.getProductSpecification())) {
                 boolQuery.must(createComboStyleMatchQuery("product_specification", "product_specification_keyword", pageReqVO.getProductSpecification().trim()));
             }
-            
+
             // 售后状况搜索
             if (StrUtil.isNotBlank(pageReqVO.getAfterSalesStatus())) {
                 boolQuery.must(createComboStyleMatchQuery("after_sales_status", "after_sales_status_keyword", pageReqVO.getAfterSalesStatus().trim()));
             }
-            
+
             // 采购人员搜索
             if (StrUtil.isNotBlank(pageReqVO.getPurchaser())) {
                 boolQuery.must(createComboStyleMatchQuery("purchaser", "purchaser_keyword", pageReqVO.getPurchaser().trim()));
             }
-            
+
             // 供应商名搜索
             if (StrUtil.isNotBlank(pageReqVO.getSupplier())) {
                 boolQuery.must(createComboStyleMatchQuery("supplier", "supplier_keyword", pageReqVO.getSupplier().trim()));
             }
-            
+
             // 销售人员搜索
             if (StrUtil.isNotBlank(pageReqVO.getSalesperson())) {
                 boolQuery.must(createComboStyleMatchQuery("salesperson", "salesperson_keyword", pageReqVO.getSalesperson().trim()));
             }
-            
+
             // 客户名称搜索
             if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
                 boolQuery.must(createComboStyleMatchQuery("customer_name", "customer_name_keyword", pageReqVO.getCustomerName().trim()));
             }
-            
+
             // 中转人员搜索
             if (StrUtil.isNotBlank(pageReqVO.getTransferPerson())) {
                 boolQuery.must(createComboStyleMatchQuery("transfer_person", "transfer_person_keyword", pageReqVO.getTransferPerson().trim()));
             }
-            
+
             // 创建人员搜索
             if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
                 boolQuery.must(createComboStyleMatchQuery("creator", "creator_keyword", pageReqVO.getCreator().trim()));
@@ -1167,7 +1169,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             }
 
             queryBuilder.withQuery(boolQuery);
-            
+
             // 在执行主查询前，先测试精确匹配是否工作
             if (StrUtil.isNotBlank(pageReqVO.getNo())) {
                 System.out.println("=== 测试精确匹配 ===");
@@ -1175,12 +1177,12 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         .withQuery(QueryBuilders.termQuery("no_keyword", pageReqVO.getNo().trim()))
                         .withPageable(PageRequest.of(0, 10))
                         .build();
-                
+
                 SearchHits<ErpWholesaleCombinedESDO> exactHits = elasticsearchRestTemplate.search(
                         exactTestQuery,
                         ErpWholesaleCombinedESDO.class,
                         IndexCoordinates.of("erp_wholesale_combined"));
-                
+
                 System.out.println("精确匹配测试结果: " + exactHits.getTotalHits() + " 条记录");
                 for (SearchHit<ErpWholesaleCombinedESDO> hit : exactHits) {
                     System.out.println("  精确匹配到: ID=" + hit.getContent().getId() + ", no='" + hit.getContent().getNo() + "', 评分=" + hit.getScore());
@@ -1762,6 +1764,46 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void batchUpdatePurchaseAuditStatus(List<Long> ids, Integer purchaseAuditStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
+            if (!combinedOpt.isPresent()) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 校验状态是否重复
+            if (combinedOpt.get().getPurchaseAuditStatus() != null &&
+                combinedOpt.get().getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+                continue; // 跳过状态相同的记录
+            }
+
+            // 3. 更新采购审核状态
+            ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
+                    .setId(id)
+                    .setPurchaseAuditStatus(purchaseAuditStatus);
+
+            // 根据审核状态设置相应时间
+            if (purchaseAuditStatus == 20) { // 审核通过
+                updateObj.setPurchaseApprovalTime(now);
+            } else if (purchaseAuditStatus == 10) { // 反审核
+                updateObj.setPurchaseUnapproveTime(now);
+            }
+
+            wholesaleCombinedMapper.updateById(updateObj);
+
+            // 4. 同步到ES
+            syncCombinedToES(id);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
         // 1. 校验存在 - 使用合并表查询
         Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
@@ -1792,6 +1834,46 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         // 4. 同步到ES
         syncCombinedToES(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
+            if (!combinedOpt.isPresent()) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 校验状态是否重复
+            if (combinedOpt.get().getSaleAuditStatus() != null &&
+                combinedOpt.get().getSaleAuditStatus().equals(saleAuditStatus)) {
+                continue; // 跳过状态相同的记录
+            }
+
+            // 3. 更新销售审核状态
+            ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
+                    .setId(id)
+                    .setSaleAuditStatus(saleAuditStatus);
+
+            // 根据审核状态设置相应时间
+            if (saleAuditStatus == 20) { // 审核通过
+                updateObj.setSaleApprovalTime(now);
+            } else if (saleAuditStatus == 10) { // 反审核
+                updateObj.setSaleUnapproveTime(now);
+            }
+
+            wholesaleCombinedMapper.updateById(updateObj);
+
+            // 4. 同步到ES
+            syncCombinedToES(id);
+        }
     }
 
     @Override
@@ -2046,9 +2128,9 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
                             combined.setTransferPerson(importVO.getTransferPerson());
                         }
-                        
+
                         updateList.add(combined);
-                        
+
                         // ES更新数据需要包含所有字段，所以需要从存在的数据中复制
                         ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existDistribution, ErpWholesaleCombinedESDO.class);
                         // 更新导入的字段 - 只有当值不为空时才更新
@@ -2117,7 +2199,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
                             esUpdateDO.setTransferPerson(importVO.getTransferPerson());
                         }
-                        
+
                         esUpdateList.add(esUpdateDO);
                         respVO.getUpdateNames().add(combined.getNo());
                     }
@@ -2155,9 +2237,205 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         return respVO;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpWholesaleImportRespVO importWholesalePurchaseAuditList(List<ErpWholesalePurchaseAuditImportExcelVO> list, Boolean updateSupport) {
+        if (CollUtil.isEmpty(list)) {
+            throw exception(WHOLESALE_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpWholesaleImportRespVO respVO = ErpWholesaleImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 批量处理数据
+        List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
+        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+
+        try {
+            // 批量查询已存在的记录
+            Set<String> noSet = list.stream()
+                    .map(ErpWholesalePurchaseAuditImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+            Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                    convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
+
+            // 批量转换数据
+            for (int i = 0; i < list.size(); i++) {
+                ErpWholesalePurchaseAuditImportExcelVO importVO = list.get(i);
+                try {
+                    // 判断记录是否存在
+                    ErpWholesaleCombinedDO existRecord = existMap.get(importVO.getNo());
+                    if (existRecord == null) {
+                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    }
+
+                    if (updateSupport) {
+                        // 更新逻辑 - 只更新采购审核相关字段
+                        ErpWholesaleCombinedDO combined = new ErpWholesaleCombinedDO();
+                        combined.setId(existRecord.getId());
+                        combined.setNo(importVO.getNo());
+
+                        // 只有当值不为null时才设置
+                        if (importVO.getPurchaseOtherFees() != null) {
+                            combined.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                            combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                        }
+                        if (importVO.getPurchaseAfterSalesAmount() != null) {
+                            combined.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
+                        }
+
+                        updateList.add(combined);
+
+                        // ES更新数据
+                        ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existRecord, ErpWholesaleCombinedESDO.class);
+                        if (importVO.getPurchaseOtherFees() != null) {
+                            esUpdateDO.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                            esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                        }
+                        if (importVO.getPurchaseAfterSalesAmount() != null) {
+                            esUpdateDO.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
+                        }
+
+                        esUpdateList.add(esUpdateDO);
+                        respVO.getUpdateNames().add(combined.getNo());
+                    } else {
+                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    }
+                } catch (ServiceException ex) {
+                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
+                    respVO.getFailureNames().put(errorKey, ex.getMessage());
+                } catch (Exception ex) {
+                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                }
+            }
+
+            // 批量保存到数据库
+            if (CollUtil.isNotEmpty(updateList)) {
+                updateList.forEach(wholesaleCombinedMapper::updateById);
+            }
+
+            // 批量保存到ES
+            if (CollUtil.isNotEmpty(esUpdateList)) {
+                wholesaleCombinedESRepository.saveAll(esUpdateList);
+            }
+        } catch (Exception ex) {
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        }
+
+        return respVO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpWholesaleImportRespVO importWholesaleSaleAuditList(List<ErpWholesaleSaleAuditImportExcelVO> list, Boolean updateSupport) {
+        if (CollUtil.isEmpty(list)) {
+            throw exception(WHOLESALE_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpWholesaleImportRespVO respVO = ErpWholesaleImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        // 批量处理数据
+        List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
+        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+
+        try {
+            // 批量查询已存在的记录
+            Set<String> noSet = list.stream()
+                    .map(ErpWholesaleSaleAuditImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+            Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                    convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
+
+            // 批量转换数据
+            for (int i = 0; i < list.size(); i++) {
+                ErpWholesaleSaleAuditImportExcelVO importVO = list.get(i);
+                try {
+                    // 判断记录是否存在
+                    ErpWholesaleCombinedDO existRecord = existMap.get(importVO.getNo());
+                    if (existRecord == null) {
+                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    }
+
+                    if (updateSupport) {
+                        // 更新逻辑 - 只更新销售审核相关字段
+                        ErpWholesaleCombinedDO combined = new ErpWholesaleCombinedDO();
+                        combined.setId(existRecord.getId());
+                        combined.setNo(importVO.getNo());
+
+                        // 只有当值不为null时才设置
+                        if (importVO.getSaleOtherFees() != null) {
+                            combined.setSaleOtherFees(importVO.getSaleOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                            combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                        }
+                        if (importVO.getSaleAfterSalesAmount() != null) {
+                            combined.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                        }
+
+                        updateList.add(combined);
+
+                        // ES更新数据
+                        ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existRecord, ErpWholesaleCombinedESDO.class);
+                        if (importVO.getSaleOtherFees() != null) {
+                            esUpdateDO.setSaleOtherFees(importVO.getSaleOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                            esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                        }
+                        if (importVO.getSaleAfterSalesAmount() != null) {
+                            esUpdateDO.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                        }
+
+                        esUpdateList.add(esUpdateDO);
+                        respVO.getUpdateNames().add(combined.getNo());
+                    } else {
+                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    }
+                } catch (ServiceException ex) {
+                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
+                    respVO.getFailureNames().put(errorKey, ex.getMessage());
+                } catch (Exception ex) {
+                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                }
+            }
+
+            // 批量保存到数据库
+            if (CollUtil.isNotEmpty(updateList)) {
+                updateList.forEach(wholesaleCombinedMapper::updateById);
+            }
+
+            // 批量保存到ES
+            if (CollUtil.isNotEmpty(esUpdateList)) {
+                wholesaleCombinedESRepository.saveAll(esUpdateList);
+            }
+        } catch (Exception ex) {
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        }
+
+        return respVO;
+    }
+
     /**
      * 创建组品表风格的搜索查询 - 完全使用组品表的搜索策略和权重
-     * 
+     *
      * @param fieldName 字段名（用于分词搜索）
      * @param keywordFieldName keyword字段名（用于精确匹配）
      * @param keyword 关键词
@@ -2165,7 +2443,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
      */
     private BoolQueryBuilder createComboStyleMatchQuery(String fieldName, String keywordFieldName, String keyword) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
-        
+
         BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
         // 第一优先级：完全精确匹配（权重最高）
         multiMatchQuery.should(QueryBuilders.termQuery(keywordFieldName, keyword).boost(1000000.0f));
@@ -2207,7 +2485,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     /**
      * 创建智能编号搜索查询 - 完全使用智能编号搜索策略
-     * 
+     *
      * @param fieldName 字段名（用于分词搜索）
      * @param keywordFieldName keyword字段名（用于精确匹配）
      * @param keyword 关键词
@@ -2215,7 +2493,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
      */
     private BoolQueryBuilder createIntelligentNumberMatchQuery(String fieldName, String keywordFieldName, String keyword) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
-        
+
         BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
         // 第一优先级：完全精确匹配（权重最高）
         multiMatchQuery.should(QueryBuilders.termQuery(keywordFieldName, keyword).boost(1000000.0f));
@@ -2250,7 +2528,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, prefix).boost(4000.0f));
                     }
                 }
-                
+
                 // 后缀匹配 - 只在查询词较短且不包含太多重复数字时使用
                 if (keyword.length() <= 8 && !containsTooManyRepeatedDigits(keyword)) {
                     for (int i = Math.max(0, keyword.length() - 4); i < keyword.length() - 1; i++) { // 减少后缀匹配范围
@@ -2263,7 +2541,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             } else if (keyword.length() <= 15) {
                 // 较长查询词：主要支持前缀匹配，极少的后缀匹配
                 multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(50000.0f));
-                
+
                 // 非常有限的后缀匹配（只匹配最后4位）
                 if (keyword.length() >= 4) {
                     String lastFour = keyword.substring(keyword.length() - 4);
@@ -2272,7 +2550,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             } else {
                 // 很长的查询词（>15字符）：几乎只使用前缀匹配
                 multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(90000.0f));
-                
+
                 // 对于完整编号长度，完全禁用后缀匹配
                 if (keyword.length() < 20) {
                     // 只对不完整的长查询词添加后缀匹配
@@ -2326,10 +2604,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (str.length() < 3) {
             return false;
         }
-        
+
         int repeatCount = 1;
         char prevChar = str.charAt(0);
-        
+
         for (int i = 1; i < str.length(); i++) {
             char currentChar = str.charAt(i);
             if (currentChar == prevChar) {

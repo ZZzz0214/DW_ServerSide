@@ -1352,6 +1352,48 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void batchUpdatePurchaseAuditStatus(List<Long> ids, Integer purchaseAuditStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
+            if (!combinedOpt.isPresent()) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 校验状态是否重复
+            ErpDistributionCombinedESDO combined = combinedOpt.get();
+            if (combined.getPurchaseAuditStatus() != null &&
+                combined.getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+                continue; // 跳过状态相同的记录
+            }
+
+            // 3. 更新采购审核状态
+            combined.setPurchaseAuditStatus(purchaseAuditStatus);
+
+            // 根据审核状态设置相应时间
+            if (purchaseAuditStatus == 20) { // 审核通过
+                combined.setPurchaseApprovalTime(now);
+            } else if (purchaseAuditStatus == 10) { // 反审核
+                combined.setPurchaseUnapproveTime(now);
+            }
+
+            distributionCombinedESRepository.save(combined);
+
+            // 4. 同步更新数据库
+            distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+        }
+
+        // 5. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
         // 1. 校验存在 - 使用合并表ES查询
         Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
@@ -1380,6 +1422,45 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         distributionCombinedESRepository.save(combined);
          // 4. 同步更新数据库
          distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
+            if (!combinedOpt.isPresent()) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 校验状态是否重复
+            ErpDistributionCombinedESDO combined = combinedOpt.get();
+            if (combined.getSaleAuditStatus() != null &&
+                combined.getSaleAuditStatus().equals(saleAuditStatus)) {
+                continue; // 跳过状态相同的记录
+            }
+
+            // 3. 更新销售审核状态
+            combined.setSaleAuditStatus(saleAuditStatus);
+
+            // 根据审核状态设置相应时间
+            if (saleAuditStatus == 20) { // 审核通过
+                combined.setSaleApprovalTime(now);
+            } else if (saleAuditStatus == 10) { // 反审核
+                combined.setSaleUnapproveTime(now);
+            }
+
+            distributionCombinedESRepository.save(combined);
+
+            // 4. 同步更新数据库
+            distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+        }
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {

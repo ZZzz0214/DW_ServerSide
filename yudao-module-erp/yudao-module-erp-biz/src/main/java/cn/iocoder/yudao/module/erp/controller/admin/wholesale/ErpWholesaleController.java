@@ -7,6 +7,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePri
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesalePurchaseAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleSaleAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
@@ -649,6 +651,15 @@ public class ErpWholesaleController {
         return success(true);
     }
 
+    @PutMapping("/batch-update-purchase-audit-status")
+    @Operation(summary = "批量更新采购审核状态")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
+    public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestParam("ids") List<Long> ids,
+                                                                @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus) {
+        wholesaleService.batchUpdatePurchaseAuditStatus(ids, purchaseAuditStatus);
+        return success(true);
+    }
+
         // 更新销售审核状态
     @PutMapping("/update-sale-audit-status")
     @Operation(summary = "更新销售审核状态")
@@ -657,6 +668,15 @@ public class ErpWholesaleController {
                                                       @RequestParam("saleAuditStatus") Integer saleAuditStatus,
                                                       @RequestParam("otherFees") BigDecimal otherFees) {
         wholesaleService.updateSaleAuditStatus(id, saleAuditStatus, otherFees);
+        return success(true);
+    }
+
+    @PutMapping("/batch-update-sale-audit-status")
+    @Operation(summary = "批量更新销售审核状态")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
+    public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestParam("ids") List<Long> ids,
+                                                            @RequestParam("saleAuditStatus") Integer saleAuditStatus) {
+        wholesaleService.batchUpdateSaleAuditStatus(ids, saleAuditStatus);
         return success(true);
     }
 
@@ -895,6 +915,86 @@ public class ErpWholesaleController {
             try (InputStream inputStream = file.getInputStream()) {
                 List<ErpWholesaleImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleImportExcelVO.class);
                 return success(wholesaleService.importWholesaleList(list, updateSupport));
+            } catch (Exception e) {
+                throw new RuntimeException("导入失败: " + e.getMessage());
+            }
+        }
+
+        @GetMapping("/get-purchase-audit-import-template")
+        @Operation(summary = "获得批发采购审核导入模板")
+        public void importPurchaseAuditTemplate(HttpServletResponse response) throws IOException {
+            // 手动创建导出 demo
+            List<ErpWholesalePurchaseAuditImportExcelVO> list = Arrays.asList(
+                    ErpWholesalePurchaseAuditImportExcelVO.builder()
+                            .no("示例订单1")
+                            .purchaseOtherFees(new BigDecimal("20.00"))
+                            .afterSalesStatus("正常")
+                            .purchaseAfterSalesAmount(new BigDecimal("0.00"))
+                            .build(),
+                    ErpWholesalePurchaseAuditImportExcelVO.builder()
+                            .no("示例订单2")
+                            .purchaseOtherFees(new BigDecimal("15.00"))
+                            .afterSalesStatus("正常")
+                            .purchaseAfterSalesAmount(new BigDecimal("0.00"))
+                            .build()
+            );
+            // 输出
+            ExcelUtils.write(response, "批发采购审核导入模板.xlsx", "批发采购审核列表", ErpWholesalePurchaseAuditImportExcelVO.class, list);
+        }
+
+        @PostMapping("/import-purchase-audit")
+        @Operation(summary = "导入批发采购审核")
+        @Parameters({
+                @Parameter(name = "file", description = "Excel 文件", required = true),
+                @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+        })
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:import-purchase-audit')")
+        public CommonResult<ErpWholesaleImportRespVO> importPurchaseAuditExcel(
+                @RequestParam("file") MultipartFile file,
+                @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+            try (InputStream inputStream = file.getInputStream()) {
+                List<ErpWholesalePurchaseAuditImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesalePurchaseAuditImportExcelVO.class);
+                return success(wholesaleService.importWholesalePurchaseAuditList(list, updateSupport));
+            } catch (Exception e) {
+                throw new RuntimeException("导入失败: " + e.getMessage());
+            }
+        }
+
+        @GetMapping("/get-sale-audit-import-template")
+        @Operation(summary = "获得批发销售审核导入模板")
+        public void importSaleAuditTemplate(HttpServletResponse response) throws IOException {
+            // 手动创建导出 demo
+            List<ErpWholesaleSaleAuditImportExcelVO> list = Arrays.asList(
+                    ErpWholesaleSaleAuditImportExcelVO.builder()
+                            .no("示例订单1")
+                            .saleOtherFees(new BigDecimal("25.00"))
+                            .afterSalesStatus("正常")
+                            .saleAfterSalesAmount(new BigDecimal("0.00"))
+                            .build(),
+                    ErpWholesaleSaleAuditImportExcelVO.builder()
+                            .no("示例订单2")
+                            .saleOtherFees(new BigDecimal("30.00"))
+                            .afterSalesStatus("正常")
+                            .saleAfterSalesAmount(new BigDecimal("0.00"))
+                            .build()
+            );
+            // 输出
+            ExcelUtils.write(response, "批发销售审核导入模板.xlsx", "批发销售审核列表", ErpWholesaleSaleAuditImportExcelVO.class, list);
+        }
+
+        @PostMapping("/import-sale-audit")
+        @Operation(summary = "导入批发销售审核")
+        @Parameters({
+                @Parameter(name = "file", description = "Excel 文件", required = true),
+                @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+        })
+        @PreAuthorize("@ss.hasPermission('erp:wholesale:import-sale-audit')")
+        public CommonResult<ErpWholesaleImportRespVO> importSaleAuditExcel(
+                @RequestParam("file") MultipartFile file,
+                @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+            try (InputStream inputStream = file.getInputStream()) {
+                List<ErpWholesaleSaleAuditImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleSaleAuditImportExcelVO.class);
+                return success(wholesaleService.importWholesaleSaleAuditList(list, updateSupport));
             } catch (Exception e) {
                 throw new RuntimeException("导入失败: " + e.getMessage());
             }
