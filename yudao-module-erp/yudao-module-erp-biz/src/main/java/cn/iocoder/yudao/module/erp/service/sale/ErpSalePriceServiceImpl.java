@@ -1798,6 +1798,35 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     existing.setWholesalePrice(req.getWholesalePrice());
                     System.out.println("设置批发单价: " + req.getWholesalePrice());
                 }
+                
+                // 设置运费信息
+                if (req.getShippingFeeType() != null) {
+                    existing.setShippingFeeType(req.getShippingFeeType());
+                    System.out.println("设置运费类型: " + req.getShippingFeeType());
+                }
+                if (req.getFixedShippingFee() != null) {
+                    existing.setFixedShippingFee(req.getFixedShippingFee());
+                    System.out.println("设置固定运费: " + req.getFixedShippingFee());
+                }
+                if (req.getAdditionalItemQuantity() != null) {
+                    existing.setAdditionalItemQuantity(req.getAdditionalItemQuantity());
+                }
+                if (req.getAdditionalItemPrice() != null) {
+                    existing.setAdditionalItemPrice(req.getAdditionalItemPrice());
+                }
+                if (req.getFirstWeight() != null) {
+                    existing.setFirstWeight(req.getFirstWeight());
+                }
+                if (req.getFirstWeightPrice() != null) {
+                    existing.setFirstWeightPrice(req.getFirstWeightPrice());
+                }
+                if (req.getAdditionalWeight() != null) {
+                    existing.setAdditionalWeight(req.getAdditionalWeight());
+                }
+                if (req.getAdditionalWeightPrice() != null) {
+                    existing.setAdditionalWeightPrice(req.getAdditionalWeightPrice());
+                }
+                
                 toUpdateList.add(existing);
             } else {
                 // 创建新的价格记录
@@ -1819,6 +1848,34 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 if (req.getWholesalePrice() != null) {
                     newRecord.setWholesalePrice(req.getWholesalePrice());
                     System.out.println("设置批发单价: " + req.getWholesalePrice());
+                }
+
+                // 设置运费信息
+                if (req.getShippingFeeType() != null) {
+                    newRecord.setShippingFeeType(req.getShippingFeeType());
+                    System.out.println("设置运费类型: " + req.getShippingFeeType());
+                }
+                if (req.getFixedShippingFee() != null) {
+                    newRecord.setFixedShippingFee(req.getFixedShippingFee());
+                    System.out.println("设置固定运费: " + req.getFixedShippingFee());
+                }
+                if (req.getAdditionalItemQuantity() != null) {
+                    newRecord.setAdditionalItemQuantity(req.getAdditionalItemQuantity());
+                }
+                if (req.getAdditionalItemPrice() != null) {
+                    newRecord.setAdditionalItemPrice(req.getAdditionalItemPrice());
+                }
+                if (req.getFirstWeight() != null) {
+                    newRecord.setFirstWeight(req.getFirstWeight());
+                }
+                if (req.getFirstWeightPrice() != null) {
+                    newRecord.setFirstWeightPrice(req.getFirstWeightPrice());
+                }
+                if (req.getAdditionalWeight() != null) {
+                    newRecord.setAdditionalWeight(req.getAdditionalWeight());
+                }
+                if (req.getAdditionalWeightPrice() != null) {
+                    newRecord.setAdditionalWeightPrice(req.getAdditionalWeightPrice());
                 }
 
                 // 获取组品信息设置产品名称等

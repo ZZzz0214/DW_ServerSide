@@ -23,4 +23,29 @@ public class ErpCombinedPriceSetReqVO {
 
     @Schema(description = "批发单价", example = "100.00")
     private BigDecimal wholesalePrice;
+
+    @Schema(description = "运费类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
+    @NotNull(message = "运费类型不能为空")
+    private Integer shippingFeeType;
+
+    @Schema(description = "固定运费", example = "10.00")
+    private BigDecimal fixedShippingFee;
+
+    @Schema(description = "续件数量", example = "1")
+    private Integer additionalItemQuantity;
+
+    @Schema(description = "续件价格", example = "5.00")
+    private BigDecimal additionalItemPrice;
+
+    @Schema(description = "首重重量", example = "1.0")
+    private BigDecimal firstWeight;
+
+    @Schema(description = "首重价格", example = "10.00")
+    private BigDecimal firstWeightPrice;
+
+    @Schema(description = "续重重量", example = "1.0")
+    private BigDecimal additionalWeight;
+
+    @Schema(description = "续重价格", example = "5.00")
+    private BigDecimal additionalWeightPrice;
 } 
