@@ -26,6 +26,7 @@ public interface ErpComboMapper extends BaseMapperX<ErpComboProductDO> {
                 .likeIfPresent(ErpComboProductDO::getShortName, reqVO.getShortName())
                 .eqIfPresent(ErpComboProductDO::getShippingCode, reqVO.getShippingCode())
                 .betweenIfPresent(ErpComboProductDO::getCreateTime, reqVO.getCreateTime())
+                .orderByDesc(ErpComboProductDO::getCreateTime)
                 .orderByDesc(ErpComboProductDO::getId));
     }
 

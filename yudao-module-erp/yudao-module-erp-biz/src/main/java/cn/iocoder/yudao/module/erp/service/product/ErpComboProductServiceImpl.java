@@ -298,7 +298,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         // 1. 构建基础查询条件
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                 .withTrackTotalHits(true)
-                .withSort(Sort.by(Sort.Direction.ASC, "id")); // 必须包含唯一字段排序
+                .withSort(Sort.by(Sort.Direction.DESC, "create_time")) // 修改：按创建时间倒序排列（新增的在前面）
+                .withSort(Sort.by(Sort.Direction.DESC, "id")); // 辅助排序：ID倒序
 
             // 处理分页参数
             // 检查是否是导出操作（pageSize为-1）
