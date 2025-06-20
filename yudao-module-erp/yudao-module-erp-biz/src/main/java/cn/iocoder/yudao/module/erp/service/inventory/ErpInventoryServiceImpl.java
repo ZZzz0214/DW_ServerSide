@@ -10,9 +10,15 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.inventory.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.inventory.ErpInventoryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductItemES;
+import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedESDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleCombinedESDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.inventory.ErpInventoryMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.iocoder.yudao.module.erp.service.product.ErpComboProductItemESRepository;
+import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionCombinedESRepository;
+import cn.iocoder.yudao.module.erp.service.wholesale.ErpWholesaleCombinedESRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -38,6 +44,15 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
     @Resource
     private ErpProductMapper productMapper;
 
+    @Resource
+    private ErpComboProductItemESRepository comboProductItemESRepository;
+
+    @Resource
+    private ErpDistributionCombinedESRepository distributionCombinedESRepository;
+
+    @Resource
+    private ErpWholesaleCombinedESRepository wholesaleCombinedESRepository;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createInventory(ErpInventorySaveReqVO createReqVO) {
@@ -50,9 +65,11 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
             throw exception(INVENTORY_NO_EXISTS);
         }
 
-        // 3. 插入库存记录
+        // 3. 插入库存记录（剩余库存不存储，仅在查询时动态计算）
         ErpInventoryDO inventory = BeanUtils.toBean(createReqVO, ErpInventoryDO.class)
-                .setNo(no);
+                .setNo(no)
+                .setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
+        
         inventoryMapper.insert(inventory);
 
         return inventory.getId();
@@ -66,8 +83,10 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
         // 1.2 校验数据
         validateInventoryForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
 
-        // 2. 更新库存记录
+        // 2. 更新库存记录（剩余库存不存储，仅在查询时动态计算）
         ErpInventoryDO updateObj = BeanUtils.toBean(updateReqVO, ErpInventoryDO.class);
+        updateObj.setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
+        
         inventoryMapper.updateById(updateObj);
     }
 
@@ -93,7 +112,13 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
 
     @Override
     public ErpInventoryRespVO getInventoryVO(Long id) {
-        return inventoryMapper.selectVOById(id);
+        ErpInventoryRespVO respVO = inventoryMapper.selectVOById(id);
+        if (respVO != null) {
+            // 动态计算剩余库存
+            Integer remainingInventory = calculateRemainingInventory(respVO.getProductId(), respVO.getSpotInventory());
+            respVO.setRemainingInventory(remainingInventory);
+        }
+        return respVO;
     }
 
     @Override
@@ -107,7 +132,15 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
 
     @Override
     public PageResult<ErpInventoryRespVO> getInventoryVOPage(ErpInventoryPageReqVO pageReqVO) {
-        return inventoryMapper.selectPage(pageReqVO);
+        PageResult<ErpInventoryRespVO> pageResult = inventoryMapper.selectPage(pageReqVO);
+        
+        // 为每个库存记录动态计算剩余库存
+        for (ErpInventoryRespVO respVO : pageResult.getList()) {
+            Integer remainingInventory = calculateRemainingInventory(respVO.getProductId(), respVO.getSpotInventory());
+            respVO.setRemainingInventory(remainingInventory);
+        }
+        
+        return pageResult;
     }
 
     @Override
@@ -115,7 +148,15 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        return inventoryMapper.selectVOListByIds(ids);
+        List<ErpInventoryRespVO> list = inventoryMapper.selectVOListByIds(ids);
+        
+        // 为每个库存记录动态计算剩余库存
+        for (ErpInventoryRespVO respVO : list) {
+            Integer remainingInventory = calculateRemainingInventory(respVO.getProductId(), respVO.getSpotInventory());
+            respVO.setRemainingInventory(remainingInventory);
+        }
+        
+        return list;
     }
 
     @Override
@@ -132,6 +173,143 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
             return Collections.emptyList();
         }
         return inventoryMapper.selectBatchIds(ids);
+    }
+
+    /**
+     * 动态计算剩余库存
+     * 剩余库存 = 现货库存 - (代发订单中该产品的总数量 + 批发订单中该产品的总数量)
+     * 
+     * @param productId 产品ID
+     * @param spotInventory 现货库存
+     * @return 剩余库存
+     */
+    private Integer calculateRemainingInventory(Long productId, Integer spotInventory) {
+        if (productId == null || spotInventory == null) {
+            return 0;
+        }
+
+        try {
+            // 1. 获取该产品在所有组品中的数量信息
+            List<ErpComboProductItemES> comboItems = (List<ErpComboProductItemES>) 
+                comboProductItemESRepository.findAllByItemProductId(productId);
+            
+            if (CollUtil.isEmpty(comboItems)) {
+                // 如果该产品不在任何组品中，剩余库存等于现货库存
+                return spotInventory;
+            }
+
+            // 2. 计算代发订单中该产品的总数量
+            int distributionTotalQuantity = calculateDistributionProductQuantity(productId, comboItems);
+
+            // 3. 计算批发订单中该产品的总数量
+            int wholesaleTotalQuantity = calculateWholesaleProductQuantity(productId, comboItems);
+
+            // 4. 计算剩余库存（允许为负值）
+            int remainingInventory = spotInventory - distributionTotalQuantity - wholesaleTotalQuantity;
+            
+            return remainingInventory;
+            
+        } catch (Exception e) {
+            // 如果计算出错，返回现货库存作为默认值
+            System.err.println("计算剩余库存时出错: " + e.getMessage());
+            return spotInventory;
+        }
+    }
+
+    /**
+     * 计算代发订单中该产品的总数量
+     * 代发订单中该产品的总数量 = SUM(代发订单的订单数量 * 组品中该产品的数量)
+     */
+    private int calculateDistributionProductQuantity(Long productId, List<ErpComboProductItemES> comboItems) {
+        try {
+            // 获取包含该产品的组品ID列表
+            List<Long> comboProductIds = comboItems.stream()
+                .map(ErpComboProductItemES::getComboProductId)
+                .distinct()
+                .collect(Collectors.toList());
+
+            if (CollUtil.isEmpty(comboProductIds)) {
+                return 0;
+            }
+
+            // 查询这些组品的所有代发订单
+            List<ErpDistributionCombinedESDO> distributionOrders = 
+                distributionCombinedESRepository.findAllByComboProductIdIn(comboProductIds);
+
+            if (CollUtil.isEmpty(distributionOrders)) {
+                return 0;
+            }
+
+            // 创建组品ID到该产品数量的映射
+            Map<Long, Integer> comboProductQuantityMap = comboItems.stream()
+                .collect(Collectors.toMap(
+                    ErpComboProductItemES::getComboProductId,
+                    ErpComboProductItemES::getItemQuantity,
+                    (existing, replacement) -> existing // 如果有重复的组品ID，保留第一个
+                ));
+
+            // 计算总数量
+            int totalQuantity = 0;
+            for (ErpDistributionCombinedESDO order : distributionOrders) {
+                Integer productQuantityInCombo = comboProductQuantityMap.get(order.getComboProductId());
+                if (productQuantityInCombo != null && order.getProductQuantity() != null) {
+                    totalQuantity += order.getProductQuantity() * productQuantityInCombo;
+                }
+            }
+
+            return totalQuantity;
+        } catch (Exception e) {
+            System.err.println("计算代发订单中产品数量时出错: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 计算批发订单中该产品的总数量
+     * 批发订单中该产品的总数量 = SUM(批发订单的订单数量 * 组品中该产品的数量)
+     */
+    private int calculateWholesaleProductQuantity(Long productId, List<ErpComboProductItemES> comboItems) {
+        try {
+            // 获取包含该产品的组品ID列表
+            List<Long> comboProductIds = comboItems.stream()
+                .map(ErpComboProductItemES::getComboProductId)
+                .distinct()
+                .collect(Collectors.toList());
+
+            if (CollUtil.isEmpty(comboProductIds)) {
+                return 0;
+            }
+
+            // 查询这些组品的所有批发订单
+            List<ErpWholesaleCombinedESDO> wholesaleOrders = 
+                wholesaleCombinedESRepository.findAllByComboProductIdIn(comboProductIds);
+
+            if (CollUtil.isEmpty(wholesaleOrders)) {
+                return 0;
+            }
+
+            // 创建组品ID到该产品数量的映射
+            Map<Long, Integer> comboProductQuantityMap = comboItems.stream()
+                .collect(Collectors.toMap(
+                    ErpComboProductItemES::getComboProductId,
+                    ErpComboProductItemES::getItemQuantity,
+                    (existing, replacement) -> existing // 如果有重复的组品ID，保留第一个
+                ));
+
+            // 计算总数量
+            int totalQuantity = 0;
+            for (ErpWholesaleCombinedESDO order : wholesaleOrders) {
+                Integer productQuantityInCombo = comboProductQuantityMap.get(order.getComboProductId());
+                if (productQuantityInCombo != null && order.getProductQuantity() != null) {
+                    totalQuantity += order.getProductQuantity() * productQuantityInCombo;
+                }
+            }
+
+            return totalQuantity;
+        } catch (Exception e) {
+            System.err.println("计算批发订单中产品数量时出错: " + e.getMessage());
+            return 0;
+        }
     }
 
     private void validateInventoryForCreateOrUpdate(Long id, ErpInventorySaveReqVO reqVO) {
@@ -217,6 +395,8 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
                         ErpInventoryDO inventory = BeanUtils.toBean(importVO, ErpInventoryDO.class);
                         inventory.setNo(noRedisDAO.generate(ErpNoRedisDAO.INVENTORY_NO_PREFIX));
                         inventory.setProductId(productId); // 设置转换后的产品ID
+                        inventory.setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
+                        
                         createList.add(inventory);
                         respVO.getCreateNames().add(inventory.getNo());
                     } else if (isUpdateSupport) {
@@ -224,6 +404,8 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
                         ErpInventoryDO updateInventory = BeanUtils.toBean(importVO, ErpInventoryDO.class);
                         updateInventory.setId(existInventory.getId());
                         updateInventory.setProductId(productId); // 设置转换后的产品ID
+                        updateInventory.setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
+                        
                         updateList.add(updateInventory);
                         respVO.getUpdateNames().add(updateInventory.getNo());
                     } else {

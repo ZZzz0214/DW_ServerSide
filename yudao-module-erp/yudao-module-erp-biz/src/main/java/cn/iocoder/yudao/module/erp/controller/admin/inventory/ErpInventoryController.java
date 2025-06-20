@@ -135,8 +135,7 @@ public class ErpInventoryController {
                         .no("示例库存1")
                         .productNo("SP001")
                         .spotInventory(100)
-                        .remainingInventory(80)
-                        .remark("示例备注").build()
+                        .remark("示例备注（剩余库存由系统自动计算）").build()
         );
         // 输出
         ExcelUtils.write(response, "库存导入模板.xls", "库存列表", ErpInventoryExportVO.class, list);

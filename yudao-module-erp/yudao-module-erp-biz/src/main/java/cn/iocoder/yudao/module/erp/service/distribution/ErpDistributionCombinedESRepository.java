@@ -33,4 +33,11 @@ public interface ErpDistributionCombinedESRepository extends ElasticsearchReposi
      */
     List<ErpDistributionCombinedESDO> findByNoIn(List<String> noList);
 
+    /**
+     * 根据组品ID列表查询所有代发订单
+     * @param comboProductIds 组品ID列表
+     * @return 代发订单列表
+     */
+    List<ErpDistributionCombinedESDO> findAllByComboProductIdIn(List<Long> comboProductIds);
+
 }

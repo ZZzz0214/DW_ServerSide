@@ -5,6 +5,8 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleCombined
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ErpWholesaleCombinedESRepository extends ElasticsearchRepository<ErpWholesaleCombinedESDO, Long> {
 
@@ -20,4 +22,11 @@ public interface ErpWholesaleCombinedESRepository extends ElasticsearchRepositor
      * @param no 订单编号
      */
     void deleteByNo(String no);
+
+    /**
+     * 根据组品ID列表查询所有批发订单
+     * @param comboProductIds 组品ID列表
+     * @return 批发订单列表
+     */
+    List<ErpWholesaleCombinedESDO> findAllByComboProductIdIn(List<Long> comboProductIds);
 }

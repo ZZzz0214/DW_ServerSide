@@ -24,10 +24,6 @@ public class ErpInventorySaveReqVO {
     @NotNull(message = "现货库存不能为空")
     private Integer spotInventory;
 
-    @Schema(description = "剩余库存", requiredMode = Schema.RequiredMode.REQUIRED, example = "80")
-    @NotNull(message = "剩余库存不能为空")
-    private Integer remainingInventory;
-
     @Schema(description = "备注信息", example = "备注内容")
     private String remark;
 }
