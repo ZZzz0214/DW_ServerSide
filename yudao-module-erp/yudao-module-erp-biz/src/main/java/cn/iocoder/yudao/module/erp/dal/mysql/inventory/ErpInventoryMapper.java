@@ -72,6 +72,10 @@ public interface ErpInventoryMapper extends BaseMapperX<ErpInventoryDO> {
         return selectList(ErpInventoryDO::getNo, nos);
     }
 
+    default ErpInventoryDO selectByProductId(Long productId) {
+        return selectOne(ErpInventoryDO::getProductId, productId);
+    }
+
     default ErpInventoryRespVO selectVOById(Long id) {
         MPJLambdaWrapperX<ErpInventoryDO> query = new MPJLambdaWrapperX<ErpInventoryDO>()
                 .eq(ErpInventoryDO::getId, id)

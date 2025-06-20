@@ -43,4 +43,7 @@ public interface ErpInventoryService {
 
     // 导入库存
     ErpInventoryImportRespVO importInventoryList(List<ErpInventoryImportExcelVO> importList, boolean isUpdateSupport);
+
+    // 检查产品是否已有库存记录
+    boolean checkProductExists(Long productId);
 }

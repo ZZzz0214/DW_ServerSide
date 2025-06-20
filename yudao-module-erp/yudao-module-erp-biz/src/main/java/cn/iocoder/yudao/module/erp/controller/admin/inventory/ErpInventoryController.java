@@ -140,4 +140,13 @@ public class ErpInventoryController {
         // 输出
         ExcelUtils.write(response, "库存导入模板.xls", "库存列表", ErpInventoryExportVO.class, list);
     }
+
+    @GetMapping("/check-product-exists")
+    @Operation(summary = "检查产品是否已有库存记录")
+    @Parameter(name = "productId", description = "产品ID", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('erp:inventory:query')")
+    public CommonResult<Boolean> checkProductExists(@RequestParam("productId") Long productId) {
+        boolean exists = inventoryService.checkProductExists(productId);
+        return success(exists);
+    }
 }

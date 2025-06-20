@@ -229,6 +229,8 @@ public interface ErrorCodeConstants {
     ErrorCode INVENTORY_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_108_008, "第{}行的库存编号({})已存在，且不支持更新");
     ErrorCode INVENTORY_IMPORT_SPOT_INVENTORY_INVALID = new ErrorCode(1_030_108_009, "第{}行的现货库存必须大于等于0");
     ErrorCode INVENTORY_IMPORT_REMAINING_INVENTORY_INVALID = new ErrorCode(1_030_108_010, "第{}行的剩余库存必须大于等于0");
+    ErrorCode INVENTORY_PRODUCT_EXISTS = new ErrorCode(1_030_108_011, "该产品已存在库存记录，不能重复添加");
+    ErrorCode INVENTORY_IMPORT_PRODUCT_EXISTS = new ErrorCode(1_030_108_012, "第{}行的产品({})已存在库存记录");
 
     // ========== ERP 记事本（1-030-109-000） ==========
     ErrorCode NOTEBOOK_NOT_EXISTS = new ErrorCode(1_030_109_000, "记事本不存在");
