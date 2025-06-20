@@ -16,32 +16,33 @@ import java.util.Map;
 
 public interface ErpLiveBroadcastingReviewService {
 
-    Long createLiveBroadcastingReview(@Valid ErpLiveBroadcastingReviewSaveReqVO createReqVO);
+    Long createLiveBroadcastingReview(@Valid ErpLiveBroadcastingReviewSaveReqVO createReqVO, String currentUsername);
 
-    void updateLiveBroadcastingReview(@Valid ErpLiveBroadcastingReviewSaveReqVO updateReqVO);
+    void updateLiveBroadcastingReview(@Valid ErpLiveBroadcastingReviewSaveReqVO updateReqVO, String currentUsername);
 
-    void deleteLiveBroadcastingReview(List<Long> ids);
+    void deleteLiveBroadcastingReview(List<Long> ids, String currentUsername);
 
-    ErpLiveBroadcastingReviewDO getLiveBroadcastingReview(Long id);
+    ErpLiveBroadcastingReviewDO getLiveBroadcastingReview(Long id, String currentUsername);
 
-    ErpLiveBroadcastingReviewDO validateLiveBroadcastingReview(Long id);
+    ErpLiveBroadcastingReviewDO validateLiveBroadcastingReview(Long id, String currentUsername);
 
-    List<ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewList(Collection<Long> ids);
+    List<ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewList(Collection<Long> ids, String currentUsername);
 
-    Map<Long, ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewMap(Collection<Long> ids);
+    Map<Long, ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewMap(Collection<Long> ids, String currentUsername);
 
-    List<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOList(Collection<Long> ids);
+    List<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOList(Collection<Long> ids, String currentUsername);
 
-    Map<Long, ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOMap(Collection<Long> ids);
+    Map<Long, ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOMap(Collection<Long> ids, String currentUsername);
 
-    PageResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOPage(ErpLiveBroadcastingReviewPageReqVO pageReqVO);
+    PageResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOPage(ErpLiveBroadcastingReviewPageReqVO pageReqVO, String currentUsername);
 
     /**
      * 导入直播复盘列表
      *
      * @param importList 导入列表
      * @param isUpdateSupport 是否支持更新
+     * @param currentUsername 当前用户名
      * @return 导入结果
      */
-    ErpLiveBroadcastingReviewImportRespVO importLiveBroadcastingReviewList(List<ErpLiveBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport);
+    ErpLiveBroadcastingReviewImportRespVO importLiveBroadcastingReviewList(List<ErpLiveBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername);
 }

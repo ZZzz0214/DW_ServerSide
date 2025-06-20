@@ -18,11 +18,15 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.Erp
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpDistributionMissingPriceVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionCombinedMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionPurchaseMapper;
@@ -36,6 +40,7 @@ import cn.iocoder.yudao.module.erp.service.sale.ErpSalespersonService;
 import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -112,6 +117,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     private ErpDistributionCombinedMapper distributionCombinedMapper;
     @Resource
     private ErpDistributionCombinedESRepository distributionCombinedESRepository;
+
+    @Resource
+    private ErpSalePriceMapper salePriceMapper;
 
     @EventListener(ApplicationReadyEvent.class)
     public void initESIndex() {
@@ -2042,5 +2050,216 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         return false;
     }
 
+    @Override
+    public PageResult<ErpDistributionMissingPriceVO> getDistributionMissingPrices(ErpSalePricePageReqVO pageReqVO) {
+        try {
+            // 构建ES查询 - 查询所有代发订单
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
+            // 添加搜索条件
+            if (pageReqVO.getGroupProductId() != null) {
+                boolQuery.must(QueryBuilders.termQuery("combo_product_id", pageReqVO.getGroupProductId()));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("customer_name.keyword", "*" + pageReqVO.getCustomerName() + "*"));
+            }
+
+            queryBuilder.withQuery(boolQuery);
+            // 设置大的查询数量以获取所有数据进行分组
+            queryBuilder.withPageable(PageRequest.of(0, 10000));
+            queryBuilder.withSort(Sort.by(Sort.Direction.DESC, "create_time"));
+
+            // 执行搜索 - 查询CombinedESDO
+            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpDistributionCombinedESDO.class);
+
+            // 按组品ID和客户名称分组
+            Map<String, List<ErpDistributionCombinedESDO>> groupedData = searchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .filter(esDO -> esDO.getComboProductId() != null && StrUtil.isNotBlank(esDO.getCustomerName()))
+                .collect(Collectors.groupingBy(esDO -> 
+                    esDO.getComboProductId() + "_" + esDO.getCustomerName()));
+
+            // 转换为VO并过滤出没有价格的记录
+            List<ErpDistributionMissingPriceVO> allVoList = groupedData.entrySet().stream()
+                .map(entry -> {
+                    List<ErpDistributionCombinedESDO> orders = entry.getValue();
+                    ErpDistributionCombinedESDO firstOrder = orders.get(0);
+                    
+                    ErpDistributionMissingPriceVO vo = new ErpDistributionMissingPriceVO();
+                    vo.setComboProductId(firstOrder.getComboProductId());
+                    vo.setComboProductNo(firstOrder.getComboProductNo());
+                    vo.setProductName(firstOrder.getProductName());
+                    vo.setCustomerName(firstOrder.getCustomerName());
+                    
+                    // 统计信息
+                    vo.setOrderCount(orders.size());
+                    vo.setTotalProductQuantity(orders.stream()
+                        .mapToInt(order -> order.getProductQuantity() != null ? order.getProductQuantity() : 0)
+                        .sum());
+                    vo.setOrderNumbers(orders.stream()
+                        .map(ErpDistributionCombinedESDO::getNo)
+                        .collect(Collectors.toList()));
+                    vo.setOrderIds(orders.stream()
+                        .map(ErpDistributionCombinedESDO::getId)
+                        .collect(Collectors.toList()));
+                    
+                    // 时间信息
+                    List<LocalDateTime> createTimes = orders.stream()
+                        .map(ErpDistributionCombinedESDO::getCreateTime)
+                        .filter(Objects::nonNull)
+                        .sorted()
+                        .collect(Collectors.toList());
+                    if (!createTimes.isEmpty()) {
+                        vo.setEarliestCreateTime(createTimes.get(0));
+                        vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
+                    }
+                    
+                    // 查询销售价格表，检查是否有代发单价
+                    try {
+                        LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
+                        priceQuery.eq(ErpSalePriceDO::getGroupProductId, firstOrder.getComboProductId())
+                                  .eq(ErpSalePriceDO::getCustomerName, firstOrder.getCustomerName());
+                        ErpSalePriceDO salePrice = salePriceMapper.selectOne(priceQuery);
+                        if (salePrice != null) {
+                            vo.setDistributionPrice(salePrice.getDistributionPrice());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("查询销售价格失败: " + e.getMessage());
+                    }
+                    
+                    return vo;
+                })
+                .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
+                .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime, 
+                    Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+            // 手动分页
+            int page = pageReqVO.getPageNo() != null ? pageReqVO.getPageNo() - 1 : 0;
+            int size = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
+            int start = page * size;
+            int end = Math.min(start + size, allVoList.size());
+            
+            List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ? 
+                allVoList.subList(start, end) : Collections.emptyList();
+
+            return new PageResult<>(pagedVoList, (long) allVoList.size());
+
+        } catch (Exception e) {
+            System.err.println("从ES查询代发缺失价格记录失败: " + e.getMessage());
+            // 降级到数据库查询
+            return getDistributionMissingPricesFromDB(pageReqVO);
+        }
+    }
+
+    /**
+     * 从数据库查询代发缺失价格记录（降级方案）
+     */
+    private PageResult<ErpDistributionMissingPriceVO> getDistributionMissingPricesFromDB(ErpSalePricePageReqVO pageReqVO) {
+        try {
+            // 构建查询条件 - 查询所有代发订单
+            LambdaQueryWrapper<ErpDistributionCombinedDO> queryWrapper = new LambdaQueryWrapper<>();
+
+            // 添加搜索条件
+            if (pageReqVO.getGroupProductId() != null) {
+                queryWrapper.eq(ErpDistributionCombinedDO::getComboProductId, pageReqVO.getGroupProductId());
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
+                queryWrapper.like(ErpDistributionCombinedDO::getCustomerName, pageReqVO.getCustomerName());
+            }
+
+            // 排序
+            queryWrapper.orderByDesc(ErpDistributionCombinedDO::getCreateTime);
+
+            // 查询所有数据进行分组
+            List<ErpDistributionCombinedDO> allRecords = distributionCombinedMapper.selectList(queryWrapper);
+
+            // 按组品ID和客户名称分组
+            Map<String, List<ErpDistributionCombinedDO>> groupedData = allRecords.stream()
+                .filter(combinedDO -> combinedDO.getComboProductId() != null && StrUtil.isNotBlank(combinedDO.getCustomerName()))
+                .collect(Collectors.groupingBy(combinedDO -> 
+                    combinedDO.getComboProductId() + "_" + combinedDO.getCustomerName()));
+
+            // 转换为VO并过滤出没有价格的记录
+            List<ErpDistributionMissingPriceVO> allVoList = groupedData.entrySet().stream()
+                .map(entry -> {
+                    List<ErpDistributionCombinedDO> orders = entry.getValue();
+                    ErpDistributionCombinedDO firstOrder = orders.get(0);
+                    
+                    ErpDistributionMissingPriceVO vo = new ErpDistributionMissingPriceVO();
+                    vo.setComboProductId(firstOrder.getComboProductId());
+                    vo.setCustomerName(firstOrder.getCustomerName());
+                    
+                    // 统计信息
+                    vo.setOrderCount(orders.size());
+                    vo.setTotalProductQuantity(orders.stream()
+                        .mapToInt(order -> order.getProductQuantity() != null ? order.getProductQuantity() : 0)
+                        .sum());
+                    vo.setOrderNumbers(orders.stream()
+                        .map(ErpDistributionCombinedDO::getNo)
+                        .collect(Collectors.toList()));
+                    vo.setOrderIds(orders.stream()
+                        .map(ErpDistributionCombinedDO::getId)
+                        .collect(Collectors.toList()));
+                    
+                    // 时间信息
+                    List<LocalDateTime> createTimes = orders.stream()
+                        .map(ErpDistributionCombinedDO::getCreateTime)
+                        .filter(Objects::nonNull)
+                        .sorted()
+                        .collect(Collectors.toList());
+                    if (!createTimes.isEmpty()) {
+                        vo.setEarliestCreateTime(createTimes.get(0));
+                        vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
+                    }
+                    
+                    // 从组品表获取组品编号和产品名称
+                    if (firstOrder.getComboProductId() != null) {
+                        Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(firstOrder.getComboProductId());
+                        if (comboProductOpt.isPresent()) {
+                            ErpComboProductES comboProduct = comboProductOpt.get();
+                            vo.setComboProductNo(comboProduct.getNo());
+                            vo.setProductName(comboProduct.getName());
+                        }
+                    }
+                    
+                    // 查询销售价格表，检查是否有代发单价
+                    try {
+                        LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
+                        priceQuery.eq(ErpSalePriceDO::getGroupProductId, firstOrder.getComboProductId())
+                                  .eq(ErpSalePriceDO::getCustomerName, firstOrder.getCustomerName());
+                        ErpSalePriceDO salePrice = salePriceMapper.selectOne(priceQuery);
+                        if (salePrice != null) {
+                            vo.setDistributionPrice(salePrice.getDistributionPrice());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("查询销售价格失败: " + e.getMessage());
+                    }
+                    
+                    return vo;
+                })
+                .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
+                .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime, 
+                    Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+            // 手动分页
+            int page = pageReqVO.getPageNo() != null ? pageReqVO.getPageNo() - 1 : 0;
+            int size = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
+            int start = page * size;
+            int end = Math.min(start + size, allVoList.size());
+            
+            List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ? 
+                allVoList.subList(start, end) : Collections.emptyList();
+
+            return new PageResult<>(pagedVoList, (long) allVoList.size());
+
+        } catch (Exception e) {
+            System.err.println("从数据库查询代发缺失价格记录失败: " + e.getMessage());
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+    }
 }

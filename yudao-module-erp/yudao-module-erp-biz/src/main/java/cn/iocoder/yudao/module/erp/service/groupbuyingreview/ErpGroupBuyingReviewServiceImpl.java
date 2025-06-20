@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.service.groupbuyingreview;
 
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
@@ -48,7 +49,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createGroupBuyingReview(ErpGroupBuyingReviewSaveReqVO createReqVO) {
+    public Long createGroupBuyingReview(ErpGroupBuyingReviewSaveReqVO createReqVO, String currentUsername) {
         // 1. 校验数据
         validateGroupBuyingReviewForCreateOrUpdate(null, createReqVO);
 
@@ -68,9 +69,9 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateGroupBuyingReview(ErpGroupBuyingReviewSaveReqVO updateReqVO) {
+    public void updateGroupBuyingReview(ErpGroupBuyingReviewSaveReqVO updateReqVO, String currentUsername) {
         // 1.1 校验存在
-        validateGroupBuyingReview(updateReqVO.getId());
+        validateGroupBuyingReview(updateReqVO.getId(), currentUsername);
         // 1.2 校验数据
         validateGroupBuyingReviewForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
 
@@ -81,126 +82,94 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteGroupBuyingReview(List<Long> ids) {
+    public void deleteGroupBuyingReview(List<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return;
         }
-        // 1. 校验存在
-        List<ErpGroupBuyingReviewDO> groupBuyingReviews = groupBuyingReviewMapper.selectBatchIds(ids);
-        if (CollUtil.isEmpty(groupBuyingReviews)) {
-            throw exception(GROUP_BUYING_REVIEW_NOT_EXISTS);
+        // 1. 校验存在且属于当前用户
+        for (Long id : ids) {
+            validateGroupBuyingReview(id, currentUsername);
         }
         // 2. 删除团购复盘记录
         groupBuyingReviewMapper.deleteBatchIds(ids);
     }
 
     @Override
-    public ErpGroupBuyingReviewDO getGroupBuyingReview(Long id) {
-        return groupBuyingReviewMapper.selectById(id);
-    }
-
-    @Override
-    public ErpGroupBuyingReviewDO validateGroupBuyingReview(Long id) {
+    public ErpGroupBuyingReviewDO getGroupBuyingReview(Long id, String currentUsername) {
         ErpGroupBuyingReviewDO groupBuyingReview = groupBuyingReviewMapper.selectById(id);
-        if (groupBuyingReview == null) {
-            throw exception(GROUP_BUYING_REVIEW_NOT_EXISTS);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (groupBuyingReview != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(groupBuyingReview.getCreator(), currentUsername)) {
+            return null; // 不是当前用户的数据且不是admin，返回null
         }
         return groupBuyingReview;
     }
 
     @Override
-    public PageResult<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOPage(ErpGroupBuyingReviewPageReqVO pageReqVO) {
-        return groupBuyingReviewMapper.selectPage(pageReqVO);
+    public ErpGroupBuyingReviewDO validateGroupBuyingReview(Long id, String currentUsername) {
+        ErpGroupBuyingReviewDO groupBuyingReview = groupBuyingReviewMapper.selectById(id);
+        if (groupBuyingReview == null) {
+            throw exception(GROUP_BUYING_REVIEW_NOT_EXISTS);
+        }
+        // admin用户可以操作全部数据，其他用户只能操作自己的数据
+        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(groupBuyingReview.getCreator(), currentUsername)) {
+            throw exception(GROUP_BUYING_REVIEW_NOT_EXISTS); // 不是当前用户的数据且不是admin
+        }
+        return groupBuyingReview;
     }
 
     @Override
-    public List<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOList(Collection<Long> ids) {
+    public PageResult<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOPage(ErpGroupBuyingReviewPageReqVO pageReqVO, String currentUsername) {
+        return groupBuyingReviewMapper.selectPage(pageReqVO, currentUsername);
+    }
+
+    @Override
+    public List<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOList(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
+        
+        // 使用Mapper方法获取完整信息，但需要过滤权限
+        List<ErpGroupBuyingReviewRespVO> list = groupBuyingReviewMapper.selectListByIds(ids);
+        
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        }
+        
+        return list;
+    }
 
-        // 1. 查询团购复盘基础信息
+    @Override
+    public Map<Long, ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOMap(Collection<Long> ids, String currentUsername) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyMap();
+        }
+        return convertMap(getGroupBuyingReviewVOList(ids, currentUsername), ErpGroupBuyingReviewRespVO::getId);
+    }
+
+    @Override
+    public List<ErpGroupBuyingReviewDO> getGroupBuyingReviewList(Collection<Long> ids, String currentUsername) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         List<ErpGroupBuyingReviewDO> list = groupBuyingReviewMapper.selectBatchIds(ids);
-        List<ErpGroupBuyingReviewRespVO> respVOList = BeanUtils.toBean(list, ErpGroupBuyingReviewRespVO.class);
-
-        // 2. 批量查询团购货盘信息
-        Set<Long> groupBuyingIds = list.stream()
-                .map(ErpGroupBuyingReviewDO::getGroupBuyingId)
-                .filter(id -> id != null)
-                .collect(Collectors.toSet());
-
-        Map<Long, ErpGroupBuyingDO> groupBuyingMap = Collections.emptyMap();
-        if (CollUtil.isNotEmpty(groupBuyingIds)) {
-            List<ErpGroupBuyingDO> groupBuyingList = groupBuyingMapper.selectBatchIds(groupBuyingIds);
-            groupBuyingMap = convertMap(groupBuyingList, ErpGroupBuyingDO::getId);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
         }
-
-        // 3. 批量查询客户信息
-        Set<Long> customerIds = list.stream()
-                .map(ErpGroupBuyingReviewDO::getCustomerId)
-                .filter(id -> id != null)
-                .collect(Collectors.toSet());
-
-        Map<Long, ErpCustomerDO> customerMap = Collections.emptyMap();
-        if (CollUtil.isNotEmpty(customerIds)) {
-            List<ErpCustomerDO> customerList = customerMapper.selectBatchIds(customerIds);
-            customerMap = convertMap(customerList, ErpCustomerDO::getId);
-        }
-
-        // 4. 填充关联信息
-        for (int i = 0; i < list.size(); i++) {
-            ErpGroupBuyingReviewDO reviewDO = list.get(i);
-            ErpGroupBuyingReviewRespVO respVO = respVOList.get(i);
-
-            // 填充团购货盘信息
-            if (reviewDO.getGroupBuyingId() != null) {
-                ErpGroupBuyingDO groupBuying = groupBuyingMap.get(reviewDO.getGroupBuyingId());
-                if (groupBuying != null) {
-                    respVO.setBrandName(groupBuying.getBrandName());
-                    respVO.setGroupBuyingNo(groupBuying.getNo());
-                    respVO.setProductName(groupBuying.getProductName());
-                    respVO.setProductSpec(groupBuying.getProductSpec());
-                    respVO.setProductSku(groupBuying.getProductSku());
-                    respVO.setGroupMechanism(groupBuying.getGroupMechanism());
-                    respVO.setStatus(groupBuying.getStatus());
-                    respVO.setExpressFee(groupBuying.getExpressFee());
-                }
-            }
-
-            // 填充客户信息
-            if (reviewDO.getCustomerId() != null) {
-                ErpCustomerDO customer = customerMap.get(reviewDO.getCustomerId());
-                if (customer != null) {
-                    respVO.setCustomerName(customer.getName());
-                }
-            }
-        }
-
-        return respVOList;
+        return list;
     }
 
     @Override
-    public Map<Long, ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOMap(Collection<Long> ids) {
+    public Map<Long, ErpGroupBuyingReviewDO> getGroupBuyingReviewMap(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return convertMap(getGroupBuyingReviewVOList(ids), ErpGroupBuyingReviewRespVO::getId);
-    }
-
-    @Override
-    public List<ErpGroupBuyingReviewDO> getGroupBuyingReviewList(Collection<Long> ids) {
-        if (CollUtil.isEmpty(ids)) {
-            return Collections.emptyList();
-        }
-        return groupBuyingReviewMapper.selectBatchIds(ids);
-    }
-
-    @Override
-    public Map<Long, ErpGroupBuyingReviewDO> getGroupBuyingReviewMap(Collection<Long> ids) {
-        if (CollUtil.isEmpty(ids)) {
-            return Collections.emptyMap();
-        }
-        return convertMap(getGroupBuyingReviewList(ids), ErpGroupBuyingReviewDO::getId);
+        return convertMap(getGroupBuyingReviewList(ids, currentUsername), ErpGroupBuyingReviewDO::getId);
     }
 
     private void validateGroupBuyingReviewForCreateOrUpdate(Long id, ErpGroupBuyingReviewSaveReqVO reqVO) {
@@ -213,7 +182,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ErpGroupBuyingReviewImportRespVO importGroupBuyingReviewList(List<ErpGroupBuyingReviewImportExcelVO> importList, boolean isUpdateSupport) {
+    public ErpGroupBuyingReviewImportRespVO importGroupBuyingReviewList(List<ErpGroupBuyingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername) {
         if (CollUtil.isEmpty(importList)) {
             throw exception(GROUP_BUYING_REVIEW_IMPORT_LIST_IS_EMPTY);
         }
@@ -303,7 +272,10 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                         createList.add(groupBuyingReview);
                         respVO.getCreateNames().add(groupBuyingReview.getNo());
                     } else if (isUpdateSupport) {
-                        // 更新
+                        // 更新 - 检查权限
+                        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(existGroupBuyingReview.getCreator(), currentUsername)) {
+                            throw exception(GROUP_BUYING_REVIEW_IMPORT_NO_PERMISSION, i + 1, importVO.getNo());
+                        }
                         ErpGroupBuyingReviewDO updateGroupBuyingReview = BeanUtils.toBean(importVO, ErpGroupBuyingReviewDO.class);
                         updateGroupBuyingReview.setId(existGroupBuyingReview.getId());
                         // 转换字段类型

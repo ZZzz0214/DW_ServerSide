@@ -8,6 +8,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWho
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesalePurchaseAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleSaleAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpWholesaleMissingPriceVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleCombinedDO;
 
@@ -130,4 +132,12 @@ public interface ErpWholesaleService {
      * @return 导入结果
      */
     ErpWholesaleImportRespVO importWholesaleSaleAuditList(List<ErpWholesaleSaleAuditImportExcelVO> list, Boolean updateSupport);
+
+    /**
+     * 获取批发缺失价格记录
+     *
+     * @param pageReqVO 分页查询参数
+     * @return 批发缺失价格记录分页
+     */
+    PageResult<ErpWholesaleMissingPriceVO> getWholesaleMissingPrices(ErpSalePricePageReqVO pageReqVO);
 }

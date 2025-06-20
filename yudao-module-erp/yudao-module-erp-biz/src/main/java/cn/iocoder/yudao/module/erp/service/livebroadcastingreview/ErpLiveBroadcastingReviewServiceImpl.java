@@ -49,7 +49,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createLiveBroadcastingReview(ErpLiveBroadcastingReviewSaveReqVO createReqVO) {
+    public Long createLiveBroadcastingReview(ErpLiveBroadcastingReviewSaveReqVO createReqVO, String currentUsername) {
         // 1. 校验数据
         validateLiveBroadcastingReviewForCreateOrUpdate(null, createReqVO);
 
@@ -69,9 +69,9 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateLiveBroadcastingReview(ErpLiveBroadcastingReviewSaveReqVO updateReqVO) {
+    public void updateLiveBroadcastingReview(ErpLiveBroadcastingReviewSaveReqVO updateReqVO, String currentUsername) {
         // 1.1 校验存在
-        validateLiveBroadcastingReview(updateReqVO.getId());
+        validateLiveBroadcastingReview(updateReqVO.getId(), currentUsername);
         // 1.2 校验数据
         validateLiveBroadcastingReviewForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
 
@@ -82,70 +82,94 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteLiveBroadcastingReview(List<Long> ids) {
+    public void deleteLiveBroadcastingReview(List<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return;
         }
-        // 1. 校验存在
-        List<ErpLiveBroadcastingReviewDO> liveBroadcastingReviews = liveBroadcastingReviewMapper.selectBatchIds(ids);
-        if (CollUtil.isEmpty(liveBroadcastingReviews)) {
-            throw exception(LIVE_BROADCASTING_REVIEW_NOT_EXISTS);
+        // 1. 校验存在且属于当前用户
+        for (Long id : ids) {
+            validateLiveBroadcastingReview(id, currentUsername);
         }
         // 2. 删除直播复盘记录
         liveBroadcastingReviewMapper.deleteBatchIds(ids);
     }
 
     @Override
-    public PageResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOPage(ErpLiveBroadcastingReviewPageReqVO pageReqVO) {
-        return liveBroadcastingReviewMapper.selectPage(pageReqVO);
+    public PageResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOPage(ErpLiveBroadcastingReviewPageReqVO pageReqVO, String currentUsername) {
+        return liveBroadcastingReviewMapper.selectPage(pageReqVO, currentUsername);
     }
 
     @Override
-    public List<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOList(Collection<Long> ids) {
+    public List<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOList(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
         
-        // 使用Mapper方法获取完整信息
-        return liveBroadcastingReviewMapper.selectListByIds(ids);
+        // 使用Mapper方法获取完整信息，但需要过滤权限
+        List<ErpLiveBroadcastingReviewRespVO> list = liveBroadcastingReviewMapper.selectListByIds(ids);
+        
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        }
+        
+        return list;
     }
 
     @Override
-    public Map<Long, ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOMap(Collection<Long> ids) {
+    public Map<Long, ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReviewVOMap(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return convertMap(getLiveBroadcastingReviewVOList(ids), ErpLiveBroadcastingReviewRespVO::getId);
+        return convertMap(getLiveBroadcastingReviewVOList(ids, currentUsername), ErpLiveBroadcastingReviewRespVO::getId);
     }
 
     @Override
-    public ErpLiveBroadcastingReviewDO getLiveBroadcastingReview(Long id) {
-        return liveBroadcastingReviewMapper.selectById(id);
-    }
-
-    @Override
-    public ErpLiveBroadcastingReviewDO validateLiveBroadcastingReview(Long id) {
+    public ErpLiveBroadcastingReviewDO getLiveBroadcastingReview(Long id, String currentUsername) {
         ErpLiveBroadcastingReviewDO liveBroadcastingReview = liveBroadcastingReviewMapper.selectById(id);
-        if (liveBroadcastingReview == null) {
-            throw exception(LIVE_BROADCASTING_REVIEW_NOT_EXISTS);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (liveBroadcastingReview != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(liveBroadcastingReview.getCreator(), currentUsername)) {
+            return null; // 不是当前用户的数据且不是admin，返回null
         }
         return liveBroadcastingReview;
     }
 
     @Override
-    public List<ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewList(Collection<Long> ids) {
-        if (CollUtil.isEmpty(ids)) {
-            return Collections.emptyList();
+    public ErpLiveBroadcastingReviewDO validateLiveBroadcastingReview(Long id, String currentUsername) {
+        ErpLiveBroadcastingReviewDO liveBroadcastingReview = liveBroadcastingReviewMapper.selectById(id);
+        if (liveBroadcastingReview == null) {
+            throw exception(LIVE_BROADCASTING_REVIEW_NOT_EXISTS);
         }
-        return liveBroadcastingReviewMapper.selectBatchIds(ids);
+        // admin用户可以操作全部数据，其他用户只能操作自己的数据
+        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(liveBroadcastingReview.getCreator(), currentUsername)) {
+            throw exception(LIVE_BROADCASTING_REVIEW_NOT_EXISTS); // 不是当前用户的数据且不是admin
+        }
+        return liveBroadcastingReview;
     }
 
     @Override
-    public Map<Long, ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewMap(Collection<Long> ids) {
+    public List<ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewList(Collection<Long> ids, String currentUsername) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        List<ErpLiveBroadcastingReviewDO> list = liveBroadcastingReviewMapper.selectBatchIds(ids);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        }
+        return list;
+    }
+
+    @Override
+    public Map<Long, ErpLiveBroadcastingReviewDO> getLiveBroadcastingReviewMap(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return convertMap(getLiveBroadcastingReviewList(ids), ErpLiveBroadcastingReviewDO::getId);
+        return convertMap(getLiveBroadcastingReviewList(ids, currentUsername), ErpLiveBroadcastingReviewDO::getId);
     }
 
     private void validateLiveBroadcastingReviewForCreateOrUpdate(Long id, ErpLiveBroadcastingReviewSaveReqVO reqVO) {
@@ -158,7 +182,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ErpLiveBroadcastingReviewImportRespVO importLiveBroadcastingReviewList(List<ErpLiveBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport) {
+    public ErpLiveBroadcastingReviewImportRespVO importLiveBroadcastingReviewList(List<ErpLiveBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername) {
         if (CollUtil.isEmpty(importList)) {
             throw exception(LIVE_BROADCASTING_REVIEW_IMPORT_LIST_IS_EMPTY);
         }
@@ -243,7 +267,10 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                         createList.add(review);
                         respVO.getCreateNames().add(review.getNo());
                     } else if (isUpdateSupport) {
-                        // 更新
+                        // 更新 - 检查权限
+                        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(existReview.getCreator(), currentUsername)) {
+                            throw exception(LIVE_BROADCASTING_REVIEW_IMPORT_NO_PERMISSION, i + 1, importVO.getNo());
+                        }
                         ErpLiveBroadcastingReviewDO updateReview = BeanUtils.toBean(importVO, ErpLiveBroadcastingReviewDO.class);
                         updateReview.setId(existReview.getId());
                         updateReview.setCustomerId(customerId);

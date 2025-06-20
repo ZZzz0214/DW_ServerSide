@@ -294,6 +294,7 @@ public interface ErrorCodeConstants {
     ErrorCode GROUP_BUYING_REVIEW_IMPORT_GROUP_BUYING_NOT_EXISTS = new ErrorCode(1_030_112_009, "第{}行的团购货盘编号({})不存在");
     ErrorCode GROUP_BUYING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_112_010, "第{}行的客户名称({})不存在");
     ErrorCode GROUP_BUYING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_112_011, "第{}行的团购复盘编号({})已存在，且不支持更新");
+    ErrorCode GROUP_BUYING_REVIEW_IMPORT_NO_PERMISSION = new ErrorCode(1_030_112_012, "第{}行的团购复盘编号({})无权限修改");
 
     // ========== ERP 团购信息（1-030-113-000） ==========
     ErrorCode GROUP_BUYING_INFO_NOT_EXISTS = new ErrorCode(1_030_113_000, "团购信息不存在");
@@ -338,6 +339,7 @@ public interface ErrorCodeConstants {
     ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_PRIVATE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_115_009, "第{}行的私播货盘编号({})不存在");
     ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_115_010, "第{}行的客户名称({})不存在");
     ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_115_011, "第{}行的私播复盘编号({})已存在，且不支持更新");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_PERMISSION = new ErrorCode(1_030_115_012, "第{}行的私播复盘编号({})无权限修改");
 
     // ========== ERP 私播信息（1-030-116-000） ==========
     ErrorCode PRIVATE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_116_000, "私播信息不存在");
@@ -389,6 +391,7 @@ public interface ErrorCodeConstants {
     ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_118_009, "第{}行的直播货盘编号({})不存在");
     ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_118_010, "第{}行的客户名称({})不存在");
     ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_118_011, "第{}行的直播复盘编号({})已存在，且不支持更新");
+    ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_PERMISSION = new ErrorCode(1_030_118_012, "第{}行的直播复盘编号({})无权限修改");
 
     // ========== ERP 直播信息（1-030-119-000） ==========
     ErrorCode LIVE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_119_000, "直播信息不存在");

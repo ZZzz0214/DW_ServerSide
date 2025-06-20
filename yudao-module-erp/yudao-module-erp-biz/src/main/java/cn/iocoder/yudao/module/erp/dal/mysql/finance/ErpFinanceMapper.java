@@ -29,8 +29,14 @@ public interface ErpFinanceMapper extends BaseMapperX<ErpFinanceDO> {
                 .likeIfPresent(ErpFinanceDO::getAuditor, reqVO.getAuditor())
                 .betweenIfPresent(ErpFinanceDO::getOrderDate, reqVO.getOrderDate())
                 .betweenIfPresent(ErpFinanceDO::getCreateTime, reqVO.getCreateTime())
-                .betweenIfPresent(ErpFinanceDO::getAuditTime, reqVO.getAuditTime())
-                .orderByDesc(ErpFinanceDO::getId)
+                .betweenIfPresent(ErpFinanceDO::getAuditTime, reqVO.getAuditTime());
+        
+        // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            query.eq(ErpFinanceDO::getCreator, currentUsername);
+        }
+        
+        query.orderByDesc(ErpFinanceDO::getId)
                 // 字段映射
                 .selectAs(ErpFinanceDO::getId, ErpFinanceRespVO::getId)
                 .selectAs(ErpFinanceDO::getNo, ErpFinanceRespVO::getNo)

@@ -130,8 +130,9 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
     @Override
     public ErpFinanceAmountDO getFinanceAmount(Long id, String currentUsername) {
         ErpFinanceAmountDO financeAmount = financeAmountMapper.selectById(id);
-        if (financeAmount != null && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
-            return null; // 不是当前用户的数据，返回null
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (financeAmount != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
+            return null; // 不是当前用户的数据且不是admin，返回null
         }
         return financeAmount;
     }
@@ -142,8 +143,9 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         if (financeAmount == null) {
             throw exception(FINANCE_AMOUNT_NOT_EXISTS);
         }
-        if (!ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
-            throw exception(FINANCE_AMOUNT_NOT_EXISTS); // 不是当前用户的数据
+        // admin用户可以操作全部数据，其他用户只能操作自己的数据
+        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
+            throw exception(FINANCE_AMOUNT_NOT_EXISTS); // 不是当前用户的数据且不是admin
         }
         return financeAmount;
     }
@@ -159,10 +161,12 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             return Collections.emptyList();
         }
         List<ErpFinanceAmountDO> list = financeAmountMapper.selectBatchIds(ids);
-        // 过滤出当前用户的数据
-        list = list.stream()
-                .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
-                .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        }
         return BeanUtils.toBean(list, ErpFinanceAmountRespVO.class);
     }
 
@@ -172,10 +176,13 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             return Collections.emptyList();
         }
         List<ErpFinanceAmountDO> list = financeAmountMapper.selectBatchIds(ids);
-        // 过滤出当前用户的数据
-        return list.stream()
-                .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
-                .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        }
+        return list;
     }
 
     @Override

@@ -16,32 +16,33 @@ import java.util.Map;
 
 public interface ErpGroupBuyingReviewService {
 
-    Long createGroupBuyingReview(@Valid ErpGroupBuyingReviewSaveReqVO createReqVO);
+    Long createGroupBuyingReview(@Valid ErpGroupBuyingReviewSaveReqVO createReqVO, String currentUsername);
 
-    void updateGroupBuyingReview(@Valid ErpGroupBuyingReviewSaveReqVO updateReqVO);
+    void updateGroupBuyingReview(@Valid ErpGroupBuyingReviewSaveReqVO updateReqVO, String currentUsername);
 
-    void deleteGroupBuyingReview(List<Long> ids);
+    void deleteGroupBuyingReview(List<Long> ids, String currentUsername);
 
-    ErpGroupBuyingReviewDO getGroupBuyingReview(Long id);
+    ErpGroupBuyingReviewDO getGroupBuyingReview(Long id, String currentUsername);
 
-    ErpGroupBuyingReviewDO validateGroupBuyingReview(Long id);
+    ErpGroupBuyingReviewDO validateGroupBuyingReview(Long id, String currentUsername);
 
-    List<ErpGroupBuyingReviewDO> getGroupBuyingReviewList(Collection<Long> ids);
+    List<ErpGroupBuyingReviewDO> getGroupBuyingReviewList(Collection<Long> ids, String currentUsername);
 
-    Map<Long, ErpGroupBuyingReviewDO> getGroupBuyingReviewMap(Collection<Long> ids);
+    Map<Long, ErpGroupBuyingReviewDO> getGroupBuyingReviewMap(Collection<Long> ids, String currentUsername);
 
-    List<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOList(Collection<Long> ids);
+    List<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOList(Collection<Long> ids, String currentUsername);
 
-    Map<Long, ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOMap(Collection<Long> ids);
+    Map<Long, ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOMap(Collection<Long> ids, String currentUsername);
 
-    PageResult<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOPage(ErpGroupBuyingReviewPageReqVO pageReqVO);
+    PageResult<ErpGroupBuyingReviewRespVO> getGroupBuyingReviewVOPage(ErpGroupBuyingReviewPageReqVO pageReqVO, String currentUsername);
 
     /**
      * 导入团购复盘
      *
      * @param importList 导入数据列表
      * @param isUpdateSupport 是否支持更新
+     * @param currentUsername 当前用户名
      * @return 导入结果
      */
-    ErpGroupBuyingReviewImportRespVO importGroupBuyingReviewList(List<ErpGroupBuyingReviewImportExcelVO> importList, boolean isUpdateSupport);
+    ErpGroupBuyingReviewImportRespVO importGroupBuyingReviewList(List<ErpGroupBuyingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername);
 }

@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.service.privatebroadcastingreview;
 
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
@@ -48,7 +49,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createPrivateBroadcastingReview(ErpPrivateBroadcastingReviewSaveReqVO createReqVO) {
+    public Long createPrivateBroadcastingReview(ErpPrivateBroadcastingReviewSaveReqVO createReqVO, String currentUsername) {
         // 1. 校验数据
         validatePrivateBroadcastingReviewForCreateOrUpdate(null, createReqVO);
 
@@ -68,9 +69,9 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updatePrivateBroadcastingReview(ErpPrivateBroadcastingReviewSaveReqVO updateReqVO) {
+    public void updatePrivateBroadcastingReview(ErpPrivateBroadcastingReviewSaveReqVO updateReqVO, String currentUsername) {
         // 1.1 校验存在
-        validatePrivateBroadcastingReview(updateReqVO.getId());
+        validatePrivateBroadcastingReview(updateReqVO.getId(), currentUsername);
         // 1.2 校验数据
         validatePrivateBroadcastingReviewForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
 
@@ -81,36 +82,44 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deletePrivateBroadcastingReview(List<Long> ids) {
+    public void deletePrivateBroadcastingReview(List<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return;
         }
-        // 1. 校验存在
-        List<ErpPrivateBroadcastingReviewDO> privateBroadcastingReviews = privateBroadcastingReviewMapper.selectBatchIds(ids);
-        if (CollUtil.isEmpty(privateBroadcastingReviews)) {
-            throw exception(PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS);
+        // 1. 校验存在且属于当前用户
+        for (Long id : ids) {
+            validatePrivateBroadcastingReview(id, currentUsername);
         }
         // 2. 删除私播复盘记录
         privateBroadcastingReviewMapper.deleteBatchIds(ids);
     }
 
     @Override
-    public ErpPrivateBroadcastingReviewDO getPrivateBroadcastingReview(Long id) {
-        return privateBroadcastingReviewMapper.selectById(id);
-    }
-
-    @Override
-    public ErpPrivateBroadcastingReviewDO validatePrivateBroadcastingReview(Long id) {
+    public ErpPrivateBroadcastingReviewDO getPrivateBroadcastingReview(Long id, String currentUsername) {
         ErpPrivateBroadcastingReviewDO privateBroadcastingReview = privateBroadcastingReviewMapper.selectById(id);
-        if (privateBroadcastingReview == null) {
-            throw exception(PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (privateBroadcastingReview != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(privateBroadcastingReview.getCreator(), currentUsername)) {
+            return null; // 不是当前用户的数据且不是admin，返回null
         }
         return privateBroadcastingReview;
     }
 
     @Override
-    public PageResult<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOPage(ErpPrivateBroadcastingReviewPageReqVO pageReqVO) {
-        PageResult<ErpPrivateBroadcastingReviewRespVO> pageResult = privateBroadcastingReviewMapper.selectPage(pageReqVO);
+    public ErpPrivateBroadcastingReviewDO validatePrivateBroadcastingReview(Long id, String currentUsername) {
+        ErpPrivateBroadcastingReviewDO privateBroadcastingReview = privateBroadcastingReviewMapper.selectById(id);
+        if (privateBroadcastingReview == null) {
+            throw exception(PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS);
+        }
+        // admin用户可以操作全部数据，其他用户只能操作自己的数据
+        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(privateBroadcastingReview.getCreator(), currentUsername)) {
+            throw exception(PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS); // 不是当前用户的数据且不是admin
+        }
+        return privateBroadcastingReview;
+    }
+
+    @Override
+    public PageResult<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOPage(ErpPrivateBroadcastingReviewPageReqVO pageReqVO, String currentUsername) {
+        PageResult<ErpPrivateBroadcastingReviewRespVO> pageResult = privateBroadcastingReviewMapper.selectPage(pageReqVO, currentUsername);
 
         // 填充关联信息
         fillRelatedInfo(pageResult.getList());
@@ -119,97 +128,53 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
     }
 
     @Override
-    public List<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOList(Collection<Long> ids) {
+    public List<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOList(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
+        
+        // 使用Mapper方法获取完整信息，但需要过滤权限
+        List<ErpPrivateBroadcastingReviewRespVO> list = privateBroadcastingReviewMapper.selectListByIds(ids);
+        
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
+        }
+        
+        return list;
+    }
 
-        // 1. 查询私播复盘记录
+    @Override
+    public Map<Long, ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOMap(Collection<Long> ids, String currentUsername) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyMap();
+        }
+        return convertMap(getPrivateBroadcastingReviewVOList(ids, currentUsername), ErpPrivateBroadcastingReviewRespVO::getId);
+    }
+
+    @Override
+    public List<ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewList(Collection<Long> ids, String currentUsername) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         List<ErpPrivateBroadcastingReviewDO> list = privateBroadcastingReviewMapper.selectBatchIds(ids);
-        List<ErpPrivateBroadcastingReviewRespVO> respVOList = BeanUtils.toBean(list, ErpPrivateBroadcastingReviewRespVO.class);
-
-        // 2. 获取私播货盘ID集合
-        List<Long> privateBroadcastingIds = list.stream()
-                .map(ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId)
-                .filter(id -> id != null)
-                .collect(Collectors.toList());
-
-        // 3. 获取客户ID集合
-        List<Long> customerIds = list.stream()
-                .map(ErpPrivateBroadcastingReviewDO::getCustomerId)
-                .filter(id -> id != null)
-                .collect(Collectors.toList());
-
-        // 4. 批量查询私播货盘信息
-        Map<Long, ErpPrivateBroadcastingDO> privateBroadcastingMap = Collections.emptyMap();
-        if (CollUtil.isNotEmpty(privateBroadcastingIds)) {
-            List<ErpPrivateBroadcastingDO> privateBroadcastingList = privateBroadcastingMapper.selectBatchIds(privateBroadcastingIds);
-            privateBroadcastingMap = convertMap(privateBroadcastingList, ErpPrivateBroadcastingDO::getId);
+        // admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            list = list.stream()
+                    .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
+                    .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
         }
-
-        // 5. 批量查询客户信息
-        Map<Long, ErpCustomerDO> customerMap = Collections.emptyMap();
-        if (CollUtil.isNotEmpty(customerIds)) {
-            List<ErpCustomerDO> customerList = customerMapper.selectBatchIds(customerIds);
-            customerMap = convertMap(customerList, ErpCustomerDO::getId);
-        }
-
-        // 6. 填充关联信息
-        for (int i = 0; i < respVOList.size(); i++) {
-            ErpPrivateBroadcastingReviewRespVO respVO = respVOList.get(i);
-            ErpPrivateBroadcastingReviewDO reviewDO = list.get(i);
-
-            // 填充私播货盘信息
-            if (reviewDO.getPrivateBroadcastingId() != null) {
-                ErpPrivateBroadcastingDO privateBroadcastingDO = privateBroadcastingMap.get(reviewDO.getPrivateBroadcastingId());
-                if (privateBroadcastingDO != null) {
-                    respVO.setPrivateBroadcastingNo(privateBroadcastingDO.getNo());
-                    respVO.setProductName(privateBroadcastingDO.getProductName());
-                    respVO.setProductSpec(privateBroadcastingDO.getProductSpec());
-                    respVO.setProductSku(privateBroadcastingDO.getProductSku());
-                    respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
-                    respVO.setPrivateStatus(privateBroadcastingDO.getPrivateStatus());
-                    // 设置品牌ID（用于导出时的字典转换）
-                    if (privateBroadcastingDO.getBrandName() != null) {
-                        respVO.setBrandName(privateBroadcastingDO.getBrandName());
-                    }
-                }
-            }
-
-            // 填充客户信息
-            if (reviewDO.getCustomerId() != null) {
-                ErpCustomerDO customerDO = customerMap.get(reviewDO.getCustomerId());
-                if (customerDO != null) {
-                    respVO.setCustomerName(customerDO.getName());
-                }
-            }
-        }
-
-        return respVOList;
+        return list;
     }
 
     @Override
-    public Map<Long, ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOMap(Collection<Long> ids) {
+    public Map<Long, ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewMap(Collection<Long> ids, String currentUsername) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return convertMap(getPrivateBroadcastingReviewVOList(ids), ErpPrivateBroadcastingReviewRespVO::getId);
-    }
-
-    @Override
-    public List<ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewList(Collection<Long> ids) {
-        if (CollUtil.isEmpty(ids)) {
-            return Collections.emptyList();
-        }
-        return privateBroadcastingReviewMapper.selectBatchIds(ids);
-    }
-
-    @Override
-    public Map<Long, ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewMap(Collection<Long> ids) {
-        if (CollUtil.isEmpty(ids)) {
-            return Collections.emptyMap();
-        }
-        return convertMap(getPrivateBroadcastingReviewList(ids), ErpPrivateBroadcastingReviewDO::getId);
+        return convertMap(getPrivateBroadcastingReviewList(ids, currentUsername), ErpPrivateBroadcastingReviewDO::getId);
     }
 
     private void validatePrivateBroadcastingReviewForCreateOrUpdate(Long id, ErpPrivateBroadcastingReviewSaveReqVO reqVO) {
@@ -265,7 +230,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ErpPrivateBroadcastingReviewImportRespVO importPrivateBroadcastingReviewList(List<ErpPrivateBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport) {
+    public ErpPrivateBroadcastingReviewImportRespVO importPrivateBroadcastingReviewList(List<ErpPrivateBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername) {
         if (CollUtil.isEmpty(importList)) {
             throw exception(PRIVATE_BROADCASTING_REVIEW_IMPORT_LIST_IS_EMPTY);
         }
@@ -277,19 +242,11 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据转换
+        // 批量处理数据
         List<ErpPrivateBroadcastingReviewDO> createList = new ArrayList<>();
         List<ErpPrivateBroadcastingReviewDO> updateList = new ArrayList<>();
 
         try {
-            // 批量查询私播货盘信息
-            Set<String> privateBroadcastingNos = importList.stream()
-                    .map(ErpPrivateBroadcastingReviewImportExcelVO::getPrivateBroadcastingNo)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-            Map<String, Long> privateBroadcastingIdMap = privateBroadcastingNos.isEmpty() ? Collections.emptyMap() :
-                    convertMap(privateBroadcastingMapper.selectListByNoIn(privateBroadcastingNos), ErpPrivateBroadcastingDO::getNo, ErpPrivateBroadcastingDO::getId);
-
             // 批量查询客户信息
             Set<String> customerNames = importList.stream()
                     .map(ErpPrivateBroadcastingReviewImportExcelVO::getCustomerName)
@@ -297,6 +254,14 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                     .collect(Collectors.toSet());
             Map<String, Long> customerIdMap = customerNames.isEmpty() ? Collections.emptyMap() :
                     convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName, ErpCustomerDO::getId);
+
+            // 批量查询私播货盘信息
+            Set<String> privateBroadcastingNos = importList.stream()
+                    .map(ErpPrivateBroadcastingReviewImportExcelVO::getPrivateBroadcastingNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+            Map<String, Long> privateBroadcastingIdMap = privateBroadcastingNos.isEmpty() ? Collections.emptyMap() :
+                    convertMap(privateBroadcastingMapper.selectListByNoIn(privateBroadcastingNos), ErpPrivateBroadcastingDO::getNo, ErpPrivateBroadcastingDO::getId);
 
             // 批量查询已存在的记录
             Set<String> noSet = importList.stream()
@@ -308,7 +273,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
 
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
-
+            
             // 批量转换数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpPrivateBroadcastingReviewImportExcelVO importVO = importList.get(i);
@@ -320,22 +285,22 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                         }
                         processedNos.add(importVO.getNo());
                     }
-
-                    // 转换私播货盘编号为ID
-                    Long privateBroadcastingId = null;
-                    if (StrUtil.isNotBlank(importVO.getPrivateBroadcastingNo())) {
-                        privateBroadcastingId = privateBroadcastingIdMap.get(importVO.getPrivateBroadcastingNo());
-                        if (privateBroadcastingId == null) {
-                            throw exception(PRIVATE_BROADCASTING_REVIEW_IMPORT_PRIVATE_BROADCASTING_NOT_EXISTS, i + 1, importVO.getPrivateBroadcastingNo());
-                        }
-                    }
-
-                    // 转换客户名称为ID
+                    
+                    // 转换客户名称为客户ID
                     Long customerId = null;
                     if (StrUtil.isNotBlank(importVO.getCustomerName())) {
                         customerId = customerIdMap.get(importVO.getCustomerName());
                         if (customerId == null) {
                             throw exception(PRIVATE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS, i + 1, importVO.getCustomerName());
+                        }
+                    }
+
+                    // 转换货盘编号为货盘ID
+                    Long privateBroadcastingId = null;
+                    if (StrUtil.isNotBlank(importVO.getPrivateBroadcastingNo())) {
+                        privateBroadcastingId = privateBroadcastingIdMap.get(importVO.getPrivateBroadcastingNo());
+                        if (privateBroadcastingId == null) {
+                            throw exception(PRIVATE_BROADCASTING_REVIEW_IMPORT_PRIVATE_BROADCASTING_NOT_EXISTS, i + 1, importVO.getPrivateBroadcastingNo());
                         }
                     }
 
@@ -345,16 +310,19 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                         // 创建 - 自动生成新的no编号
                         ErpPrivateBroadcastingReviewDO review = BeanUtils.toBean(importVO, ErpPrivateBroadcastingReviewDO.class);
                         review.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRIVATE_BROADCASTING_REVIEW_NO_PREFIX));
-                        review.setPrivateBroadcastingId(privateBroadcastingId);
                         review.setCustomerId(customerId);
+                        review.setPrivateBroadcastingId(privateBroadcastingId);
                         createList.add(review);
                         respVO.getCreateNames().add(review.getNo());
                     } else if (isUpdateSupport) {
-                        // 更新
+                        // 更新 - 检查权限
+                        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(existReview.getCreator(), currentUsername)) {
+                            throw exception(PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_PERMISSION, i + 1, importVO.getNo());
+                        }
                         ErpPrivateBroadcastingReviewDO updateReview = BeanUtils.toBean(importVO, ErpPrivateBroadcastingReviewDO.class);
                         updateReview.setId(existReview.getId());
-                        updateReview.setPrivateBroadcastingId(privateBroadcastingId);
                         updateReview.setCustomerId(customerId);
+                        updateReview.setPrivateBroadcastingId(privateBroadcastingId);
                         updateList.add(updateReview);
                         respVO.getUpdateNames().add(updateReview.getNo());
                     } else {

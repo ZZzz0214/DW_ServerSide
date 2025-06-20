@@ -143,6 +143,36 @@ public interface ErpSalePriceService {
     List<ErpSalePriceRespVO> getMissingPrices();
 
     /**
+     * 获取代发缺失价格记录
+     *
+     * @param pageReqVO 分页查询参数
+     * @return 代发缺失价格记录分页
+     */
+    PageResult<ErpDistributionMissingPriceVO> getDistributionMissingPrices(ErpSalePricePageReqVO pageReqVO);
+
+    /**
+     * 获取批发缺失价格记录
+     *
+     * @param pageReqVO 分页查询参数
+     * @return 批发缺失价格记录分页
+     */
+    PageResult<ErpWholesaleMissingPriceVO> getWholesaleMissingPrices(ErpSalePricePageReqVO pageReqVO);
+
+    /**
+     * 批量设置代发价格
+     *
+     * @param reqList 价格设置请求列表
+     */
+    void batchSetDistributionPrices(List<ErpDistributionPriceSetReqVO> reqList);
+
+    /**
+     * 批量设置批发价格
+     *
+     * @param reqList 价格设置请求列表
+     */
+    void batchSetWholesalePrices(List<ErpWholesalePriceSetReqVO> reqList);
+
+    /**
      * 导入销售价格
      *
      * @param importList 导入数据列表
@@ -160,4 +190,19 @@ public interface ErpSalePriceService {
      * 手动全量同步数据到ES
      */
     void manualFullSyncToES();
+
+    /**
+     * 获取统一缺失价格记录（代发+批发）
+     *
+     * @param pageReqVO 分页查询参数
+     * @return 统一缺失价格记录分页
+     */
+    PageResult<ErpCombinedMissingPriceVO> getCombinedMissingPrices(ErpSalePricePageReqVO pageReqVO);
+
+    /**
+     * 批量设置统一价格（代发+批发）
+     *
+     * @param reqList 价格设置请求列表
+     */
+    void batchSetCombinedPrices(List<ErpCombinedPriceSetReqVO> reqList);
 }

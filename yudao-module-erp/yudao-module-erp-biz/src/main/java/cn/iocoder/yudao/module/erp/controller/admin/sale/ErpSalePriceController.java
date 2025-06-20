@@ -128,6 +128,51 @@ public class ErpSalePriceController {
         return success(salePriceService.getMissingPrices());
     }
 
+    @GetMapping("/distribution-missing-prices")
+    @Operation(summary = "获取代发缺失价格记录")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
+    public CommonResult<PageResult<ErpDistributionMissingPriceVO>> getDistributionMissingPrices(@Valid ErpSalePricePageReqVO pageReqVO) {
+        return success(salePriceService.getDistributionMissingPrices(pageReqVO));
+    }
+
+    @GetMapping("/wholesale-missing-prices")
+    @Operation(summary = "获取批发缺失价格记录")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
+    public CommonResult<PageResult<ErpWholesaleMissingPriceVO>> getWholesaleMissingPrices(@Valid ErpSalePricePageReqVO pageReqVO) {
+        return success(salePriceService.getWholesaleMissingPrices(pageReqVO));
+    }
+
+    @PostMapping("/batch-set-distribution-prices")
+    @Operation(summary = "批量设置代发价格")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:update')")
+    public CommonResult<Boolean> batchSetDistributionPrices(@Valid @RequestBody List<ErpDistributionPriceSetReqVO> reqList) {
+        salePriceService.batchSetDistributionPrices(reqList);
+        return success(true);
+    }
+
+    @PostMapping("/batch-set-wholesale-prices")
+    @Operation(summary = "批量设置批发价格")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:update')")
+    public CommonResult<Boolean> batchSetWholesalePrices(@Valid @RequestBody List<ErpWholesalePriceSetReqVO> reqList) {
+        salePriceService.batchSetWholesalePrices(reqList);
+        return success(true);
+    }
+
+    @GetMapping("/combined-missing-prices")
+    @Operation(summary = "获取统一缺失价格记录（代发+批发）")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:query')")
+    public CommonResult<PageResult<ErpCombinedMissingPriceVO>> getCombinedMissingPrices(@Valid ErpSalePricePageReqVO pageReqVO) {
+        return success(salePriceService.getCombinedMissingPrices(pageReqVO));
+    }
+
+    @PostMapping("/batch-set-combined-prices")
+    @Operation(summary = "批量设置统一价格（代发+批发）")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:update')")
+    public CommonResult<Boolean> batchSetCombinedPrices(@Valid @RequestBody List<ErpCombinedPriceSetReqVO> reqList) {
+        salePriceService.batchSetCombinedPrices(reqList);
+        return success(true);
+    }
+
     @PostMapping("/import")
     @Operation(summary = "导入销售价格")
     @Parameters({

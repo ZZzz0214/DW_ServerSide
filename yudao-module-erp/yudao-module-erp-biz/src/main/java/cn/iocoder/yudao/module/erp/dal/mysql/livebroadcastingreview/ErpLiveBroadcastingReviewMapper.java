@@ -18,7 +18,7 @@ import cn.hutool.core.collection.CollUtil;
 @Mapper
 public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroadcastingReviewDO> {
 
-    default PageResult<ErpLiveBroadcastingReviewRespVO> selectPage(ErpLiveBroadcastingReviewPageReqVO reqVO) {
+    default PageResult<ErpLiveBroadcastingReviewRespVO> selectPage(ErpLiveBroadcastingReviewPageReqVO reqVO, String currentUsername) {
         MPJLambdaWrapperX<ErpLiveBroadcastingReviewDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingReviewDO>()
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getLiveCommission, reqVO.getLiveCommission())
@@ -26,8 +26,14 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getLiveStartDate, reqVO.getLiveStartDate())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getCreator, reqVO.getCreator())
-                .betweenIfPresent(ErpLiveBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime())
-                .orderByDesc(ErpLiveBroadcastingReviewDO::getId)
+                .betweenIfPresent(ErpLiveBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime());
+        
+        // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            query.eq(ErpLiveBroadcastingReviewDO::getCreator, currentUsername);
+        }
+        
+        query.orderByDesc(ErpLiveBroadcastingReviewDO::getId)
                 // 直播复盘表字段映射
                 .selectAs(ErpLiveBroadcastingReviewDO::getId, ErpLiveBroadcastingReviewRespVO::getId)
                 .selectAs(ErpLiveBroadcastingReviewDO::getNo, ErpLiveBroadcastingReviewRespVO::getNo)

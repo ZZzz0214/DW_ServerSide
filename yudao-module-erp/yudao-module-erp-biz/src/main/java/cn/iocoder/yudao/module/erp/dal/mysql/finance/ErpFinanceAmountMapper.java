@@ -28,6 +28,11 @@ public interface ErpFinanceAmountMapper extends BaseMapperX<ErpFinanceAmountDO> 
                 .betweenIfPresent(ErpFinanceAmountDO::getCreateTime, reqVO.getCreateTime())
                 .betweenIfPresent(ErpFinanceAmountDO::getAuditTime, reqVO.getAuditTime());
         
+        // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
+        if (!"admin".equals(currentUsername)) {
+            query.eq(ErpFinanceAmountDO::getCreator, currentUsername);
+        }
+        
         // 处理旧查询逻辑转换为新的业务逻辑
         // 当有具体渠道充值查询条件时，使用OR条件组合
         boolean hasRechargeQuery = reqVO.getWechatRecharge() != null || reqVO.getAlipayRecharge() != null || reqVO.getBankCardRecharge() != null;

@@ -16,32 +16,33 @@ import java.util.Map;
 
 public interface ErpPrivateBroadcastingReviewService {
 
-    Long createPrivateBroadcastingReview(@Valid ErpPrivateBroadcastingReviewSaveReqVO createReqVO);
+    Long createPrivateBroadcastingReview(@Valid ErpPrivateBroadcastingReviewSaveReqVO createReqVO, String currentUsername);
 
-    void updatePrivateBroadcastingReview(@Valid ErpPrivateBroadcastingReviewSaveReqVO updateReqVO);
+    void updatePrivateBroadcastingReview(@Valid ErpPrivateBroadcastingReviewSaveReqVO updateReqVO, String currentUsername);
 
-    void deletePrivateBroadcastingReview(List<Long> ids);
+    void deletePrivateBroadcastingReview(List<Long> ids, String currentUsername);
 
-    ErpPrivateBroadcastingReviewDO getPrivateBroadcastingReview(Long id);
+    ErpPrivateBroadcastingReviewDO getPrivateBroadcastingReview(Long id, String currentUsername);
 
-    ErpPrivateBroadcastingReviewDO validatePrivateBroadcastingReview(Long id);
+    ErpPrivateBroadcastingReviewDO validatePrivateBroadcastingReview(Long id, String currentUsername);
 
-    List<ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewList(Collection<Long> ids);
+    List<ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewList(Collection<Long> ids, String currentUsername);
 
-    Map<Long, ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewMap(Collection<Long> ids);
+    Map<Long, ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewMap(Collection<Long> ids, String currentUsername);
 
-    List<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOList(Collection<Long> ids);
+    List<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOList(Collection<Long> ids, String currentUsername);
 
-    Map<Long, ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOMap(Collection<Long> ids);
+    Map<Long, ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOMap(Collection<Long> ids, String currentUsername);
 
-    PageResult<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOPage(ErpPrivateBroadcastingReviewPageReqVO pageReqVO);
+    PageResult<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReviewVOPage(ErpPrivateBroadcastingReviewPageReqVO pageReqVO, String currentUsername);
 
     /**
      * 导入私播复盘
      *
      * @param importList 导入数据列表
      * @param isUpdateSupport 是否支持更新
+     * @param currentUsername 当前用户名
      * @return 导入结果
      */
-    ErpPrivateBroadcastingReviewImportRespVO importPrivateBroadcastingReviewList(List<ErpPrivateBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport);
+    ErpPrivateBroadcastingReviewImportRespVO importPrivateBroadcastingReviewList(List<ErpPrivateBroadcastingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername);
 }
