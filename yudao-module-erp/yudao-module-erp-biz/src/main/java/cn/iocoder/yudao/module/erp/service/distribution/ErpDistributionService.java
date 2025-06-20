@@ -113,5 +113,10 @@ public interface ErpDistributionService {
      */
     ErpDistributionImportRespVO importSaleAuditList(List<ErpDistributionSaleAuditImportExcelVO> importList);
 
-     ErpDistributionRespVO getDistribution(Long id);
+    ErpDistributionRespVO getDistribution(Long id);
+
+    /**
+     * 手动全量同步代发数据到ES
+     */
+    void manualFullSyncToES();
 }

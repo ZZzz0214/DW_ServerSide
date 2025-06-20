@@ -1203,6 +1203,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     .map(SearchHit::getContent)
                     .map(combined -> {
                         ErpWholesaleRespVO vo = BeanUtils.toBean(combined, ErpWholesaleRespVO.class)
+                                .setTruckFee(combined.getPurchaseTruckFee())
+                                .setLogisticsFee(combined.getPurchaseLogisticsFee())
                                 .setOtherFees(combined.getPurchaseOtherFees());
 
                         // 查询组品信息并设置到respVO
@@ -1974,12 +1976,149 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         esCreateList.add(BeanUtils.toBean(combined, ErpWholesaleCombinedESDO.class).setCreator(username).setCreateTime(now));
                         respVO.getCreateNames().add(combined.getNo());
                     } else if (updateSupport) {
-                        // 更新逻辑
-                        ErpWholesaleCombinedDO combined = BeanUtils.toBean(importVO, ErpWholesaleCombinedDO.class);
+                        // 更新逻辑 - 只更新导入的字段，保留其他字段的原有数据
+                        ErpWholesaleCombinedDO combined = new ErpWholesaleCombinedDO();
                         combined.setId(existDistribution.getId());
-                        combined.setComboProductId(comboProductId);
+                        // 只设置需要更新的字段，且只有当导入值不为空时才设置
+                        combined.setNo(importVO.getNo());
+                        if (StrUtil.isNotBlank(importVO.getLogisticsNumber())) {
+                            combined.setLogisticsNumber(importVO.getLogisticsNumber());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverName())) {
+                            combined.setReceiverName(importVO.getReceiverName());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
+                            combined.setReceiverPhone(importVO.getReceiverPhone());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
+                            combined.setReceiverAddress(importVO.getReceiverAddress());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getRemark())) {
+                            combined.setRemark(importVO.getRemark());
+                        }
+                        if (comboProductId != null) {
+                            combined.setComboProductId(comboProductId);
+                        }
+                        if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
+                            combined.setProductSpecification(importVO.getProductSpecification());
+                        }
+                        if (importVO.getProductQuantity() != null) {
+                            combined.setProductQuantity(importVO.getProductQuantity());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                            combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                        }
+                        if (importVO.getAfterSalesTime() != null) {
+                            combined.setAfterSalesTime(importVO.getAfterSalesTime());
+                        }
+                        // 采购相关字段 - 只有当值不为null时才设置
+                        if (importVO.getPurchaseTruckFee() != null) {
+                            combined.setPurchaseTruckFee(importVO.getPurchaseTruckFee());
+                        }
+                        if (importVO.getPurchaseLogisticsFee() != null) {
+                            combined.setPurchaseLogisticsFee(importVO.getPurchaseLogisticsFee());
+                        }
+                        if (importVO.getPurchaseOtherFees() != null) {
+                            combined.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getPurchaseRemark())) {
+                            combined.setPurchaseRemark(importVO.getPurchaseRemark());
+                        }
+                        // 销售相关字段 - 只有当值不为null时才设置
+                        if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                            combined.setSalesperson(importVO.getSalesperson());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                            combined.setCustomerName(importVO.getCustomerName());
+                        }
+                        if (importVO.getSaleTruckFee() != null) {
+                            combined.setSaleTruckFee(importVO.getSaleTruckFee());
+                        }
+                        if (importVO.getSaleLogisticsFee() != null) {
+                            combined.setSaleLogisticsFee(importVO.getSaleLogisticsFee());
+                        }
+                        if (importVO.getSaleOtherFees() != null) {
+                            combined.setSaleOtherFees(importVO.getSaleOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getSaleRemark())) {
+                            combined.setSaleRemark(importVO.getSaleRemark());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                            combined.setTransferPerson(importVO.getTransferPerson());
+                        }
+                        
                         updateList.add(combined);
-                        esUpdateList.add(BeanUtils.toBean(combined, ErpWholesaleCombinedESDO.class));
+                        
+                        // ES更新数据需要包含所有字段，所以需要从存在的数据中复制
+                        ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existDistribution, ErpWholesaleCombinedESDO.class);
+                        // 更新导入的字段 - 只有当值不为空时才更新
+                        if (StrUtil.isNotBlank(importVO.getLogisticsNumber())) {
+                            esUpdateDO.setLogisticsNumber(importVO.getLogisticsNumber());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverName())) {
+                            esUpdateDO.setReceiverName(importVO.getReceiverName());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
+                            esUpdateDO.setReceiverPhone(importVO.getReceiverPhone());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
+                            esUpdateDO.setReceiverAddress(importVO.getReceiverAddress());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getRemark())) {
+                            esUpdateDO.setRemark(importVO.getRemark());
+                        }
+                        if (comboProductId != null) {
+                            esUpdateDO.setComboProductId(comboProductId);
+                        }
+                        if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
+                            esUpdateDO.setProductSpecification(importVO.getProductSpecification());
+                        }
+                        if (importVO.getProductQuantity() != null) {
+                            esUpdateDO.setProductQuantity(importVO.getProductQuantity());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                            esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                        }
+                        if (importVO.getAfterSalesTime() != null) {
+                            esUpdateDO.setAfterSalesTime(importVO.getAfterSalesTime());
+                        }
+                        // 采购相关字段 - 只有当值不为null时才更新
+                        if (importVO.getPurchaseTruckFee() != null) {
+                            esUpdateDO.setPurchaseTruckFee(importVO.getPurchaseTruckFee());
+                        }
+                        if (importVO.getPurchaseLogisticsFee() != null) {
+                            esUpdateDO.setPurchaseLogisticsFee(importVO.getPurchaseLogisticsFee());
+                        }
+                        if (importVO.getPurchaseOtherFees() != null) {
+                            esUpdateDO.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getPurchaseRemark())) {
+                            esUpdateDO.setPurchaseRemark(importVO.getPurchaseRemark());
+                        }
+                        // 销售相关字段 - 只有当值不为null时才更新
+                        if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                            esUpdateDO.setSalesperson(importVO.getSalesperson());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                            esUpdateDO.setCustomerName(importVO.getCustomerName());
+                        }
+                        if (importVO.getSaleTruckFee() != null) {
+                            esUpdateDO.setSaleTruckFee(importVO.getSaleTruckFee());
+                        }
+                        if (importVO.getSaleLogisticsFee() != null) {
+                            esUpdateDO.setSaleLogisticsFee(importVO.getSaleLogisticsFee());
+                        }
+                        if (importVO.getSaleOtherFees() != null) {
+                            esUpdateDO.setSaleOtherFees(importVO.getSaleOtherFees());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getSaleRemark())) {
+                            esUpdateDO.setSaleRemark(importVO.getSaleRemark());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                            esUpdateDO.setTransferPerson(importVO.getTransferPerson());
+                        }
+                        
+                        esUpdateList.add(esUpdateDO);
                         respVO.getUpdateNames().add(combined.getNo());
                     }
                     else {

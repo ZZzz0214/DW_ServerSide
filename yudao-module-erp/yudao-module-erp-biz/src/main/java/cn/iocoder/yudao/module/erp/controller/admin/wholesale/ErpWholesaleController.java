@@ -686,12 +686,12 @@ public class ErpWholesaleController {
         return success(true);
     }
 
-    @GetMapping("/export-excel")
-    @Operation(summary = "导出批发订单 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+    @GetMapping("/export-basic")
+    @Operation(summary = "导出批发基础订单 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:importBasic')")
     @ApiAccessLog(operateType = EXPORT)
-    public void exportWholesaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
-                                   HttpServletResponse response) throws IOException {
+    public void exportBasicWholesaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                        HttpServletResponse response) throws IOException {
         // 设置分页大小
         pageReqVO.setPageSize(10000);
 
@@ -699,10 +699,67 @@ public class ErpWholesaleController {
         PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
 
         // 转换为导出VO
-        List<ErpWholesaleExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleExportExcelVO.class);
+        List<ErpWholesaleBasicExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleBasicExportExcelVO.class);
 
         // 导出Excel
-        ExcelUtils.write(response, "批发订单信息.xlsx", "数据", ErpWholesaleExportExcelVO.class, exportList);
+        ExcelUtils.write(response, "批发基础订单信息.xlsx", "数据", ErpWholesaleBasicExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-purchase")
+    @Operation(summary = "导出批发采购订单 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:importPurchase')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportPurchaseWholesaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                           HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+
+        // 获取分页数据
+        PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+
+        // 转换为导出VO
+        List<ErpWholesalePurchaseExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesalePurchaseExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "批发采购订单信息.xlsx", "数据", ErpWholesalePurchaseExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-sale")
+    @Operation(summary = "导出批发出货订单 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:importSale')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportSaleWholesaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                       HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+
+        // 获取分页数据
+        PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+
+        // 转换为导出VO
+        List<ErpWholesaleSaleExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleSaleExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "批发出货订单信息.xlsx", "数据", ErpWholesaleSaleExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-ship")
+    @Operation(summary = "导出批发发货订单 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:importShip')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportShipWholesaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
+                                       HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+
+        // 获取分页数据
+        PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
+
+        // 转换为导出VO
+        List<ErpWholesaleShipExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleShipExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "批发发货订单信息.xlsx", "数据", ErpWholesaleShipExportExcelVO.class, exportList);
     }
 
 
@@ -780,9 +837,22 @@ public class ErpWholesaleController {
                             .receiverName("张三")
                             .receiverPhone("13800138000")
                             .receiverAddress("北京市朝阳区")
+                            .remark("示例备注1")
                             .comboProductNo("CP-001")
-                            .productName("示例产品1")
+                            .productSpecification("规格A")
                             .productQuantity(10)
+                            .afterSalesStatus("正常")
+                            .purchaseTruckFee(new BigDecimal("50.00"))
+                            .purchaseLogisticsFee(new BigDecimal("30.00"))
+                            .purchaseOtherFees(new BigDecimal("20.00"))
+                            .purchaseRemark("采购备注1")
+                            .salesperson("销售员A")
+                            .customerName("客户A")
+                            .saleTruckFee(new BigDecimal("60.00"))
+                            .saleLogisticsFee(new BigDecimal("40.00"))
+                            .saleOtherFees(new BigDecimal("25.00"))
+                            .saleRemark("出货备注1")
+                            .transferPerson("中转员A")
                             .build(),
                     ErpWholesaleImportExcelVO.builder()
                             .no("示例订单2")
@@ -790,9 +860,22 @@ public class ErpWholesaleController {
                             .receiverName("李四")
                             .receiverPhone("13900139000")
                             .receiverAddress("上海市浦东新区")
+                            .remark("示例备注2")
                             .comboProductNo("CP-002")
-                            .productName("示例产品2")
+                            .productSpecification("规格B")
                             .productQuantity(20)
+                            .afterSalesStatus("正常")
+                            .purchaseTruckFee(new BigDecimal("55.00"))
+                            .purchaseLogisticsFee(new BigDecimal("35.00"))
+                            .purchaseOtherFees(new BigDecimal("15.00"))
+                            .purchaseRemark("采购备注2")
+                            .salesperson("销售员B")
+                            .customerName("客户B")
+                            .saleTruckFee(new BigDecimal("65.00"))
+                            .saleLogisticsFee(new BigDecimal("45.00"))
+                            .saleOtherFees(new BigDecimal("30.00"))
+                            .saleRemark("出货备注2")
+                            .transferPerson("中转员B")
                             .build()
             );
             // 输出

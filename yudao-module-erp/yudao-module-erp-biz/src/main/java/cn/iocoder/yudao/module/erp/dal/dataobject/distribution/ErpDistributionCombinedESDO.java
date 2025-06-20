@@ -57,17 +57,17 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "receiver_address_keyword", type = FieldType.Keyword)
     private String receiverAddressKeyword;
 
-    @Field(name = "original_product", type = FieldType.Text, analyzer = "ik_max_word")
-    private String originalProduct;
+    @Field(name = "original_product_name", type = FieldType.Text, analyzer = "ik_max_word")
+    private String originalProductName;
 
     @Field(name = "original_product_keyword", type = FieldType.Keyword)
     private String originalProductKeyword;
 
-    @Field(name = "original_specification", type = FieldType.Text, analyzer = "ik_max_word")
-    private String originalSpecification;
+    @Field(name = "original_standard", type = FieldType.Text, analyzer = "ik_max_word")
+    private String originalStandard;
 
-    @Field(name = "original_specification_keyword", type = FieldType.Keyword)
-    private String originalSpecificationKeyword;
+    @Field(name = "original_standard_keyword", type = FieldType.Keyword)
+    private String originalStandardKeyword;
 
     @Field(name = "original_quantity", type = FieldType.Integer)
     private Integer originalQuantity;

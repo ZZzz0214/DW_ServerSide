@@ -188,6 +188,14 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         // 在所有关联项更新完成后，再同步主表到 ES
         syncComboToES(updateReqVO.getId());
+        
+        // 🔥 新增：强制刷新ES索引，确保代发表能立即获取到最新的采购单价
+        try {
+            elasticsearchRestTemplate.indexOps(ErpComboProductES.class).refresh();
+            System.out.println("组品更新后强制刷新ES索引成功，组品ID: " + updateReqVO.getId());
+        } catch (Exception e) {
+            System.err.println("组品更新后强制刷新ES索引失败: " + e.getMessage());
+        }
     }
 
     @Override
@@ -1076,6 +1084,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
     /**
      * 转换组合产品DO为ES对象
+     * 🔥 重要：确保ES中的采购单价、批发单价、重量等都是实时计算的
      */
     private ErpComboProductES convertComboToES(ErpComboProductDO combo) {
         ErpComboProductES es = new ErpComboProductES();
@@ -1091,7 +1100,72 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         System.out.println("=== 组品ES数据转换调试 ===");
         System.out.println("组品ID: " + combo.getId());
-        System.out.println("数据库name: " + combo.getName());
+        System.out.println("数据库purchasePrice: " + combo.getPurchasePrice());
+
+        // 🔥 关键修复：实时计算采购单价、批发单价、重量等
+        try {
+            // 查询组品关联的单品项
+            List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(combo.getId());
+            if (CollUtil.isNotEmpty(comboItems)) {
+                // 提取单品ID列表
+                List<Long> productIds = comboItems.stream()
+                        .map(ErpComboProductItemDO::getItemProductId)
+                        .collect(Collectors.toList());
+                
+                // 查询单品详细信息
+                List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
+                if (CollUtil.isNotEmpty(products)) {
+                    // 创建单品ID到单品对象的映射
+                    Map<Long, ErpProductDO> productMap = products.stream()
+                            .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
+                    
+                    // 实时计算采购总价、批发总价、总重量
+                    BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+                    BigDecimal totalWholesalePrice = BigDecimal.ZERO;
+                    BigDecimal totalWeight = BigDecimal.ZERO;
+                    
+                    for (ErpComboProductItemDO item : comboItems) {
+                        ErpProductDO product = productMap.get(item.getItemProductId());
+                        if (product != null) {
+                            BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
+                            
+                            // 计算采购总价
+                            if (product.getPurchasePrice() != null) {
+                                totalPurchasePrice = totalPurchasePrice.add(
+                                    product.getPurchasePrice().multiply(itemQuantity)
+                                );
+                            }
+                            
+                            // 计算批发总价
+                            if (product.getWholesalePrice() != null) {
+                                totalWholesalePrice = totalWholesalePrice.add(
+                                    product.getWholesalePrice().multiply(itemQuantity)
+                                );
+                            }
+                            
+                            // 计算总重量
+                            if (product.getWeight() != null) {
+                                totalWeight = totalWeight.add(
+                                    product.getWeight().multiply(itemQuantity)
+                                );
+                            }
+                        }
+                    }
+                    
+                    // 🔥 核心：使用实时计算的价格和重量覆盖数据库中的值
+                    es.setPurchasePrice(totalPurchasePrice);
+                    es.setWholesalePrice(totalWholesalePrice);
+                    es.setWeight(totalWeight);
+                    
+                    System.out.println("实时计算采购单价: " + totalPurchasePrice);
+                    System.out.println("实时计算批发单价: " + totalWholesalePrice);
+                    System.out.println("实时计算总重量: " + totalWeight);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("实时计算组品价格和重量失败，ID: " + combo.getId() + ", 错误: " + e.getMessage());
+            // 如果计算失败，保留数据库中的原值
+        }
 
         // 构建完整的组合名称
         try {
@@ -1119,6 +1193,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         System.out.println("最终ES name: " + es.getName());
         System.out.println("最终ES name_keyword: " + es.getNameKeyword());
+        System.out.println("最终ES purchasePrice: " + es.getPurchasePrice());
         System.out.println("========================");
 
         return es;

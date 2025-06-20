@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.Erp
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionPurchaseAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
@@ -14,10 +15,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionPurchaseMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.distribution.ErpDistributionSaleMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
-import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionBaseESRepository;
-import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionPurchaseESRepository;
-import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionSaleESRepository;
-import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionService;
+import cn.iocoder.yudao.module.erp.service.distribution.*;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductESRepository;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceESRepository;
@@ -47,6 +45,10 @@ import java.util.stream.Collectors;
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 @Tag(name = "管理后台 - ERP 代发")
 @RestController
 @RequestMapping("/erp/distribution")
@@ -75,6 +77,9 @@ public class ErpDistributionController {
     private ErpComboProductESRepository comboProductESRepository;
     @Resource
     private ErpSalePriceESRepository salePriceESRepository;
+
+    @Resource
+    private ErpDistributionCombinedESRepository distributionCombinedESRepository;
 
     @PostMapping("/create")
     @Operation(summary = "创建代发")
@@ -434,7 +439,79 @@ public class ErpDistributionController {
         ExcelUtils.write(response, "代发信息.xlsx", "数据", ErpDistributionExportExcelVO.class, exportList);
     }
 
+    @GetMapping("/export-basic-excel")
+    @Operation(summary = "导出代发基础信息 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:importBasic')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportBasicExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+        // 获取分页数据
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为基础导出VO
+        List<ErpDistributionBasicExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionBasicExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "代发基础信息.xlsx", "数据", ErpDistributionBasicExportExcelVO.class, exportList);
+    }
+
     @GetMapping("/export-purchase-excel")
+    @Operation(summary = "导出代发采购信息 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:importPurchase')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportPurchaseExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                                   HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+        // 获取分页数据
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为采购导出VO
+        List<ErpDistributionPurchaseExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "代发采购信息.xlsx", "数据", ErpDistributionPurchaseExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-sale-excel")
+    @Operation(summary = "导出代发出货信息 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:importSale')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportSaleExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                               HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+        // 获取分页数据
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为出货导出VO
+        List<ErpDistributionSaleExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "代发出货信息.xlsx", "数据", ErpDistributionSaleExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-ship-excel")
+    @Operation(summary = "导出代发发货信息 Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:importShip')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportShipExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                               HttpServletResponse response) throws IOException {
+        // 设置分页大小
+        pageReqVO.setPageSize(10000);
+        // 获取分页数据
+        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+
+        // 转换为发货导出VO
+        List<ErpDistributionShipExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionShipExportExcelVO.class);
+
+        // 导出Excel
+        ExcelUtils.write(response, "代发发货信息.xlsx", "数据", ErpDistributionShipExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-purchase-audit-excel")
     @Operation(summary = "导出代发采购审核 Excel")
     @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
     @ApiAccessLog(operateType = EXPORT)
@@ -450,7 +527,7 @@ public class ErpDistributionController {
         ExcelUtils.write(response, "代发采购审核信息.xlsx", "数据", ErpDistributionPurchaseAuditExportVO.class, exportList);
     }
 
-    @GetMapping("/export-sale-excel")
+    @GetMapping("/export-sale-audit-excel")
     @Operation(summary = "导出代发销售审核 Excel")
     @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
     @ApiAccessLog(operateType = EXPORT)
@@ -612,5 +689,7 @@ public class ErpDistributionController {
             throw new RuntimeException("导入失败: " + e.getMessage());
         }
     }
+
+
 
 }

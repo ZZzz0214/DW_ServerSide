@@ -14,7 +14,9 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductUnitDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboProductItemMapper;
 import cn.iocoder.yudao.module.system.api.dict.DictDataApi;
 import cn.iocoder.yudao.module.system.api.dict.dto.DictDataRespDTO;
 import com.alibaba.excel.util.StringUtils;
@@ -76,6 +78,12 @@ public class ErpProductServiceImpl implements ErpProductService {
 
     @Resource
     private DictDataApi dictDataApi;
+    
+    @Resource
+    private ErpComboProductService comboProductService;
+    
+    @Resource 
+    private ErpComboProductItemMapper comboProductItemMapper;
     
     // 用于存储当前搜索条件的ThreadLocal
     private static final ThreadLocal<String> CURRENT_SEARCH_NAME = new ThreadLocal<>();
@@ -168,6 +176,9 @@ public class ErpProductServiceImpl implements ErpProductService {
 
         // 同步到ES
         syncProductToES(updateReqVO.getId());
+        
+        // 🔥 关键：单品更新后，需要同步所有相关的组品ES索引
+        syncRelatedCombosToES(updateReqVO.getId());
     }
 
     @Override
@@ -1480,5 +1491,49 @@ public class ErpProductServiceImpl implements ErpProductService {
         
         intelligentQuery.minimumShouldMatch(1);
         return intelligentQuery;
+    }
+    
+    /**
+     * 🔥 关键方法：单品更新后，同步所有相关的组品ES索引
+     * 确保组品的采购单价、批发单价、重量等实时反映单品变化
+     */
+    private void syncRelatedCombosToES(Long productId) {
+        try {
+            System.out.println("开始同步单品ID " + productId + " 相关的组品...");
+            
+            // 1. 查找所有包含该单品的组品关联记录
+            List<ErpComboProductItemDO> comboItems = comboProductItemMapper.selectList(
+                new LambdaQueryWrapper<ErpComboProductItemDO>()
+                    .eq(ErpComboProductItemDO::getItemProductId, productId)
+            );
+            
+            if (CollUtil.isEmpty(comboItems)) {
+                System.out.println("单品ID " + productId + " 未被任何组品使用");
+                return;
+            }
+            
+            // 2. 提取所有相关的组品ID
+            Set<Long> comboProductIds = comboItems.stream()
+                .map(ErpComboProductItemDO::getComboProductId)
+                .collect(Collectors.toSet());
+            
+            System.out.println("发现 " + comboProductIds.size() + " 个相关组品需要同步: " + comboProductIds);
+            
+            // 3. 逐个同步相关组品的ES索引
+            for (Long comboProductId : comboProductIds) {
+                try {
+                    comboProductService.manualSyncComboToES(comboProductId);
+                    System.out.println("已同步组品ID: " + comboProductId);
+                } catch (Exception e) {
+                    System.err.println("同步组品ID " + comboProductId + " 失败: " + e.getMessage());
+                }
+            }
+            
+            System.out.println("单品相关组品同步完成，共同步 " + comboProductIds.size() + " 个组品");
+            
+        } catch (Exception e) {
+            System.err.println("同步单品相关组品失败，单品ID: " + productId + ", 错误: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
