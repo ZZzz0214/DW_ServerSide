@@ -90,6 +90,7 @@ public class ErpDropshipAssistController {
             ErpComboProductDO comboProduct = comboProductService.getCombo(comboProductId);
             if (comboProduct != null) {
                 respVO.setName(comboProduct.getName());
+                respVO.setProductName(comboProduct.getName());
                 respVO.setProductShortName(comboProduct.getShortName());
                 respVO.setShippingCode(comboProduct.getShippingCode());
                 respVO.setComboProductNo(comboProduct.getNo());

@@ -418,6 +418,7 @@ public interface ErrorCodeConstants {
     ErrorCode DROPSHIP_ASSIST_NOT_APPROVE = new ErrorCode(1_030_110_004, "代发辅助记录未审核，无法操作");
     ErrorCode DROPSHIP_ASSIST_APPROVE_FAIL = new ErrorCode(1_030_110_005, "审核失败，只有未审核的代发辅助记录才能审核");
     ErrorCode DROPSHIP_ASSIST_PROCESS_FAIL = new ErrorCode(1_030_110_006, "反审核失败，只有已审核的代发辅助记录才能反审核");
+    ErrorCode DROPSHIP_ASSIST_FIELDS_DUPLICATE = new ErrorCode(1_030_110_007, "原表商品、原表规格、原表数量、组品编号、产品规格、产品数量的组合已存在，不能重复添加");
 
     // ========== ERP 产品导入 1-030-503-000 ==========
     ErrorCode PRODUCT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_503_000, "导入产品数据不能为空");

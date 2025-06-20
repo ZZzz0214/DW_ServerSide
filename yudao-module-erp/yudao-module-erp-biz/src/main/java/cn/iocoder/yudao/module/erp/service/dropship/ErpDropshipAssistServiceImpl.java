@@ -295,6 +295,20 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         if (dropshipAssist != null && !ObjectUtil.equal(dropshipAssist.getId(), id)) {
             throw exception(DROPSHIP_ASSIST_NO_EXISTS);
         }
+        
+        // 2. 校验字段组合唯一性
+        ErpDropshipAssistDO existingRecord = dropshipAssistMapper.selectByUniqueFields(
+                reqVO.getOriginalProduct(),
+                reqVO.getOriginalSpec(),
+                reqVO.getOriginalQuantity(),
+                reqVO.getComboProductId(),
+                reqVO.getProductSpec(),
+                reqVO.getProductQuantity(),
+                id // 排除当前记录ID（更新时使用）
+        );
+        if (existingRecord != null) {
+            throw exception(DROPSHIP_ASSIST_FIELDS_DUPLICATE);
+        }
     }
 
 

@@ -74,4 +74,35 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
     default ErpDropshipAssistDO selectByNo(String no) {
         return selectOne(ErpDropshipAssistDO::getNo, no);
     }
+
+    /**
+     * 根据字段组合查询是否存在重复记录
+     * @param originalProduct 原表商品
+     * @param originalSpec 原表规格
+     * @param originalQuantity 原表数量
+     * @param comboProductId 组品编号
+     * @param productSpec 产品规格
+     * @param productQuantity 产品数量
+     * @param excludeId 排除的ID（用于更新时排除自己）
+     * @return 是否存在重复记录
+     */
+    default ErpDropshipAssistDO selectByUniqueFields(String originalProduct, String originalSpec, 
+                                                     Integer originalQuantity, String comboProductId, 
+                                                     String productSpec, Integer productQuantity, 
+                                                     Long excludeId) {
+        MPJLambdaWrapperX<ErpDropshipAssistDO> query = new MPJLambdaWrapperX<ErpDropshipAssistDO>()
+                .eq(ErpDropshipAssistDO::getOriginalProduct, originalProduct)
+                .eq(ErpDropshipAssistDO::getOriginalSpec, originalSpec)
+                .eq(ErpDropshipAssistDO::getOriginalQuantity, originalQuantity)
+                .eq(ErpDropshipAssistDO::getComboProductId, comboProductId)
+                .eq(ErpDropshipAssistDO::getProductSpec, productSpec)
+                .eq(ErpDropshipAssistDO::getProductQuantity, productQuantity);
+        
+        // 如果是更新操作，排除当前记录
+        if (excludeId != null) {
+            query.ne(ErpDropshipAssistDO::getId, excludeId);
+        }
+        
+        return selectOne(query);
+    }
 }
