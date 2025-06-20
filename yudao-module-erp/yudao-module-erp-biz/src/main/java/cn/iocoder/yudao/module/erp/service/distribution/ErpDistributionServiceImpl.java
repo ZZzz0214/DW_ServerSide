@@ -1463,6 +1463,66 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdatePurchaseAfterSales(List<Long> ids, Integer purchaseAfterSalesStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
+            if (!combinedOpt.isPresent()) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 更新采购售后状态
+            ErpDistributionCombinedESDO combined = combinedOpt.get();
+            combined.setPurchaseAfterSalesStatus(purchaseAfterSalesStatus)
+                    .setPurchaseAfterSalesTime(now);
+
+            distributionCombinedESRepository.save(combined);
+
+            // 3. 同步更新数据库
+            distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+        }
+
+        // 4. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdateSaleAfterSales(List<Long> ids, Integer saleAfterSalesStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
+            if (!combinedOpt.isPresent()) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 更新销售售后状态
+            ErpDistributionCombinedESDO combined = combinedOpt.get();
+            combined.setSaleAfterSalesStatus(saleAfterSalesStatus)
+                    .setSaleAfterSalesTime(now);
+
+            distributionCombinedESRepository.save(combined);
+
+            // 3. 同步更新数据库
+            distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+        }
+
+        // 4. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+    }
+
     private LocalDateTime parseDateTime(String dateTimeStr) {
         // 先检查是否为null或空
         if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {

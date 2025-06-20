@@ -26,4 +26,7 @@ public class WholesaleSalesSummaryPageResult<T> {
 
     @Schema(description = "出货总额合计", example = "12000.00")
     private BigDecimal totalSaleAmount;
+
+    @Schema(description = "销售售后费用合计", example = "150.00")
+    private BigDecimal totalSaleAfterSalesAmount;
 }

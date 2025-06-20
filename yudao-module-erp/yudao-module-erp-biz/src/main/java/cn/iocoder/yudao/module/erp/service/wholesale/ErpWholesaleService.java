@@ -95,6 +95,22 @@ public interface ErpWholesaleService {
      */
     void updateSaleAfterSales(@Valid ErpWholesaleSaleAfterSalesUpdateReqVO reqVO);
 
+    /**
+     * 批量更新采购售后状态
+     *
+     * @param ids 编号列表
+     * @param purchaseAfterSalesStatus 采购售后状态
+     */
+    void batchUpdatePurchaseAfterSales(List<Long> ids, Integer purchaseAfterSalesStatus);
+
+    /**
+     * 批量更新销售售后状态
+     *
+     * @param ids 编号列表
+     * @param saleAfterSalesStatus 销售售后状态
+     */
+    void batchUpdateSaleAfterSales(List<Long> ids, Integer saleAfterSalesStatus);
+
     ErpWholesaleImportRespVO importWholesaleList(List<ErpWholesaleImportExcelVO> list, Boolean updateSupport);
 
     /**

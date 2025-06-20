@@ -1930,6 +1930,62 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         syncCombinedToES(reqVO.getId());
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdatePurchaseAfterSales(List<Long> ids, Integer purchaseAfterSalesStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            ErpWholesaleCombinedDO combined = wholesaleCombinedMapper.selectById(id);
+            if (combined == null) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 更新采购售后状态
+            ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
+                    .setId(id)
+                    .setPurchaseAfterSalesStatus(purchaseAfterSalesStatus)
+                    .setPurchaseAfterSalesTime(now);
+
+            wholesaleCombinedMapper.updateById(updateObj);
+
+            // 3. 同步到ES
+            syncCombinedToES(id);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdateSaleAfterSales(List<Long> ids, Integer saleAfterSalesStatus) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            // 1. 校验存在
+            ErpWholesaleCombinedDO combined = wholesaleCombinedMapper.selectById(id);
+            if (combined == null) {
+                continue; // 跳过不存在的记录
+            }
+
+            // 2. 更新销售售后状态
+            ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
+                    .setId(id)
+                    .setSaleAfterSalesStatus(saleAfterSalesStatus)
+                    .setSaleAfterSalesTime(now);
+
+            wholesaleCombinedMapper.updateById(updateObj);
+
+            // 3. 同步到ES
+            syncCombinedToES(id);
+        }
+    }
+
     private LocalDateTime parseDateTime(String dateTimeStr) {
         // 先检查是否为null或空
         if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {

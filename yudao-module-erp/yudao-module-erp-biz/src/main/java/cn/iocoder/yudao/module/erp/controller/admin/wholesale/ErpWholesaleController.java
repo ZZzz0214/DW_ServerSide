@@ -220,6 +220,7 @@ public class ErpWholesaleController {
         BigDecimal totalLogisticsFee = BigDecimal.ZERO;
         BigDecimal totalOtherFees = BigDecimal.ZERO;
         BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
 
         for (ErpWholesalePurchaseAuditVO vo : list) {
             if (vo.getPurchasePrice() != null) {
@@ -237,6 +238,9 @@ public class ErpWholesaleController {
             if (vo.getTotalPurchaseAmount() != null) {
                 totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
             }
+            if (vo.getPurchaseAfterSalesAmount() != null) {
+                totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
+            }
         }
 
         // 创建返回结果
@@ -247,6 +251,7 @@ public class ErpWholesaleController {
         result.setTotalLogisticsFee(totalLogisticsFee);
         result.setTotalOtherFees(totalOtherFees);
         result.setTotalPurchaseAmount(totalPurchaseAmount);
+        result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
 
         return success(result);
     }
@@ -272,6 +277,7 @@ public class ErpWholesaleController {
         BigDecimal totalLogisticsFee = BigDecimal.ZERO;
         BigDecimal totalOtherFees = BigDecimal.ZERO;
         BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
 
         for (ErpWholesalePurchaseAuditVO vo : list) {
             if (vo.getPurchasePrice() != null) {
@@ -289,6 +295,9 @@ public class ErpWholesaleController {
             if (vo.getTotalPurchaseAmount() != null) {
                 totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
             }
+            if (vo.getPurchaseAfterSalesAmount() != null) {
+                totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
+            }
         }
 
         // 创建返回结果
@@ -299,6 +308,7 @@ public class ErpWholesaleController {
         result.setTotalLogisticsFee(totalLogisticsFee);
         result.setTotalOtherFees(totalOtherFees);
         result.setTotalPurchaseAmount(totalPurchaseAmount);
+        result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
 
         return success(result);
     }
@@ -323,6 +333,7 @@ public class ErpWholesaleController {
         BigDecimal totalSaleLogisticsFee = BigDecimal.ZERO;
         BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
         BigDecimal totalSaleAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
 
         for (ErpWholesaleSaleAuditVO vo : list) {
             if (vo.getSalePrice() != null) {
@@ -340,6 +351,9 @@ public class ErpWholesaleController {
             if (vo.getTotalSaleAmount() != null) {
                 totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
             }
+            if (vo.getSaleAfterSalesAmount() != null) {
+                totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
+            }
         }
 
         // 创建返回结果
@@ -350,6 +364,7 @@ public class ErpWholesaleController {
         result.setTotalSaleLogisticsFee(totalSaleLogisticsFee);
         result.setTotalSaleOtherFees(totalSaleOtherFees);
         result.setTotalSaleAmount(totalSaleAmount);
+        result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
         System.out.println("批发销售的返回"+result);
 
         return success(result);
@@ -376,6 +391,7 @@ public class ErpWholesaleController {
         BigDecimal totalSaleLogisticsFee = BigDecimal.ZERO;
         BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
         BigDecimal totalSaleAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
 
         for (ErpWholesaleSaleAuditVO vo : list) {
             if (vo.getSalePrice() != null) {
@@ -393,6 +409,9 @@ public class ErpWholesaleController {
             if (vo.getTotalSaleAmount() != null) {
                 totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
             }
+            if (vo.getSaleAfterSalesAmount() != null) {
+                totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
+            }
         }
 
         // 创建返回结果
@@ -403,6 +422,7 @@ public class ErpWholesaleController {
         result.setTotalSaleLogisticsFee(totalSaleLogisticsFee);
         result.setTotalSaleOtherFees(totalSaleOtherFees);
         result.setTotalSaleAmount(totalSaleAmount);
+        result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
 
         return success(result);
     }
@@ -703,6 +723,24 @@ public class ErpWholesaleController {
     public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpWholesaleSaleAfterSalesUpdateReqVO reqVO) {
         System.out.println("销售售后前端传递的vo"+reqVO);
         wholesaleService.updateSaleAfterSales(reqVO);
+        return success(true);
+    }
+
+    @PutMapping("/batch-update-purchase-after-sales")
+    @Operation(summary = "批量更新采购售后状态")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
+    public CommonResult<Boolean> batchUpdatePurchaseAfterSales(@RequestParam("ids") List<Long> ids,
+                                                               @RequestParam("purchaseAfterSalesStatus") Integer purchaseAfterSalesStatus) {
+        wholesaleService.batchUpdatePurchaseAfterSales(ids, purchaseAfterSalesStatus);
+        return success(true);
+    }
+
+    @PutMapping("/batch-update-sale-after-sales")
+    @Operation(summary = "批量更新销售售后状态")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
+    public CommonResult<Boolean> batchUpdateSaleAfterSales(@RequestParam("ids") List<Long> ids,
+                                                           @RequestParam("saleAfterSalesStatus") Integer saleAfterSalesStatus) {
+        wholesaleService.batchUpdateSaleAfterSales(ids, saleAfterSalesStatus);
         return success(true);
     }
 
