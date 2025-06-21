@@ -92,8 +92,11 @@ public class ErpGroupBuyingReviewController {
     public CommonResult<ErpGroupBuyingReviewRespVO> getGroupBuyingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        ErpGroupBuyingReviewDO groupBuyingReview = groupBuyingReviewService.getGroupBuyingReview(id, currentUsername);
-        return success(BeanUtils.toBean(groupBuyingReview, ErpGroupBuyingReviewRespVO.class));
+        List<ErpGroupBuyingReviewRespVO> list = groupBuyingReviewService.getGroupBuyingReviewVOList(Collections.singletonList(id), currentUsername);
+        if (list.isEmpty()) {
+            return success(null);
+        }
+        return success(list.get(0));
     }
 
     @GetMapping("/page")

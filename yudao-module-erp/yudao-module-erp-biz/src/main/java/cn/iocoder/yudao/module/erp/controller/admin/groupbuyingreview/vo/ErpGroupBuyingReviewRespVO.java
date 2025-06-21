@@ -46,6 +46,8 @@ public class ErpGroupBuyingReviewRespVO {
     @ExcelProperty("客户名称")
     private String customerName;
 
+    @Schema(description = "客户ID", example = "1")
+    private Long customerId;
 
     @Schema(description = "供团价格", example = "100.00")
     @ExcelProperty("供团价格")

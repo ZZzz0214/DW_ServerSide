@@ -46,6 +46,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getRepeatGroupDate, ErpGroupBuyingReviewRespVO::getRepeatGroupDate)
                 .selectAs(ErpGroupBuyingReviewDO::getRepeatGroupSales, ErpGroupBuyingReviewRespVO::getRepeatGroupSales)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupBuyingId, ErpGroupBuyingReviewRespVO::getGroupBuyingId)
+                .selectAs(ErpGroupBuyingReviewDO::getCustomerId, ErpGroupBuyingReviewRespVO::getCustomerId)
                 .selectAs(ErpGroupBuyingReviewDO::getCreator, ErpGroupBuyingReviewRespVO::getCreator)
                 .selectAs(ErpGroupBuyingReviewDO::getCreateTime, ErpGroupBuyingReviewRespVO::getCreateTime);
 
@@ -62,6 +63,9 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
         if (reqVO.getProductSpec() != null && !reqVO.getProductSpec().isEmpty()) {
             query.like(ErpGroupBuyingDO::getProductSpec, reqVO.getProductSpec());
         }
+        if (reqVO.getProductSku() != null && !reqVO.getProductSku().isEmpty()) {
+            query.like(ErpGroupBuyingDO::getProductSku, reqVO.getProductSku());
+        }
         if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
             query.eq(ErpGroupBuyingDO::getStatus, reqVO.getStatus());
         }
@@ -70,6 +74,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewRespVO::getGroupBuyingNo)
                 .selectAs(ErpGroupBuyingDO::getProductName, ErpGroupBuyingReviewRespVO::getProductName)
                 .selectAs(ErpGroupBuyingDO::getProductSpec, ErpGroupBuyingReviewRespVO::getProductSpec)
+                .selectAs(ErpGroupBuyingDO::getProductSku, ErpGroupBuyingReviewRespVO::getProductSku)
                 .selectAs(ErpGroupBuyingDO::getSupplyGroupPrice, ErpGroupBuyingReviewRespVO::getSupplyGroupPrice)
                 .selectAs(ErpGroupBuyingDO::getGroupMechanism, ErpGroupBuyingReviewRespVO::getGroupMechanism)
                 .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus);
@@ -115,6 +120,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getRepeatGroupDate, ErpGroupBuyingReviewRespVO::getRepeatGroupDate)
                 .selectAs(ErpGroupBuyingReviewDO::getRepeatGroupSales, ErpGroupBuyingReviewRespVO::getRepeatGroupSales)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupBuyingId, ErpGroupBuyingReviewRespVO::getGroupBuyingId)
+                .selectAs(ErpGroupBuyingReviewDO::getCustomerId, ErpGroupBuyingReviewRespVO::getCustomerId)
                 .selectAs(ErpGroupBuyingReviewDO::getCreator, ErpGroupBuyingReviewRespVO::getCreator)
                 .selectAs(ErpGroupBuyingReviewDO::getCreateTime, ErpGroupBuyingReviewRespVO::getCreateTime);
 

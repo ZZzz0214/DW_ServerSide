@@ -31,6 +31,9 @@ public class ErpGroupBuyingReviewPageReqVO extends PageParam {
     @Schema(description = "产品规格", example = "500ml")
     private String productSpec;
 
+    @Schema(description = "产品SKU", example = "SKU12345")
+    private String productSku;
+
     @Schema(description = "客户名称", example = "张三")
     private String customerName;
 
