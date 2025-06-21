@@ -24,6 +24,8 @@ public interface ErpPrivateBroadcastingReviewService {
 
     ErpPrivateBroadcastingReviewDO getPrivateBroadcastingReview(Long id, String currentUsername);
 
+    ErpPrivateBroadcastingReviewRespVO getPrivateBroadcastingReviewVO(Long id, String currentUsername);
+
     ErpPrivateBroadcastingReviewDO validatePrivateBroadcastingReview(Long id, String currentUsername);
 
     List<ErpPrivateBroadcastingReviewDO> getPrivateBroadcastingReviewList(Collection<Long> ids, String currentUsername);

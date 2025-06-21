@@ -94,8 +94,11 @@ public class ErpLiveBroadcastingReviewController {
     public CommonResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        ErpLiveBroadcastingReviewDO liveBroadcastingReview = liveBroadcastingReviewService.getLiveBroadcastingReview(id, currentUsername);
-        return success(BeanUtils.toBean(liveBroadcastingReview, ErpLiveBroadcastingReviewRespVO.class));
+        List<ErpLiveBroadcastingReviewRespVO> list = liveBroadcastingReviewService.getLiveBroadcastingReviewVOList(Collections.singletonList(id), currentUsername);
+        if (list.isEmpty()) {
+            return success(null);
+        }
+        return success(list.get(0));
     }
 
     @GetMapping("/page")
@@ -163,5 +166,19 @@ public class ErpLiveBroadcastingReviewController {
         );
         // 输出
         ExcelUtils.write(response, "直播复盘导入模板.xls", "直播复盘列表", ErpLiveBroadcastingReviewExportVO.class, list);
+    }
+
+    @GetMapping("/copy")
+    @Operation(summary = "复制直播复盘")
+    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:query')")
+    public CommonResult<ErpLiveBroadcastingReviewRespVO> copyLiveBroadcastingReview(@RequestParam("id") Long id) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
+        List<ErpLiveBroadcastingReviewRespVO> list = liveBroadcastingReviewService.getLiveBroadcastingReviewVOList(Collections.singletonList(id), currentUsername);
+        if (list.isEmpty()) {
+            return success(null);
+        }
+        return success(list.get(0));
     }
 }

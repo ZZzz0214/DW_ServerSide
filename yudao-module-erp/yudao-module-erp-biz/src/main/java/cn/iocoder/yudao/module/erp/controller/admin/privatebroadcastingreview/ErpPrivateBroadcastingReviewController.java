@@ -94,8 +94,8 @@ public class ErpPrivateBroadcastingReviewController {
     public CommonResult<ErpPrivateBroadcastingReviewRespVO> getPrivateBroadcastingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        ErpPrivateBroadcastingReviewDO privateBroadcastingReview = privateBroadcastingReviewService.getPrivateBroadcastingReview(id, currentUsername);
-        return success(BeanUtils.toBean(privateBroadcastingReview, ErpPrivateBroadcastingReviewRespVO.class));
+        ErpPrivateBroadcastingReviewRespVO privateBroadcastingReview = privateBroadcastingReviewService.getPrivateBroadcastingReviewVO(id, currentUsername);
+        return success(privateBroadcastingReview);
     }
 
     @GetMapping("/page")

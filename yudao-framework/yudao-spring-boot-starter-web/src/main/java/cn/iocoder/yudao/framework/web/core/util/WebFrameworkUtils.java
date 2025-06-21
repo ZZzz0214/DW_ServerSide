@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
 import cn.iocoder.yudao.framework.web.config.WebProperties;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
+import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -43,7 +44,15 @@ public class WebFrameworkUtils {
         if (userId == null || adminUserApi == null) {
             return null;
         }
-        return adminUserApi.getUser(userId).getUsername();
+        try {
+            AdminUserRespDTO user = adminUserApi.getUser(userId);
+            if (user != null) {
+                return user.getUsername();
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
     // ... 其他代码保持不变 ...
 

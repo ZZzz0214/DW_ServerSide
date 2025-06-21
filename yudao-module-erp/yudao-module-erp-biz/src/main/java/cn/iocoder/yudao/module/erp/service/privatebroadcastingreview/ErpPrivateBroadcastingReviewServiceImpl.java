@@ -104,6 +104,46 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
         return privateBroadcastingReview;
     }
 
+    /**
+     * 获取私播复盘详情（带关联信息）
+     */
+    @Override
+    public ErpPrivateBroadcastingReviewRespVO getPrivateBroadcastingReviewVO(Long id, String currentUsername) {
+        ErpPrivateBroadcastingReviewDO privateBroadcastingReview = getPrivateBroadcastingReview(id, currentUsername);
+        if (privateBroadcastingReview == null) {
+            return null;
+        }
+        
+        // 转换为VO并填充关联信息
+        ErpPrivateBroadcastingReviewRespVO respVO = BeanUtils.toBean(privateBroadcastingReview, ErpPrivateBroadcastingReviewRespVO.class);
+        
+        // 填充关联信息
+        if (privateBroadcastingReview.getPrivateBroadcastingId() != null) {
+            ErpPrivateBroadcastingDO privateBroadcastingDO = privateBroadcastingMapper.selectById(privateBroadcastingReview.getPrivateBroadcastingId());
+            if (privateBroadcastingDO != null) {
+                respVO.setPrivateBroadcastingNo(privateBroadcastingDO.getNo());
+                respVO.setProductName(privateBroadcastingDO.getProductName());
+                respVO.setProductSpec(privateBroadcastingDO.getProductSpec());
+                respVO.setProductSku(privateBroadcastingDO.getProductSku());
+                respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
+                respVO.setPrivateStatus(privateBroadcastingDO.getPrivateStatus());
+                if (privateBroadcastingDO.getBrandName() != null) {
+                    respVO.setBrandName(privateBroadcastingDO.getBrandName());
+                }
+            }
+        }
+        
+        // 填充客户信息
+        if (privateBroadcastingReview.getCustomerId() != null) {
+            ErpCustomerDO customerDO = customerMapper.selectById(privateBroadcastingReview.getCustomerId());
+            if (customerDO != null) {
+                respVO.setCustomerName(customerDO.getName());
+            }
+        }
+        
+        return respVO;
+    }
+
     @Override
     public ErpPrivateBroadcastingReviewDO validatePrivateBroadcastingReview(Long id, String currentUsername) {
         ErpPrivateBroadcastingReviewDO privateBroadcastingReview = privateBroadcastingReviewMapper.selectById(id);
