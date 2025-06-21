@@ -92,8 +92,9 @@ public class ErpDistributionWholesaleStatisticsRespVO {
         @Schema(description = "利润分析")
         private ProfitAnalysis profitAnalysis;
 
-        @Schema(description = "订单明细（最近10条）")
-        private List<OrderDetail> recentOrders;
+        // 移除最近订单明细字段，根据需求不再需要
+        // @Schema(description = "订单明细（最近10条）")
+        // private List<OrderDetail> recentOrders;
     }
 
     /**

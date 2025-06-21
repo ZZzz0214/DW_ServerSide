@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
@@ -724,30 +725,40 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
     @Override
     public ErpDistributionWholesaleStatisticsRespVO.DetailStatistics getDetailStatistics(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
+        System.out.println("=== 获取详细统计数据 ===");
+        System.out.println("统计类型: " + reqVO.getStatisticsType());
+        System.out.println("分类名称: " + categoryName);
+        System.out.println("时间范围: " + reqVO.getBeginTime() + " 到 " + reqVO.getEndTime());
+
         ErpDistributionWholesaleStatisticsRespVO.DetailStatistics detail = new ErpDistributionWholesaleStatisticsRespVO.DetailStatistics();
         detail.setCategoryName(categoryName);
         detail.setStatisticsType(reqVO.getStatisticsType());
 
         // 1. 获取基础统计信息
+        System.out.println("1. 获取基础统计信息...");
         ErpDistributionWholesaleStatisticsRespVO.StatisticsItem basicInfo = getStatisticsForCategory(reqVO, categoryName);
         detail.setBasicInfo(basicInfo);
 
-        // 2. 获取月度趋势数据
+        // 2. 获取趋势数据
+        System.out.println("2. 获取趋势数据...");
         List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> monthlyTrends = getMonthlyTrends(reqVO, categoryName);
         detail.setMonthlyTrends(monthlyTrends);
+        System.out.println("趋势数据获取完成，共 " + monthlyTrends.size() + " 个时间点");
 
         // 3. 获取产品分布数据
+        System.out.println("3. 获取产品分布数据...");
         List<ErpDistributionWholesaleStatisticsRespVO.ProductDistribution> productDistributions = getProductDistributions(reqVO, categoryName);
         detail.setProductDistributions(productDistributions);
+        System.out.println("产品分布数据获取完成，共 " + productDistributions.size() + " 个产品");
 
         // 4. 计算利润分析
+        System.out.println("4. 计算利润分析...");
         ErpDistributionWholesaleStatisticsRespVO.ProfitAnalysis profitAnalysis = calculateProfitAnalysis(basicInfo);
         detail.setProfitAnalysis(profitAnalysis);
 
-        // 5. 获取最近订单明细
-        List<ErpDistributionWholesaleStatisticsRespVO.OrderDetail> recentOrders = getRecentOrders(reqVO, categoryName);
-        detail.setRecentOrders(recentOrders);
+        // 5. 不再获取最近订单明细，根据需求移除
 
+        System.out.println("详细统计数据获取完成");
         return detail;
     }
 
@@ -755,18 +766,31 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
      * 获取单个分类的统计信息
      */
     private ErpDistributionWholesaleStatisticsRespVO.StatisticsItem getStatisticsForCategory(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
-        ErpDistributionWholesaleStatisticsReqVO singleReqVO = new ErpDistributionWholesaleStatisticsReqVO();
-        singleReqVO.setStatisticsType(reqVO.getStatisticsType());
-        singleReqVO.setBeginTime(reqVO.getBeginTime());
-        singleReqVO.setEndTime(reqVO.getEndTime());
-        singleReqVO.setSearchKeyword(categoryName);
+        System.out.println("=== 获取单个分类统计信息 ===");
+        System.out.println("统计类型: " + reqVO.getStatisticsType());
+        System.out.println("分类名称: " + categoryName);
+        System.out.println("时间范围: " + reqVO.getBeginTime() + " 到 " + reqVO.getEndTime());
 
-        ErpDistributionWholesaleStatisticsRespVO statistics = getDistributionWholesaleStatistics(singleReqVO);
-        if (statistics.getItems() != null && !statistics.getItems().isEmpty()) {
-            return statistics.getItems().get(0);
+        // 直接查询ES数据，使用精确的分类筛选
+        List<ErpDistributionCombinedESDO> distributionData = getDistributionDataForCategory(reqVO, categoryName);
+        List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataForCategory(reqVO, categoryName);
+
+        System.out.println("代发数据查询结果: " + distributionData.size() + " 条记录");
+        System.out.println("批发数据查询结果: " + wholesaleData.size() + " 条记录");
+
+        // 合并数据
+        List<ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> items = mergeStatisticsData(
+                distributionData, wholesaleData, reqVO.getStatisticsType());
+
+        if (!items.isEmpty()) {
+            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem result = items.get(0);
+            System.out.println("统计结果: 总采购金额=" + result.getTotalPurchaseAmount() +
+                             ", 总销售金额=" + result.getTotalSaleAmount());
+            return result;
         }
 
         // 如果没有找到数据，返回空的统计项
+        System.out.println("未找到数据，返回空统计项");
         ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem();
         item.setCategoryName(categoryName);
         item.setDistributionOrderCount(0);
@@ -785,42 +809,143 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     }
 
     /**
-     * 获取月度趋势数据
+     * 获取指定分类的代发数据
+     */
+    private List<ErpDistributionCombinedESDO> getDistributionDataForCategory(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
+        try {
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+
+            // 添加时间范围查询
+            addTimeRangeQuery(boolQuery, reqVO);
+
+            // 添加分类筛选条件
+            addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
+
+            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000))
+                    .build();
+
+            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    searchQuery, ErpDistributionCombinedESDO.class,
+                    IndexCoordinates.of("erp_distribution_combined"));
+
+            return searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("获取指定分类的代发数据失败: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 获取指定分类的批发数据
+     */
+    private List<ErpWholesaleCombinedESDO> getWholesaleDataForCategory(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
+        try {
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+
+            // 添加时间范围查询
+            addTimeRangeQuery(boolQuery, reqVO);
+
+            // 添加分类筛选条件
+            addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
+
+            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000))
+                    .build();
+
+            SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    searchQuery, ErpWholesaleCombinedESDO.class,
+                    IndexCoordinates.of("erp_wholesale_combined"));
+
+            return searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("获取指定分类的批发数据失败: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 获取时间范围内的趋势数据（不再限制为月度，根据用户选择的时间范围动态分组）
      */
     private List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> getMonthlyTrends(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
         List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> trends = new ArrayList<>();
 
-        // 计算月份范围
+        // 解析时间范围
         LocalDateTime startTime = parseTimeString(reqVO.getBeginTime());
         LocalDateTime endTime = parseTimeString(reqVO.getEndTime());
 
-        if (startTime == null) {
-            startTime = LocalDateTime.now().minusMonths(11).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        }
-        if (endTime == null) {
+        if (startTime == null || endTime == null) {
+            // 如果没有指定时间范围，默认显示最近12个月
             endTime = LocalDateTime.now();
+            startTime = endTime.minusMonths(11).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         }
 
-        // 按月份统计
-        LocalDateTime currentMonth = startTime.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        while (currentMonth.isBefore(endTime) || currentMonth.isEqual(endTime.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0))) {
+        // 计算时间跨度，决定分组方式
+        long daysBetween = java.time.Duration.between(startTime, endTime).toDays();
+
+        if (daysBetween <= 31) {
+            // 31天内：按天分组
+            trends = getTrendsByDay(reqVO, categoryName, startTime, endTime);
+        } else if (daysBetween <= 365) {
+            // 1年内：按月分组
+            trends = getTrendsByMonth(reqVO, categoryName, startTime, endTime);
+        } else {
+            // 超过1年：按季度分组
+            trends = getTrendsByQuarter(reqVO, categoryName, startTime, endTime);
+        }
+
+        return trends;
+    }
+
+    /**
+     * 按天获取趋势数据
+     */
+    private List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> getTrendsByDay(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName, LocalDateTime startTime, LocalDateTime endTime) {
+        List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> trends = new ArrayList<>();
+
+        LocalDateTime currentDay = startTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
+        while (!currentDay.isAfter(endTime)) {
+            LocalDateTime dayStart = currentDay;
+            LocalDateTime dayEnd = currentDay.withHour(23).withMinute(59).withSecond(59);
+
+            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem dayStats = getStatisticsForTimeRange(reqVO, categoryName, dayStart, dayEnd);
+
+            ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend trend = new ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend();
+            trend.setMonth(currentDay.format(DateTimeFormatter.ofPattern("MM-dd")));
+            setTrendAmounts(trend, dayStats, reqVO.getStatisticsType());
+
+            trends.add(trend);
+            currentDay = currentDay.plusDays(1);
+        }
+
+        return trends;
+    }
+
+    /**
+     * 按月获取趋势数据
+     */
+    private List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> getTrendsByMonth(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName, LocalDateTime startTime, LocalDateTime endTime) {
+        List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> trends = new ArrayList<>();
+
+        LocalDateTime currentMonth = startTime.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        while (!currentMonth.isAfter(endTime)) {
             LocalDateTime monthStart = currentMonth;
-            LocalDateTime monthEnd = currentMonth.plusMonths(1).minusSeconds(1);
+            LocalDateTime monthEnd = currentMonth.plusMonths(1).minusNanos(1);
+            if (monthEnd.isAfter(endTime)) {
+                monthEnd = endTime;
+            }
 
-            ErpDistributionWholesaleStatisticsReqVO monthReqVO = new ErpDistributionWholesaleStatisticsReqVO();
-            monthReqVO.setStatisticsType(reqVO.getStatisticsType());
-            monthReqVO.setBeginTime(monthStart.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            monthReqVO.setEndTime(monthEnd.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            monthReqVO.setSearchKeyword(categoryName);
-
-            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem monthStats = getStatisticsForCategory(monthReqVO, categoryName);
+            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem monthStats = getStatisticsForTimeRange(reqVO, categoryName, monthStart, monthEnd);
 
             ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend trend = new ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend();
             trend.setMonth(currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")));
-            trend.setDistributionOrderCount(monthStats.getDistributionOrderCount());
-            trend.setWholesaleOrderCount(monthStats.getWholesaleOrderCount());
-            trend.setDistributionAmount(monthStats.getDistributionSaleAmount());
-            trend.setWholesaleAmount(monthStats.getWholesaleSaleAmount());
+            setTrendAmounts(trend, monthStats, reqVO.getStatisticsType());
 
             trends.add(trend);
             currentMonth = currentMonth.plusMonths(1);
@@ -830,49 +955,116 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     }
 
     /**
+     * 按季度获取趋势数据
+     */
+    private List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> getTrendsByQuarter(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName, LocalDateTime startTime, LocalDateTime endTime) {
+        List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> trends = new ArrayList<>();
+
+        // 计算开始季度
+        LocalDateTime currentQuarter = startTime.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        int startMonth = ((currentQuarter.getMonthValue() - 1) / 3) * 3 + 1;
+        currentQuarter = currentQuarter.withMonth(startMonth);
+
+        while (!currentQuarter.isAfter(endTime)) {
+            LocalDateTime quarterStart = currentQuarter;
+            LocalDateTime quarterEnd = currentQuarter.plusMonths(3).minusNanos(1);
+            if (quarterEnd.isAfter(endTime)) {
+                quarterEnd = endTime;
+            }
+
+            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem quarterStats = getStatisticsForTimeRange(reqVO, categoryName, quarterStart, quarterEnd);
+
+            ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend trend = new ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend();
+            int quarter = (currentQuarter.getMonthValue() - 1) / 3 + 1;
+            trend.setMonth(currentQuarter.getYear() + "-Q" + quarter);
+            setTrendAmounts(trend, quarterStats, reqVO.getStatisticsType());
+
+            trends.add(trend);
+            currentQuarter = currentQuarter.plusMonths(3);
+        }
+
+        return trends;
+    }
+
+    /**
+     * 设置趋势数据的金额，根据统计类型决定显示采购金额还是销售金额
+     */
+    private void setTrendAmounts(ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend trend,
+                                ErpDistributionWholesaleStatisticsRespVO.StatisticsItem stats,
+                                String statisticsType) {
+        trend.setDistributionOrderCount(stats.getDistributionOrderCount());
+        trend.setWholesaleOrderCount(stats.getWholesaleOrderCount());
+
+        // 根据统计类型决定显示采购金额还是销售金额
+        if ("purchaser".equals(statisticsType) || "supplier".equals(statisticsType)) {
+            trend.setDistributionAmount(stats.getDistributionPurchaseAmount());
+            trend.setWholesaleAmount(stats.getWholesalePurchaseAmount());
+            System.out.println("  设置采购金额 - 代发: " + stats.getDistributionPurchaseAmount() + ", 批发: " + stats.getWholesalePurchaseAmount());
+        } else {
+            trend.setDistributionAmount(stats.getDistributionSaleAmount());
+            trend.setWholesaleAmount(stats.getWholesaleSaleAmount());
+            System.out.println("  设置销售金额 - 代发: " + stats.getDistributionSaleAmount() + ", 批发: " + stats.getWholesaleSaleAmount());
+        }
+    }
+
+    /**
+     * 获取指定时间范围内的统计数据
+     */
+    private ErpDistributionWholesaleStatisticsRespVO.StatisticsItem getStatisticsForTimeRange(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName, LocalDateTime startTime, LocalDateTime endTime) {
+        ErpDistributionWholesaleStatisticsReqVO timeRangeReqVO = new ErpDistributionWholesaleStatisticsReqVO();
+        timeRangeReqVO.setStatisticsType(reqVO.getStatisticsType());
+        timeRangeReqVO.setBeginTime(startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        timeRangeReqVO.setEndTime(endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        timeRangeReqVO.setSearchKeyword(categoryName);
+
+        return getStatisticsForCategory(timeRangeReqVO, categoryName);
+    }
+
+    /**
      * 获取产品分布数据
      */
     private List<ErpDistributionWholesaleStatisticsRespVO.ProductDistribution> getProductDistributions(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
         List<ErpDistributionWholesaleStatisticsRespVO.ProductDistribution> distributions = new ArrayList<>();
 
         try {
-            // 构建查询条件
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-            // 添加时间范围
-            if (reqVO.getBeginTime() != null && reqVO.getEndTime() != null) {
-                LocalDateTime beginTime = parseTimeString(reqVO.getBeginTime());
-                LocalDateTime endTime = parseTimeString(reqVO.getEndTime());
-                if (beginTime != null && endTime != null) {
-                    // 🔥 修复：使用与主查询相同的时间处理逻辑
-                    if (beginTime.getHour() == 0 && beginTime.getMinute() == 0 && beginTime.getSecond() == 0) {
-                        beginTime = beginTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
-                    }
-                    if (endTime.getHour() == 23 && endTime.getMinute() == 59 && endTime.getSecond() == 59) {
-                        endTime = endTime.withHour(23).withMinute(59).withSecond(59).withNano(999999999);
-                    }
+            // 构建代发数据查询条件
+            BoolQueryBuilder distributionBoolQuery = QueryBuilders.boolQuery();
+            addTimeRangeQuery(distributionBoolQuery, reqVO);
+            addCategoryFilter(distributionBoolQuery, reqVO.getStatisticsType(), categoryName);
 
-                    boolQuery.must(QueryBuilders.rangeQuery("create_time")
-                            .gte(beginTime)
-                            .lte(endTime));
-                }
-            }
-
-            // 添加分类筛选条件
-            addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
+            // 构建批发数据查询条件
+            BoolQueryBuilder wholesaleBoolQuery = QueryBuilders.boolQuery();
+            addTimeRangeQuery(wholesaleBoolQuery, reqVO);
+            addCategoryFilter(wholesaleBoolQuery, reqVO.getStatisticsType(), categoryName);
 
             // 代发数据查询
             NativeSearchQuery distributionQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
+                    .withQuery(distributionBoolQuery)
                     .withPageable(PageRequest.of(0, 1000))
                     .build();
 
             SearchHits<ErpDistributionCombinedESDO> distributionHits = elasticsearchRestTemplate.search(
-                    distributionQuery, ErpDistributionCombinedESDO.class);
+                    distributionQuery,
+                    ErpDistributionCombinedESDO.class,
+                    IndexCoordinates.of("erp_distribution_combined"));
 
-            // 批发数据查询
-            SearchHits<ErpWholesaleCombinedESDO> wholesaleHits = elasticsearchRestTemplate.search(
-                    distributionQuery, ErpWholesaleCombinedESDO.class);
+            // 批发数据查询 - 使用明确的索引名称
+            SearchHits<ErpWholesaleCombinedESDO> wholesaleHits;
+            try {
+                NativeSearchQuery wholesaleQuery = new NativeSearchQueryBuilder()
+                        .withQuery(wholesaleBoolQuery)
+                        .withPageable(PageRequest.of(0, 1000))
+                        .build();
+
+                wholesaleHits = elasticsearchRestTemplate.search(
+                        wholesaleQuery,
+                        ErpWholesaleCombinedESDO.class,
+                        IndexCoordinates.of("erp_wholesale_combined"));
+            } catch (Exception e) {
+                // 如果批发表查询失败，跳过批发数据处理，将wholesaleHits设为null
+                wholesaleHits = null;
+            }
 
             // 按产品名称分组统计
             Map<String, ErpDistributionWholesaleStatisticsRespVO.ProductDistribution> productMap = new HashMap<>();
@@ -896,45 +1088,57 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 product.setOrderCount(product.getOrderCount() + 1);
                 product.setProductQuantity(product.getProductQuantity() + (distribution.getProductQuantity() != null ? distribution.getProductQuantity() : 0));
 
-                // 计算销售金额
+                // 根据统计类型决定显示采购金额还是销售金额
                 BigDecimal[] amounts = calculateDistributionAmounts(distribution);
-                BigDecimal saleAmount = amounts[1];
-                product.setSaleAmount(product.getSaleAmount().add(saleAmount));
+                BigDecimal targetAmount;
+                if ("purchaser".equals(reqVO.getStatisticsType()) || "supplier".equals(reqVO.getStatisticsType())) {
+                    targetAmount = amounts[0]; // 采购金额
+                } else {
+                    targetAmount = amounts[1]; // 销售金额
+                }
+                product.setSaleAmount(product.getSaleAmount().add(targetAmount));
             }
 
-            // 处理批发数据
-            for (SearchHit<ErpWholesaleCombinedESDO> hit : wholesaleHits) {
-                ErpWholesaleCombinedESDO wholesale = hit.getContent();
-                String productName = wholesale.getProductName();
-                if (productName == null) productName = "未知产品";
+            // 处理批发数据（如果查询成功）
+            if (wholesaleHits != null) {
+                for (SearchHit<ErpWholesaleCombinedESDO> hit : wholesaleHits) {
+                    ErpWholesaleCombinedESDO wholesale = hit.getContent();
+                    String productName = wholesale.getProductName();
+                    if (productName == null) productName = "未知产品";
 
-                ErpDistributionWholesaleStatisticsRespVO.ProductDistribution product = productMap.computeIfAbsent(productName,
-                    k -> {
-                        ErpDistributionWholesaleStatisticsRespVO.ProductDistribution p = new ErpDistributionWholesaleStatisticsRespVO.ProductDistribution();
-                        p.setProductName(k);
-                        p.setOrderCount(0);
-                        p.setProductQuantity(0);
-                        p.setSaleAmount(BigDecimal.ZERO);
-                        return p;
-                    });
+                    ErpDistributionWholesaleStatisticsRespVO.ProductDistribution product = productMap.computeIfAbsent(productName,
+                        k -> {
+                            ErpDistributionWholesaleStatisticsRespVO.ProductDistribution p = new ErpDistributionWholesaleStatisticsRespVO.ProductDistribution();
+                            p.setProductName(k);
+                            p.setOrderCount(0);
+                            p.setProductQuantity(0);
+                            p.setSaleAmount(BigDecimal.ZERO);
+                            return p;
+                        });
 
-                product.setOrderCount(product.getOrderCount() + 1);
-                product.setProductQuantity(product.getProductQuantity() + (wholesale.getProductQuantity() != null ? wholesale.getProductQuantity() : 0));
+                    product.setOrderCount(product.getOrderCount() + 1);
+                    product.setProductQuantity(product.getProductQuantity() + (wholesale.getProductQuantity() != null ? wholesale.getProductQuantity() : 0));
 
-                // 计算销售金额
-                BigDecimal[] amounts = calculateWholesaleAmounts(wholesale);
-                BigDecimal saleAmount = amounts[1];
-                product.setSaleAmount(product.getSaleAmount().add(saleAmount));
+                    // 根据统计类型决定显示采购金额还是销售金额
+                    BigDecimal[] amounts = calculateWholesaleAmounts(wholesale);
+                    BigDecimal targetAmount;
+                    if ("purchaser".equals(reqVO.getStatisticsType()) || "supplier".equals(reqVO.getStatisticsType())) {
+                        targetAmount = amounts[0]; // 采购金额
+                    } else {
+                        targetAmount = amounts[1]; // 销售金额
+                    }
+                    product.setSaleAmount(product.getSaleAmount().add(targetAmount));
+                }
             }
 
-            // 转换为列表并按销售金额排序
+            // 转换为列表并按金额排序（可能是采购金额或销售金额，取决于统计类型）
             distributions = productMap.values().stream()
                     .sorted((a, b) -> b.getSaleAmount().compareTo(a.getSaleAmount()))
                     .limit(10) // 只取前10个产品
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
-            System.err.println("获取产品分布数据失败: " + e.getMessage());
+            // 查询失败时返回空列表
         }
 
         return distributions;
@@ -972,99 +1176,36 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         return analysis;
     }
 
+    // 移除getRecentOrders方法，根据需求不再需要最近订单明细
+
+
+
     /**
-     * 获取最近订单明细
+     * 添加时间范围查询条件
      */
-    private List<ErpDistributionWholesaleStatisticsRespVO.OrderDetail> getRecentOrders(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
-        List<ErpDistributionWholesaleStatisticsRespVO.OrderDetail> orders = new ArrayList<>();
-
-        try {
-            // 构建查询条件
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-
-            // 添加时间范围
-            if (reqVO.getBeginTime() != null && reqVO.getEndTime() != null) {
-                LocalDateTime beginTime = parseTimeString(reqVO.getBeginTime());
-                LocalDateTime endTime = parseTimeString(reqVO.getEndTime());
-                if (beginTime != null && endTime != null) {
-                    // 🔥 修复：使用与主查询相同的时间处理逻辑
-                    if (beginTime.getHour() == 0 && beginTime.getMinute() == 0 && beginTime.getSecond() == 0) {
-                        beginTime = beginTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
-                    }
-                    if (endTime.getHour() == 23 && endTime.getMinute() == 59 && endTime.getSecond() == 59) {
-                        endTime = endTime.withHour(23).withMinute(59).withSecond(59).withNano(999999999);
-                    }
-
-                    boolQuery.must(QueryBuilders.rangeQuery("create_time")
-                            .gte(beginTime)
-                            .lte(endTime));
+    private void addTimeRangeQuery(BoolQueryBuilder boolQuery, ErpDistributionWholesaleStatisticsReqVO reqVO) {
+        if (reqVO.getBeginTime() != null && reqVO.getEndTime() != null) {
+            LocalDateTime beginTime = parseTimeString(reqVO.getBeginTime());
+            LocalDateTime endTime = parseTimeString(reqVO.getEndTime());
+            if (beginTime != null && endTime != null) {
+                // 使用与主查询相同的时间处理逻辑
+                if (beginTime.getHour() == 0 && beginTime.getMinute() == 0 && beginTime.getSecond() == 0) {
+                    beginTime = beginTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
                 }
+                if (endTime.getHour() == 23 && endTime.getMinute() == 59 && endTime.getSecond() == 59) {
+                    endTime = endTime.withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+                }
+
+                // 格式化为ES期望的格式（不包含毫秒和时区）
+                DateTimeFormatter esFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                String beginTimeStr = beginTime.format(esFormatter);
+                String endTimeStr = endTime.format(esFormatter);
+
+                boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                        .gte(beginTimeStr)
+                        .lte(endTimeStr));
             }
-
-            // 添加分类筛选条件
-            addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
-
-            // 代发数据查询
-            NativeSearchQuery distributionQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withSort(Sort.by(Sort.Direction.DESC, "create_time"))
-                    .withPageable(PageRequest.of(0, 5))
-                    .build();
-
-            SearchHits<ErpDistributionCombinedESDO> distributionHits = elasticsearchRestTemplate.search(
-                    distributionQuery, ErpDistributionCombinedESDO.class);
-
-            // 批发数据查询
-            SearchHits<ErpWholesaleCombinedESDO> wholesaleHits = elasticsearchRestTemplate.search(
-                    distributionQuery, ErpWholesaleCombinedESDO.class);
-
-            // 处理代发数据
-            for (SearchHit<ErpDistributionCombinedESDO> hit : distributionHits) {
-                ErpDistributionCombinedESDO distribution = hit.getContent();
-
-                ErpDistributionWholesaleStatisticsRespVO.OrderDetail order = new ErpDistributionWholesaleStatisticsRespVO.OrderDetail();
-                order.setOrderNo(distribution.getNo());
-                order.setOrderType("代发");
-                order.setProductName(distribution.getProductName());
-                order.setQuantity(distribution.getProductQuantity());
-
-                BigDecimal[] amounts = calculateDistributionAmounts(distribution);
-                order.setPurchaseAmount(amounts[0]);
-                order.setSaleAmount(amounts[1]);
-                order.setCreateTime(distribution.getCreateTime());
-
-                orders.add(order);
-            }
-
-            // 处理批发数据
-            for (SearchHit<ErpWholesaleCombinedESDO> hit : wholesaleHits) {
-                ErpWholesaleCombinedESDO wholesale = hit.getContent();
-
-                ErpDistributionWholesaleStatisticsRespVO.OrderDetail order = new ErpDistributionWholesaleStatisticsRespVO.OrderDetail();
-                order.setOrderNo(wholesale.getNo());
-                order.setOrderType("批发");
-                order.setProductName(wholesale.getProductName());
-                order.setQuantity(wholesale.getProductQuantity());
-
-                BigDecimal[] amounts = calculateWholesaleAmounts(wholesale);
-                order.setPurchaseAmount(amounts[0]);
-                order.setSaleAmount(amounts[1]);
-                order.setCreateTime(wholesale.getCreateTime());
-
-                orders.add(order);
-            }
-
-            // 按创建时间排序，只取前10条
-            orders = orders.stream()
-                    .sorted((a, b) -> b.getCreateTime().compareTo(a.getCreateTime()))
-                    .limit(10)
-                    .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            System.err.println("获取最近订单明细失败: " + e.getMessage());
         }
-
-        return orders;
     }
 
     /**
@@ -1073,16 +1214,16 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     private void addCategoryFilter(BoolQueryBuilder boolQuery, String statisticsType, String categoryName) {
         switch (statisticsType) {
             case "purchaser":
-                boolQuery.must(QueryBuilders.termQuery("purchaser.keyword", categoryName));
+                boolQuery.must(QueryBuilders.termQuery("purchaser_keyword", categoryName));
                 break;
             case "supplier":
-                boolQuery.must(QueryBuilders.termQuery("supplier.keyword", categoryName));
+                boolQuery.must(QueryBuilders.termQuery("supplier_keyword", categoryName));
                 break;
             case "salesperson":
-                boolQuery.must(QueryBuilders.termQuery("salesperson.keyword", categoryName));
+                boolQuery.must(QueryBuilders.termQuery("salesperson_keyword", categoryName));
                 break;
             case "customer":
-                boolQuery.must(QueryBuilders.termQuery("customer_name.keyword", categoryName));
+                boolQuery.must(QueryBuilders.termQuery("customer_name_keyword", categoryName));
                 break;
         }
     }
@@ -1095,36 +1236,26 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             return null;
         }
 
-        System.out.println("解析时间字符串: " + timeStr);
-
         try {
             // 先检查是否为时间戳格式
             try {
                 long timestamp = Long.parseLong(timeStr);
                 // 判断是秒级还是毫秒级时间戳
                 if (timeStr.length() <= 10) { // 秒级
-                    LocalDateTime result = LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(timestamp), java.time.ZoneId.systemDefault());
-                    System.out.println("使用秒级时间戳解析成功: " + result);
-                    return result;
+                    return LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(timestamp), java.time.ZoneId.systemDefault());
                 } else { // 毫秒级
-                    LocalDateTime result = LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(timestamp), java.time.ZoneId.systemDefault());
-                    System.out.println("使用毫秒级时间戳解析成功: " + result);
-                    return result;
+                    return LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(timestamp), java.time.ZoneId.systemDefault());
                 }
             } catch (NumberFormatException e) {
                 // 如果不是时间戳，继续原有解析逻辑
             }
 
             // 尝试解析 yyyy-MM-dd HH:mm:ss 格式
-            LocalDateTime result = LocalDateTime.parse(timeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            System.out.println("使用 yyyy-MM-dd HH:mm:ss 格式解析成功: " + result);
-            return result;
+            return LocalDateTime.parse(timeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         } catch (DateTimeParseException e1) {
             try {
                 // 尝试解析 yyyy-MM-dd'T'HH:mm:ss 格式
-                LocalDateTime result = LocalDateTime.parse(timeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-                System.out.println("使用 yyyy-MM-dd'T'HH:mm:ss 格式解析成功: " + result);
-                return result;
+                return LocalDateTime.parse(timeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
             } catch (DateTimeParseException e2) {
                 try {
                     // 尝试解析 yyyy-MM-dd'T'HH:mm 格式 (没有秒)
