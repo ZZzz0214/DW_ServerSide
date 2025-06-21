@@ -585,6 +585,12 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                         BigDecimal saleShippingFee = calculateDistributionSaleShippingFee(salePrice, quantity, comboProduct);
                         BigDecimal saleOtherFees = distribution.getSaleOtherFees() != null ? distribution.getSaleOtherFees() : BigDecimal.ZERO;
                         saleAmount = saleProductAmount.add(saleShippingFee).add(saleOtherFees);
+                    } else {
+                        // 🔥 修复：销售价格表没有数据时，也能计算销售金额，销售价格字段设置为0
+                        BigDecimal saleProductAmount = BigDecimal.ZERO; // 销售价格为0
+                        BigDecimal saleShippingFee = BigDecimal.ZERO; // 运费为0
+                        BigDecimal saleOtherFees = distribution.getSaleOtherFees() != null ? distribution.getSaleOtherFees() : BigDecimal.ZERO;
+                        saleAmount = saleProductAmount.add(saleShippingFee).add(saleOtherFees);
                     }
                 }
             }
@@ -621,6 +627,13 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                     if (salePriceOpt.isPresent()) {
                         ErpSalePriceESDO salePrice = salePriceOpt.get();
                         BigDecimal saleProductAmount = salePrice.getWholesalePrice().multiply(new BigDecimal(quantity));
+                        BigDecimal saleTruckFee = wholesale.getSaleTruckFee() != null ? wholesale.getSaleTruckFee() : BigDecimal.ZERO;
+                        BigDecimal saleLogisticsFee = wholesale.getSaleLogisticsFee() != null ? wholesale.getSaleLogisticsFee() : BigDecimal.ZERO;
+                        BigDecimal saleOtherFees = wholesale.getSaleOtherFees() != null ? wholesale.getSaleOtherFees() : BigDecimal.ZERO;
+                        saleAmount = saleProductAmount.add(saleTruckFee).add(saleLogisticsFee).add(saleOtherFees);
+                    } else {
+                        // 🔥 修复：销售价格表没有数据时，也能计算销售金额，销售价格字段设置为0
+                        BigDecimal saleProductAmount = BigDecimal.ZERO; // 销售价格为0
                         BigDecimal saleTruckFee = wholesale.getSaleTruckFee() != null ? wholesale.getSaleTruckFee() : BigDecimal.ZERO;
                         BigDecimal saleLogisticsFee = wholesale.getSaleLogisticsFee() != null ? wholesale.getSaleLogisticsFee() : BigDecimal.ZERO;
                         BigDecimal saleOtherFees = wholesale.getSaleOtherFees() != null ? wholesale.getSaleOtherFees() : BigDecimal.ZERO;
