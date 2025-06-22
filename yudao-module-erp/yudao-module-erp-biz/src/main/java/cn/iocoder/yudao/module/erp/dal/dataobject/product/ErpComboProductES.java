@@ -18,7 +18,7 @@ public class ErpComboProductES {
     @Id
     private Long id;
 
-    @Field(name = "no", type = FieldType.Keyword)
+    @Field(name = "no", type = FieldType.Text, analyzer = "ik_max_word")
     private String no;
 
     @Field(name = "no_keyword", type = FieldType.Keyword)
