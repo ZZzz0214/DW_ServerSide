@@ -193,6 +193,28 @@ public class ErpProductServiceImpl implements ErpProductService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteProducts(List<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+        // 1. 校验存在
+        for (Long id : ids) {
+            validateProductExists(id);
+        }
+        // 2. 批量删除
+        productMapper.deleteBatchIds(ids);
+        
+        // 3. 批量删除ES记录
+        try {
+            productESRepository.deleteAllById(ids);
+        } catch (Exception e) {
+            System.err.println("批量删除ES记录失败: " + e.getMessage());
+            // ES删除失败不影响数据库删除
+        }
+    }
+
+    @Override
     public List<ErpProductDO> validProductList(Collection<Long> ids) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();

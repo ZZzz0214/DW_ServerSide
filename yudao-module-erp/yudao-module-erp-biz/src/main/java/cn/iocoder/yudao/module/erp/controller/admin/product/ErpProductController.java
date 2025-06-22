@@ -66,6 +66,15 @@ public class ErpProductController {
         return success(true);
     }
 
+    @DeleteMapping("/batch-delete")
+    @Operation(summary = "批量删除产品")
+    @Parameter(name = "ids", description = "编号列表", required = true)
+    @PreAuthorize("@ss.hasPermission('erp:product:delete')")
+    public CommonResult<Boolean> deleteProducts(@RequestParam("ids") List<Long> ids) {
+        productService.deleteProducts(ids);
+        return success(true);
+    }
+
     @GetMapping("/get")
     @Operation(summary = "获得产品")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")

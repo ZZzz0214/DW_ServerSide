@@ -15,7 +15,7 @@ public class ErpDistributionCombinedESDO {
     @Id
     private Long id;
 
-    @Field(name = "no", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "no", type = FieldType.Keyword)
     private String no;
 
     @Field(name = "no_keyword", type = FieldType.Keyword)
@@ -79,7 +79,7 @@ public class ErpDistributionCombinedESDO {
     private Long comboProductId;
 
     // 组品编号
-    @Field(name = "combo_product_no", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "combo_product_no", type = FieldType.Keyword)
     private String comboProductNo;
 
     @Field(name = "combo_product_no_keyword", type = FieldType.Keyword)

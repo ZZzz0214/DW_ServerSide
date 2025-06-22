@@ -41,6 +41,13 @@ public interface ErpProductService {
     void deleteProduct(Long id);
 
     /**
+     * 批量删除产品
+     *
+     * @param ids 编号列表
+     */
+    void deleteProducts(List<Long> ids);
+
+    /**
      * 校验产品们的有效性
      *
      * @param ids 编号数组

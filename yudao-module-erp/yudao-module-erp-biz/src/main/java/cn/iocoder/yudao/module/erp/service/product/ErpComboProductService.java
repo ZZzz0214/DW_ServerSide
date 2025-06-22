@@ -47,6 +47,13 @@ public interface ErpComboProductService {
     void deleteCombo(Long id);
 
     /**
+     * 批量删除组合产品
+     *
+     * @param ids 编号列表
+     */
+    void deleteCombos(List<Long> ids);
+
+    /**
      * 校验组合产品们的有效性
      *
      * @param ids 编号数组

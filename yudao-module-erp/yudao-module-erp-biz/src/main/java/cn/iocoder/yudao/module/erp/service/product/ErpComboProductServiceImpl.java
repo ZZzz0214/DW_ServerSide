@@ -216,6 +216,45 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteCombos(List<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+        // 1. 校验存在
+        for (Long id : ids) {
+            validateComboExists(id);
+        }
+        
+        // 2. 批量删除关联的单品信息
+        for (Long id : ids) {
+            List<ErpComboProductItemDO> items = erpComboProductItemMapper.selectByComboProductId(id);
+            if (CollUtil.isNotEmpty(items)) {
+                List<Long> itemIds = items.stream().map(ErpComboProductItemDO::getId).collect(Collectors.toList());
+                erpComboProductItemMapper.deleteBatchIds(itemIds);
+                
+                // 批量删除关联项ES记录
+                try {
+                    comboProductItemESRepository.deleteAllById(itemIds);
+                } catch (Exception e) {
+                    System.err.println("批量删除组品关联项ES记录失败: " + e.getMessage());
+                }
+            }
+        }
+        
+        // 3. 批量删除主表
+        erpComboMapper.deleteBatchIds(ids);
+        
+        // 4. 批量删除主表ES记录
+        try {
+            comboProductESRepository.deleteAllById(ids);
+        } catch (Exception e) {
+            System.err.println("批量删除组品ES记录失败: " + e.getMessage());
+            // ES删除失败不影响数据库删除
+        }
+    }
+
+    @Override
     public List<ErpComboProductDO> validComboList(Collection<Long> ids) {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();

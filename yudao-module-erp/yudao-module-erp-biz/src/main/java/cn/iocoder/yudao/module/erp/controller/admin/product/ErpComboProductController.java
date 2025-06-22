@@ -72,6 +72,15 @@ public class ErpComboProductController {
         return success(true);
     }
 
+    @DeleteMapping("/batch-delete")
+    @Operation(summary = "批量删除组合产品")
+    @Parameter(name = "ids", description = "编号列表", required = true)
+    @PreAuthorize("@ss.hasPermission('erp:combo-product:delete')")
+    public CommonResult<Boolean> deleteComboProducts(@RequestParam("ids") List<Long> ids) {
+        comboProductService.deleteCombos(ids);
+        return success(true);
+    }
+
     @GetMapping("/get")
     @Operation(summary = "获得组合产品")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")

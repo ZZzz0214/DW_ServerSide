@@ -210,7 +210,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 先复制基础字段
         BeanUtils.copyProperties(combinedDO, esDO);
 
-        // 填充keyword字段（与组品表保持一致）
+        // 设置keyword字段（用于精确匹配和通配符查询）- 与产品表保持完全一致
         esDO.setNoKeyword(combinedDO.getNo());
         esDO.setOrderNumberKeyword(combinedDO.getOrderNumber());
         esDO.setLogisticsCompanyKeyword(combinedDO.getLogisticsCompany());
@@ -226,6 +226,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         esDO.setTransferPersonKeyword(combinedDO.getTransferPerson());
         esDO.setCreatorKeyword(combinedDO.getCreator());
         esDO.setUpdaterKeyword(combinedDO.getUpdater());
+
+        // 添加调试信息
+        System.out.println("=== 代发表ES转换调试 ===");
+        System.out.println("订单编号: '" + combinedDO.getNo() + "' -> no_keyword: '" + esDO.getNoKeyword() + "'");
+        System.out.println("组品ID: " + combinedDO.getComboProductId());
+        System.out.println("=== 代发表ES转换调试结束 ===");
 
         // 显式设置售后状态字段，确保这些重要字段能正确同步到ES
         esDO.setPurchaseAfterSalesStatus(combinedDO.getPurchaseAfterSalesStatus());
@@ -250,6 +256,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 esDO.setPurchaserKeyword(comboProduct.getPurchaser());
                 esDO.setSupplier(comboProduct.getSupplier());
                 esDO.setSupplierKeyword(comboProduct.getSupplier());
+
+                // 添加调试信息
+                System.out.println("组品编号: '" + comboProduct.getNo() + "' -> combo_product_no_keyword: '" + esDO.getComboProductNoKeyword() + "'");
             }
         }
 
@@ -577,7 +586,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 3. 添加查询条件 - 完全使用组品表搜索策略
             BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-            // 订单编号搜索 - 超智能搜索策略，精确控制匹配范围
+            // 订单编号搜索 - 完全使用产品表的简化搜索策略
             if (StrUtil.isNotBlank(pageReqVO.getNo())) {
                 BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
                 String no = pageReqVO.getNo().trim();
@@ -588,112 +597,24 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                 BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
 
-                // 第一优先级：完全精确匹配（权重最高，确保精确查询优先）
+                // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
+                // 由于no字段现在是keyword类型，不会分词，可以大幅简化匹配策略
+                
+                System.out.println("使用简化的编号匹配策略，查询词长度: " + no.length());
+
+                // 第一优先级：完全精确匹配（最高权重）
                 multiMatchQuery.should(QueryBuilders.termQuery("no_keyword", no).boost(1000000.0f));
                 System.out.println("添加精确匹配: no_keyword = '" + no + "', 权重: 1000000");
 
-                // 第二优先级：前缀匹配（支持"DFJL"匹配"DFJL20250614..."）
+                // 第二优先级：前缀匹配（支持"DFJL2025"匹配"DFJL2025..."）
                 multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(100000.0f));
                 System.out.println("添加前缀匹配: no_keyword 前缀 = '" + no + "', 权重: 100000");
 
-                // 第三优先级：通配符包含匹配
-                multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(10000.0f));
-                System.out.println("添加通配符匹配: *" + no + "*, 权重: 10000");
+                // 第三优先级：包含匹配（支持任意位置的模糊匹配）
+                multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(50000.0f));
+                System.out.println("添加包含匹配: *" + no + "*, 权重: 50000");
 
-                // 第四优先级：超智能子字符串匹配
-                if (no.length() >= 2) {
-                    if (no.length() <= 6) {
-                        // 短查询词：优化子字符串匹配，避免过短子字符串的误匹配
-                        System.out.println("使用短查询词策略（≤6字符）");
-
-                        // 后缀子字符串匹配 - 只保留长度>=4且不包含太多重复字符的有意义子字符串，避免误匹配
-                        for (int i = 1; i < no.length(); i++) {
-                            String substring = no.substring(i);
-                            if (substring.length() >= 4 && !containsTooManyRepeatedChars(substring)) {
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + substring + "*").boost(5000.0f));
-                                System.out.println("  添加后缀子字符串: *" + substring + "*, 权重: 5000");
-                            } else if (substring.length() >= 4) {
-                                System.out.println("  跳过重复字符过多的后缀: *" + substring + "*");
-                            }
-                        }
-
-                        // 前缀子字符串匹配 - 只保留长度>=4的有意义子字符串，避免误匹配
-                        for (int i = 0; i < no.length() - 1; i++) {
-                            String prefix = no.substring(0, no.length() - i);
-                            if (prefix.length() >= 4) { // 进一步提高最小长度要求到4
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + prefix + "*").boost(4000.0f));
-                                System.out.println("  添加前缀子字符串: *" + prefix + "*, 权重: 4000");
-                            }
-                        }
-                    } else if (no.length() <= 10) {
-                        // 中等长度：主要使用前缀匹配，减少后缀匹配的误匹配
-                        System.out.println("使用中等长度策略（7-10字符）");
-
-                        // 前缀匹配（去掉最后几位）- 这是相对安全的匹配方式
-                        for (int i = 1; i <= 2 && i < no.length(); i++) { // 减少前缀匹配的数量
-                            String prefix = no.substring(0, no.length() - i);
-                            if (prefix.length() >= 6) { // 提高前缀最小长度要求
-                                multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", prefix).boost(4000.0f));
-                                System.out.println("  添加部分前缀: " + prefix + ", 权重: 4000");
-                            }
-                        }
-
-                        // 后缀匹配 - 只在查询词较短且不包含太多重复数字时使用
-                        if (no.length() <= 8 && !containsTooManyRepeatedDigits(no)) {
-                            for (int i = Math.max(0, no.length() - 4); i < no.length() - 1; i++) { // 减少后缀匹配范围
-                                String suffix = no.substring(i);
-                                if (suffix.length() >= 5) { // 提高后缀最小长度要求
-                                    multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + suffix).boost(2000.0f)); // 降低权重
-                                    System.out.println("  添加后缀: *" + suffix + ", 权重: 2000");
-                                }
-                            }
-                        } else {
-                            System.out.println("  跳过后缀匹配（查询词过长或包含重复数字）");
-                        }
-                    } else if (no.length() <= 15) {
-                        // 较长查询词：主要支持前缀匹配，极少的后缀匹配
-                        System.out.println("使用较长查询词策略（11-15字符）");
-                        multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(50000.0f));
-                        System.out.println("  添加完整前缀: " + no + ", 权重: 50000");
-
-                        // 非常有限的后缀匹配（只匹配最后4位）
-                        if (no.length() >= 4) {
-                            String lastFour = no.substring(no.length() - 4);
-                            multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + lastFour).boost(2000.0f));
-                            System.out.println("  添加最后4位后缀: *" + lastFour + ", 权重: 2000");
-                        }
-                    } else {
-                        // 很长的查询词（>15字符，可能是几乎完整的订单号）：几乎只使用前缀匹配
-                        System.out.println("使用很长查询词策略（>15字符）");
-                        multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(90000.0f));
-                        System.out.println("  添加完整前缀: " + no + ", 权重: 90000");
-
-                        // 对于完整订单号长度（22字符），完全禁用后缀匹配
-                        if (no.length() < 20) {
-                            // 只对不完整的长查询词添加后缀匹配
-                            String lastThree = no.substring(no.length() - 3);
-                            multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + lastThree).boost(800.0f));
-                            System.out.println("  添加最后3位后缀: *" + lastThree + ", 权重: 800");
-                        } else {
-                            System.out.println("  跳过后缀匹配（查询词过长，可能是完整订单号）");
-                        }
-                    }
-                }
-
-                // 第五优先级：智能分词匹配
-                if (no.length() == 1) {
-                    multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.OR).boost(800.0f));
-                    System.out.println("添加单字分词匹配, 权重: 800");
-                } else if (no.length() == 2) {
-                    multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.AND).boost(600.0f));
-                    multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(1200.0f));
-                    multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.OR).boost(400.0f));
-                    System.out.println("添加双字分词匹配, 权重: 600/1200/400");
-                } else {
-                    multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.AND).boost(500.0f));
-                    multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(1000.0f));
-                    System.out.println("添加多字分词匹配, 权重: 500/1000");
-                }
+                // 注意：移除复杂的智能子字符串匹配，因为keyword字段已经足够支持模糊匹配
 
                 multiMatchQuery.minimumShouldMatch(1);
                 noQuery.must(multiMatchQuery);
@@ -1916,92 +1837,25 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
 
         BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-        // 第一优先级：完全精确匹配（权重最高）
+
+        // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
+        // 由于字段现在是keyword类型，不会分词，可以大幅简化匹配策略
+        
+        System.out.println("使用简化的编号匹配策略，查询词长度: " + keyword.length());
+
+        // 第一优先级：完全精确匹配（最高权重）
         multiMatchQuery.should(QueryBuilders.termQuery(keywordFieldName, keyword).boost(1000000.0f));
-        // 第二优先级：前缀匹配
+        System.out.println("添加精确匹配: " + keywordFieldName + " = '" + keyword + "', 权重: 1000000");
+
+        // 第二优先级：前缀匹配（支持"CPXX2025"匹配"CPXX2025..."）
         multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(100000.0f));
-        // 第三优先级：通配符包含匹配
-        multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + keyword + "*").boost(10000.0f));
+        System.out.println("添加前缀匹配: " + keywordFieldName + " 前缀 = '" + keyword + "', 权重: 100000");
 
-        // 第四优先级：超智能子字符串匹配
-        if (keyword.length() >= 2) {
-            if (keyword.length() <= 6) {
-                // 短查询词：优化子字符串匹配，避免过短子字符串的误匹配
-                for (int i = 1; i < keyword.length(); i++) {
-                    String substring = keyword.substring(i);
-                    if (substring.length() >= 4 && !containsTooManyRepeatedChars(substring)) { // 避免重复字符过多的子字符串
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + substring + "*").boost(5000.0f));
-                    }
-                }
-                // 前缀子字符串匹配
-                for (int i = 0; i < keyword.length() - 1; i++) {
-                    String prefix = keyword.substring(0, keyword.length() - i);
-                    if (prefix.length() >= 4) { // 进一步提高最小长度要求到4
-                        multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + prefix + "*").boost(4000.0f));
-                    }
-                }
-            } else if (keyword.length() <= 10) {
-                // 中等长度：主要使用前缀匹配，减少后缀匹配的误匹配
-                System.out.println("使用中等长度策略（7-10字符）");
+        // 第三优先级：包含匹配（支持任意位置的模糊匹配）
+        multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + keyword + "*").boost(50000.0f));
+        System.out.println("添加包含匹配: *" + keyword + "*, 权重: 50000");
 
-                // 前缀匹配（去掉最后几位）- 这是相对安全的匹配方式
-                for (int i = 1; i <= 2 && i < keyword.length(); i++) { // 减少前缀匹配的数量
-                    String prefix = keyword.substring(0, keyword.length() - i);
-                    if (prefix.length() >= 6) { // 提高前缀最小长度要求
-                        multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, prefix).boost(4000.0f));
-                        System.out.println("  添加部分前缀: " + prefix + ", 权重: 4000");
-                    }
-                }
-
-                // 后缀匹配 - 只在查询词较短且不包含太多重复数字时使用
-                if (keyword.length() <= 8 && !containsTooManyRepeatedDigits(keyword)) {
-                    for (int i = Math.max(0, keyword.length() - 4); i < keyword.length() - 1; i++) { // 减少后缀匹配范围
-                        String suffix = keyword.substring(i);
-                        if (suffix.length() >= 5) { // 提高后缀最小长度要求
-                            multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + suffix).boost(2000.0f)); // 降低权重
-                            System.out.println("  添加后缀: *" + suffix + ", 权重: 2000");
-                        }
-                    }
-                } else {
-                    System.out.println("  跳过后缀匹配（查询词过长或包含重复数字）");
-                }
-            } else if (keyword.length() <= 15) {
-                // 较长查询词：主要支持前缀匹配，极少的后缀匹配
-                multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(50000.0f));
-
-                // 非常有限的后缀匹配（只匹配最后4位）
-                if (keyword.length() >= 4) {
-                    String lastFour = keyword.substring(keyword.length() - 4);
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + lastFour).boost(2000.0f));
-                }
-            } else {
-                // 很长的查询词（>15字符）：几乎只使用前缀匹配
-                multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(90000.0f));
-
-                // 对于完整编号长度，完全禁用后缀匹配
-                if (keyword.length() < 20) {
-                    // 只对不完整的长查询词添加后缀匹配
-                    String lastThree = keyword.substring(keyword.length() - 3);
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + lastThree).boost(800.0f));
-                }
-            }
-        }
-
-        // 第五优先级：智能分词匹配
-        if (keyword.length() == 1) {
-            // 单字搜索
-            multiMatchQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.OR).boost(800.0f));
-        } else if (keyword.length() == 2) {
-            // 双字搜索，使用AND匹配避免误匹配，但也添加OR匹配作为兜底
-            multiMatchQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.AND).boost(600.0f));
-            multiMatchQuery.should(QueryBuilders.matchPhraseQuery(fieldName, keyword).boost(1200.0f));
-            // 添加OR匹配作为兜底，权重较低
-            multiMatchQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.OR).boost(400.0f));
-        } else {
-            // 多字搜索
-            multiMatchQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.AND).boost(500.0f));
-            multiMatchQuery.should(QueryBuilders.matchPhraseQuery(fieldName, keyword).boost(1000.0f));
-        }
+        // 注意：移除复杂的智能子字符串匹配，因为keyword字段已经足够支持模糊匹配
 
         multiMatchQuery.minimumShouldMatch(1);
         query.must(multiMatchQuery);
