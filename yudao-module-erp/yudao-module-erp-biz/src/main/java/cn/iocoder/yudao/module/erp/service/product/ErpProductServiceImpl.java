@@ -19,7 +19,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboProductItemMapper;
 import cn.iocoder.yudao.module.system.api.dict.DictDataApi;
 import cn.iocoder.yudao.module.system.api.dict.dto.DictDataRespDTO;
-import com.alibaba.excel.util.StringUtils;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
@@ -78,16 +78,16 @@ public class ErpProductServiceImpl implements ErpProductService {
 
     @Resource
     private DictDataApi dictDataApi;
-    
+
     @Resource
     private ErpComboProductService comboProductService;
-    
-    @Resource 
+
+    @Resource
     private ErpComboProductItemMapper comboProductItemMapper;
-    
+
     // 用于存储当前搜索条件的ThreadLocal
     private static final ThreadLocal<String> CURRENT_SEARCH_NAME = new ThreadLocal<>();
-    
+
     /**
      * ES状态枚举
      */
@@ -107,9 +107,9 @@ public class ErpProductServiceImpl implements ErpProductService {
                 System.out.println("ES服务不可用，跳过索引初始化");
                 return;
             }
-            
+
         IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
-            
+
             // 检查索引是否存在
         if (!indexOps.exists()) {
                 // 创建新索引
@@ -119,16 +119,16 @@ public class ErpProductServiceImpl implements ErpProductService {
             } else {
                 System.out.println("ERP产品索引已存在，跳过创建");
         }
-            
+
             // 注意：不在启动时进行全量同步，避免租户上下文问题
             System.out.println("ES索引初始化完成");
-            
+
     } catch (Exception e) {
         System.err.println("ERP产品索引创建失败: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     /**
      * 检查ES服务是否可用
      */
@@ -176,7 +176,7 @@ public class ErpProductServiceImpl implements ErpProductService {
 
         // 同步到ES
         syncProductToES(updateReqVO.getId());
-        
+
         // 🔥 关键：单品更新后，需要同步所有相关的组品ES索引
         syncRelatedCombosToES(updateReqVO.getId());
     }
@@ -242,28 +242,28 @@ public class ErpProductServiceImpl implements ErpProductService {
         try {
             // 智能检查ES状态和数据一致性
             ESStatus esStatus = checkESStatus();
-            
+
             switch (esStatus) {
                 case UNAVAILABLE:
                     System.out.println("ES服务不可用，使用数据库查询");
                     return getProductVOPageFromDB(pageReqVO);
-                    
+
                 case EMPTY_INDEX:
                     System.out.println("ES索引为空，自动同步数据后查询");
                     syncAllDataToES();
                     return searchProductsFromES(pageReqVO);
-                    
+
                 case DATA_MISMATCH:
                     System.out.println("ES数据量不匹配，重新同步数据后查询");
                     syncAllDataToES();
                     return searchProductsFromES(pageReqVO);
-                    
+
                 case HEALTHY:
                 default:
                     // ES状态正常，直接查询
                     return searchProductsFromES(pageReqVO);
             }
-            
+
         } catch (Exception e) {
             System.err.println("ES查询失败，回退到数据库查询: " + e.getMessage());
             e.printStackTrace();
@@ -280,7 +280,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             if (!isESServiceAvailable()) {
                 return ESStatus.UNAVAILABLE;
             }
-            
+
             // 2. 检查索引是否存在
             IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
             if (!indexOps.exists()) {
@@ -290,23 +290,23 @@ public class ErpProductServiceImpl implements ErpProductService {
                 indexOps.putMapping(indexOps.createMapping(ErpProductESDO.class));
                 return ESStatus.EMPTY_INDEX;
             }
-            
+
             // 3. 检查数据量是否一致
          long dbCount = productMapper.selectCount(null);
             long esCount = 0;
-            
+
             try {
                 esCount = elasticsearchRestTemplate.count(
-                    new NativeSearchQueryBuilder().withQuery(QueryBuilders.matchAllQuery()).build(), 
+                    new NativeSearchQueryBuilder().withQuery(QueryBuilders.matchAllQuery()).build(),
                     ErpProductESDO.class
                 );
             } catch (Exception e) {
                 System.err.println("ES计数查询失败: " + e.getMessage());
                 return ESStatus.DATA_MISMATCH;
             }
-            
+
             System.out.println("数据量检查 - 数据库: " + dbCount + ", ES: " + esCount);
-            
+
             // 4. 判断数据一致性
             if (esCount == 0 && dbCount > 0) {
                 return ESStatus.EMPTY_INDEX;
@@ -315,7 +315,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             } else {
                 return ESStatus.HEALTHY;
             }
-            
+
         } catch (Exception e) {
             System.err.println("ES状态检查失败: " + e.getMessage());
             return ESStatus.UNAVAILABLE;
@@ -345,16 +345,16 @@ public class ErpProductServiceImpl implements ErpProductService {
                 indexOps.create();
                 indexOps.putMapping(indexOps.createMapping(ErpProductESDO.class));
                 System.out.println("ES索引创建成功");
-                
+
                 // 索引不存在时需要全量同步
                 syncAllDataToES();
                 return;
             }
-            
+
             // 索引存在时，只进行轻量级检查（不查询数据库）
             // 如果需要精确同步，可以调用手动同步接口
             System.out.println("ES索引存在，跳过数据同步检查（提高查询性能）");
-            
+
         } catch (Exception e) {
             System.err.println("ES索引检查失败: " + e.getMessage());
             // 检查失败时不抛出异常，让查询降级到数据库
@@ -376,16 +376,16 @@ public class ErpProductServiceImpl implements ErpProductService {
                 indexOps.create();
                 indexOps.putMapping(indexOps.createMapping(ErpProductESDO.class));
                 System.out.println("ES索引创建成功");
-                
+
                 // 索引不存在时需要全量同步
                 syncAllDataToES();
                 return;
             }
-            
+
             // 索引存在，检查数据量是否匹配
             long dbCount = productMapper.selectCount(null);
             long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpProductESDO.class);
-            
+
             // 数据量不匹配时才需要同步（允许10条的差异）
             if (Math.abs(dbCount - esCount) > 10) {
                 System.out.println("检测到数据量不匹配。数据库:" + dbCount + ", ES:" + esCount + "，开始同步数据...");
@@ -393,7 +393,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             } else {
                 System.out.println("ES索引和数据都正常。数据库:" + dbCount + ", ES:" + esCount);
             }
-            
+
         } catch (Exception e) {
             System.err.println("ES索引检查失败: " + e.getMessage());
             e.printStackTrace();
@@ -406,7 +406,7 @@ public class ErpProductServiceImpl implements ErpProductService {
     private void syncAllDataToES() {
         try {
             System.out.println("开始全量同步数据到ES...");
-            
+
             // 获取数据库数据
             List<ErpProductDO> products = productMapper.selectList(null);
             if (CollUtil.isEmpty(products)) {
@@ -418,7 +418,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             int batchSize = 100;
             int totalSize = products.size();
             System.out.println("总共需要同步 " + totalSize + " 条记录，分批处理，每批 " + batchSize + " 条");
-            
+
             // 先清空ES数据
             try {
                 productESRepository.deleteAll();
@@ -426,44 +426,44 @@ public class ErpProductServiceImpl implements ErpProductService {
             } catch (Exception e) {
                 System.err.println("清空ES数据失败: " + e.getMessage());
             }
-            
+
             // 分批同步数据
             for (int i = 0; i < totalSize; i += batchSize) {
                 int endIndex = Math.min(i + batchSize, totalSize);
                 List<ErpProductDO> batch = products.subList(i, endIndex);
-                
+
                 try {
                     // 转换为ES对象
                     List<ErpProductESDO> esBatch = batch.stream()
                         .map(this::convertProductToES)
                         .filter(Objects::nonNull) // 过滤转换失败的数据
                         .collect(Collectors.toList());
-                    
+
                     if (!esBatch.isEmpty()) {
                         productESRepository.saveAll(esBatch);
                         System.out.println("已同步第 " + (i/batchSize + 1) + " 批，共 " + esBatch.size() + " 条记录");
                     }
-                    
+
                     // 短暂休息，避免ES压力过大
                     if (i + batchSize < totalSize) {
                         Thread.sleep(100);
                     }
-                    
+
                 } catch (Exception e) {
                     System.err.println("同步第 " + (i/batchSize + 1) + " 批数据失败: " + e.getMessage());
                     // 继续处理下一批
                 }
             }
-            
+
             // 验证同步结果
             Thread.sleep(2000); // 等待ES索引完成
             long esCount = elasticsearchRestTemplate.count(
-                new NativeSearchQueryBuilder().withQuery(QueryBuilders.matchAllQuery()).build(), 
+                new NativeSearchQueryBuilder().withQuery(QueryBuilders.matchAllQuery()).build(),
                 ErpProductESDO.class
             );
-            
+
             System.out.println("全量同步完成！数据库: " + totalSize + " 条，ES: " + esCount + " 条");
-            
+
         } catch (Exception e) {
             System.err.println("全量同步数据失败: " + e.getMessage());
             e.printStackTrace();
@@ -473,7 +473,7 @@ public class ErpProductServiceImpl implements ErpProductService {
 
     /**
      * 从ES搜索产品（支持智能匹配查询和深度分页）
-     * 
+     *
      * 查询策略说明：
      * 智能匹配策略，按权重优先级进行多层匹配：
      * 1. 完全精确匹配（权重1,000,000）：keyword字段完全相同
@@ -482,18 +482,18 @@ public class ErpProductServiceImpl implements ErpProductService {
      * 4. 智能分词匹配（权重100-500）：根据搜索词长度智能选择匹配策略
      *    - 单字/双字搜索：使用OR匹配，权重100（支持单字搜索）
      *    - 多字搜索：使用AND匹配，权重500（减少误匹配）
-     * 
+     *
      * 关键特性：
      * - 精确匹配优先：完全匹配的结果排在最前面，避免"产品名称2"误匹配"产品名称"
      * - 支持单字搜索：搜索"品"可以匹配"产品名称"（通过分词匹配）
      * - 减少误匹配：多字搜索时要求所有分词都匹配，避免不相关结果
      * - 智能权重：分词匹配权重远低于精确匹配，确保精确结果优先
-     * 
+     *
      * 示例：
      * - 搜索 "品" → 返回包含"品"字的产品（分词匹配，权重100）
      * - 搜索 "产品名称2" → 优先返回完全匹配的产品（精确匹配，权重1,000,000）
      * - 搜索 "产品名称" → 精确匹配优先，不会误匹配"产品名称2"
-     * 
+     *
      * 深度分页：
      * - offset < 10000：使用普通分页
      * - offset >= 10000：自动切换到search_after机制，支持无限深度分页
@@ -501,26 +501,28 @@ public class ErpProductServiceImpl implements ErpProductService {
     private PageResult<ErpProductRespVO> searchProductsFromES(ErpProductPageReqVO pageReqVO) {
         try {
             // 设置当前搜索条件到ThreadLocal
-            if (StringUtils.isNotBlank(pageReqVO.getName())) {
+            if (StrUtil.isNotBlank(pageReqVO.getName())) {
                 CURRENT_SEARCH_NAME.set(pageReqVO.getName().trim());
             }
-            
+
             // 1. 构建ES查询
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
             // 全文搜索（优先级最高）
-            if (StringUtils.isNotBlank(pageReqVO.getKeyword())) {
+            if (StrUtil.isNotBlank(pageReqVO.getKeyword())) {
                 BoolQueryBuilder keywordQuery = QueryBuilders.boolQuery();
                 String keyword = pageReqVO.getKeyword().trim();
-                
+
                 // 多字段搜索，使用should表示OR关系，优先精确匹配
                 keywordQuery
                         // 1. 精确词匹配
                         .should(QueryBuilders.termQuery("name_keyword", keyword).boost(8.0f))
-                        
+                        .should(QueryBuilders.termQuery("no_keyword", keyword).boost(7.0f))  // 产品编号精确匹配
+
                         // 2. 智能分词匹配 - 根据关键词长度调整策略
                         .should(createIntelligentMatchQuery("name", keyword, 6.0f, 4.0f, 2.0f))
-                        
+                        .should(createIntelligentMatchQuery("no", keyword, 5.5f, 3.5f, 1.8f))  // 产品编号分词匹配
+
                         // 3. 其他字段精确匹配
                         .should(QueryBuilders.matchPhraseQuery("product_short_name", keyword).boost(5.0f))
                         .should(QueryBuilders.matchPhraseQuery("brand", keyword).boost(4.0f))
@@ -528,31 +530,250 @@ public class ErpProductServiceImpl implements ErpProductService {
                         .should(QueryBuilders.matchPhraseQuery("purchaser", keyword).boost(3.0f))
                         .should(QueryBuilders.matchPhraseQuery("supplier", keyword).boost(3.0f))
                         .should(QueryBuilders.matchPhraseQuery("creator", keyword).boost(2.5f))
-                        
+
                         // 4. 其他字段智能分词匹配
                         .should(createIntelligentMatchQuery("product_short_name", keyword, 2.0f, 1.8f, 1.5f))
                         .should(createIntelligentMatchQuery("standard", keyword, 1.5f, 1.3f, 1.0f))
                         .should(createIntelligentMatchQuery("product_selling_points", keyword, 1.0f, 0.8f, 0.5f))
                         .minimumShouldMatch(1);
-                
+
                 boolQuery.must(keywordQuery);
             } else {
+                // 产品编号查询 - 完全使用代发表订单编号的搜索策略
+                if (StrUtil.isNotBlank(pageReqVO.getNo())) {
+                    BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
+                    String no = pageReqVO.getNo().trim();
+
+                    // 添加调试信息
+                    System.out.println("=== 产品编号搜索调试 ===");
+                    System.out.println("查询关键词: '" + no + "', 长度: " + no.length());
+
+                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+
+                    // 第一优先级：完全精确匹配（权重最高，确保精确查询优先）
+                    multiMatchQuery.should(QueryBuilders.termQuery("no_keyword", no).boost(1000000.0f));
+                    System.out.println("添加精确匹配: no_keyword = '" + no + "', 权重: 1000000");
+
+                    // 第二优先级：前缀匹配（支持"P001"匹配"P001..."）
+                    multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(100000.0f));
+                    System.out.println("添加前缀匹配: no_keyword 前缀 = '" + no + "', 权重: 100000");
+
+                    // 🔥 智能匹配策略：根据查询词长度和特征决定匹配方式
+                    boolean isShortQuery = no.length() <= 8; // 短查询词，需要更多模糊匹配
+                    boolean isMediumQuery = no.length() > 8 && no.length() <= 14; // 中等查询词
+                    boolean isLongQuery = no.length() >= 15; // 长查询词
+                    boolean isLikelyCompleteNo = no.length() >= 15 && (no.startsWith("CPXX") || no.matches(".*\\d{6,}.*")); // 包含长数字序列
+                    boolean isVeryLikelyCompleteNo = no.length() >= 18 && no.startsWith("CPXX") && no.matches(".*\\d{10,}.*"); // 很可能是完整编号
+                    
+                    System.out.println("查询分类: 短查询=" + isShortQuery + ", 中等查询=" + isMediumQuery + ", 长查询=" + isLongQuery + 
+                                     ", 疑似完整编号=" + isLikelyCompleteNo + ", 很可能完整编号=" + isVeryLikelyCompleteNo);
+                    
+                    if (isVeryLikelyCompleteNo) {
+                        System.out.println("检测到很可能是完整编号(>=18字符且符合CPXX格式)，使用严格精确匹配策略");
+                        // 只添加1个前缀匹配，避免过多模糊匹配
+                        String prefix = no.substring(0, no.length() - 1);
+                        if (prefix.length() >= 15) {
+                            multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", prefix).boost(30000.0f));
+                            System.out.println("    添加严格前缀: " + prefix + ", 权重: 30000");
+                        }
+                    } else if (isLikelyCompleteNo) {
+                        System.out.println("检测到疑似完整编号(>=15字符且符合编号格式)，使用精确匹配策略");
+                        // 只添加有限的前缀匹配，避免通配符匹配
+                        for (int i = 1; i <= 2 && i < no.length(); i++) {
+                            String prefix = no.substring(0, no.length() - i);
+                            if (prefix.length() >= 12) { // 提高最小前缀长度
+                                float boost = 50000.0f - (i * 15000.0f); // 权重递减更快
+                                multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", prefix).boost(boost));
+                                System.out.println("    添加精确前缀: " + prefix + ", 权重: " + boost);
+                            }
+                        }
+                    } else if (isLongQuery) {
+                        System.out.println("检测到长查询词(>=15字符)，使用受限模糊匹配");
+                        // 添加通配符匹配，但权重较低
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(5000.0f));
+                        System.out.println("添加受限通配符匹配: *" + no + "*, 权重: 5000");
+                    } else if (isMediumQuery) {
+                        System.out.println("检测到中等查询词(9-14字符)，使用平衡模糊匹配");
+                        // 中等长度查询，提供较好的模糊匹配
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(8000.0f));
+                        System.out.println("添加平衡通配符匹配: *" + no + "*, 权重: 8000");
+                        
+                        // 🔥 特殊优化：如果中等长度查询看起来像编号的一部分，添加后缀匹配
+                        if (no.startsWith("CPXX") || no.matches(".*\\d{4,}.*")) {
+                            multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", no + "*").boost(6000.0f));
+                            System.out.println("添加部分编号后缀匹配: " + no + "*, 权重: 6000");
+                        }
+                    } else {
+                        System.out.println("检测到短查询词(<=8字符)，使用完整模糊匹配");
+                        // 短查询词，提供最强的模糊匹配能力
+                        multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(10000.0f));
+                        System.out.println("添加完整通配符匹配: *" + no + "*, 权重: 10000");
+                        
+                        // 🔥 特殊优化：如果短查询词看起来像编号开头，添加后缀匹配
+                        if (no.startsWith("CPXX") || no.startsWith("CP") || no.matches(".*\\d{3,}.*")) {
+                            multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", no + "*").boost(8000.0f));
+                            System.out.println("添加短编号后缀匹配: " + no + "*, 权重: 8000");
+                        }
+                    }
+
+                    // 第四优先级：智能子字符串匹配 - 支持任意长度的模糊查询
+                    // 🔥 重要优化：对于疑似完整编号的查询，跳过复杂的子字符串匹配，避免误匹配
+                    if (no.length() >= 2 && !isLikelyCompleteNo) {
+                        System.out.println("使用智能子字符串匹配策略，查询词长度: " + no.length());
+
+                        // 对于非完整编号的查询词，提供子字符串匹配能力
+                        // 策略：根据查询词长度动态调整匹配范围和权重
+
+                        if (no.length() <= 6) {
+                            // 短查询词：提供丰富的子字符串匹配，但避免过短的误匹配
+                            System.out.println("  使用短查询词策略（≤6字符）");
+
+                            // 后缀子字符串匹配 - 提高最小长度，避免误匹配
+                            for (int i = 1; i < no.length(); i++) {
+                                String substring = no.substring(i);
+                                if (substring.length() >= 4 && !containsTooManyRepeatedChars(substring)) {
+                                    multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + substring + "*").boost(5000.0f));
+                                    System.out.println("    添加后缀子字符串: *" + substring + "*, 权重: 5000");
+                                }
+                            }
+
+                            // 前缀子字符串匹配 - 提高最小长度，避免误匹配
+                            for (int i = 1; i < no.length(); i++) {
+                                String prefix = no.substring(0, no.length() - i);
+                                if (prefix.length() >= 4) {
+                                    multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + prefix + "*").boost(4000.0f));
+                                    System.out.println("    添加前缀子字符串: *" + prefix + "*, 权重: 4000");
+                                }
+                            }
+                        } else if (no.length() <= 12) {
+                            // 中等长度：平衡精确性和召回率
+                            System.out.println("  使用中等长度策略（7-12字符）");
+
+                            // 部分前缀匹配（去掉最后1-3位）
+                            for (int i = 1; i <= 3 && i < no.length(); i++) {
+                                String prefix = no.substring(0, no.length() - i);
+                                if (prefix.length() >= 4) {
+                                    float boost = 6000.0f - (i * 1000.0f); // 权重递减
+                                    multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", prefix).boost(boost));
+                                    System.out.println("    添加部分前缀: " + prefix + ", 权重: " + boost);
+                                }
+                            }
+
+                            // 后缀匹配（最后6-8位）- 提高最小长度，避免误匹配
+                            for (int len = Math.min(8, no.length() - 1); len >= 6; len--) {
+                                if (no.length() >= len) {
+                                    String suffix = no.substring(no.length() - len);
+                                    boolean hasRepeatedDigits = containsTooManyRepeatedDigits(suffix);
+                                    System.out.println("    检查后缀: " + suffix + ", 长度: " + len + ", 重复数字检查: " + hasRepeatedDigits);
+                                    if (!hasRepeatedDigits) {
+                                        float boost = 3000.0f + (len * 200.0f); // 长度越长权重越高
+                                        multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + suffix).boost(boost));
+                                        System.out.println("    添加后缀: *" + suffix + ", 权重: " + boost);
+                                    } else {
+                                        System.out.println("    跳过后缀: " + suffix + " (包含太多重复数字)");
+                                    }
+                                }
+                            }
+                        } else {
+                            // 长查询词：主要支持前缀匹配和有限的后缀匹配
+                            System.out.println("  使用长查询词策略（>12字符）");
+
+                            // 部分前缀匹配（去掉最后1-5位）
+                            for (int i = 1; i <= 5 && i < no.length(); i++) {
+                                String prefix = no.substring(0, no.length() - i);
+                                if (prefix.length() >= 6) {
+                                    float boost = 8000.0f - (i * 500.0f); // 权重递减
+                                    multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", prefix).boost(boost));
+                                    System.out.println("    添加部分前缀: " + prefix + ", 权重: " + boost);
+                                }
+                            }
+
+                            // 后缀匹配（最后6-10位）- 提高最小长度，避免误匹配
+                            for (int len = Math.min(10, no.length() - 1); len >= 6; len--) {
+                                if (no.length() >= len) {
+                                    String suffix = no.substring(no.length() - len);
+                                    if (!containsTooManyRepeatedDigits(suffix)) {
+                                        float boost = 2000.0f + (len * 150.0f); // 长度越长权重越高
+                                        multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + suffix).boost(boost));
+                                        System.out.println("    添加后缀: *" + suffix + ", 权重: " + boost);
+                                    }
+                                }
+                            }
+
+                            // 中间片段匹配（对于很长的查询词，提取中间有意义的片段）
+                            // 提高匹配精确性：只匹配长度>=8的中间片段，并降低权重
+                            if (no.length() >= 12) {
+                                // 提取中间8-12位的片段，确保足够长避免误匹配
+                                for (int start = 2; start <= Math.min(3, no.length() - 8); start++) {
+                                    for (int len = 8; len <= Math.min(12, no.length() - start); len++) {
+                                        String middle = no.substring(start, start + len);
+                                        if (!containsTooManyRepeatedChars(middle) && !containsTooManyRepeatedDigits(middle)) {
+                                            // 降低权重，避免过度匹配
+                                            multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + middle + "*").boost(800.0f));
+                                            System.out.println("    添加中间片段: *" + middle + "*, 权重: 800");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 第五优先级：智能分词匹配
+                    if (no.length() == 1) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.OR).boost(800.0f));
+                        System.out.println("添加单字分词匹配, 权重: 800");
+                    } else if (no.length() == 2) {
+                        multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.AND).boost(600.0f));
+                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(1200.0f));
+                        multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.OR).boost(400.0f));
+                        System.out.println("添加双字分词匹配, 权重: 600/1200/400");
+                    } else if (isVeryLikelyCompleteNo) {
+                        // 🔥 重要优化：对于很可能是完整编号，极大降低分词匹配权重，避免误匹配
+                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(50.0f));
+                        System.out.println("添加严格完整编号分词匹配, 权重: 50（极大降低权重避免误匹配）");
+                    } else if (isLikelyCompleteNo) {
+                        // 🔥 重要优化：对于疑似完整编号，大幅降低分词匹配权重，避免误匹配
+                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(100.0f));
+                        System.out.println("添加完整编号分词匹配, 权重: 100（大幅降低权重避免误匹配）");
+                    } else if (isLongQuery) {
+                        // 对于长查询词，降低分词匹配权重
+                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(300.0f));
+                        System.out.println("添加长查询词分词匹配, 权重: 300");
+                    } else if (isMediumQuery) {
+                        // 对于中等查询词，使用平衡的分词匹配
+                        multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.AND).boost(400.0f));
+                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(800.0f));
+                        System.out.println("添加中等查询词分词匹配, 权重: 400/800");
+                    } else {
+                        // 短查询词，使用完整的分词匹配策略
+                        multiMatchQuery.should(QueryBuilders.matchQuery("no", no).operator(Operator.AND).boost(500.0f));
+                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("no", no).boost(1000.0f));
+                        System.out.println("添加短查询词分词匹配, 权重: 500/1000");
+                    }
+
+                    multiMatchQuery.minimumShouldMatch(1);
+                    noQuery.must(multiMatchQuery);
+                    boolQuery.must(noQuery);
+
+                    System.out.println("=== 产品编号搜索调试结束 ===");
+                }
+
                 // 产品名称查询 - 智能匹配策略（精确匹配优先，分词匹配兜底）
-        if (StringUtils.isNotBlank(pageReqVO.getName())) {
+        if (StrUtil.isNotBlank(pageReqVO.getName())) {
                     BoolQueryBuilder nameQuery = QueryBuilders.boolQuery();
                     String name = pageReqVO.getName().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    
+
                     // 第一优先级：完全精确匹配（最高权重）
                     multiMatchQuery.should(QueryBuilders.termQuery("name_keyword", name).boost(1000000.0f));
-                    
+
                     // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("name_keyword", name).boost(100000.0f));
-                    
+
                     // 第三优先级：通配符包含匹配（支持中间字符搜索）
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(10000.0f));
-                    
+
                     // 第四优先级：分词匹配（权重大幅降低，仅作为兜底方案）
                     if (name.length() == 1) {
                         // 单字搜索，使用分词匹配，权重适中以确保能找到结果
@@ -568,22 +789,22 @@ public class ErpProductServiceImpl implements ErpProductService {
                         // 添加短语匹配，提高精确度
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("name", name).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     nameQuery.must(multiMatchQuery);
                     boolQuery.must(nameQuery);
                 }
-                
+
                 // 产品简称查询 - 智能匹配策略
-                if (StringUtils.isNotBlank(pageReqVO.getProductShortName())) {
+                if (StrUtil.isNotBlank(pageReqVO.getProductShortName())) {
                     BoolQueryBuilder shortNameQuery = QueryBuilders.boolQuery();
                     String shortName = pageReqVO.getProductShortName().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("product_short_name_keyword", shortName).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("product_short_name_keyword", shortName).boost(100000.0f));
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("product_short_name_keyword", "*" + shortName + "*").boost(10000.0f));
-                    
+
                     // 智能分词匹配
                     if (shortName.length() == 1) {
                         // 单字搜索，使用分词匹配，权重适中
@@ -597,22 +818,22 @@ public class ErpProductServiceImpl implements ErpProductService {
                         multiMatchQuery.should(QueryBuilders.matchQuery("product_short_name", shortName).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("product_short_name", shortName).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     shortNameQuery.must(multiMatchQuery);
                     boolQuery.must(shortNameQuery);
                 }
-                
+
                 // 发货编码查询 - 智能匹配策略
-                if (StringUtils.isNotBlank(pageReqVO.getShippingCode())) {
+                if (StrUtil.isNotBlank(pageReqVO.getShippingCode())) {
                     BoolQueryBuilder codeQuery = QueryBuilders.boolQuery();
                     String code = pageReqVO.getShippingCode().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("shipping_code_keyword", code).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("shipping_code_keyword", code).boost(100000.0f));
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(10000.0f));
-                    
+
                     // 智能分词匹配
                     if (code.length() == 1) {
                         // 单字搜索
@@ -626,22 +847,22 @@ public class ErpProductServiceImpl implements ErpProductService {
                         multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("shipping_code", code).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     codeQuery.must(multiMatchQuery);
                     boolQuery.must(codeQuery);
                 }
-                
+
                 // 品牌名称查询 - 智能匹配策略
-                if (StringUtils.isNotBlank(pageReqVO.getBrand())) {
+                if (StrUtil.isNotBlank(pageReqVO.getBrand())) {
                     BoolQueryBuilder brandQuery = QueryBuilders.boolQuery();
                     String brand = pageReqVO.getBrand().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("brand_keyword", brand).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("brand_keyword", brand).boost(100000.0f));
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("brand_keyword", "*" + brand + "*").boost(10000.0f));
-                    
+
                     // 智能分词匹配
                     if (brand.length() == 1) {
                         // 单字搜索
@@ -655,22 +876,22 @@ public class ErpProductServiceImpl implements ErpProductService {
                         multiMatchQuery.should(QueryBuilders.matchQuery("brand", brand).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("brand", brand).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     brandQuery.must(multiMatchQuery);
                     boolQuery.must(brandQuery);
                 }
-                
+
                 // 采购人员查询 - 智能匹配策略
-                if (StringUtils.isNotBlank(pageReqVO.getPurchaser())) {
+                if (StrUtil.isNotBlank(pageReqVO.getPurchaser())) {
                     BoolQueryBuilder purchaserQuery = QueryBuilders.boolQuery();
                     String purchaser = pageReqVO.getPurchaser().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("purchaser_keyword", purchaser).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("purchaser_keyword", purchaser).boost(100000.0f));
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + purchaser + "*").boost(10000.0f));
-                    
+
                     // 智能分词匹配
                     if (purchaser.length() == 1) {
                         // 单字搜索
@@ -684,22 +905,22 @@ public class ErpProductServiceImpl implements ErpProductService {
                         multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("purchaser", purchaser).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     purchaserQuery.must(multiMatchQuery);
                     boolQuery.must(purchaserQuery);
                 }
-                
+
                 // 供应商名查询 - 智能匹配策略
-                if (StringUtils.isNotBlank(pageReqVO.getSupplier())) {
+                if (StrUtil.isNotBlank(pageReqVO.getSupplier())) {
                     BoolQueryBuilder supplierQuery = QueryBuilders.boolQuery();
                     String supplier = pageReqVO.getSupplier().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("supplier_keyword", supplier).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("supplier_keyword", supplier).boost(100000.0f));
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + supplier + "*").boost(10000.0f));
-                    
+
                     // 智能分词匹配
                     if (supplier.length() == 1) {
                         // 单字搜索
@@ -713,22 +934,22 @@ public class ErpProductServiceImpl implements ErpProductService {
                         multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("supplier", supplier).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     supplierQuery.must(multiMatchQuery);
                     boolQuery.must(supplierQuery);
                 }
-                
+
                 // 创建人员查询 - 智能匹配策略
-                if (StringUtils.isNotBlank(pageReqVO.getCreator())) {
+                if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
                     BoolQueryBuilder creatorQuery = QueryBuilders.boolQuery();
                     String creator = pageReqVO.getCreator().trim();
-                    
+
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
                     multiMatchQuery.should(QueryBuilders.termQuery("creator_keyword", creator).boost(1000000.0f));
                     multiMatchQuery.should(QueryBuilders.prefixQuery("creator_keyword", creator).boost(100000.0f));
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("creator_keyword", "*" + creator + "*").boost(10000.0f));
-                    
+
                     // 智能分词匹配
                     if (creator.length() == 1) {
                         // 单字搜索
@@ -742,42 +963,42 @@ public class ErpProductServiceImpl implements ErpProductService {
                         multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("creator", creator).boost(1000.0f));
                     }
-                    
+
                     multiMatchQuery.minimumShouldMatch(1);
                     creatorQuery.must(multiMatchQuery);
                     boolQuery.must(creatorQuery);
                 }
             }
-            
+
             // 产品分类精确查询
         if (pageReqVO.getCategoryId() != null) {
                 boolQuery.must(QueryBuilders.termQuery("category_id", pageReqVO.getCategoryId()));
             }
-            
+
             // 产品状态精确查询
             if (pageReqVO.getStatus() != null) {
                 boolQuery.must(QueryBuilders.termQuery("status", pageReqVO.getStatus()));
             }
-            
+
             // 创建时间范围查询
         if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
                 boolQuery.must(QueryBuilders.rangeQuery("create_time")
                         .gte(pageReqVO.getCreateTime()[0].toString())
                         .lte(pageReqVO.getCreateTime()[1].toString()));
             }
-            
+
             // 如果没有任何查询条件，使用match_all
             if (!boolQuery.hasClauses()) {
                 boolQuery.must(QueryBuilders.matchAllQuery());
             }
-            
+
             // 2. 构建查询请求
             NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                     .withQuery(boolQuery)
                     .withTrackTotalHits(true)
                     .withSort(Sort.by(Sort.Direction.DESC, "_score"))  // 按相关性排序
                     .withSort(Sort.by(Sort.Direction.DESC, "id"));     // 相关性相同时按ID排序
-            
+
             // 3. 处理分页参数
             // 检查是否是导出操作（pageSize为-1）
             if (PageParam.PAGE_SIZE_NONE.equals(pageReqVO.getPageSize())) {
@@ -795,33 +1016,34 @@ public class ErpProductServiceImpl implements ErpProductService {
                     queryBuilder.withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()));
                 }
             }
-            
+
             // 4. 执行查询
             NativeSearchQuery finalQuery = queryBuilder.build();
-            
+
             // 添加调试日志
             System.out.println("=== ES查询调试信息 ===");
             System.out.println("查询参数: " + pageReqVO.getName());
             System.out.println("查询语句: " + finalQuery.getQuery().toString());
             System.out.println("==================");
-            
+
         SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
                     finalQuery,
                 ErpProductESDO.class,
                 IndexCoordinates.of("erp_products"));
-            
+
             // 添加结果调试日志
             System.out.println("=== ES查询结果 ===");
             System.out.println("总命中数: " + searchHits.getTotalHits());
             searchHits.getSearchHits().forEach(hit -> {
                 ErpProductESDO content = hit.getContent();
-                System.out.println("命中产品: ID=" + content.getId() + 
-                                 ", 名称=" + content.getName() + 
-                                 ", name_keyword=" + content.getNameKeyword() +
+                System.out.println("命中产品: ID=" + content.getId() +
+                                 ", 名称=" + content.getName() +
+                                 ", 产品编号=" + content.getNo() +
+                                 ", no_keyword=" + content.getNoKeyword() +
                                  ", 得分=" + hit.getScore());
             });
             System.out.println("================");
-            
+
             // 5. 转换结果
             return convertSearchHitsToPageResult(searchHits);
 
@@ -838,7 +1060,7 @@ public class ErpProductServiceImpl implements ErpProductService {
     /**
      * 处理深度分页（offset >= 10000时使用search_after）
      */
-    private PageResult<ErpProductRespVO> handleDeepPagination(ErpProductPageReqVO pageReqVO, 
+    private PageResult<ErpProductRespVO> handleDeepPagination(ErpProductPageReqVO pageReqVO,
                                                             NativeSearchQueryBuilder queryBuilder,
                                                             BoolQueryBuilder boolQuery) {
         try {
@@ -846,31 +1068,31 @@ public class ErpProductServiceImpl implements ErpProductService {
             if (pageReqVO.getLastId() != null) {
                 return searchAfterPagination(pageReqVO, queryBuilder);
             }
-            
+
             // 2. 没有lastId时，需要先获取到目标位置的最后一条记录的ID
             int targetOffset = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
             Long searchAfterValue = findSearchAfterValue(boolQuery, targetOffset);
-            
+
             if (searchAfterValue == null) {
                 // 如果找不到search_after值，返回空结果
                 return new PageResult<>(Collections.emptyList(), 0L);
             }
-            
+
             // 3. 使用找到的search_after值进行查询
             // 检查pageSize是否为导出标志，如果是则使用合理的分页大小
             int pageSize = PageParam.PAGE_SIZE_NONE.equals(pageReqVO.getPageSize()) ? 10000 : pageReqVO.getPageSize();
             queryBuilder.withPageable(PageRequest.of(0, pageSize));
-            
+
         NativeSearchQuery query = queryBuilder.build();
             query.setSearchAfter(Arrays.asList(searchAfterValue));
-            
+
             SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
                     query,
                     ErpProductESDO.class,
                     IndexCoordinates.of("erp_products"));
 
             return convertSearchHitsToPageResult(searchHits);
-            
+
         } catch (Exception e) {
             System.err.println("深度分页查询失败: " + e.getMessage());
             // 降级到普通分页（可能会有性能问题，但保证功能可用）
@@ -889,15 +1111,15 @@ public class ErpProductServiceImpl implements ErpProductService {
     /**
      * 使用search_after进行分页查询
      */
-    private PageResult<ErpProductRespVO> searchAfterPagination(ErpProductPageReqVO pageReqVO, 
+    private PageResult<ErpProductRespVO> searchAfterPagination(ErpProductPageReqVO pageReqVO,
                                                              NativeSearchQueryBuilder queryBuilder) {
         // 检查pageSize是否为导出标志，如果是则使用合理的分页大小
         int pageSize = PageParam.PAGE_SIZE_NONE.equals(pageReqVO.getPageSize()) ? 10000 : pageReqVO.getPageSize();
         queryBuilder.withPageable(PageRequest.of(0, pageSize));
-        
+
         NativeSearchQuery query = queryBuilder.build();
         query.setSearchAfter(Arrays.asList(pageReqVO.getLastId()));
-        
+
         SearchHits<ErpProductESDO> searchHits = elasticsearchRestTemplate.search(
                 query,
                 ErpProductESDO.class,
@@ -914,30 +1136,30 @@ public class ErpProductServiceImpl implements ErpProductService {
             // 分批获取，避免一次性获取过多数据
             int batchSize = Math.min(1000, targetOffset);
             int batches = (targetOffset + batchSize - 1) / batchSize;
-            
+
             List<Object> lastSortValues = null;
-            
+
             for (int i = 0; i < batches; i++) {
                 NativeSearchQueryBuilder batchQueryBuilder = new NativeSearchQueryBuilder()
                         .withQuery(boolQuery)
                         .withPageable(PageRequest.of(0, batchSize))
                         .withSort(Sort.by(Sort.Direction.DESC, "id"))
                         .withTrackTotalHits(false); // 提高性能
-                
+
                 NativeSearchQuery batchQuery = batchQueryBuilder.build();
                 if (lastSortValues != null) {
                     batchQuery.setSearchAfter(lastSortValues);
                 }
-                
+
                 SearchHits<ErpProductESDO> batchHits = elasticsearchRestTemplate.search(
                         batchQuery,
                         ErpProductESDO.class,
                         IndexCoordinates.of("erp_products"));
-                
+
                 if (batchHits.isEmpty()) {
                     break;
                 }
-                
+
                 // 获取最后一条记录的排序值
                 SearchHit<ErpProductESDO> lastHit = batchHits.getSearchHits().get(batchHits.getSearchHits().size() - 1);
                 List<Object> sortValuesList = lastHit.getSortValues();
@@ -945,9 +1167,9 @@ public class ErpProductServiceImpl implements ErpProductService {
                     lastSortValues = new ArrayList<>(sortValuesList);
                 }
             }
-            
+
             return lastSortValues != null && !lastSortValues.isEmpty() ? (Long) lastSortValues.get(0) : null;
-            
+
         } catch (Exception e) {
             System.err.println("查找search_after值失败: " + e.getMessage());
             return null;
@@ -963,7 +1185,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                 .map(esDO -> {
                     // 先进行基础转换
                     ErpProductRespVO vo = BeanUtils.toBean(esDO, ErpProductRespVO.class);
-                    
+
                     // 手动处理日期字段转换
                     if (StrUtil.isNotBlank(esDO.getProductionDate())) {
                         try {
@@ -975,7 +1197,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     } else {
                         vo.setProductionDate(null);
                     }
-                    
+
                     if (StrUtil.isNotBlank(esDO.getCreateTime())) {
                         try {
                             vo.setCreateTime(LocalDateTime.parse(esDO.getCreateTime()));
@@ -986,7 +1208,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     } else {
                         vo.setCreateTime(null);
                     }
-                    
+
                     // 确保关键字段不为空
                     if (vo.getCategoryName() == null && vo.getCategoryId() != null) {
                         vo.setCategoryName(getCategoryNameById(vo.getCategoryId()));
@@ -994,17 +1216,17 @@ public class ErpProductServiceImpl implements ErpProductService {
                     if (vo.getUnitName() == null && vo.getUnitId() != null) {
                         vo.setUnitName(getUnitNameById(vo.getUnitId()));
                     }
-                    
+
                     // 设置lastId用于下一页的search_after
                     vo.setLastId(vo.getId());
-                    
+
                     return vo;
                 })
                 .collect(Collectors.toList());
-        
+
         // 应用层二次排序 - 确保精确匹配优先
         voList = applySecondarySort(voList);
-        
+
         return new PageResult<>(voList, searchHits.getTotalHits());
     }
 
@@ -1016,57 +1238,57 @@ public class ErpProductServiceImpl implements ErpProductService {
         if (voList == null || voList.size() <= 1) {
             return voList;
         }
-        
+
         // 获取当前搜索条件
         String searchName = CURRENT_SEARCH_NAME.get();
         if (StrUtil.isBlank(searchName)) {
             return voList;
         }
-        
+
         // 去掉引号（如果有）
         if (searchName.startsWith("\"") && searchName.endsWith("\"")) {
             searchName = searchName.substring(1, searchName.length() - 1);
         }
-        
+
         final String finalSearchName = searchName;
-        
+
         return voList.stream()
                 .sorted((a, b) -> {
                     String nameA = a.getName();
                     String nameB = b.getName();
-                    
+
                     if (nameA == null && nameB == null) return 0;
                     if (nameA == null) return 1;
                     if (nameB == null) return -1;
-                    
+
                     // 1. 完全精确匹配优先（最高优先级）
                     boolean exactMatchA = finalSearchName.equals(nameA);
                     boolean exactMatchB = finalSearchName.equals(nameB);
-                    
+
                     if (exactMatchA && !exactMatchB) return -1;
                     if (!exactMatchA && exactMatchB) return 1;
                     if (exactMatchA && exactMatchB) return 0;
-                    
+
                     // 2. 前缀匹配优先
                     boolean prefixMatchA = nameA.startsWith(finalSearchName);
                     boolean prefixMatchB = nameB.startsWith(finalSearchName);
-                    
+
                     if (prefixMatchA && !prefixMatchB) return -1;
                     if (!prefixMatchA && prefixMatchB) return 1;
-                    
+
                     // 3. 包含匹配，但名称越短越靠前
                     boolean containsA = nameA.contains(finalSearchName);
                     boolean containsB = nameB.contains(finalSearchName);
-                    
+
                     if (containsA && !containsB) return -1;
                     if (!containsA && containsB) return 1;
-                    
+
                     if (containsA && containsB) {
                         // 都包含的情况下，名称越短越靠前
                         int lengthCompare = Integer.compare(nameA.length(), nameB.length());
                         if (lengthCompare != 0) return lengthCompare;
                     }
-                    
+
                     // 4. 最后按ID排序保证稳定性
                     return Long.compare(
                         a.getId() != null ? a.getId() : 0L,
@@ -1326,13 +1548,18 @@ public class ErpProductServiceImpl implements ErpProductService {
         if (product == null) {
             return null;
         }
-        
+
         try {
             ErpProductESDO es = new ErpProductESDO();
-            
+
+            // 添加调试信息
+            System.out.println("转换产品到ES: ID=" + product.getId() +
+                             ", no='" + product.getNo() + "'" +
+                             ", name='" + product.getName() + "'");
+
             // 复制基础属性（排除日期字段）
             BeanUtils.copyProperties(product, es, "productionDate", "createTime");
-            
+
             // 安全处理日期字段 - 转换为字符串
             if (product.getProductionDate() != null) {
                 es.setProductionDate(product.getProductionDate().toString());
@@ -1340,16 +1567,22 @@ public class ErpProductServiceImpl implements ErpProductService {
             if (product.getCreateTime() != null) {
                 es.setCreateTime(product.getCreateTime().toString());
             }
-            
-            // 设置keyword字段（用于精确匹配和通配符查询）
-            es.setNameKeyword(product.getName() != null ? product.getName() : "");
-            es.setProductShortNameKeyword(product.getProductShortName() != null ? product.getProductShortName() : "");
-            es.setShippingCodeKeyword(product.getShippingCode() != null ? product.getShippingCode() : "");
-            es.setBrandKeyword(product.getBrand() != null ? product.getBrand() : "");
-            es.setPurchaserKeyword(product.getPurchaser() != null ? product.getPurchaser() : "");
-            es.setSupplierKeyword(product.getSupplier() != null ? product.getSupplier() : "");
-            es.setCreatorKeyword(product.getCreator() != null ? product.getCreator() : "");
-            
+
+            // 设置keyword字段（用于精确匹配和通配符查询）- 与代发表保持完全一致
+            es.setNoKeyword(product.getNo());
+            es.setNameKeyword(product.getName());
+
+            // 验证转换结果
+            System.out.println("转换后ES对象: no='" + es.getNo() + "'" +
+                             ", no_keyword='" + es.getNoKeyword() + "'" +
+                             ", name='" + es.getName() + "'");
+            es.setProductShortNameKeyword(product.getProductShortName());
+            es.setShippingCodeKeyword(product.getShippingCode());
+            es.setBrandKeyword(product.getBrand());
+            es.setPurchaserKeyword(product.getPurchaser());
+            es.setSupplierKeyword(product.getSupplier());
+            es.setCreatorKeyword(product.getCreator());
+
             // 设置分类名称（优化：减少数据库查询）
             if (product.getCategoryId() != null) {
                 try {
@@ -1362,7 +1595,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             } else {
                 es.setCategoryName("");
             }
-            
+
             // 设置单位名称（优化：减少数据库查询）
             if (product.getUnitId() != null) {
                 try {
@@ -1375,9 +1608,9 @@ public class ErpProductServiceImpl implements ErpProductService {
             } else {
                 es.setUnitName("");
             }
-            
+
             return es;
-            
+
         } catch (Exception e) {
             System.err.println("转换产品到ES对象失败，产品ID: " + (product.getId() != null ? product.getId() : "null") + ", 错误: " + e.getMessage());
             // 返回null，让调用方过滤掉
@@ -1393,36 +1626,98 @@ public class ErpProductServiceImpl implements ErpProductService {
     }
 
     /**
+     * 检查ES索引中的产品编号数据
+     */
+    public void checkESProductNoData() {
+        try {
+            System.out.println("=== 检查ES索引中的产品编号数据 ===");
+
+            // 查询前10条记录，检查产品编号字段
+            NativeSearchQuery query = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.matchAllQuery())
+                    .withPageable(PageRequest.of(0, 10))
+                    .build();
+
+            SearchHits<ErpProductESDO> hits = elasticsearchRestTemplate.search(
+                    query,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            System.out.println("ES中总记录数: " + hits.getTotalHits());
+            System.out.println("前10条记录的产品编号数据:");
+
+            hits.getSearchHits().forEach(hit -> {
+                ErpProductESDO content = hit.getContent();
+                System.out.println("ID=" + content.getId() +
+                                 ", no='" + content.getNo() + "'" +
+                                 ", no_keyword='" + content.getNoKeyword() + "'" +
+                                 ", name='" + content.getName() + "'");
+            });
+
+            // 检查数据库中的产品编号数据
+            System.out.println("\n对比数据库中的产品编号数据:");
+            List<ErpProductDO> dbProducts = productMapper.selectList(
+                new LambdaQueryWrapper<ErpProductDO>().last("LIMIT 10"));
+
+            dbProducts.forEach(product -> {
+                System.out.println("DB: ID=" + product.getId() +
+                                 ", no='" + product.getNo() + "'" +
+                                 ", name='" + product.getName() + "'");
+            });
+
+            System.out.println("=== 检查完成 ===");
+
+            // 检查ES索引映射
+            System.out.println("\n=== 检查ES索引映射 ===");
+            IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
+            if (indexOps.exists()) {
+                try {
+                    Map<String, Object> mapping = indexOps.getMapping();
+                    System.out.println("ES索引映射: " + mapping.toString());
+                } catch (Exception e) {
+                    System.err.println("获取ES索引映射失败: " + e.getMessage());
+                }
+            } else {
+                System.out.println("ES索引不存在");
+            }
+
+        } catch (Exception e) {
+            System.err.println("检查ES产品编号数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * 重建ES索引（删除重建）
      */
     public void rebuildESIndex() {
         try {
             System.out.println("开始重建ES索引...");
-            
+
             // 检查ES是否可用
             if (!isESServiceAvailable()) {
                 throw new RuntimeException("ES服务不可用，无法重建索引");
             }
-            
+
             IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpProductESDO.class);
-            
+
             // 删除现有索引（如果存在）
             if (indexOps.exists()) {
                 System.out.println("删除现有索引...");
                 indexOps.delete();
             }
-            
+
             // 创建新索引
             System.out.println("创建新索引...");
             indexOps.create();
             indexOps.putMapping(indexOps.createMapping(ErpProductESDO.class));
             System.out.println("索引创建成功");
-            
+
             // 全量同步数据
             System.out.println("开始同步数据...");
             syncAllDataToES();
             System.out.println("ES索引重建完成");
-            
+
         } catch (Exception e) {
             System.err.println("重建ES索引失败: " + e.getMessage());
             e.printStackTrace();
@@ -1464,7 +1759,7 @@ public class ErpProductServiceImpl implements ErpProductService {
     /**
      * 创建智能匹配查询
      * 根据关键词长度智能选择匹配策略
-     * 
+     *
      * @param fieldName 字段名
      * @param keyword 关键词
      * @param singleCharBoost 单字搜索权重
@@ -1472,10 +1767,10 @@ public class ErpProductServiceImpl implements ErpProductService {
      * @param multiCharBoost 多字搜索权重
      * @return 智能匹配查询
      */
-    private BoolQueryBuilder createIntelligentMatchQuery(String fieldName, String keyword, 
+    private BoolQueryBuilder createIntelligentMatchQuery(String fieldName, String keyword,
                                                         float singleCharBoost, float doubleCharBoost, float multiCharBoost) {
         BoolQueryBuilder intelligentQuery = QueryBuilders.boolQuery();
-        
+
         if (keyword.length() == 1) {
             // 单字搜索，使用OR匹配，确保能找到包含该字的结果
             intelligentQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.OR).boost(singleCharBoost));
@@ -1488,52 +1783,90 @@ public class ErpProductServiceImpl implements ErpProductService {
             intelligentQuery.should(QueryBuilders.matchQuery(fieldName, keyword).operator(Operator.AND).boost(multiCharBoost));
             intelligentQuery.should(QueryBuilders.matchPhraseQuery(fieldName, keyword).boost(multiCharBoost * 1.5f));
         }
-        
+
         intelligentQuery.minimumShouldMatch(1);
         return intelligentQuery;
     }
-    
+
     /**
      * 🔥 关键方法：单品更新后，同步所有相关的组品ES索引
      * 确保组品的采购单价、批发单价、重量等实时反映单品变化
      */
     private void syncRelatedCombosToES(Long productId) {
         try {
-            System.out.println("开始同步单品ID " + productId + " 相关的组品...");
-            
-            // 1. 查找所有包含该单品的组品关联记录
-            List<ErpComboProductItemDO> comboItems = comboProductItemMapper.selectList(
-                new LambdaQueryWrapper<ErpComboProductItemDO>()
-                    .eq(ErpComboProductItemDO::getItemProductId, productId)
+            // 查询包含该产品的组品
+            List<ErpComboProductItemDO> items = comboProductItemMapper.selectList(
+                    new LambdaQueryWrapper<ErpComboProductItemDO>()
+                            .eq(ErpComboProductItemDO::getItemProductId, productId)
             );
-            
-            if (CollUtil.isEmpty(comboItems)) {
-                System.out.println("单品ID " + productId + " 未被任何组品使用");
-                return;
-            }
-            
-            // 2. 提取所有相关的组品ID
-            Set<Long> comboProductIds = comboItems.stream()
-                .map(ErpComboProductItemDO::getComboProductId)
-                .collect(Collectors.toSet());
-            
-            System.out.println("发现 " + comboProductIds.size() + " 个相关组品需要同步: " + comboProductIds);
-            
-            // 3. 逐个同步相关组品的ES索引
-            for (Long comboProductId : comboProductIds) {
-                try {
+
+            if (CollUtil.isNotEmpty(items)) {
+                Set<Long> comboProductIds = items.stream()
+                        .map(ErpComboProductItemDO::getComboProductId)
+                        .collect(Collectors.toSet());
+
+                // 通知组品服务同步这些组品到ES
+                for (Long comboProductId : comboProductIds) {
                     comboProductService.manualSyncComboToES(comboProductId);
-                    System.out.println("已同步组品ID: " + comboProductId);
-                } catch (Exception e) {
-                    System.err.println("同步组品ID " + comboProductId + " 失败: " + e.getMessage());
                 }
+                System.out.println("已同步 " + comboProductIds.size() + " 个相关组品到ES");
             }
-            
-            System.out.println("单品相关组品同步完成，共同步 " + comboProductIds.size() + " 个组品");
-            
         } catch (Exception e) {
-            System.err.println("同步单品相关组品失败，单品ID: " + productId + ", 错误: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("同步相关组品到ES失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 检查字符串是否包含太多重复字符（连续相同字符超过2个）
+     * 用于避免像"0001"这样的模式匹配到多条记录
+     */
+    private boolean containsTooManyRepeatedChars(String str) {
+        if (str.length() < 3) {
+            return false;
+        }
+
+        int repeatCount = 1;
+        char prevChar = str.charAt(0);
+
+        for (int i = 1; i < str.length(); i++) {
+            char currentChar = str.charAt(i);
+            if (currentChar == prevChar) {
+                repeatCount++;
+                if (repeatCount > 2) { // 连续超过2个相同字符就认为是重复过多
+                    return true;
+                }
+            } else {
+                repeatCount = 1;
+                prevChar = currentChar;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查字符串是否包含太多重复数字（连续相同数字超过3个）
+     * 修改逻辑：只检查连续相同的数字，而不是连续的数字
+     */
+    private boolean containsTooManyRepeatedDigits(String str) {
+        if (str.length() < 4) {
+            return false;
+        }
+
+        int sameDigitCount = 1;
+        char prevChar = str.charAt(0);
+
+        for (int i = 1; i < str.length(); i++) {
+            char currentChar = str.charAt(i);
+            if (Character.isDigit(currentChar) && Character.isDigit(prevChar) && currentChar == prevChar) {
+                sameDigitCount++;
+                if (sameDigitCount > 3) { // 连续超过3个相同数字才认为是重复过多
+                    return true;
+                }
+            } else {
+                sameDigitCount = 1;
+                prevChar = currentChar;
+            }
+        }
+        return false;
     }
 }

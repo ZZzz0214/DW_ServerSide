@@ -19,8 +19,11 @@ public class ErpProductESDO {
     @Id
     private Long id;
 
-    @Field(name = "no", type = FieldType.Keyword)
+    @Field(name = "no", type = FieldType.Text, analyzer = "ik_max_word")
     private String no;
+
+    @Field(name = "no_keyword", type = FieldType.Keyword)
+    private String noKeyword;
 
     @Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word")
     private String name;

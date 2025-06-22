@@ -19,6 +19,9 @@ import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_
 public class ErpProductPageReqVO extends PageParam {
     private Long lastId; // 上一页最后一条记录的ID
 
+    @Schema(description = "产品编号", example = "P001")
+    private String no;
+
     @Schema(description = "产品名称", example = "李四")
     private String name;
 
