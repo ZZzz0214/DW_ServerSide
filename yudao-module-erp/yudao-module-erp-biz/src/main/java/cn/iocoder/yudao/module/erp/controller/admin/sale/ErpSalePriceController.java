@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.*;
+import cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo.ErpTransitSaleRespVO;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
@@ -111,6 +113,17 @@ public class ErpSalePriceController {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpSalePriceRespVO> pageResult = salePriceService.getSalePriceVOPage(pageReqVO);
         ExcelUtils.write(response, "销售价格.xlsx", "数据", ErpSalePriceRespVO.class, pageResult.getList());
+    }
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得导入销售价格模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpSalePriceRespVO> list = Arrays.asList(
+                new ErpSalePriceRespVO()
+        );
+
+        ExcelUtils.write(response, "销售价格模板.xlsx", "销售价格模板", ErpSalePriceRespVO.class, list);
     }
 
     @GetMapping("/search")

@@ -2,12 +2,14 @@ package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO;
 
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -53,11 +55,6 @@ public class ErpDistributionImportExcelVO {
     @ExcelProperty("组品编号")
     private String comboProductNo;
 
-    @ExcelProperty("发货编码")
-    private String shippingCode;
-
-    @ExcelProperty("产品名称")
-    private String productName;
 
     @ExcelProperty("产品规格")
     private String productSpecification;
@@ -71,11 +68,23 @@ public class ErpDistributionImportExcelVO {
     @ExcelProperty("售后时间")
     private LocalDateTime afterSalesTime;
 
+    @ExcelProperty("采购杂费")
+    private BigDecimal otherFees;
+
+    @ExcelProperty("采购备注")
+    private String purchaseRemark;
+
     @ExcelProperty("销售人员")
     private String salesperson;
 
     @ExcelProperty("客户名称")
     private String customerName;
+
+    @ExcelProperty("出货杂费")
+    private BigDecimal saleOtherFees;
+
+    @ExcelProperty("出货备注")
+    private String saleRemark;
 
     @ExcelProperty("中转人员")
     private String transferPerson;

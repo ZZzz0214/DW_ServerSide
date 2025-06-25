@@ -83,10 +83,5 @@ public class ErpWholesaleImportExcelVO {
 
     @ExcelProperty("中转人员")
     private String transferPerson;
-
-//    @ExcelProperty("创建人员")
-//    private String creator;
-//
-//    @ExcelProperty("创建日期")
-//    private LocalDateTime createTime;
+    
 }

@@ -162,8 +162,7 @@ public class ErpDropshipAssistController {
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
         List<ErpDropshipAssistExportVO> list = Arrays.asList(
-                ErpDropshipAssistExportVO.builder()
-                        .no("示例订单1").build()
+                ErpDropshipAssistExportVO.builder().build()
         );
         // 输出
         ExcelUtils.write(response, "代发辅助导入模板.xls", "代发辅助列表", ErpDropshipAssistExportVO.class, list);

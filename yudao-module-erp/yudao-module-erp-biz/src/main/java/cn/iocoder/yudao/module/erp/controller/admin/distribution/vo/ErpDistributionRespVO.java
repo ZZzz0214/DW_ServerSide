@@ -77,7 +77,7 @@ public class ErpDistributionRespVO {
     @Schema(description = "采购运费", example = "50.00")
     private BigDecimal shippingFee;
 
-    @Schema(description = "采购其他费用", example = "20.00")
+    @Schema(description = "采购杂费", example = "20.00")
     private BigDecimal otherFees;
 
     @Schema(description = "采购总额", example = "10000.00")

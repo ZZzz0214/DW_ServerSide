@@ -636,16 +636,6 @@ public class ErpDistributionController {
         // 手动创建导出 demo
         List<ErpDistributionExportExcelVO> list = Arrays.asList(
                 ErpDistributionExportExcelVO.builder()
-                .no("示例订单1")
-                .orderNumber("ORD-001")
-                .receiverName("张三")
-                .receiverPhone("13800138000")
-                .build(),
-                ErpDistributionExportExcelVO.builder()
-                .no("示例订单2")
-                .orderNumber("ORD-002")
-                .receiverName("李四")
-                .receiverPhone("13900139000")
                 .build()
         );
         // 输出

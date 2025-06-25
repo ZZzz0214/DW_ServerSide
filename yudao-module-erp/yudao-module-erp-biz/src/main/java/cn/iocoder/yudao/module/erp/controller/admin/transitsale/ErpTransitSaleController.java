@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
+import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistExportVO;
 import cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpTransitSaleDO;
 import cn.iocoder.yudao.module.erp.service.transitsale.ErpTransitSaleService;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
@@ -94,6 +96,17 @@ public class ErpTransitSaleController {
         //List<ErpTransitSaleExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpTransitSaleExportVO.class);
         // 导出 Excel
         ExcelUtils.write(response, "中转销售信息.xlsx", "数据", ErpTransitSaleRespVO.class, pageResult.getList());
+    }
+
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得导入中转销售模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpTransitSaleRespVO> list = Arrays.asList(
+        );
+        // 输出
+        ExcelUtils.write(response, "中转销售模板.xlsx", "中转销售模板", ErpTransitSaleRespVO.class, list);
     }
 
     @PostMapping("/import")

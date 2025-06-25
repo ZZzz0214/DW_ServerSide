@@ -9,6 +9,7 @@ import com.alibaba.excel.annotation.write.style.HeadFontStyle;
 import com.alibaba.excel.annotation.write.style.HeadStyle;
 import com.alibaba.excel.enums.BooleanEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Schema(description = "管理后台 - ERP 销售价格 Response VO")
+//@Builder
 @Data
 @ExcelIgnoreUnannotated
 public class ErpSalePriceRespVO {
