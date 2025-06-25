@@ -453,6 +453,7 @@ public interface ErrorCodeConstants {
     ErrorCode SALE_PRICE_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_300_007, "导入销售价格数据不能为空");
     ErrorCode SALE_PRICE_IMPORT_NO_EXISTS = new ErrorCode(1_030_300_008, "导入失败，第{}行的销售价格编号({})已存在");
     ErrorCode TRANSIT_SALE_GROUP_PRODUCT_ID_REQUIRED = new ErrorCode(1_030_120_009, "组品编号不能为空");
+    ErrorCode TRANSIT_SALE_PERSON_PRODUCT_DUPLICATE = new ErrorCode(1_030_120_010, "中转人员和组品组合已存在");
     // ========== ERP 组合产品导入 1-030-504-000 ==========
     ErrorCode COMBO_PRODUCT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_504_000, "导入组合产品数据不能为空");
     ErrorCode COMBO_PRODUCT_IMPORT_NO_EMPTY = new ErrorCode(1_030_504_001, "组合产品编号不能为空");

@@ -1,6 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo;
 
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
+import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -15,7 +19,6 @@ public class ErpTransitSaleSaveReqVO {
     private Long id;
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "TS001")
-    @NotNull(message = "编号不能为空")
     private String no;
 
     @Schema(description = "组品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
@@ -23,7 +26,8 @@ public class ErpTransitSaleSaveReqVO {
     private Long groupProductId;
 
     @Schema(description = "中转人员", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
-    @NotNull(message = "中转人员不能为空")
+    @ExcelProperty(value = "中转人员", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_TRANSIT_PERSON)
     private String transitPerson;
 
     @Schema(description = "代发单价（单位：元）", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -32,14 +32,6 @@ public class ErpTransitSaleImportExcelVO {
     private String groupProductNo;
 
 
-    @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "产品A")
-    @ExcelProperty("产品名称")
-    private String productName;
-
-    @Schema(description = "产品简称", example = "产品A简称")
-    @ExcelProperty("产品简称")
-    private String productShortName;
-
 
     @ExcelProperty(value = "中转人员", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_TRANSIT_PERSON)
@@ -58,7 +50,7 @@ public class ErpTransitSaleImportExcelVO {
     private String remark;
 
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）", example = "0")
-    @ExcelProperty("运费类型")
+    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
     private Integer shippingFeeType;
 
     @Schema(description = "固定运费（单位：元）", example = "10.00")
@@ -73,23 +65,20 @@ public class ErpTransitSaleImportExcelVO {
     @ExcelProperty("按件价格")
     private BigDecimal additionalItemPrice;
 
-    @Schema(description = "首重重量（单位：g）", example = "1000")
-    @ExcelProperty("首重重量（单位：g）")
+    @Schema(description = "首重重量", example = "1000")
+    @ExcelProperty("首重重量")
     private BigDecimal firstWeight;
 
     @Schema(description = "首重价格（单位：元）", example = "10.00")
     @ExcelProperty("首重价格")
     private BigDecimal firstWeightPrice;
 
-    @Schema(description = "续重重量（单位：g）", example = "500")
-    @ExcelProperty("续重重量（单位：g）")
+    @Schema(description = "续重重量", example = "500")
+    @ExcelProperty("续重重量")
     private BigDecimal additionalWeight;
 
     @Schema(description = "续重价格（单位：元）", example = "5.00")
     @ExcelProperty("续重价格")
     private BigDecimal additionalWeightPrice;
 
-    @Schema(description = "发货编码", example = "SH202503250001")
-    @ExcelProperty("发货编码")
-    private String shippingCode;
 }

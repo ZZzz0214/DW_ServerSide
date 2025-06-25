@@ -1238,6 +1238,9 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     updateSalePrice.setId(existSalePrice.getId());
                     updateSalePrice.setGroupProductId(comboProduct.getId());
 
+                    // 创建新记录时，校验组品编号+客户名称的唯一性
+                    validateCustomerProductUniqueWithCache(importVO.getCustomerName(), comboProduct.getId(), customerProductMap, updateSalePrice.getId());
+
                     // 只更新导入文件中提供的字段
                     if (importVO.getCustomerName() != null) {
                         updateSalePrice.setCustomerName(importVO.getCustomerName());
@@ -1666,16 +1669,16 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
     public PageResult<ErpCombinedMissingPriceVO> getCombinedMissingPrices(ErpSalePricePageReqVO pageReqVO) {
         try {
             System.out.println("=== 获取统一缺失价格记录 ===");
-            
+
             // 获取代发缺失价格记录
             PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(pageReqVO);
-            
+
             // 获取批发缺失价格记录
             PageResult<ErpWholesaleMissingPriceVO> wholesaleResult = wholesaleService.getWholesaleMissingPrices(pageReqVO);
-            
+
             // 合并数据，按组品ID+客户名称分组
             Map<String, ErpCombinedMissingPriceVO> combinedMap = new HashMap<>();
-            
+
             // 处理代发数据
             for (ErpDistributionMissingPriceVO distributionVO : distributionResult.getList()) {
                 String key = distributionVO.getComboProductId() + "_" + distributionVO.getCustomerName();
@@ -1688,7 +1691,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     vo.setCurrentDistributionPrice(distributionVO.getDistributionPrice());
                     return vo;
                 });
-                
+
                 // 设置代发信息
                 ErpCombinedMissingPriceVO.DistributionOrderInfo distributionInfo = new ErpCombinedMissingPriceVO.DistributionOrderInfo();
                 distributionInfo.setOrderCount(distributionVO.getOrderCount());
@@ -1699,7 +1702,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 distributionInfo.setLatestCreateTime(distributionVO.getLatestCreateTime());
                 combined.setDistributionInfo(distributionInfo);
             }
-            
+
             // 处理批发数据
             for (ErpWholesaleMissingPriceVO wholesaleVO : wholesaleResult.getList()) {
                 String key = wholesaleVO.getComboProductId() + "_" + wholesaleVO.getCustomerName();
@@ -1712,7 +1715,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     vo.setCurrentWholesalePrice(wholesaleVO.getWholesalePrice());
                     return vo;
                 });
-                
+
                 // 设置批发信息
                 ErpCombinedMissingPriceVO.WholesaleOrderInfo wholesaleInfo = new ErpCombinedMissingPriceVO.WholesaleOrderInfo();
                 wholesaleInfo.setOrderCount(wholesaleVO.getOrderCount());
@@ -1723,7 +1726,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 wholesaleInfo.setLatestCreateTime(wholesaleVO.getLatestCreateTime());
                 combined.setWholesaleInfo(wholesaleInfo);
             }
-            
+
             // 查询当前销售价格表中的价格信息
             for (ErpCombinedMissingPriceVO combined : combinedMap.values()) {
                 try {
@@ -1741,20 +1744,20 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     System.err.println("查询当前价格失败: " + e.getMessage());
                 }
             }
-            
+
             // 转换为列表并分页
             List<ErpCombinedMissingPriceVO> resultList = new ArrayList<>(combinedMap.values());
-            
+
             // 简单分页处理
             int start = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
             int end = Math.min(start + pageReqVO.getPageSize(), resultList.size());
-            
-            List<ErpCombinedMissingPriceVO> pageList = start < resultList.size() ? 
+
+            List<ErpCombinedMissingPriceVO> pageList = start < resultList.size() ?
                 resultList.subList(start, end) : Collections.emptyList();
-            
+
             System.out.println("统一缺失价格记录数量: " + resultList.size());
             return new PageResult<>(pageList, (long) resultList.size());
-            
+
         } catch (Exception e) {
             System.err.println("获取统一缺失价格记录失败: " + e.getMessage());
             e.printStackTrace();
@@ -1777,7 +1780,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
 
         for (ErpCombinedPriceSetReqVO req : reqList) {
             System.out.println("处理组品: " + req.getGroupProductId() + ", 客户: " + req.getCustomerName());
-            
+
             // 查找是否已存在该组品和客户的价格记录
             ErpSalePriceDO existing = erpSalePriceMapper.selectOne(
                 new LambdaQueryWrapper<ErpSalePriceDO>()
@@ -1788,7 +1791,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
             if (existing != null) {
                 // 更新现有记录
                 System.out.println("更新现有记录，ID: " + existing.getId());
-                
+
                 // 只更新非null的价格
                 if (req.getDistributionPrice() != null) {
                     existing.setDistributionPrice(req.getDistributionPrice());
@@ -1798,7 +1801,7 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                     existing.setWholesalePrice(req.getWholesalePrice());
                     System.out.println("设置批发单价: " + req.getWholesalePrice());
                 }
-                
+
                 // 设置运费信息
                 if (req.getShippingFeeType() != null) {
                     existing.setShippingFeeType(req.getShippingFeeType());
@@ -1826,21 +1829,21 @@ public ErpSalePriceRespVO getSalePriceWithItems(Long id) {
                 if (req.getAdditionalWeightPrice() != null) {
                     existing.setAdditionalWeightPrice(req.getAdditionalWeightPrice());
                 }
-                
+
                 toUpdateList.add(existing);
             } else {
                 // 创建新的价格记录
                 System.out.println("创建新的价格记录");
-                
+
                 ErpSalePriceDO newRecord = new ErpSalePriceDO();
-                
+
                 // 生成编号
                 String no = noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX);
                 newRecord.setNo(no);
-                
+
                 newRecord.setGroupProductId(req.getGroupProductId());
                 newRecord.setCustomerName(req.getCustomerName());
-                
+
                 if (req.getDistributionPrice() != null) {
                     newRecord.setDistributionPrice(req.getDistributionPrice());
                     System.out.println("设置代发单价: " + req.getDistributionPrice());

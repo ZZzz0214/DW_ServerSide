@@ -165,14 +165,14 @@ public class ErpComboProductController {
     @Operation(summary = "获得导入组合产品模板")
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
-        List<ErpComboImportExcelVO> list = Arrays.asList(
-            ErpComboImportExcelVO.builder()
+        List<ErpComboPurchaseRespVO> list = Arrays.asList(
+                ErpComboPurchaseRespVO.builder()
             .build()
         );
 
         System.out.println("查询一下模板"+list);
         // 输出
-        ExcelUtils.write(response, "组合产品导入模板.xls", "组合产品列表", ErpComboImportExcelVO.class, list);
+        ExcelUtils.write(response, "组合产品导入模板.xls", "组合产品列表", ErpComboPurchaseRespVO.class, list);
     }
 
 

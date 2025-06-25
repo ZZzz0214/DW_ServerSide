@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo;
 
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalToIntegerConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
@@ -60,28 +61,14 @@ public class ErpTransitSaleRespVO {
     private String remark;
 
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）", requiredMode = Schema.RequiredMode.REQUIRED)
-    @ExcelProperty("运费类型")
+    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
     private Integer shippingFeeType;
 
     @Schema(description = "固定运费（单位：元）")
     @ExcelProperty("固定运费")
     private BigDecimal fixedShippingFee;
 
-//    @Schema(description = "首件数量")
-//    @ExcelProperty("首件数量")
-//    private Integer firstItemQuantity;
-//
-//    @Schema(description = "首件价格（单位：元）")
-//    @ExcelProperty("首件价格")
-//    private BigDecimal firstItemPrice;
-//
-//    @Schema(description = "续件数量")
-//    @ExcelProperty("续件数量")
-//    private Integer additionalItemQuantity;
-//
-//    @Schema(description = "续件价格（单位：元）")
-//    @ExcelProperty("续件价格")
-//    private BigDecimal additionalItemPrice;
+
     @Schema(description = "续件数量", example = "10")
     @ExcelProperty("按件数量")
     private Integer additionalItemQuantity;
@@ -91,7 +78,7 @@ public class ErpTransitSaleRespVO {
     private BigDecimal additionalItemPrice;
 
     @Schema(description = "首重重量（单位：kg）")
-    @ExcelProperty("首重重量（单位：g）")
+    @ExcelProperty(value = "首重重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal firstWeight;
 
     @Schema(description = "首重价格（单位：元）")
@@ -99,7 +86,7 @@ public class ErpTransitSaleRespVO {
     private BigDecimal firstWeightPrice;
 
     @Schema(description = "续重重量（单位：kg）")
-    @ExcelProperty("续重重量（单位：g）")
+    @ExcelProperty(value = "续重重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal additionalWeight;
 
     @Schema(description = "续重价格（单位：元）")

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice;
 
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalToIntegerConvert;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
@@ -64,7 +65,7 @@ public class ErpSalePriceRespVO {
     private String remark;
 
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）", example = "0")
-    @ExcelProperty("运费类型")
+    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
     private Integer shippingFeeType;
 
     @Schema(description = "固定运费（单位：元）", example = "10.00")
@@ -80,7 +81,7 @@ public class ErpSalePriceRespVO {
     private BigDecimal additionalItemPrice;
 
     @Schema(description = "首重重量（单位：kg）", example = "1.00")
-    @ExcelProperty("首重重量（单位：g）")
+    @ExcelProperty(value = "首重重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal firstWeight;
 
     @Schema(description = "首重价格（单位：元）", example = "10.00")
@@ -88,7 +89,7 @@ public class ErpSalePriceRespVO {
     private BigDecimal firstWeightPrice;
 
     @Schema(description = "续重重量（单位：kg）", example = "0.50")
-    @ExcelProperty("续重重量（单位：g）")
+    @ExcelProperty(value = "续重重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal additionalWeight;
 
     @Schema(description = "续重价格（单位：元）", example = "5.00")

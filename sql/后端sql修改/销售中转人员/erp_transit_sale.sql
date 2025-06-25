@@ -45,7 +45,8 @@ CREATE TABLE `erp_transit_sale`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除（0：未删除，1：已删除）',
   `tenant_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_transit_person_group_product` (`transit_person`, `group_product_id`) USING BTREE COMMENT '中转人员和组品ID唯一索引'
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 中转销售表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------

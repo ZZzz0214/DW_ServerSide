@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo.ErpTransitSal
 import cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo.ErpTransitSaleRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpTransitSaleDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.Collection;
@@ -53,7 +54,7 @@ public interface ErpTransitSaleMapper extends BaseMapperX<ErpTransitSaleDO> {
         .selectAs(ErpComboProductDO::getName, ErpTransitSaleRespVO::getProductName)
         .selectAs(ErpComboProductDO::getShortName, ErpTransitSaleRespVO::getProductShortName)
         .selectAs(ErpComboProductDO::getNo, ErpTransitSaleRespVO::getGroupProductNo);
-        
+
         // 添加关联表字段的搜索条件
         if (reqVO.getProductName() != null) {
             query.like(ErpComboProductDO::getName, reqVO.getProductName());
@@ -73,5 +74,21 @@ public interface ErpTransitSaleMapper extends BaseMapperX<ErpTransitSaleDO> {
 
     default ErpTransitSaleDO selectByNo(String no) {
         return selectOne(ErpTransitSaleDO::getNo, no);
+    }
+
+    default ErpTransitSaleDO selectByTransitPersonAndGroupProductId(String transitPerson, Long groupProductId) {
+        return selectOne(new LambdaQueryWrapper<ErpTransitSaleDO>()
+                .eq(ErpTransitSaleDO::getTransitPerson, transitPerson)
+                .eq(ErpTransitSaleDO::getGroupProductId, groupProductId));
+    }
+
+    default Long selectCountByTransitPersonAndGroupProductId(String transitPerson, Long groupProductId, Long excludeId) {
+        LambdaQueryWrapper<ErpTransitSaleDO> queryWrapper = new LambdaQueryWrapper<ErpTransitSaleDO>()
+                .eq(ErpTransitSaleDO::getTransitPerson, transitPerson)
+                .eq(ErpTransitSaleDO::getGroupProductId, groupProductId);
+        if (excludeId != null) {
+            queryWrapper.ne(ErpTransitSaleDO::getId, excludeId);
+        }
+        return selectCount(queryWrapper);
     }
 }
