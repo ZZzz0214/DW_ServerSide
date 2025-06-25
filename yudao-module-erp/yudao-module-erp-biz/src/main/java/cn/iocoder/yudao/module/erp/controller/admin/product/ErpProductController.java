@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionExportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
@@ -89,15 +90,15 @@ public class ErpProductController {
     @PreAuthorize("@ss.hasPermission('erp:product:query')")
     public CommonResult<PageResult<ErpProductRespVO>> getProductPage(@Valid ErpProductPageReqVO pageReqVO) {
         System.out.println("产品分页查询参数: " + pageReqVO);
-        System.out.println("查询条件详情: 产品名称=" + pageReqVO.getName() + 
-                          ", 产品简称=" + pageReqVO.getProductShortName() + 
-                          ", 发货编码=" + pageReqVO.getShippingCode() + 
-                          ", 品牌=" + pageReqVO.getBrand() + 
-                          ", 分类ID=" + pageReqVO.getCategoryId() + 
-                          ", 状态=" + pageReqVO.getStatus() + 
-                          ", 采购人员=" + pageReqVO.getPurchaser() + 
-                          ", 供应商=" + pageReqVO.getSupplier() + 
-                          ", 创建人员=" + pageReqVO.getCreator() + 
+        System.out.println("查询条件详情: 产品名称=" + pageReqVO.getName() +
+                          ", 产品简称=" + pageReqVO.getProductShortName() +
+                          ", 发货编码=" + pageReqVO.getShippingCode() +
+                          ", 品牌=" + pageReqVO.getBrand() +
+                          ", 分类ID=" + pageReqVO.getCategoryId() +
+                          ", 状态=" + pageReqVO.getStatus() +
+                          ", 采购人员=" + pageReqVO.getPurchaser() +
+                          ", 供应商=" + pageReqVO.getSupplier() +
+                          ", 创建人员=" + pageReqVO.getCreator() +
                           ", 关键词=" + pageReqVO.getKeyword());
         return success(productService.getProductVOPage(pageReqVO));
     }
@@ -124,9 +125,9 @@ public class ErpProductController {
               HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpProductRespVO> pageResult = productService.getProductVOPage(pageReqVO);
-        // 导出 Excel
-        ExcelUtils.write(response, "产品信息.xlsx", "数据", ErpProductRespVO.class,
-                pageResult.getList());
+        // 转换为导出VO并导出Excel
+        List<ErpProductExportExcelVO> exportList = BeanUtils.toBeanList(pageResult.getList(), ErpProductExportExcelVO.class);
+        ExcelUtils.write(response, "产品信息.xlsx", "数据", ErpProductExportExcelVO.class, exportList);
     }
     @GetMapping("/export-excel2")
     @Operation(summary = "导出采购产品 Excel")
@@ -139,7 +140,6 @@ public class ErpProductController {
         // 导出 Excel
         // 转换为采购VO并导出Excel
         List<ErpProductPurchaseRespVO> purchaseList = BeanUtils.toBeanList(pageResult.getList(), ErpProductPurchaseRespVO.class);
-        System.out.println("1111"+purchaseList);
         ExcelUtils.write(response, "采购产品信息.xlsx", "数据", ErpProductPurchaseRespVO.class, purchaseList);
     }
 
@@ -155,14 +155,14 @@ public class ErpProductController {
     @Operation(summary = "获得导入产品模板")
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
-        List<ErpProductRespVO> list = Arrays.asList(
-            ErpProductRespVO.builder().name("示例产品1").categoryId(1L).barCode("1234567890123")
-                        .status(CommonStatusEnum.ENABLE.getStatus()).build(),
-                        ErpProductRespVO.builder().name("示例产品2").categoryId(2L).barCode("9876543210987")
-                        .status(CommonStatusEnum.DISABLE.getStatus()).build()
+        List<ErpProductPurchaseRespVO> list = Arrays.asList(
+                ErpProductPurchaseRespVO.builder()
+                        .build(),
+                ErpProductPurchaseRespVO.builder()
+                        .build()
         );
         // 输出
-        ExcelUtils.write(response, "产品导入模板.xls", "产品列表", ErpProductRespVO.class, list);
+        ExcelUtils.write(response, "产品导入模板.xls", "产品列表", ErpProductPurchaseRespVO.class, list);
     }
 
     @PostMapping("/import")

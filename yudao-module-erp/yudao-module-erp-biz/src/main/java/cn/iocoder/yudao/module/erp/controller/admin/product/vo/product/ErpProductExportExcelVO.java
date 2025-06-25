@@ -2,11 +2,10 @@ package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
-import cn.iocoder.yudao.framework.excel.core.convert.UserNicknameExcelConverter;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalToIntegerConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,18 +15,13 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Schema(description = "管理后台 - ERP 产品 Response VO")
+@Schema(description = "管理后台 - ERP 产品导出 Excel VO")
 @Data
 @Builder
 @ExcelIgnoreUnannotated
 @NoArgsConstructor
 @AllArgsConstructor
-public class ErpProductRespVO {
-
-    private Long lastId;
-
-    @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "15672")
-    private Long id;
+public class ErpProductExportExcelVO {
 
     @Schema(description = "产品编号(业务编号)", example = "P123456")
     @ExcelProperty("产品编号")
@@ -80,44 +74,40 @@ public class ErpProductRespVO {
     @ExcelProperty("产品卖点")
     private String productSellingPoints;
 
-
     @Schema(description = "采购人员")
     @ExcelProperty("采购人员")
     private String purchaser;
 
-
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
-    @ExcelProperty("运费类型")
+    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
     private Integer shippingFeeType;
 
-    @Schema(description = "固定运费（单位：元）")
-    @ExcelProperty("固定运费（单位：元）")
+    @Schema(description = "固定运费")
+    @ExcelProperty("固定运费")
     private BigDecimal fixedShippingFee;
-
-
 
     @Schema(description = "按件数量")
     @ExcelProperty("按件数量")
     private Integer additionalItemQuantity;
 
-    @Schema(description = "按件价格（单位：元）")
-    @ExcelProperty("按件价格（单位：元）")
+    @Schema(description = "按件价格")
+    @ExcelProperty("按件价格")
     private BigDecimal additionalItemPrice;
 
-    @Schema(description = "首重重量（单位：kg）")
-    @ExcelProperty("首重重量（单位：g）")
+    @Schema(description = "首重重量")
+    @ExcelProperty(value = "首重重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal firstWeight;
 
-    @Schema(description = "首重价格（单位：元）")
-    @ExcelProperty("首重价格（单位：元）")
+    @Schema(description = "首重价格")
+    @ExcelProperty("首重价格")
     private BigDecimal firstWeightPrice;
 
-    @Schema(description = "续重重量（单位：kg）")
-    @ExcelProperty("续重重量（单位：g）")
+    @Schema(description = "续重重量")
+    @ExcelProperty(value = "续重重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal additionalWeight;
 
-    @Schema(description = "续重价格（单位：元）")
-    @ExcelProperty("续重价格（单位：元）")
+    @Schema(description = "续重价格")
+    @ExcelProperty("续重价格")
     private BigDecimal additionalWeightPrice;
 
     @Schema(description = "条形编号")
@@ -152,8 +142,8 @@ public class ErpProductRespVO {
     @ExcelProperty("品长宽高")
     private String productLength;
 
-    @Schema(description = "产品重量（单位：g）")
-    @ExcelProperty("产品重量（单位：g）")
+    @Schema(description = "产品重量")
+    @ExcelProperty(value = "产品重量", converter = BigDecimalToIntegerConvert.class)
     private BigDecimal weight;
 
     @Schema(description = "箱规数量")
@@ -223,39 +213,5 @@ public class ErpProductRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-
-
-    @Schema(description = "单位编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "8869")
-    private Long unitId;
-
-    @Schema(description = "单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "个")
-    private String unitName;
-
-
-    @Schema(description = "产品分类", requiredMode = Schema.RequiredMode.REQUIRED, example = "水果")
-    private String categoryName;
-
-
-    @Schema(description = "供应商名")
-    private String supplier;
-
-    @Schema(description = "采购单价（单位：元）")
-    private BigDecimal purchasePrice;
-
-    @Schema(description = "批发单价（单位：元）")
-    private BigDecimal wholesalePrice;
-
-    @Schema(description = "备注信息")
-    private String remark;
-
-    @Schema(description = "对外最低采购单价（单位：元）")
-    private BigDecimal minPurchasePrice;
-
-    @Schema(description = "对外最低批发单价（单位：元）")
-    private BigDecimal minWholesalePrice;
-
-
-    @Schema(description = "组_单数量关系")
-    private Integer count;
 
 }

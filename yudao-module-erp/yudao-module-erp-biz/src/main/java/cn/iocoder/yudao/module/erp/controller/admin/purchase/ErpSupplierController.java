@@ -103,7 +103,9 @@ public class ErpSupplierController {
     @Operation(summary = "搜索供应商")
     @PreAuthorize("@ss.hasPermission('erp:supplier:query')")
     public CommonResult<List<ErpSupplierRespVO>> searchSuppliers(@Valid ErpSupplierPageReqVO searchReqVO) {
+        System.out.println("调用了"+searchReqVO);
         List<ErpSupplierDO> list = supplierService.searchSuppliers(searchReqVO);
+        System.out.println("返回的数据"+list);
         return success(BeanUtils.toBean(list, ErpSupplierRespVO.class));
     }
 

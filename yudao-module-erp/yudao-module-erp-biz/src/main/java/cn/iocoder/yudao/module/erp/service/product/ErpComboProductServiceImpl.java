@@ -188,7 +188,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         // 在所有关联项更新完成后，再同步主表到 ES
         syncComboToES(updateReqVO.getId());
-        
+
         // 🔥 新增：强制刷新ES索引，确保代发表能立即获取到最新的采购单价
         try {
             elasticsearchRestTemplate.indexOps(ErpComboProductES.class).refresh();
@@ -225,14 +225,14 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         for (Long id : ids) {
             validateComboExists(id);
         }
-        
+
         // 2. 批量删除关联的单品信息
         for (Long id : ids) {
             List<ErpComboProductItemDO> items = erpComboProductItemMapper.selectByComboProductId(id);
             if (CollUtil.isNotEmpty(items)) {
                 List<Long> itemIds = items.stream().map(ErpComboProductItemDO::getId).collect(Collectors.toList());
                 erpComboProductItemMapper.deleteBatchIds(itemIds);
-                
+
                 // 批量删除关联项ES记录
                 try {
                     comboProductItemESRepository.deleteAllById(itemIds);
@@ -241,10 +241,10 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 }
             }
         }
-        
+
         // 3. 批量删除主表
         erpComboMapper.deleteBatchIds(ids);
-        
+
         // 4. 批量删除主表ES记录
         try {
             comboProductESRepository.deleteAllById(ids);
@@ -416,7 +416,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
                     // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
                     // 由于no字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-                    
+
                     System.out.println("使用简化的编号匹配策略，查询词长度: " + no.length());
 
                     // 第一优先级：完全精确匹配（最高权重）
@@ -459,7 +459,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                                 debugQuery,
                                 ErpComboProductES.class,
                                 IndexCoordinates.of("erp_combo_products"));
-                        
+
                         System.out.println("=== ES中的所有组品数据 ===");
                         debugHits.getSearchHits().forEach(hit -> {
                             ErpComboProductES content = hit.getContent();
@@ -1105,7 +1105,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             ErpComboProductES es = convertComboToES(combo);
             comboProductESRepository.save(es);
                 System.out.println("保存ES组合产品ID: " + es.getId() + ", 组合名称: " + es.getName());
-                
+
                 // 强制刷新ES索引，确保数据立即可见
                 try {
                     elasticsearchRestTemplate.indexOps(ErpComboProductES.class).refresh();
@@ -1153,38 +1153,38 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 List<Long> productIds = comboItems.stream()
                         .map(ErpComboProductItemDO::getItemProductId)
                         .collect(Collectors.toList());
-                
+
                 // 查询单品详细信息
                 List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
                 if (CollUtil.isNotEmpty(products)) {
                     // 创建单品ID到单品对象的映射
                     Map<Long, ErpProductDO> productMap = products.stream()
                             .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
-                    
+
                     // 实时计算采购总价、批发总价、总重量
                     BigDecimal totalPurchasePrice = BigDecimal.ZERO;
                     BigDecimal totalWholesalePrice = BigDecimal.ZERO;
                     BigDecimal totalWeight = BigDecimal.ZERO;
-                    
+
                     for (ErpComboProductItemDO item : comboItems) {
                         ErpProductDO product = productMap.get(item.getItemProductId());
                         if (product != null) {
                             BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
-                            
+
                             // 计算采购总价
                             if (product.getPurchasePrice() != null) {
                                 totalPurchasePrice = totalPurchasePrice.add(
                                     product.getPurchasePrice().multiply(itemQuantity)
                                 );
                             }
-                            
+
                             // 计算批发总价
                             if (product.getWholesalePrice() != null) {
                                 totalWholesalePrice = totalWholesalePrice.add(
                                     product.getWholesalePrice().multiply(itemQuantity)
                                 );
                             }
-                            
+
                             // 计算总重量
                             if (product.getWeight() != null) {
                                 totalWeight = totalWeight.add(
@@ -1193,12 +1193,12 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                             }
                         }
                     }
-                    
+
                     // 🔥 核心：使用实时计算的价格和重量覆盖数据库中的值
                     es.setPurchasePrice(totalPurchasePrice);
                     es.setWholesalePrice(totalWholesalePrice);
                     es.setWeight(totalWeight);
-                    
+
                     System.out.println("实时计算采购单价: " + totalPurchasePrice);
                     System.out.println("实时计算批发单价: " + totalWholesalePrice);
                     System.out.println("实时计算总重量: " + totalWeight);
@@ -1213,7 +1213,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         try {
             String fullComboName = buildComboName(combo.getId());
             System.out.println("构建的完整组合名称: " + fullComboName);
-            
+
             // 使用构建的完整组合名称作为name和name_keyword
             if (StrUtil.isNotBlank(fullComboName)) {
                 es.setName(fullComboName);
@@ -1299,7 +1299,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             BeanUtils.copyProperties(item, es);
             comboProductItemESRepository.save(es);
                 System.out.println("保存ES关联项ID: " + es.getId() + ", 组合产品ID: " + es.getComboProductId());
-                
+
                 // 强制刷新ES索引，确保数据立即可见
                 try {
                     elasticsearchRestTemplate.indexOps(ErpComboProductItemES.class).refresh();
@@ -1366,16 +1366,16 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
     public void manualSyncComboToES(Long comboId) {
         try {
             System.out.println("开始手动同步组合产品到ES，ID: " + comboId);
-            
+
             // 同步主表
             syncComboToES(comboId);
-            
+
             // 同步关联项
             List<ErpComboProductItemDO> items = erpComboProductItemMapper.selectByComboProductId(comboId);
             for (ErpComboProductItemDO item : items) {
                 syncItemToES(item.getId());
             }
-            
+
             System.out.println("手动同步组合产品完成，ID: " + comboId);
         } catch (Exception e) {
             System.err.println("手动同步组合产品失败，ID: " + comboId + ", 错误: " + e.getMessage());
@@ -1471,9 +1471,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 if (existCombo == null) {
                     // 创建
                     ErpComboProductDO comboProduct = BeanUtils.toBean(importVO, ErpComboProductDO.class);
-                    if (StrUtil.isEmpty(comboProduct.getNo())) {
                         comboProduct.setNo(noRedisDAO.generate(ErpNoRedisDAO.COMBO_PRODUCT_NO_PREFIX));
-                    }
+
 
                     // 计算并设置总价和总重量
                     calculateAndSetPricesAndWeight(importVO, comboProduct);

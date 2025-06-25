@@ -151,10 +151,10 @@ public class ProductSaveReqVO {
     private String remark;
 
     @Schema(description = "对外最低采购单价（单位：元）")
-    private BigDecimal minPurchasePrice;
+    private String minPurchasePrice;
 
-    @Schema(description = "对外最低批发单价（单位：元）")
-    private BigDecimal minWholesalePrice;
+//    @Schema(description = "对外最低批发单价（单位：元）")
+//    private BigDecimal minWholesalePrice;
 
     @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）")
     private Integer shippingFeeType;

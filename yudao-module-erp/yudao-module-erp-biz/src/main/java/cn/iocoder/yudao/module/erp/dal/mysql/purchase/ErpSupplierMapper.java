@@ -35,4 +35,13 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
                 .eq(ErpSupplierDO::getNo, no));
     }
 
+    default List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
+        return selectList(new LambdaQueryWrapperX<ErpSupplierDO>()
+                .likeIfPresent(ErpSupplierDO::getNo, searchReqVO.getNo())
+                .likeIfPresent(ErpSupplierDO::getName, searchReqVO.getName())
+                .likeIfPresent(ErpSupplierDO::getMobile, searchReqVO.getMobile())
+                .likeIfPresent(ErpSupplierDO::getTelephone, searchReqVO.getTelephone())
+                .orderByDesc(ErpSupplierDO::getId));
+    }
+
 }

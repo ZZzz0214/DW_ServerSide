@@ -259,7 +259,7 @@ public class ErpProductDO extends BaseDO {
     /**
      * 对外最低采购单价（单位：元）
      */
-    private BigDecimal minPurchasePrice;
+    private String minPurchasePrice;
 
     /**
      * 对外最低批发单价（单位：元）

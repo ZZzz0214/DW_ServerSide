@@ -214,8 +214,8 @@ public class ErpProductESDO {
     @Field(name = "remark", type = FieldType.Text)
     private String remark;
 
-    @Field(name = "min_purchase_price", type = FieldType.Double)
-    private BigDecimal minPurchasePrice;
+    @Field(name = "min_purchase_price", type = FieldType.Text)
+    private String minPurchasePrice;
 
     @Field(name = "min_wholesale_price", type = FieldType.Double)
     private BigDecimal minWholesalePrice;

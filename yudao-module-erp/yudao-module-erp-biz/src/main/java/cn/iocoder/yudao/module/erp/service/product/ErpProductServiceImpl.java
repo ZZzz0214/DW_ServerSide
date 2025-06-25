@@ -10,13 +10,19 @@ import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.framework.common.util.collection.MapUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductUnitDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboProductItemMapper;
+import cn.iocoder.yudao.module.erp.service.purchase.ErpPurchaserService;
+import cn.iocoder.yudao.module.erp.service.purchase.ErpSupplierService;
 import cn.iocoder.yudao.module.system.api.dict.DictDataApi;
 import cn.iocoder.yudao.module.system.api.dict.dto.DictDataRespDTO;
 
@@ -84,6 +90,12 @@ public class ErpProductServiceImpl implements ErpProductService {
 
     @Resource
     private ErpComboProductItemMapper comboProductItemMapper;
+
+    @Resource
+    private ErpPurchaserService purchaserService;
+
+    @Resource
+    private ErpSupplierService supplierService;
 
     // 用于存储当前搜索条件的ThreadLocal
     private static final ThreadLocal<String> CURRENT_SEARCH_NAME = new ThreadLocal<>();
@@ -204,7 +216,7 @@ public class ErpProductServiceImpl implements ErpProductService {
         }
         // 2. 批量删除
         productMapper.deleteBatchIds(ids);
-        
+
         // 3. 批量删除ES记录
         try {
             productESRepository.deleteAllById(ids);
@@ -574,7 +586,7 @@ public class ErpProductServiceImpl implements ErpProductService {
 
                     // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
                     // 由于no字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-                    
+
                     System.out.println("使用简化的编号匹配策略，查询词长度: " + no.length());
 
                     // 第一优先级：完全精确匹配（最高权重）
@@ -1249,6 +1261,32 @@ public class ErpProductServiceImpl implements ErpProductService {
             Map<String, ErpProductDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(productMapper.selectListByNoIn(noSet), ErpProductDO::getNo);
 
+            // 3.1 批量查询所有采购人员名称，验证采购人员是否存在
+            Set<String> purchaserNames = importProducts.stream()
+                    .map(ErpProductImportExcelVO::getPurchaser)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            Map<String, Boolean> purchaserExistsMap = new HashMap<>();
+            for (String purchaserName : purchaserNames) {
+                List<ErpPurchaserRespVO> purchasers = purchaserService.searchPurchasers(
+                        new ErpPurchaserPageReqVO().setPurchaserName(purchaserName));
+                purchaserExistsMap.put(purchaserName, CollUtil.isNotEmpty(purchasers));
+            }
+
+            // 3.2 批量查询所有供应商名称，验证供应商是否存在
+            Set<String> supplierNames = importProducts.stream()
+                    .map(ErpProductImportExcelVO::getSupplier)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            Map<String, Boolean> supplierExistsMap = new HashMap<>();
+            for (String supplierName : supplierNames) {
+                List<ErpSupplierDO> suppliers = supplierService.searchSuppliers(
+                        new ErpSupplierPageReqVO().setName(supplierName));
+                supplierExistsMap.put(supplierName, CollUtil.isNotEmpty(suppliers));
+            }
+
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
 
@@ -1260,7 +1298,6 @@ public class ErpProductServiceImpl implements ErpProductService {
                 if (StrUtil.isEmpty(importVO.getName())) {
                     throw exception(PRODUCT_IMPORT_NAME_EMPTY, i + 1);
                 }
-
                     // 4.2 检查Excel内部编号重复
                     if (StrUtil.isNotBlank(importVO.getNo())) {
                         if (processedNos.contains(importVO.getNo())) {
@@ -1269,29 +1306,40 @@ public class ErpProductServiceImpl implements ErpProductService {
                         processedNos.add(importVO.getNo());
                     }
 
-                    // 4.3 判断是否支持更新
+                    // 4.3 校验采购人员是否存在
+                    if (StrUtil.isNotBlank(importVO.getPurchaser())) {
+                        Boolean purchaserExists = purchaserExistsMap.get(importVO.getPurchaser());
+                        if (purchaserExists == null || !purchaserExists) {
+                            throw exception(PURCHASER_NOT_EXISTS, "采购人员不存在: " + importVO.getPurchaser());
+                        }
+                    }
+
+                    // 4.4 校验供应商是否存在
+                    if (StrUtil.isNotBlank(importVO.getSupplier())) {
+                        Boolean supplierExists = supplierExistsMap.get(importVO.getSupplier());
+                        if (supplierExists == null || !supplierExists) {
+                            throw exception(SUPPLIER_NOT_EXISTS, "供应商不存在: " + importVO.getSupplier());
+                        }
+                    }
+
+                    // 4.5 判断是否支持更新
                     ErpProductDO existProduct = existMap.get(importVO.getNo());
                 if (existProduct == null) {
                     // 创建产品
                     ErpProductDO product = BeanUtils.toBean(importVO, ErpProductDO.class);
-                    if (StrUtil.isEmpty(product.getNo())) {
-                        product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
-                    }
-
-                        // 校验产品名称唯一性（对于新增的产品）
-                        validateProductNameUniqueForImport(product.getName(), null, createList, updateList);
-
-                        createList.add(product);
+                    product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
+                    // 校验产品名称唯一性（对于新增的产品）
+                    validateProductNameUniqueForImport(product.getName(), null, createList, updateList);
+                    createList.add(product);
                     respVO.getCreateNames().add(product.getName());
                 } else if (isUpdateSupport) {
                     // 更新产品
                     ErpProductDO updateProduct = BeanUtils.toBean(importVO, ErpProductDO.class);
                     updateProduct.setId(existProduct.getId());
+                    // 校验产品名称唯一性（对于更新的产品）
+                    validateProductNameUniqueForImport(updateProduct.getName(), updateProduct.getId(), createList, updateList);
 
-                        // 校验产品名称唯一性（对于更新的产品）
-                        validateProductNameUniqueForImport(updateProduct.getName(), updateProduct.getId(), createList, updateList);
-
-                        updateList.add(updateProduct);
+                    updateList.add(updateProduct);
                     respVO.getUpdateNames().add(updateProduct.getName());
                 } else {
                     throw exception(PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());

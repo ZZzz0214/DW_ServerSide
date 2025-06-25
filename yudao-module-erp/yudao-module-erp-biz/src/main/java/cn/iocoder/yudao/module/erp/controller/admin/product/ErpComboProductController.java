@@ -94,13 +94,13 @@ public class ErpComboProductController {
     @Operation(summary = "获得组合产品分页")
     @PreAuthorize("@ss.hasPermission('erp:combo-product:query')")
     public CommonResult<PageResult<ErpComboRespVO>> getComboProductPage(@Valid ErpComboPageReqVO pageReqVO) {
-        System.out.println("组品查询条件详情: 组品编码=" + pageReqVO.getNo() + 
-                          ", 产品名称=" + pageReqVO.getName() + 
-                          ", 产品简称=" + pageReqVO.getShortName() + 
-                          ", 发货编码=" + pageReqVO.getShippingCode() + 
-                          ", 采购人员=" + pageReqVO.getPurchaser() + 
-                          ", 供应商=" + pageReqVO.getSupplier() + 
-                          ", 创建人员=" + pageReqVO.getCreator() + 
+        System.out.println("组品查询条件详情: 组品编码=" + pageReqVO.getNo() +
+                          ", 产品名称=" + pageReqVO.getName() +
+                          ", 产品简称=" + pageReqVO.getShortName() +
+                          ", 发货编码=" + pageReqVO.getShippingCode() +
+                          ", 采购人员=" + pageReqVO.getPurchaser() +
+                          ", 供应商=" + pageReqVO.getSupplier() +
+                          ", 创建人员=" + pageReqVO.getCreator() +
                           ", 关键词=" + pageReqVO.getKeyword());
         return success(comboProductService.getComboVOPage(pageReqVO));
     }
@@ -189,6 +189,7 @@ public class ErpComboProductController {
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
             List<ErpComboImportExcelVO> list = ExcelUtils.read(inputStream, ErpComboImportExcelVO.class);
+            System.out.println("导入的组品数据"+list);
             return success(comboProductService.importComboList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

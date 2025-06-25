@@ -26,9 +26,6 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("产品编号")
     private String no;
 
-    @ExcelProperty("产品图片")
-    private String image;
-
     @ExcelProperty("产品名称")
     private String name;
 
@@ -48,14 +45,6 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("保质日期")
     private Integer expiryDay;
 
-//    @ExcelProperty("品牌名称")
-//    private String brand;
-//
-//    @ExcelProperty("产品品类")
-//    private String categoryId;
-//
-//    @ExcelProperty("产品状态")
-//    private String status;
 
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
@@ -87,31 +76,31 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-    @ExcelProperty("对外最低采购单价（单位：元）")
-    private BigDecimal minPurchasePrice;
+    @ExcelProperty("对外最低出货单价")
+    private String minPurchasePrice;
 
-    @ExcelProperty("运费类型")
+    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
     private Integer shippingFeeType;
 
-    @ExcelProperty("固定运费（单位：元）")
+    @ExcelProperty("固定运费")
     private BigDecimal fixedShippingFee;
 
     @ExcelProperty("按件数量")
     private Integer additionalItemQuantity;
 
-    @ExcelProperty("按件价格（单位：元）")
+    @ExcelProperty("按件价格")
     private BigDecimal additionalItemPrice;
 
-    @ExcelProperty("首重重量（单位：g）")
+    @ExcelProperty("首重重量")
     private BigDecimal firstWeight;
 
-    @ExcelProperty("首重价格（单位：元）")
+    @ExcelProperty("首重价格")
     private BigDecimal firstWeightPrice;
 
-    @ExcelProperty("续重重量（单位：g）")
+    @ExcelProperty("续重重量")
     private BigDecimal additionalWeight;
 
-    @ExcelProperty("续重价格（单位：元）")
+    @ExcelProperty("续重价格")
     private BigDecimal additionalWeightPrice;
 
     @ExcelProperty("条形编号")
@@ -133,7 +122,7 @@ public class ErpProductImportExcelVO {
     private Integer packagingMaterialQuantity;
 
     @ExcelProperty("返单时效")
-    private LocalDateTime orderReplenishmentLeadTime;
+    private String orderReplenishmentLeadTime;
 
     @ExcelProperty("品长宽高")
     private String productLength;
@@ -186,10 +175,4 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("团购活动最低价")
     private String groupBuyEventMinimunPrice;
 
-    @ExcelProperty("创建人员")
-    private String creator;
-
-    @ExcelProperty("创建日期")
-    @DateTimeFormat("yyyy/M/d")
-    private LocalDateTime createTime;
 }

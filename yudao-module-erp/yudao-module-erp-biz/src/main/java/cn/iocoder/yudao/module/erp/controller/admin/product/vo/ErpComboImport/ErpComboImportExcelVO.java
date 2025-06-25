@@ -26,7 +26,7 @@ public class ErpComboImportExcelVO {
     @ExcelProperty("组品编号")
     private String no;
 
-    @ExcelProperty("单品组品(产品编号,产品数量;产品数量,产品数量;)")
+    @ExcelProperty("单品组品(产品编号,产品数量;产品编号,产品数量;)")
     private String itemsString; // 直接使用字符串存储
 
     @ExcelProperty("产品简称")
@@ -53,22 +53,19 @@ public class ErpComboImportExcelVO {
     @ExcelProperty("按件数量")
     private Integer additionalItemQuantity;
 
-    @ExcelProperty("按件价格（单位：元）")
+    @ExcelProperty("按件价格")
     private BigDecimal additionalItemPrice;
 
-    @ExcelProperty("首重重量（单位：g）")
+    @ExcelProperty("首重重量")
     private BigDecimal firstWeight;
 
-    @ExcelProperty("首重价格（单位：元）")
+    @ExcelProperty("首重价格")
     private BigDecimal firstWeightPrice;
 
-    @ExcelProperty("续重重量（单位：g）")
+    @ExcelProperty("续重重量")
     private BigDecimal additionalWeight;
 
-    @ExcelProperty("续重价格（单位：元）")
+    @ExcelProperty("续重价格")
     private BigDecimal additionalWeightPrice;
-
-
-
 
 }
