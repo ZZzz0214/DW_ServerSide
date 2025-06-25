@@ -351,6 +351,8 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
 
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
+            // 用于跟踪Excel内部重复的组合字段
+            Set<String> processedCombinations = new HashSet<>();
 
             // 批量转换数据
             for (int i = 0; i < importList.size(); i++) {
@@ -365,27 +367,45 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                     }
 
                     // 将组品业务编号转换为组品ID
+                    Long comboProductId = null;
                     if (StrUtil.isNotBlank(importVO.getComboProductId())) {
-                        Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
+                        comboProductId = comboProductIdMap.get(importVO.getComboProductId());
                         if (comboProductId == null) {
                             throw exception(DROPSHIP_ASSIST_IMPORT_COMBO_PRODUCT_NOT_EXISTS, i + 1, importVO.getComboProductId());
                         }
                         importVO.setComboProductId(comboProductId.toString());
                     }
 
+                    // 检查Excel内部组合字段重复
+                    String combination = buildCombinationKey(importVO.getOriginalProduct(), importVO.getOriginalSpec(), 
+                            importVO.getOriginalQuantity() != null ? importVO.getOriginalQuantity().toString() : "", 
+                            comboProductId, importVO.getProductSpec(), 
+                            importVO.getProductQuantity() != null ? importVO.getProductQuantity().toString() : "");
+                    if (processedCombinations.contains(combination)) {
+                        throw exception(DROPSHIP_ASSIST_FIELDS_DUPLICATE);
+                    }
+                    processedCombinations.add(combination);
+
                     // 判断是否支持更新
                     ErpDropshipAssistDO existDropshipAssist = existMap.get(importVO.getNo());
                     if (existDropshipAssist == null) {
                        // 创建 - 自动生成新的no编号
                        ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-
                        dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
-                        createList.add(dropshipAssist);
-                        respVO.getCreateNames().add(dropshipAssist.getNo());
+                       
+                       // 校验组合字段唯一性（与数据库中的记录比较）
+                       validateCombinationUniqueForCreate(dropshipAssist, i + 1);
+                       
+                       createList.add(dropshipAssist);
+                       respVO.getCreateNames().add(dropshipAssist.getNo());
                     } else if (isUpdateSupport) {
                         // 更新
                         ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
                         updateDropshipAssist.setId(existDropshipAssist.getId());
+                        
+                        // 校验组合字段唯一性（与数据库中的记录比较，排除当前记录）
+                        validateCombinationUniqueForUpdate(updateDropshipAssist, existDropshipAssist.getId(), i + 1);
+                        
                         updateList.add(updateDropshipAssist);
                         respVO.getUpdateNames().add(updateDropshipAssist.getNo());
                     } else {
@@ -414,5 +434,50 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         return respVO;
     }
 
+    /**
+     * 构建组合字段的唯一键
+     */
+    private String buildCombinationKey(String originalProduct, String originalSpec, String originalQuantity, 
+                                     Long comboProductId, String productSpec, String productQuantity) {
+        return String.format("%s|%s|%s|%s|%s|%s", 
+                originalProduct, originalSpec, originalQuantity, 
+                comboProductId != null ? comboProductId.toString() : "", productSpec, productQuantity);
+    }
+
+    /**
+     * 校验创建时的组合字段唯一性
+     */
+    private void validateCombinationUniqueForCreate(ErpDropshipAssistDO dropshipAssist, int rowNum) {
+        ErpDropshipAssistDO existingRecord = dropshipAssistMapper.selectByUniqueFields(
+                dropshipAssist.getOriginalProduct(),
+                dropshipAssist.getOriginalSpec(),
+                dropshipAssist.getOriginalQuantity(),
+                dropshipAssist.getComboProductId(),
+                dropshipAssist.getProductSpec(),
+                dropshipAssist.getProductQuantity(),
+                null // 创建时不需要排除ID
+        );
+        if (existingRecord != null) {
+            throw exception(DROPSHIP_ASSIST_FIELDS_DUPLICATE);
+        }
+    }
+
+    /**
+     * 校验更新时的组合字段唯一性
+     */
+    private void validateCombinationUniqueForUpdate(ErpDropshipAssistDO dropshipAssist, Long excludeId, int rowNum) {
+        ErpDropshipAssistDO existingRecord = dropshipAssistMapper.selectByUniqueFields(
+                dropshipAssist.getOriginalProduct(),
+                dropshipAssist.getOriginalSpec(),
+                dropshipAssist.getOriginalQuantity(),
+                dropshipAssist.getComboProductId(),
+                dropshipAssist.getProductSpec(),
+                dropshipAssist.getProductQuantity(),
+                excludeId // 更新时需要排除当前记录ID
+        );
+        if (existingRecord != null) {
+            throw exception(DROPSHIP_ASSIST_FIELDS_DUPLICATE);
+        }
+    }
 
 }

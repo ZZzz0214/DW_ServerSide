@@ -70,7 +70,7 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
         }
         return selectList(ErpDropshipAssistDO::getNo, nos);
     }
-    
+
     default ErpDropshipAssistDO selectByNo(String no) {
         return selectOne(ErpDropshipAssistDO::getNo, no);
     }
@@ -86,9 +86,9 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
      * @param excludeId 排除的ID（用于更新时排除自己）
      * @return 是否存在重复记录
      */
-    default ErpDropshipAssistDO selectByUniqueFields(String originalProduct, String originalSpec, 
-                                                     Integer originalQuantity, String comboProductId, 
-                                                     String productSpec, Integer productQuantity, 
+    default ErpDropshipAssistDO selectByUniqueFields(String originalProduct, String originalSpec,
+                                                     Integer originalQuantity, String comboProductId,
+                                                     String productSpec, Integer productQuantity,
                                                      Long excludeId) {
         MPJLambdaWrapperX<ErpDropshipAssistDO> query = new MPJLambdaWrapperX<ErpDropshipAssistDO>()
                 .eq(ErpDropshipAssistDO::getOriginalProduct, originalProduct)
@@ -96,19 +96,19 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .eq(ErpDropshipAssistDO::getOriginalQuantity, originalQuantity)
                 .eq(ErpDropshipAssistDO::getProductSpec, productSpec)
                 .eq(ErpDropshipAssistDO::getProductQuantity, productQuantity);
-        
+
         // 处理组品编号可能为空的情况
         if (comboProductId == null || comboProductId.trim().isEmpty()) {
             query.isNull(ErpDropshipAssistDO::getComboProductId);
         } else {
             query.eq(ErpDropshipAssistDO::getComboProductId, comboProductId);
         }
-        
+
         // 如果是更新操作，排除当前记录
         if (excludeId != null) {
             query.ne(ErpDropshipAssistDO::getId, excludeId);
         }
-        
+        query.last("LIMIT 1"); // 限制只返回一条记录，避免TooManyResultsException
         return selectOne(query);
     }
 }
