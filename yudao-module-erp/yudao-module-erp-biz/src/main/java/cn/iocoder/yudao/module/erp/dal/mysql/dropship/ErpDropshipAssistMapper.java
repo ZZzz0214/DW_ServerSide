@@ -29,17 +29,17 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .betweenIfPresent(ErpDropshipAssistDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpDropshipAssistDO::getId);
 
-        // 联表查询组品信息
+        // 联表查询组品信息 - 使用LEFT JOIN确保即使组品编号为空也能查询到代发辅助记录
         query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId);
 
-        // 添加组品相关的查询条件
-        if (reqVO.getComboProductId() != null && !reqVO.getComboProductId().isEmpty()) {
+        // 添加组品相关的查询条件 - 只有当查询条件不为空时才添加
+        if (reqVO.getComboProductId() != null && !reqVO.getComboProductId().trim().isEmpty()) {
             query.like(ErpComboProductDO::getNo, reqVO.getComboProductId());
         }
-        if (reqVO.getShippingCode() != null && !reqVO.getShippingCode().isEmpty()) {
+        if (reqVO.getShippingCode() != null && !reqVO.getShippingCode().trim().isEmpty()) {
             query.like(ErpComboProductDO::getShippingCode, reqVO.getShippingCode());
         }
-        if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
+        if (reqVO.getProductName() != null && !reqVO.getProductName().trim().isEmpty()) {
             query.like(ErpComboProductDO::getName, reqVO.getProductName());
         }
 
@@ -94,9 +94,15 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .eq(ErpDropshipAssistDO::getOriginalProduct, originalProduct)
                 .eq(ErpDropshipAssistDO::getOriginalSpec, originalSpec)
                 .eq(ErpDropshipAssistDO::getOriginalQuantity, originalQuantity)
-                .eq(ErpDropshipAssistDO::getComboProductId, comboProductId)
                 .eq(ErpDropshipAssistDO::getProductSpec, productSpec)
                 .eq(ErpDropshipAssistDO::getProductQuantity, productQuantity);
+        
+        // 处理组品编号可能为空的情况
+        if (comboProductId == null || comboProductId.trim().isEmpty()) {
+            query.isNull(ErpDropshipAssistDO::getComboProductId);
+        } else {
+            query.eq(ErpDropshipAssistDO::getComboProductId, comboProductId);
+        }
         
         // 如果是更新操作，排除当前记录
         if (excludeId != null) {

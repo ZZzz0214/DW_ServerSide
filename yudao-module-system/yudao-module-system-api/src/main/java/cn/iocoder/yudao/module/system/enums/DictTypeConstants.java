@@ -65,4 +65,6 @@ public interface DictTypeConstants {
     String ERP_LIVE_CUSTOMER_CITY = "erp_live_customer_city"; // 直播信息客户城市
     String ERP_LIVE_CUSTOMER_DISTRICT = "erp_live_customer_district"; // 直播信息客户区县
 
+    String ERP_DROPSHIP_STATUS="erp_dropship_status";
+
 }

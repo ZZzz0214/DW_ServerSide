@@ -85,15 +85,20 @@ public class ErpDropshipAssistController {
         ErpDropshipAssistRespVO respVO = BeanUtils.toBean(dropshipAssist, ErpDropshipAssistRespVO.class);
 
         // 如果有关联组品，查询组品信息
-        if (dropshipAssist.getComboProductId() != null) {
-            Long comboProductId = Long.parseLong(dropshipAssist.getComboProductId());
-            ErpComboProductDO comboProduct = comboProductService.getCombo(comboProductId);
-            if (comboProduct != null) {
-                respVO.setName(comboProduct.getName());
-                respVO.setProductName(comboProduct.getName());
-                respVO.setProductShortName(comboProduct.getShortName());
-                respVO.setShippingCode(comboProduct.getShippingCode());
-                respVO.setComboProductNo(comboProduct.getNo());
+        if (dropshipAssist.getComboProductId() != null && !dropshipAssist.getComboProductId().trim().isEmpty()) {
+            try {
+                Long comboProductId = Long.parseLong(dropshipAssist.getComboProductId());
+                ErpComboProductDO comboProduct = comboProductService.getCombo(comboProductId);
+                if (comboProduct != null) {
+                    respVO.setName(comboProduct.getName());
+                    respVO.setProductName(comboProduct.getName());
+                    respVO.setProductShortName(comboProduct.getShortName());
+                    respVO.setShippingCode(comboProduct.getShippingCode());
+                    respVO.setComboProductNo(comboProduct.getNo());
+                }
+            } catch (NumberFormatException e) {
+                // 记录日志但不影响主流程
+                System.err.println("组品编号格式错误: " + dropshipAssist.getComboProductId() + ", 错误: " + e.getMessage());
             }
         }
         return success(respVO);
@@ -126,7 +131,6 @@ public class ErpDropshipAssistController {
               HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpDropshipAssistRespVO> pageResult = dropshipAssistService.getDropshipAssistVOPage(pageReqVO);
-        System.out.println("查看代发辅助"+pageResult.getList());
         // 转换为导出VO
         List<ErpDropshipAssistExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDropshipAssistExportVO.class);
         // 导出 Excel

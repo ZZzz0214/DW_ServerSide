@@ -1,6 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.dropship.vo;
 
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
+import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -37,9 +41,12 @@ public class ErpDropshipAssistSaveReqVO {
     private Integer productQuantity;
 
     @Schema(description = "备注信息", example = "备注内容")
+    @ExcelProperty("备注信息")
     private String remark;
 
-    @Schema(description = "状态信息", example = "pending")
+
+    @ExcelProperty(value = "状态信息", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_DROPSHIP_STATUS)
     private String status;
 
 }

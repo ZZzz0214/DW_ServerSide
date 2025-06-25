@@ -1,6 +1,9 @@
 package cn.iocoder.yudao.module.erp.controller.admin.dropship.vo;
 
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -29,8 +32,6 @@ public class ErpDropshipAssistExportVO {
     @ExcelProperty("原表数量")
     private Integer originalQuantity;
 
-//    @Schema(description = "组品编号", example = "1")
-//    private String comboProductId;
 
     @Schema(description = "组品编号", example = "1")
     @ExcelProperty("组品编号")
@@ -51,6 +52,14 @@ public class ErpDropshipAssistExportVO {
     @Schema(description = "产品数量", example = "100")
     @ExcelProperty("产品数量")
     private Integer productQuantity;
+
+    @Schema(description = "备注信息", example = "备注内容")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+    @ExcelProperty(value = "状态信息", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_DROPSHIP_STATUS)
+    private String status;
 
     @Schema(description = "创建者")
     @ExcelProperty("创建人员")

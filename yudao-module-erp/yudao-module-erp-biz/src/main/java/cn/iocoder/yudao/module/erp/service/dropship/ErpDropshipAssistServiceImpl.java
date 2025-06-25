@@ -295,7 +295,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         if (dropshipAssist != null && !ObjectUtil.equal(dropshipAssist.getId(), id)) {
             throw exception(DROPSHIP_ASSIST_NO_EXISTS);
         }
-        
+
         // 2. 校验字段组合唯一性
         ErpDropshipAssistDO existingRecord = dropshipAssistMapper.selectByUniqueFields(
                 reqVO.getOriginalProduct(),
@@ -351,7 +351,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
 
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
-            
+
             // 批量转换数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpDropshipAssistImportExcelVO importVO = importList.get(i);
@@ -363,7 +363,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                         }
                         processedNos.add(importVO.getNo());
                     }
-                    
+
                     // 将组品业务编号转换为组品ID
                     if (StrUtil.isNotBlank(importVO.getComboProductId())) {
                         Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
@@ -378,6 +378,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                     if (existDropshipAssist == null) {
                        // 创建 - 自动生成新的no编号
                        ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
+
                        dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX));
                         createList.add(dropshipAssist);
                         respVO.getCreateNames().add(dropshipAssist.getNo());
