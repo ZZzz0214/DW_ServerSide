@@ -17,18 +17,18 @@ public class RowIndexListener<T> implements ReadListener<T> {
 
     @Override
     public void invoke(T data, AnalysisContext context) {
-        // 获取当前行号（EasyExcel的行号从0开始，我们转换为从1开始）
-        int rowIndex = context.readRowHolder().getRowIndex() + 1;
+        // 获取当前行号（EasyExcel的行号从0开始，我们转换为从1开始以与产品表保持一致）
+        int rowIndex = context.readRowHolder().getRowIndex();
         
-        // 设置当前处理的行号
-        ConversionErrorHolder.setCurrentRowIndex(rowIndex);
+        // 设置当前处理的行号（从1开始）
+        ConversionErrorHolder.setCurrentRowIndex(rowIndex + 1);
         
-        log.debug("处理第{}行数据", rowIndex);
+        log.debug("处理第{}行数据", rowIndex + 1);
     }
 
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
         // 读取完成后的处理
-        log.debug("Excel读取完成，总共处理{}行数据", context.readRowHolder().getRowIndex());
+        log.debug("Excel读取完成，总共处理{}行数据", context.readRowHolder().getRowIndex() + 1);
     }
 } 

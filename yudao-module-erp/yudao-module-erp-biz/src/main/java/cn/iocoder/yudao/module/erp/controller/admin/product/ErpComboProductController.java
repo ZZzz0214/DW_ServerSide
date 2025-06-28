@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportRespVO;
@@ -187,8 +188,9 @@ public class ErpComboProductController {
     public CommonResult<ErpComboImportRespVO> importExcel(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+        // 使用RowIndexListener来读取Excel，确保转换器能够获取到正确的行号
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpComboImportExcelVO> list = ExcelUtils.read(inputStream, ErpComboImportExcelVO.class);
+            List<ErpComboImportExcelVO> list = ExcelUtils.read(inputStream, ErpComboImportExcelVO.class, new RowIndexListener<>());
             System.out.println("导入的组品数据"+list);
             return success(comboProductService.importComboList(list, updateSupport));
         } catch (Exception e) {

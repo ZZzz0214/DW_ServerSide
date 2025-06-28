@@ -45,11 +45,24 @@ public interface ErpComboMapper extends BaseMapperX<ErpComboProductDO> {
         return selectOne(ErpComboProductDO::getNo, no);
     }
 
-
     default List<ErpComboProductDO> selectListByNoIn(Collection<String> nos) {
         if (CollUtil.isEmpty(nos)) {
             return Collections.emptyList();
         }
         return selectList(ErpComboProductDO::getNo, nos);
+    }
+
+    /**
+     * 批量插入组合产品
+     */
+    default void insertBatch(List<ErpComboProductDO> list) {
+        list.forEach(this::insert);
+    }
+
+    /**
+     * 批量更新组合产品
+     */
+    default void updateBatch(List<ErpComboProductDO> list) {
+        list.forEach(this::updateById);
     }
 }

@@ -222,21 +222,36 @@ public class LocalDateTimeConvert implements Converter<LocalDateTime> {
      * 尝试从ReadCellData中获取行号信息
      */
     private int getRowIndexFromReadCellData(ReadCellData readCellData) {
+        // 优先使用ConversionErrorHolder中的当前行号，这是最可靠的
+        int currentRowIndex = ConversionErrorHolder.getCurrentRowIndex();
+        log.debug("[LocalDateTimeConvert] 使用ConversionErrorHolder中的当前行号: {}", currentRowIndex);
+        
+        // 如果当前行号有效（大于0），直接使用
+        if (currentRowIndex > 0) {
+            return currentRowIndex;
+        }
+        
+        // 如果当前行号无效，尝试从ReadCellData中获取
         try {
             // 尝试通过反射获取行号信息
             java.lang.reflect.Field rowIndexField = readCellData.getClass().getDeclaredField("rowIndex");
             rowIndexField.setAccessible(true);
             Object rowIndexObj = rowIndexField.get(readCellData);
             if (rowIndexObj instanceof Integer) {
-                return (Integer) rowIndexObj;
+                int rowIndex = (Integer) rowIndexObj;
+                // EasyExcel的行号从0开始，转换为从1开始
+                int convertedRowIndex = rowIndex + 1;
+                log.debug("[LocalDateTimeConvert] 从ReadCellData获取行号: {} -> {}", rowIndex, convertedRowIndex);
+                return convertedRowIndex;
             }
         } catch (Exception e) {
-            // 如果无法获取行号，使用当前设置的行号
-            log.debug("无法从ReadCellData获取行号，使用当前设置的行号: {}", e.getMessage());
+            // 如果无法获取行号，记录日志
+            log.debug("[LocalDateTimeConvert] 无法从ReadCellData获取行号: {}", e.getMessage());
         }
 
-        // 如果无法获取行号，使用当前设置的行号
-        return ConversionErrorHolder.getCurrentRowIndex();
+        // 如果都无法获取，返回1作为默认值（避免返回0）
+        log.warn("[LocalDateTimeConvert] 无法获取行号，使用默认值1");
+        return 1;
     }
 
 }

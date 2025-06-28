@@ -53,7 +53,7 @@ public class ConversionErrorHolder {
      */
     public static int getCurrentRowIndex() {
         Integer rowIndex = CURRENT_ROW_INDEX.get();
-        return rowIndex != null ? rowIndex : 0;
+        return rowIndex != null ? rowIndex : 1;
     }
 
     /**

@@ -467,7 +467,7 @@ public class ErpProductServiceImpl implements ErpProductService {
 
             // 获取数据库数据
             List<ErpProductDO> products = productMapper.selectList(null);
-            
+
             // 先清空ES数据
             try {
                 productESRepository.deleteAll();
@@ -1335,7 +1335,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                         respVO.getFailureNames().put(errorKey, "产品名称不能为空");
                         continue;
                     }
-                    
+
                     // 5.2 检查Excel内部编号重复
                     if (StrUtil.isNotBlank(importVO.getNo())) {
                         if (processedNos.contains(importVO.getNo())) {
@@ -1408,14 +1408,14 @@ public class ErpProductServiceImpl implements ErpProductService {
             if (CollUtil.isNotEmpty(createList)) {
                 // 批量插入新产品
                 productMapper.insertBatch(createList);
-                
+
                 // 批量同步到ES
                 batchSyncProductsToES(createList);
             }
             if (CollUtil.isNotEmpty(updateList)) {
                 // 批量更新产品
                 productMapper.updateBatch(updateList);
-                
+
                 // 批量同步到ES
                 batchSyncProductsToES(updateList);
             }
@@ -1435,37 +1435,41 @@ public class ErpProductServiceImpl implements ErpProductService {
      */
     private Map<String, String> validateDataTypeErrors(List<ErpProductImportExcelVO> importProducts) {
         Map<String, String> dataTypeErrors = new LinkedHashMap<>();
-        
+
         // 检查是否有转换错误
         Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
-        
+
         if (!allErrors.isEmpty()) {
             // 收集所有转换错误
             for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
                 int rowIndex = entry.getKey();
                 List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
-                
-                // 获取产品名称
+
+                // 获取产品名称 - 修复行号索引问题
                 String productName = "未知产品";
-                if (rowIndex > 0 && rowIndex <= importProducts.size()) {
-                    ErpProductImportExcelVO importVO = importProducts.get(rowIndex - 1);
+                // ConversionErrorHolder中的行号是从1开始的，数组索引是从0开始的
+                // 所以需要减1来访问数组，但要确保索引有效
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importProducts.size()) {
+                    ErpProductImportExcelVO importVO = importProducts.get(arrayIndex);
                     if (StrUtil.isNotBlank(importVO.getName())) {
                         productName = importVO.getName();
                     }
                 }
-                
+
+                // 行号显示，RowIndexListener已经设置为从1开始，直接使用
                 String errorKey = "第" + rowIndex + "行(" + productName + ")";
                 List<String> errorMessages = new ArrayList<>();
-                
+
                 for (ConversionErrorHolder.ConversionError error : errors) {
                     errorMessages.add(error.getErrorMessage());
                 }
-                
+
                 String errorMsg = String.join("; ", errorMessages);
                 dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
             }
         }
-        
+
         return dataTypeErrors;
     }
 
@@ -1590,8 +1594,8 @@ public class ErpProductServiceImpl implements ErpProductService {
     /**
      * 转换产品DO为ES对象（带缓存版本，用于批量操作）
      */
-    private ErpProductESDO convertProductToESWithCache(ErpProductDO product, 
-                                                     Map<Long, String> categoryNameMap, 
+    private ErpProductESDO convertProductToESWithCache(ErpProductDO product,
+                                                     Map<Long, String> categoryNameMap,
                                                      Map<Long, String> unitNameMap) {
         if (product == null) {
             return null;
