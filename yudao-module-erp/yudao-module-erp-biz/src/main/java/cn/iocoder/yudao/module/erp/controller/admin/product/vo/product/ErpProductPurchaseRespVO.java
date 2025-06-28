@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalToIntegerConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.DoubleConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
@@ -178,7 +179,7 @@ public class ErpProductPurchaseRespVO {
     private String cartonLength;
 
     @Schema(description = "箱规重量")
-    @ExcelProperty("箱规重量")
+    @ExcelProperty(value = "箱规重量", converter = DoubleConvert.class)
     private Double cartonWeight;
 
     @Schema(description = "发货地址")

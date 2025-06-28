@@ -9,6 +9,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.framework.common.util.collection.MapUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserRespVO;
@@ -1246,12 +1247,43 @@ public class ErpProductServiceImpl implements ErpProductService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 2. 批量处理列表
+        // 2. 检查是否有数据类型转换错误
+        List<ConversionErrorHolder.ConversionError> conversionErrors = ConversionErrorHolder.getErrors();
+        if (!conversionErrors.isEmpty()) {
+            // 将转换错误按行号分组并添加到失败列表中
+            for (int i = 0; i < importProducts.size(); i++) {
+                ErpProductImportExcelVO importVO = importProducts.get(i);
+                String productName = StrUtil.isNotBlank(importVO.getName()) ? importVO.getName() : "未知产品";
+                
+                // 获取当前行的转换错误
+                List<ConversionErrorHolder.ConversionError> rowErrors = ConversionErrorHolder.getErrorsByRowIndex(i + 1);
+                
+                if (!rowErrors.isEmpty()) {
+                    String errorKey = "第" + (i + 1) + "行(" + productName + ")";
+                    List<String> errorMessages = new ArrayList<>();
+                    
+                    for (ConversionErrorHolder.ConversionError error : rowErrors) {
+                        errorMessages.add(error.getErrorMessage());
+                    }
+                    
+                    String errorMsg = String.join("; ", errorMessages);
+                    respVO.getFailureNames().put(errorKey, "数据类型错误: " + errorMsg);
+                }
+            }
+            
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
+            
+            // 如果有转换错误，直接返回结果，不进行后续处理
+            return respVO;
+        }
+
+        // 3. 批量处理列表
         List<ErpProductDO> createList = new ArrayList<>();
         List<ErpProductDO> updateList = new ArrayList<>();
 
         try {
-            // 3. 批量查询已存在的产品
+            // 4. 批量查询已存在的产品
         Set<String> noSet = importProducts.stream()
                 .map(ErpProductImportExcelVO::getNo)
                 .filter(StrUtil::isNotBlank)
@@ -1261,7 +1293,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             Map<String, ErpProductDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(productMapper.selectListByNoIn(noSet), ErpProductDO::getNo);
 
-            // 3.1 批量查询所有采购人员名称，验证采购人员是否存在
+            // 4.1 批量查询所有采购人员名称，验证采购人员是否存在
             Set<String> purchaserNames = importProducts.stream()
                     .map(ErpProductImportExcelVO::getPurchaser)
                     .filter(StrUtil::isNotBlank)
@@ -1274,7 +1306,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                 purchaserExistsMap.put(purchaserName, CollUtil.isNotEmpty(purchasers));
             }
 
-            // 3.2 批量查询所有供应商名称，验证供应商是否存在
+            // 4.2 批量查询所有供应商名称，验证供应商是否存在
             Set<String> supplierNames = importProducts.stream()
                     .map(ErpProductImportExcelVO::getSupplier)
                     .filter(StrUtil::isNotBlank)
@@ -1290,15 +1322,18 @@ public class ErpProductServiceImpl implements ErpProductService {
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
 
-            // 4. 批量转换数据
+            // 5. 批量转换数据
         for (int i = 0; i < importProducts.size(); i++) {
+            // 设置当前处理的行号（从1开始，因为Excel行号从1开始）
+            ConversionErrorHolder.setCurrentRowIndex(i + 1);
+            
             ErpProductImportExcelVO importVO = importProducts.get(i);
             try {
-                    // 4.1 基础数据校验
+                    // 5.1 基础数据校验
                 if (StrUtil.isEmpty(importVO.getName())) {
                     throw exception(PRODUCT_IMPORT_NAME_EMPTY, i + 1);
                 }
-                    // 4.2 检查Excel内部编号重复
+                    // 5.2 检查Excel内部编号重复
                     if (StrUtil.isNotBlank(importVO.getNo())) {
                         if (processedNos.contains(importVO.getNo())) {
                             throw exception(PRODUCT_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
@@ -1306,7 +1341,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                         processedNos.add(importVO.getNo());
                     }
 
-                    // 4.3 校验采购人员是否存在
+                    // 5.3 校验采购人员是否存在
                     if (StrUtil.isNotBlank(importVO.getPurchaser())) {
                         Boolean purchaserExists = purchaserExistsMap.get(importVO.getPurchaser());
                         if (purchaserExists == null || !purchaserExists) {
@@ -1314,7 +1349,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                         }
                     }
 
-                    // 4.4 校验供应商是否存在
+                    // 5.4 校验供应商是否存在
                     if (StrUtil.isNotBlank(importVO.getSupplier())) {
                         Boolean supplierExists = supplierExistsMap.get(importVO.getSupplier());
                         if (supplierExists == null || !supplierExists) {
@@ -1322,7 +1357,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                         }
                     }
 
-                    // 4.5 判断是否支持更新
+                    // 5.5 判断是否支持更新
                     ErpProductDO existProduct = existMap.get(importVO.getNo());
                 if (existProduct == null) {
                     // 创建产品
@@ -1353,7 +1388,7 @@ public class ErpProductServiceImpl implements ErpProductService {
             }
         }
 
-            // 5. 批量保存到数据库
+            // 6. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 // 批量插入新产品
                 for (ErpProductDO product : createList) {
@@ -1373,7 +1408,6 @@ public class ErpProductServiceImpl implements ErpProductService {
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
         }
-
 
         return respVO;
     }

@@ -83,5 +83,5 @@ public class ErpWholesaleImportExcelVO {
 
     @ExcelProperty("中转人员")
     private String transferPerson;
-    
+
 }

@@ -21,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
@@ -155,14 +156,14 @@ public class ErpProductController {
     @Operation(summary = "获得导入产品模板")
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
-        List<ErpProductPurchaseRespVO> list = Arrays.asList(
-                ErpProductPurchaseRespVO.builder()
+        List<ErpProductImportExcelVO> list = Arrays.asList(
+                ErpProductImportExcelVO.builder()
                         .build(),
-                ErpProductPurchaseRespVO.builder()
+                ErpProductImportExcelVO.builder()
                         .build()
         );
         // 输出
-        ExcelUtils.write(response, "产品导入模板.xls", "产品列表", ErpProductPurchaseRespVO.class, list);
+        ExcelUtils.write(response, "产品导入模板.xls", "产品列表", ErpProductImportExcelVO.class, list);
     }
 
     @PostMapping("/import")
@@ -176,7 +177,8 @@ public class ErpProductController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpProductImportExcelVO> list = ExcelUtils.read(inputStream, ErpProductImportExcelVO.class);
+            // 使用RowIndexListener来读取Excel，确保转换器能够获取到正确的行号
+            List<ErpProductImportExcelVO> list = ExcelUtils.read(inputStream, ErpProductImportExcelVO.class, new RowIndexListener<>());
             return success(productService.importProductList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

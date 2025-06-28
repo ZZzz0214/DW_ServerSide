@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.excel.core.handler.SelectSheetWriteHandler;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter;
 import com.alibaba.excel.converters.longconverter.LongStringConverter;
+import com.alibaba.excel.read.listener.ReadListener;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.multipart.MultipartFile;
@@ -56,15 +57,43 @@ public class ExcelUtils {
                 .doReadAllSync();
     }
 
-        // 新增InputStream参数的read方法
+    // 新增InputStream参数的read方法
     public static <T> List<T> read(InputStream inputStream, Class<T> head) throws IOException {
         return EasyExcel.read(inputStream, head, null)
                 .autoCloseStream(false)
                 .doReadAllSync();
     }
 
+    /**
+     * 带监听器的Excel读取方法
+     *
+     * @param inputStream 输入流
+     * @param head        数据类型
+     * @param listener    读取监听器
+     * @param <T>         泛型
+     * @return 读取的数据列表
+     * @throws IOException 读取异常
+     */
+    public static <T> List<T> read(InputStream inputStream, Class<T> head, ReadListener<T> listener) throws IOException {
+        return EasyExcel.read(inputStream, head, listener)
+                .autoCloseStream(false)
+                .doReadAllSync();
+    }
 
-
-
+    /**
+     * 带监听器的Excel读取方法（MultipartFile版本）
+     *
+     * @param file     文件
+     * @param head     数据类型
+     * @param listener 读取监听器
+     * @param <T>      泛型
+     * @return 读取的数据列表
+     * @throws IOException 读取异常
+     */
+    public static <T> List<T> read(MultipartFile file, Class<T> head, ReadListener<T> listener) throws IOException {
+        return EasyExcel.read(file.getInputStream(), head, listener)
+                .autoCloseStream(false)
+                .doReadAllSync();
+    }
 
 }

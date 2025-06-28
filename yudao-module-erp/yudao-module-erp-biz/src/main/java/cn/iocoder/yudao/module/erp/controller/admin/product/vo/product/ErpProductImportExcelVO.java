@@ -3,6 +3,10 @@ package cn.iocoder.yudao.module.erp.controller.admin.product.vo.product;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.DoubleConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateTimeConvert;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.format.DateTimeFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,11 +42,11 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("产品规格")
     private String standard;
 
-    @ExcelProperty("产品日期")
+    @ExcelProperty(value = "产品日期", converter = LocalDateTimeConvert.class)
     @DateTimeFormat("yyyy/M/d")
     private LocalDateTime productionDate;
 
-    @ExcelProperty("保质日期")
+    @ExcelProperty(value = "保质日期", converter = IntegerConvert.class)
     private Integer expiryDay;
 
 
@@ -67,10 +71,10 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("供应商名")
     private String supplier;
 
-    @ExcelProperty("采购单价")
+    @ExcelProperty(value = "采购单价", converter = BigDecimalConvert.class)
     private BigDecimal purchasePrice;
 
-    @ExcelProperty("批发单价")
+    @ExcelProperty(value = "批发单价", converter = BigDecimalConvert.class)
     private BigDecimal wholesalePrice;
 
     @ExcelProperty("备注信息")
@@ -79,28 +83,28 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("对外最低出货单价")
     private String minPurchasePrice;
 
-    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
+    @ExcelProperty(value = "运费类型(0-固定运费,1-按件运费,2-按重运费)", converter = IntegerConvert.class)
     private Integer shippingFeeType;
 
-    @ExcelProperty("固定运费")
+    @ExcelProperty(value = "固定运费", converter = BigDecimalConvert.class)
     private BigDecimal fixedShippingFee;
 
-    @ExcelProperty("按件数量")
+    @ExcelProperty(value = "按件数量", converter = IntegerConvert.class)
     private Integer additionalItemQuantity;
 
-    @ExcelProperty("按件价格")
+    @ExcelProperty(value = "按件价格", converter = BigDecimalConvert.class)
     private BigDecimal additionalItemPrice;
 
-    @ExcelProperty("首重重量")
+    @ExcelProperty(value = "首重重量", converter = BigDecimalConvert.class)
     private BigDecimal firstWeight;
 
-    @ExcelProperty("首重价格")
+    @ExcelProperty(value = "首重价格", converter = BigDecimalConvert.class)
     private BigDecimal firstWeightPrice;
 
-    @ExcelProperty("续重重量")
+    @ExcelProperty(value = "续重重量", converter = BigDecimalConvert.class)
     private BigDecimal additionalWeight;
 
-    @ExcelProperty("续重价格")
+    @ExcelProperty(value = "续重价格", converter = BigDecimalConvert.class)
     private BigDecimal additionalWeightPrice;
 
     @ExcelProperty("条形编号")
@@ -115,10 +119,10 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("商标编号")
     private String trademarkCode;
 
-    @ExcelProperty("现货数量")
+    @ExcelProperty(value = "现货数量", converter = IntegerConvert.class)
     private Integer totalQuantity;
 
-    @ExcelProperty("包材数量")
+    @ExcelProperty(value = "包材数量", converter = IntegerConvert.class)
     private Integer packagingMaterialQuantity;
 
     @ExcelProperty("返单时效")
@@ -127,7 +131,7 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("品长宽高")
     private String productLength;
 
-    @ExcelProperty("产品重量")
+    @ExcelProperty(value = "产品重量", converter = BigDecimalConvert.class)
     private BigDecimal weight;
 
     @ExcelProperty("箱规数量")
@@ -136,7 +140,7 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("箱长宽高")
     private String cartonLength;
 
-    @ExcelProperty("箱规重量")
+    @ExcelProperty(value = "箱规重量", converter = DoubleConvert.class)
     private Double cartonWeight;
 
     @ExcelProperty("发货地址")
