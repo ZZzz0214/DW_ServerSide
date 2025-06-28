@@ -112,7 +112,7 @@ public class ErpProductESDO {
     @Field(name = "carton_dimensions", type = FieldType.Keyword)
     private String cartonDimensions;
 
-    @Field(name = "carton_weight", type = FieldType.Double)
+    @Field(name = "carton_weight", type = FieldType.Keyword)
     private Double cartonWeight;
 
     @Field(name = "shipping_address", type = FieldType.Keyword)

@@ -140,8 +140,8 @@ public class ErpProductImportExcelVO {
     @ExcelProperty("箱长宽高")
     private String cartonLength;
 
-    @ExcelProperty(value = "箱规重量", converter = DoubleConvert.class)
-    private Double cartonWeight;
+    @ExcelProperty(value = "箱规重量")
+    private String cartonWeight;
 
     @ExcelProperty("发货地址")
     private String shippingAddress;

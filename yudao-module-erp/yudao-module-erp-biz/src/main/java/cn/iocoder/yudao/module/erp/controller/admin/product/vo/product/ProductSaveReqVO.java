@@ -84,7 +84,7 @@ public class ProductSaveReqVO {
 
 
     @Schema(description = "箱规重量")
-    private Double cartonWeight;
+    private String cartonWeight;
 
     @Schema(description = "发货地址")
     private String shippingAddress;

@@ -3,7 +3,9 @@ package cn.iocoder.yudao.framework.excel.core.convert;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Excel转换错误信息持有器
@@ -14,7 +16,7 @@ import java.util.List;
  */
 public class ConversionErrorHolder {
 
-    private static final ThreadLocal<List<ConversionError>> ERROR_HOLDER = new ThreadLocal<>();
+    private static final ThreadLocal<Map<Integer, List<ConversionError>>> ERROR_HOLDER = new ThreadLocal<>();
     private static final ThreadLocal<Integer> CURRENT_ROW_INDEX = new ThreadLocal<>();
 
     @Data
@@ -58,28 +60,54 @@ public class ConversionErrorHolder {
      * 添加转换错误（使用当前行号）
      */
     public static void addError(String fieldName, String invalidValue, String errorMessage) {
-        List<ConversionError> errors = getErrors();
-        errors.add(new ConversionError(fieldName, invalidValue, errorMessage));
+        Map<Integer, List<ConversionError>> errorMap = getErrorMap();
+        int rowIndex = getCurrentRowIndex();
+        
+        errorMap.computeIfAbsent(rowIndex, k -> new ArrayList<>())
+                .add(new ConversionError(fieldName, invalidValue, errorMessage, rowIndex));
     }
 
     /**
      * 添加转换错误（指定行号）
      */
     public static void addError(String fieldName, String invalidValue, String errorMessage, int rowIndex) {
-        List<ConversionError> errors = getErrors();
-        errors.add(new ConversionError(fieldName, invalidValue, errorMessage, rowIndex));
+        Map<Integer, List<ConversionError>> errorMap = getErrorMap();
+        errorMap.computeIfAbsent(rowIndex, k -> new ArrayList<>())
+                .add(new ConversionError(fieldName, invalidValue, errorMessage, rowIndex));
     }
 
     /**
-     * 获取所有错误
+     * 获取错误映射表（按行号分组）
+     */
+    public static Map<Integer, List<ConversionError>> getAllErrors() {
+        Map<Integer, List<ConversionError>> errorMap = getErrorMap();
+        return new HashMap<>(errorMap);
+    }
+
+    /**
+     * 获取所有错误（扁平化列表）
      */
     public static List<ConversionError> getErrors() {
-        List<ConversionError> errors = ERROR_HOLDER.get();
-        if (errors == null) {
-            errors = new ArrayList<>();
-            ERROR_HOLDER.set(errors);
+        Map<Integer, List<ConversionError>> errorMap = getErrorMap();
+        List<ConversionError> allErrors = new ArrayList<>();
+        
+        for (List<ConversionError> rowErrors : errorMap.values()) {
+            allErrors.addAll(rowErrors);
         }
-        return errors;
+        
+        return allErrors;
+    }
+
+    /**
+     * 获取错误映射表
+     */
+    private static Map<Integer, List<ConversionError>> getErrorMap() {
+        Map<Integer, List<ConversionError>> errorMap = ERROR_HOLDER.get();
+        if (errorMap == null) {
+            errorMap = new HashMap<>();
+            ERROR_HOLDER.set(errorMap);
+        }
+        return errorMap;
     }
 
     /**
@@ -94,8 +122,8 @@ public class ConversionErrorHolder {
      * 检查是否有错误
      */
     public static boolean hasErrors() {
-        List<ConversionError> errors = getErrors();
-        return !errors.isEmpty();
+        Map<Integer, List<ConversionError>> errorMap = getErrorMap();
+        return !errorMap.isEmpty();
     }
 
     /**
@@ -110,15 +138,8 @@ public class ConversionErrorHolder {
      * 按行号分组获取错误
      */
     public static List<ConversionError> getErrorsByRowIndex(int rowIndex) {
-        List<ConversionError> allErrors = getErrors();
-        List<ConversionError> rowErrors = new ArrayList<>();
-        
-        for (ConversionError error : allErrors) {
-            if (error.getRowIndex() == rowIndex) {
-                rowErrors.add(error);
-            }
-        }
-        
-        return rowErrors;
+        Map<Integer, List<ConversionError>> errorMap = getErrorMap();
+        List<ConversionError> rowErrors = errorMap.get(rowIndex);
+        return rowErrors != null ? new ArrayList<>(rowErrors) : new ArrayList<>();
     }
 } 

@@ -175,13 +175,11 @@ public class ErpProductController {
     @PreAuthorize("@ss.hasPermission('erp:product:import')")
     public CommonResult<ErpProductImportRespVO> importExcel(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws IOException {
+        // 使用RowIndexListener来读取Excel，确保转换器能够获取到正确的行号
         try (InputStream inputStream = file.getInputStream()) {
-            // 使用RowIndexListener来读取Excel，确保转换器能够获取到正确的行号
             List<ErpProductImportExcelVO> list = ExcelUtils.read(inputStream, ErpProductImportExcelVO.class, new RowIndexListener<>());
             return success(productService.importProductList(list, updateSupport));
-        } catch (Exception e) {
-            throw new RuntimeException("导入失败: " + e.getMessage());
         }
     }
 

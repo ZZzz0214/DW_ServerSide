@@ -140,7 +140,7 @@ public class ErpProductDO extends BaseDO {
     /**
      * 箱规重量
      */
-    private Double cartonWeight;
+    private String cartonWeight;
 
     /**
      * 发货地址

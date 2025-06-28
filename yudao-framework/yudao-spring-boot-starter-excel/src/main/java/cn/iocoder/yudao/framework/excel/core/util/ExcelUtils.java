@@ -1,6 +1,10 @@
 package cn.iocoder.yudao.framework.excel.core.util;
 
 import cn.iocoder.yudao.framework.excel.core.handler.SelectSheetWriteHandler;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.DoubleConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateTimeConvert;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter;
 import com.alibaba.excel.converters.longconverter.LongStringConverter;
@@ -17,6 +21,8 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Excel 工具类
@@ -24,6 +30,8 @@ import java.util.List;
  * @author 芋道源码
  */
 public class ExcelUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(ExcelUtils.class);
 
     /**
      * 将列表以 Excel 响应给前端
@@ -54,6 +62,10 @@ public class ExcelUtils {
     public static <T> List<T> read(MultipartFile file, Class<T> head) throws IOException {
         return EasyExcel.read(file.getInputStream(), head, null)
                 .autoCloseStream(false)  // 不要自动关闭，交给 Servlet 自己处理
+                .registerConverter(new IntegerConvert()) // 注册自定义转换器
+                .registerConverter(new BigDecimalConvert())
+                .registerConverter(new DoubleConvert())
+                .registerConverter(new LocalDateTimeConvert())
                 .doReadAllSync();
     }
 
@@ -61,6 +73,10 @@ public class ExcelUtils {
     public static <T> List<T> read(InputStream inputStream, Class<T> head) throws IOException {
         return EasyExcel.read(inputStream, head, null)
                 .autoCloseStream(false)
+                .registerConverter(new IntegerConvert()) // 注册自定义转换器
+                .registerConverter(new BigDecimalConvert())
+                .registerConverter(new DoubleConvert())
+                .registerConverter(new LocalDateTimeConvert())
                 .doReadAllSync();
     }
 
@@ -75,8 +91,24 @@ public class ExcelUtils {
      * @throws IOException 读取异常
      */
     public static <T> List<T> read(InputStream inputStream, Class<T> head, ReadListener<T> listener) throws IOException {
+        log.info("[ExcelUtils] 开始读取Excel文件，类: {}", head.getSimpleName());
+        
+        // 创建转换器实例并添加调试日志
+        IntegerConvert integerConvert = new IntegerConvert();
+        BigDecimalConvert bigDecimalConvert = new BigDecimalConvert();
+        DoubleConvert doubleConvert = new DoubleConvert();
+        LocalDateTimeConvert localDateTimeConvert = new LocalDateTimeConvert();
+        
+        log.info("[ExcelUtils] 转换器实例创建完成");
+        
         return EasyExcel.read(inputStream, head, listener)
-                .autoCloseStream(false)
+                .autoCloseStream(false)  // 不要自动关闭，交给调用方处理
+                .registerConverter(new LongStringConverter()) // 避免 Long 类型丢失精度
+                .registerConverter(new BigDecimalStringConverter())
+                .registerConverter(integerConvert) // 注册自定义转换器
+                .registerConverter(bigDecimalConvert)
+                .registerConverter(doubleConvert)
+                .registerConverter(localDateTimeConvert)
                 .doReadAllSync();
     }
 
@@ -93,6 +125,10 @@ public class ExcelUtils {
     public static <T> List<T> read(MultipartFile file, Class<T> head, ReadListener<T> listener) throws IOException {
         return EasyExcel.read(file.getInputStream(), head, listener)
                 .autoCloseStream(false)
+                .registerConverter(new IntegerConvert()) // 注册自定义转换器
+                .registerConverter(new BigDecimalConvert())
+                .registerConverter(new DoubleConvert())
+                .registerConverter(new LocalDateTimeConvert())
                 .doReadAllSync();
     }
 

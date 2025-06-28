@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import org.apache.ibatis.annotations.Mapper;
+import cn.hutool.core.collection.CollUtil;
 
 import java.util.Collection;
 import java.util.List;

@@ -343,7 +343,16 @@ public class ErpProductServiceImpl implements ErpProductService {
             System.out.println("数据量检查 - 数据库: " + dbCount + ", ES: " + esCount);
 
             // 4. 判断数据一致性
-            if (esCount == 0 && dbCount > 0) {
+            if (dbCount == 0) {
+                // 数据库为空时，ES也应该为空
+                if (esCount == 0) {
+                    return ESStatus.HEALTHY;
+                } else {
+                    System.out.println("数据库为空但ES有数据，需要清空ES");
+                    return ESStatus.DATA_MISMATCH;
+                }
+            } else if (esCount == 0 && dbCount > 0) {
+                // ES为空但数据库有数据
                 return ESStatus.EMPTY_INDEX;
             } else if (Math.abs(dbCount - esCount) > 5) { // 允许5条差异
                 return ESStatus.DATA_MISMATCH;
@@ -421,9 +430,23 @@ public class ErpProductServiceImpl implements ErpProductService {
             long dbCount = productMapper.selectCount(null);
             long esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpProductESDO.class);
 
-            // 数据量不匹配时才需要同步（允许10条的差异）
-            if (Math.abs(dbCount - esCount) > 10) {
-                System.out.println("检测到数据量不匹配。数据库:" + dbCount + ", ES:" + esCount + "，开始同步数据...");
+            System.out.println("检查数据一致性 - 数据库: " + dbCount + ", ES: " + esCount);
+
+            // 判断是否需要同步
+            boolean needSync = false;
+            if (dbCount == 0) {
+                // 数据库为空时，ES也应该为空
+                if (esCount > 0) {
+                    System.out.println("数据库为空但ES有数据，需要清空ES");
+                    needSync = true;
+                }
+            } else if (Math.abs(dbCount - esCount) > 10) { // 允许10条的差异
+                System.out.println("检测到数据量不匹配，需要同步数据");
+                needSync = true;
+            }
+
+            if (needSync) {
+                System.out.println("开始同步数据...");
                 syncAllDataToES();
             } else {
                 System.out.println("ES索引和数据都正常。数据库:" + dbCount + ", ES:" + esCount);
@@ -444,8 +467,19 @@ public class ErpProductServiceImpl implements ErpProductService {
 
             // 获取数据库数据
             List<ErpProductDO> products = productMapper.selectList(null);
+            
+            // 先清空ES数据
+            try {
+                productESRepository.deleteAll();
+                Thread.sleep(1000); // 等待删除完成
+                System.out.println("已清空ES数据");
+            } catch (Exception e) {
+                System.err.println("清空ES数据失败: " + e.getMessage());
+            }
+
+            // 如果数据库为空，直接返回
             if (CollUtil.isEmpty(products)) {
-                System.out.println("数据库中没有产品数据，跳过同步");
+                System.out.println("数据库中没有产品数据，ES已清空，同步完成");
                 return;
             }
 
@@ -453,14 +487,6 @@ public class ErpProductServiceImpl implements ErpProductService {
             int batchSize = 100;
             int totalSize = products.size();
             System.out.println("总共需要同步 " + totalSize + " 条记录，分批处理，每批 " + batchSize + " 条");
-
-            // 先清空ES数据
-            try {
-                productESRepository.deleteAll();
-                Thread.sleep(1000); // 等待删除完成
-            } catch (Exception e) {
-                System.err.println("清空ES数据失败: " + e.getMessage());
-            }
 
             // 分批同步数据
             for (int i = 0; i < totalSize; i += batchSize) {
@@ -470,7 +496,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                 try {
                     // 转换为ES对象
                     List<ErpProductESDO> esBatch = batch.stream()
-                        .map(this::convertProductToES)
+                        .map(this::convertProductToESSimple)
                         .filter(Objects::nonNull) // 过滤转换失败的数据
                         .collect(Collectors.toList());
 
@@ -1247,47 +1273,24 @@ public class ErpProductServiceImpl implements ErpProductService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 2. 检查是否有数据类型转换错误
-        List<ConversionErrorHolder.ConversionError> conversionErrors = ConversionErrorHolder.getErrors();
-        if (!conversionErrors.isEmpty()) {
-            // 将转换错误按行号分组并添加到失败列表中
-            for (int i = 0; i < importProducts.size(); i++) {
-                ErpProductImportExcelVO importVO = importProducts.get(i);
-                String productName = StrUtil.isNotBlank(importVO.getName()) ? importVO.getName() : "未知产品";
-                
-                // 获取当前行的转换错误
-                List<ConversionErrorHolder.ConversionError> rowErrors = ConversionErrorHolder.getErrorsByRowIndex(i + 1);
-                
-                if (!rowErrors.isEmpty()) {
-                    String errorKey = "第" + (i + 1) + "行(" + productName + ")";
-                    List<String> errorMessages = new ArrayList<>();
-                    
-                    for (ConversionErrorHolder.ConversionError error : rowErrors) {
-                        errorMessages.add(error.getErrorMessage());
-                    }
-                    
-                    String errorMsg = String.join("; ", errorMessages);
-                    respVO.getFailureNames().put(errorKey, "数据类型错误: " + errorMsg);
-                }
-            }
-            
-            // 清除转换错误
-            ConversionErrorHolder.clearErrors();
-            
-            // 如果有转换错误，直接返回结果，不进行后续处理
-            return respVO;
-        }
-
-        // 3. 批量处理列表
-        List<ErpProductDO> createList = new ArrayList<>();
-        List<ErpProductDO> updateList = new ArrayList<>();
-
         try {
+            // 2. 数据类型校验前置检查
+            Map<String, String> dataTypeErrors = validateDataTypeErrors(importProducts);
+            if (!dataTypeErrors.isEmpty()) {
+                // 如果有数据类型错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(dataTypeErrors);
+                return respVO;
+            }
+
+            // 3. 批量处理列表
+            List<ErpProductDO> createList = new ArrayList<>();
+            List<ErpProductDO> updateList = new ArrayList<>();
+
             // 4. 批量查询已存在的产品
-        Set<String> noSet = importProducts.stream()
-                .map(ErpProductImportExcelVO::getNo)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toSet());
+            Set<String> noSet = importProducts.stream()
+                    .map(ErpProductImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
 
             // 使用数据库查询替代ES查询，确保数据一致性
             Map<String, ErpProductDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
@@ -1323,20 +1326,22 @@ public class ErpProductServiceImpl implements ErpProductService {
             Set<String> processedNos = new HashSet<>();
 
             // 5. 批量转换数据
-        for (int i = 0; i < importProducts.size(); i++) {
-            // 设置当前处理的行号（从1开始，因为Excel行号从1开始）
-            ConversionErrorHolder.setCurrentRowIndex(i + 1);
-            
-            ErpProductImportExcelVO importVO = importProducts.get(i);
-            try {
+            for (int i = 0; i < importProducts.size(); i++) {
+                ErpProductImportExcelVO importVO = importProducts.get(i);
+                try {
                     // 5.1 基础数据校验
-                if (StrUtil.isEmpty(importVO.getName())) {
-                    throw exception(PRODUCT_IMPORT_NAME_EMPTY, i + 1);
-                }
+                    if (StrUtil.isEmpty(importVO.getName())) {
+                        String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
+                        respVO.getFailureNames().put(errorKey, "产品名称不能为空");
+                        continue;
+                    }
+                    
                     // 5.2 检查Excel内部编号重复
                     if (StrUtil.isNotBlank(importVO.getNo())) {
                         if (processedNos.contains(importVO.getNo())) {
-                            throw exception(PRODUCT_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
+                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
+                            respVO.getFailureNames().put(errorKey, "产品编号重复: " + importVO.getNo());
+                            continue;
                         }
                         processedNos.add(importVO.getNo());
                     }
@@ -1345,7 +1350,9 @@ public class ErpProductServiceImpl implements ErpProductService {
                     if (StrUtil.isNotBlank(importVO.getPurchaser())) {
                         Boolean purchaserExists = purchaserExistsMap.get(importVO.getPurchaser());
                         if (purchaserExists == null || !purchaserExists) {
-                            throw exception(PURCHASER_NOT_EXISTS, "采购人员不存在: " + importVO.getPurchaser());
+                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
+                            respVO.getFailureNames().put(errorKey, "采购人员不存在: " + importVO.getPurchaser());
+                            continue;
                         }
                     }
 
@@ -1353,63 +1360,113 @@ public class ErpProductServiceImpl implements ErpProductService {
                     if (StrUtil.isNotBlank(importVO.getSupplier())) {
                         Boolean supplierExists = supplierExistsMap.get(importVO.getSupplier());
                         if (supplierExists == null || !supplierExists) {
-                            throw exception(SUPPLIER_NOT_EXISTS, "供应商不存在: " + importVO.getSupplier());
+                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
+                            respVO.getFailureNames().put(errorKey, "供应商不存在: " + importVO.getSupplier());
+                            continue;
                         }
                     }
 
                     // 5.5 判断是否支持更新
                     ErpProductDO existProduct = existMap.get(importVO.getNo());
-                if (existProduct == null) {
-                    // 创建产品
-                    ErpProductDO product = BeanUtils.toBean(importVO, ErpProductDO.class);
-                    product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
-                    // 校验产品名称唯一性（对于新增的产品）
-                    validateProductNameUniqueForImport(product.getName(), null, createList, updateList);
-                    createList.add(product);
-                    respVO.getCreateNames().add(product.getName());
-                } else if (isUpdateSupport) {
-                    // 更新产品
-                    ErpProductDO updateProduct = BeanUtils.toBean(importVO, ErpProductDO.class);
-                    updateProduct.setId(existProduct.getId());
-                    // 校验产品名称唯一性（对于更新的产品）
-                    validateProductNameUniqueForImport(updateProduct.getName(), updateProduct.getId(), createList, updateList);
-
-                    updateList.add(updateProduct);
-                    respVO.getUpdateNames().add(updateProduct.getName());
-                } else {
-                    throw exception(PRODUCT_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    if (existProduct == null) {
+                        // 创建产品
+                        ErpProductDO product = convertImportVOToDO(importVO);
+                        product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
+                        // 校验产品名称唯一性（对于新增的产品）
+                        try {
+                            validateProductNameUniqueForImport(product.getName(), null, createList, updateList);
+                            createList.add(product);
+                            respVO.getCreateNames().add(product.getName());
+                        } catch (ServiceException ex) {
+                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
+                            respVO.getFailureNames().put(errorKey, ex.getMessage());
+                        }
+                    } else if (isUpdateSupport) {
+                        // 更新产品
+                        ErpProductDO updateProduct = convertImportVOToDO(importVO);
+                        updateProduct.setId(existProduct.getId());
+                        // 校验产品名称唯一性（对于更新的产品）
+                        try {
+                            validateProductNameUniqueForImport(updateProduct.getName(), updateProduct.getId(), createList, updateList);
+                            updateList.add(updateProduct);
+                            respVO.getUpdateNames().add(updateProduct.getName());
+                        } catch (ServiceException ex) {
+                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
+                            respVO.getFailureNames().put(errorKey, ex.getMessage());
+                        }
+                    } else {
+                        String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
+                        respVO.getFailureNames().put(errorKey, "产品编号不存在且不支持更新: " + importVO.getNo());
+                    }
+                } catch (Exception ex) {
+                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
                 }
-            } catch (ServiceException ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
-                respVO.getFailureNames().put(errorKey, ex.getMessage());
-            } catch (Exception ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
-                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
             }
-        }
 
             // 6. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 // 批量插入新产品
-                for (ErpProductDO product : createList) {
-                    productMapper.insert(product);
-                    // 同步到ES
-                    syncProductToES(product.getId());
-                }
+                productMapper.insertBatch(createList);
+                
+                // 批量同步到ES
+                batchSyncProductsToES(createList);
             }
             if (CollUtil.isNotEmpty(updateList)) {
                 // 批量更新产品
-                for (ErpProductDO product : updateList) {
-                    productMapper.updateById(product);
-                    // 同步到ES
-                    syncProductToES(product.getId());
-                }
+                productMapper.updateBatch(updateList);
+                
+                // 批量同步到ES
+                batchSyncProductsToES(updateList);
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
+    }
+
+    /**
+     * 数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpProductImportExcelVO> importProducts) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+        
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+        
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+                
+                // 获取产品名称
+                String productName = "未知产品";
+                if (rowIndex > 0 && rowIndex <= importProducts.size()) {
+                    ErpProductImportExcelVO importVO = importProducts.get(rowIndex - 1);
+                    if (StrUtil.isNotBlank(importVO.getName())) {
+                        productName = importVO.getName();
+                    }
+                }
+                
+                String errorKey = "第" + rowIndex + "行(" + productName + ")";
+                List<String> errorMessages = new ArrayList<>();
+                
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+                
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+        
+        return dataTypeErrors;
     }
 
     /**
@@ -1474,11 +1531,6 @@ public class ErpProductServiceImpl implements ErpProductService {
         try {
             ErpProductESDO es = new ErpProductESDO();
 
-            // 添加调试信息
-            System.out.println("转换产品到ES: ID=" + product.getId() +
-                             ", no='" + product.getNo() + "'" +
-                             ", name='" + product.getName() + "'");
-
             // 复制基础属性（排除日期字段）
             BeanUtils.copyProperties(product, es, "productionDate", "createTime");
 
@@ -1493,11 +1545,6 @@ public class ErpProductServiceImpl implements ErpProductService {
             // 设置keyword字段（用于精确匹配和通配符查询）- 与代发表保持完全一致
             es.setNoKeyword(product.getNo());
             es.setNameKeyword(product.getName());
-
-            // 验证转换结果
-            System.out.println("转换后ES对象: no='" + es.getNo() + "'" +
-                             ", no_keyword='" + es.getNoKeyword() + "'" +
-                             ", name='" + es.getName() + "'");
             es.setProductShortNameKeyword(product.getProductShortName());
             es.setShippingCodeKeyword(product.getShippingCode());
             es.setBrandKeyword(product.getBrand());
@@ -1537,6 +1584,144 @@ public class ErpProductServiceImpl implements ErpProductService {
             System.err.println("转换产品到ES对象失败，产品ID: " + (product.getId() != null ? product.getId() : "null") + ", 错误: " + e.getMessage());
             // 返回null，让调用方过滤掉
             return null;
+        }
+    }
+
+    /**
+     * 转换产品DO为ES对象（带缓存版本，用于批量操作）
+     */
+    private ErpProductESDO convertProductToESWithCache(ErpProductDO product, 
+                                                     Map<Long, String> categoryNameMap, 
+                                                     Map<Long, String> unitNameMap) {
+        if (product == null) {
+            return null;
+        }
+
+        try {
+            ErpProductESDO es = new ErpProductESDO();
+
+            // 复制基础属性（排除日期字段）
+            BeanUtils.copyProperties(product, es, "productionDate", "createTime");
+
+            // 安全处理日期字段 - 转换为字符串
+            if (product.getProductionDate() != null) {
+                es.setProductionDate(product.getProductionDate().toString());
+            }
+            if (product.getCreateTime() != null) {
+                es.setCreateTime(product.getCreateTime().toString());
+            }
+
+            // 设置keyword字段（用于精确匹配和通配符查询）
+            es.setNoKeyword(product.getNo());
+            es.setNameKeyword(product.getName());
+            es.setProductShortNameKeyword(product.getProductShortName());
+            es.setShippingCodeKeyword(product.getShippingCode());
+            es.setBrandKeyword(product.getBrand());
+            es.setPurchaserKeyword(product.getPurchaser());
+            es.setSupplierKeyword(product.getSupplier());
+            es.setCreatorKeyword(product.getCreator());
+
+            // 设置分类名称（使用缓存）
+            if (product.getCategoryId() != null) {
+                es.setCategoryName(categoryNameMap.getOrDefault(product.getCategoryId(), ""));
+            } else {
+                es.setCategoryName("");
+            }
+
+            // 设置单位名称（使用缓存）
+            if (product.getUnitId() != null) {
+                es.setUnitName(unitNameMap.getOrDefault(product.getUnitId(), ""));
+            } else {
+                es.setUnitName("");
+            }
+
+            return es;
+
+        } catch (Exception e) {
+            System.err.println("转换产品到ES对象失败，产品ID: " + (product.getId() != null ? product.getId() : "null") + ", 错误: " + e.getMessage());
+            // 返回null，让调用方过滤掉
+            return null;
+        }
+    }
+
+    /**
+     * 转换产品DO为ES对象（简化版本，不查询其他服务）
+     */
+    private ErpProductESDO convertProductToESSimple(ErpProductDO product) {
+        if (product == null) {
+            return null;
+        }
+
+        try {
+            ErpProductESDO es = new ErpProductESDO();
+
+            // 复制基础属性（排除日期字段）
+            BeanUtils.copyProperties(product, es, "productionDate", "createTime");
+
+            // 安全处理日期字段 - 转换为字符串
+            if (product.getProductionDate() != null) {
+                es.setProductionDate(product.getProductionDate().toString());
+            }
+            if (product.getCreateTime() != null) {
+                es.setCreateTime(product.getCreateTime().toString());
+            }
+
+            // 设置keyword字段（用于精确匹配和通配符查询）
+            es.setNoKeyword(product.getNo());
+            es.setNameKeyword(product.getName());
+            es.setProductShortNameKeyword(product.getProductShortName());
+            es.setShippingCodeKeyword(product.getShippingCode());
+            es.setBrandKeyword(product.getBrand());
+            es.setPurchaserKeyword(product.getPurchaser());
+            es.setSupplierKeyword(product.getSupplier());
+            es.setCreatorKeyword(product.getCreator());
+
+            // 分类名称和单位名称暂时设为空，避免查询其他服务
+            es.setCategoryName("");
+            es.setUnitName("");
+
+            return es;
+
+        } catch (Exception e) {
+            System.err.println("转换产品到ES对象失败，产品ID: " + (product.getId() != null ? product.getId() : "null") + ", 错误: " + e.getMessage());
+            // 返回null，让调用方过滤掉
+            return null;
+        }
+    }
+
+    /**
+     * 批量同步产品到ES（优化版本）
+     */
+    private void batchSyncProductsToES(List<ErpProductDO> products) {
+        if (CollUtil.isEmpty(products)) {
+            return;
+        }
+
+        try {
+            // 批量转换产品为ES对象
+            List<ErpProductESDO> esList = products.stream()
+                    .map(this::convertProductToESSimple)
+                    .filter(Objects::nonNull) // 过滤转换失败的数据
+                    .collect(Collectors.toList());
+
+            if (CollUtil.isNotEmpty(esList)) {
+                // 批量保存到ES
+                productESRepository.saveAll(esList);
+                System.out.println("批量同步 " + esList.size() + " 条产品到ES成功");
+            }
+        } catch (Exception e) {
+            System.err.println("批量同步产品到ES失败: " + e.getMessage());
+            // 降级为单条同步
+            for (ErpProductDO product : products) {
+                try {
+                    ErpProductESDO es = convertProductToESSimple(product);
+                    if (es != null) {
+                        productESRepository.save(es);
+                    }
+                } catch (Exception ex) {
+                    System.err.println("单条同步产品到ES失败，产品ID: " + product.getId() + ", 错误: " + ex.getMessage());
+                }
+            }
         }
     }
 
@@ -1790,5 +1975,82 @@ public class ErpProductServiceImpl implements ErpProductService {
             }
         }
         return false;
+    }
+
+    /**
+     * 将导入VO转换为DO
+     * 特别注意处理字段类型转换，如categoryId和status从String转为Long/Integer
+     */
+    private ErpProductDO convertImportVOToDO(ErpProductImportExcelVO importVO) {
+        if (importVO == null) {
+            return null;
+        }
+
+        // 添加调试信息
+        System.out.println("=== 转换调试信息 ===");
+        System.out.println("产品名称: " + importVO.getName());
+        System.out.println("保质日期: " + importVO.getExpiryDay() + " (类型: " + (importVO.getExpiryDay() != null ? importVO.getExpiryDay().getClass().getSimpleName() : "null") + ")");
+        System.out.println("采购单价: " + importVO.getPurchasePrice() + " (类型: " + (importVO.getPurchasePrice() != null ? importVO.getPurchasePrice().getClass().getSimpleName() : "null") + ")");
+        System.out.println("产品日期: " + importVO.getProductionDate() + " (类型: " + (importVO.getProductionDate() != null ? importVO.getProductionDate().getClass().getSimpleName() : "null") + ")");
+        System.out.println("箱规重量: " + importVO.getCartonWeight() + " (类型: " + (importVO.getCartonWeight() != null ? importVO.getCartonWeight().getClass().getSimpleName() : "null") + ")");
+        System.out.println("==================");
+
+        // 使用BeanUtils进行基础转换
+        ErpProductDO product = BeanUtils.toBean(importVO, ErpProductDO.class);
+
+        // 手动设置转换器处理的字段，确保数据正确传递
+        product.setExpiryDay(importVO.getExpiryDay());
+        product.setPurchasePrice(importVO.getPurchasePrice());
+        product.setWholesalePrice(importVO.getWholesalePrice());
+        product.setProductionDate(importVO.getProductionDate());
+        product.setCartonWeight(importVO.getCartonWeight());
+        product.setShippingFeeType(importVO.getShippingFeeType());
+        product.setFixedShippingFee(importVO.getFixedShippingFee());
+        product.setAdditionalItemQuantity(importVO.getAdditionalItemQuantity());
+        product.setAdditionalItemPrice(importVO.getAdditionalItemPrice());
+        product.setFirstWeight(importVO.getFirstWeight());
+        product.setFirstWeightPrice(importVO.getFirstWeightPrice());
+        product.setAdditionalWeight(importVO.getAdditionalWeight());
+        product.setAdditionalWeightPrice(importVO.getAdditionalWeightPrice());
+        product.setTotalQuantity(importVO.getTotalQuantity());
+        product.setPackagingMaterialQuantity(importVO.getPackagingMaterialQuantity());
+        product.setWeight(importVO.getWeight());
+
+        // 特殊处理：categoryId从String转为Long
+        if (StrUtil.isNotBlank(importVO.getCategoryId())) {
+            try {
+                product.setCategoryId(Long.valueOf(importVO.getCategoryId()));
+            } catch (NumberFormatException e) {
+                // 如果转换失败，记录错误但不抛出异常，让字段保持null
+                System.err.println("categoryId转换失败: " + importVO.getCategoryId() + ", 错误: " + e.getMessage());
+                product.setCategoryId(null);
+            }
+        } else {
+            product.setCategoryId(null);
+        }
+
+        // 特殊处理：status从String转为Integer
+        if (StrUtil.isNotBlank(importVO.getStatus())) {
+            try {
+                product.setStatus(Integer.valueOf(importVO.getStatus()));
+            } catch (NumberFormatException e) {
+                // 如果转换失败，记录错误但不抛出异常，让字段保持null
+                System.err.println("status转换失败: " + importVO.getStatus() + ", 错误: " + e.getMessage());
+                product.setStatus(null);
+            }
+        } else {
+            product.setStatus(null);
+        }
+
+        // 添加转换后的调试信息
+        System.out.println("=== 转换后调试信息 ===");
+        System.out.println("产品名称: " + product.getName());
+        System.out.println("保质日期: " + product.getExpiryDay() + " (类型: " + (product.getExpiryDay() != null ? product.getExpiryDay().getClass().getSimpleName() : "null") + ")");
+        System.out.println("采购单价: " + product.getPurchasePrice() + " (类型: " + (product.getPurchasePrice() != null ? product.getPurchasePrice().getClass().getSimpleName() : "null") + ")");
+        System.out.println("产品日期: " + product.getProductionDate() + " (类型: " + (product.getProductionDate() != null ? product.getProductionDate().getClass().getSimpleName() : "null") + ")");
+        System.out.println("箱规重量: " + product.getCartonWeight() + " (类型: " + (product.getCartonWeight() != null ? product.getCartonWeight().getClass().getSimpleName() : "null") + ")");
+        System.out.println("==================");
+
+        return product;
     }
 }
