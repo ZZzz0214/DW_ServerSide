@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionExportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.*;
@@ -75,34 +76,9 @@ public class ErpDropshipAssistController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:dropship-assist:query')")
     public CommonResult<ErpDropshipAssistRespVO> getDropshipAssist(@RequestParam("id") Long id) {
-        // 查询基础信息
-        ErpDropshipAssistDO dropshipAssist = dropshipAssistService.getDropshipAssist(id);
-        if (dropshipAssist == null) {
-            return success(null);
-        }
-
-        // 转换为VO
-        ErpDropshipAssistRespVO respVO = BeanUtils.toBean(dropshipAssist, ErpDropshipAssistRespVO.class);
-
-        // 如果有关联组品，查询组品信息
-        if (dropshipAssist.getComboProductId() != null && !dropshipAssist.getComboProductId().trim().isEmpty()) {
-            try {
-                Long comboProductId = Long.parseLong(dropshipAssist.getComboProductId());
-                ErpComboProductDO comboProduct = comboProductService.getCombo(comboProductId);
-                if (comboProduct != null) {
-                    respVO.setName(comboProduct.getName());
-                    respVO.setProductName(comboProduct.getName());
-                    respVO.setProductShortName(comboProduct.getShortName());
-                    respVO.setShippingCode(comboProduct.getShippingCode());
-                    respVO.setComboProductNo(comboProduct.getNo());
-                }
-            } catch (NumberFormatException e) {
-                // 记录日志但不影响主流程
-                System.err.println("组品编号格式错误: " + dropshipAssist.getComboProductId() + ", 错误: " + e.getMessage());
-            }
-        }
+        // 使用新的详情查询方法，自动包含组品信息
+        ErpDropshipAssistRespVO respVO = dropshipAssistService.getDropshipAssistDetail(id);
         return success(respVO);
-
     }
 
     @GetMapping("/page")
@@ -150,7 +126,7 @@ public class ErpDropshipAssistController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpDropshipAssistImportExcelVO> list = ExcelUtils.read(inputStream, ErpDropshipAssistImportExcelVO.class);
+            List<ErpDropshipAssistImportExcelVO> list = ExcelUtils.read(inputStream, ErpDropshipAssistImportExcelVO.class, new RowIndexListener<>());
             return success(dropshipAssistService.importDropshipAssistList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

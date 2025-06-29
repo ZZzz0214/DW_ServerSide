@@ -24,6 +24,9 @@ public interface ErpDropshipAssistService {
     // 根据id查询代发辅助记录
     ErpDropshipAssistDO getDropshipAssist(Long id);
 
+    // 根据id查询代发辅助记录详情（包含组品信息）
+    ErpDropshipAssistRespVO getDropshipAssistDetail(Long id);
+
     // 根据id列表查询代发辅助记录
     List<ErpDropshipAssistDO> getDropshipAssistList(Collection<Long> ids);
 

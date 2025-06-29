@@ -29,8 +29,8 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .betweenIfPresent(ErpDropshipAssistDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpDropshipAssistDO::getId);
 
-        // 联表查询组品信息 - 使用LEFT JOIN确保即使组品编号为空也能查询到代发辅助记录
-        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId);
+        // 联表查询组品信息 - 通过combo_product_id与组品表的no字段进行关联
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getNo, ErpDropshipAssistDO::getComboProductId);
 
         // 添加组品相关的查询条件 - 只有当查询条件不为空时才添加
         if (reqVO.getComboProductId() != null && !reqVO.getComboProductId().trim().isEmpty()) {
@@ -62,6 +62,37 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .selectAs(ErpComboProductDO::getShippingCode, ErpDropshipAssistRespVO::getShippingCode);
 
         return selectJoinPage(reqVO, ErpDropshipAssistRespVO.class, query);
+    }
+
+    /**
+     * 根据ID查询代发辅助记录详情（包含组品信息）
+     */
+    default ErpDropshipAssistRespVO selectDetailById(Long id) {
+        MPJLambdaWrapperX<ErpDropshipAssistDO> query = new MPJLambdaWrapperX<ErpDropshipAssistDO>()
+                .eq(ErpDropshipAssistDO::getId, id);
+
+        // 联表查询组品信息 - 通过combo_product_id与组品表的no字段进行关联
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getNo, ErpDropshipAssistDO::getComboProductId);
+
+        // 字段映射
+        query.selectAs(ErpDropshipAssistDO::getId, ErpDropshipAssistRespVO::getId)
+                .selectAs(ErpDropshipAssistDO::getNo, ErpDropshipAssistRespVO::getNo)
+                .selectAs(ErpDropshipAssistDO::getOriginalProduct, ErpDropshipAssistRespVO::getOriginalProduct)
+                .selectAs(ErpDropshipAssistDO::getOriginalSpec, ErpDropshipAssistRespVO::getOriginalSpec)
+                .selectAs(ErpDropshipAssistDO::getOriginalQuantity, ErpDropshipAssistRespVO::getOriginalQuantity)
+                .selectAs(ErpDropshipAssistDO::getComboProductId, ErpDropshipAssistRespVO::getComboProductId)
+                .selectAs(ErpDropshipAssistDO::getProductSpec, ErpDropshipAssistRespVO::getProductSpec)
+                .selectAs(ErpDropshipAssistDO::getProductQuantity, ErpDropshipAssistRespVO::getProductQuantity)
+                .selectAs(ErpDropshipAssistDO::getRemark, ErpDropshipAssistRespVO::getRemark)
+                .selectAs(ErpDropshipAssistDO::getStatus, ErpDropshipAssistRespVO::getStatus)
+                .selectAs(ErpDropshipAssistDO::getCreator, ErpDropshipAssistRespVO::getCreator)
+                .selectAs(ErpDropshipAssistDO::getCreateTime, ErpDropshipAssistRespVO::getCreateTime)
+                .selectAs(ErpComboProductDO::getName, ErpDropshipAssistRespVO::getProductName)
+                .selectAs(ErpComboProductDO::getNo, ErpDropshipAssistRespVO::getComboProductNo)
+                .selectAs(ErpComboProductDO::getShortName, ErpDropshipAssistRespVO::getProductShortName)
+                .selectAs(ErpComboProductDO::getShippingCode, ErpDropshipAssistRespVO::getShippingCode);
+
+        return selectJoinOne(ErpDropshipAssistRespVO.class, query);
     }
 
     default List<ErpDropshipAssistDO> selectListByNoIn(Collection<String> nos) {

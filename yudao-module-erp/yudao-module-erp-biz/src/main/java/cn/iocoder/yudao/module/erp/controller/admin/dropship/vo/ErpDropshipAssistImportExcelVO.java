@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.dropship.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,7 +31,7 @@ public class ErpDropshipAssistImportExcelVO {
     @ExcelProperty("原表规格")
     private String originalSpec;
 
-    @ExcelProperty("原表数量")
+    @ExcelProperty(value = "原表数量", converter = IntegerConvert.class)
     private Integer originalQuantity;
 
     @ExcelProperty("组品编号")
@@ -40,7 +41,7 @@ public class ErpDropshipAssistImportExcelVO {
     @ExcelProperty("产品规格")
     private String productSpec;
 
-    @ExcelProperty("产品数量")
+    @ExcelProperty(value = "产品数量", converter = IntegerConvert.class)
     private Integer productQuantity;
 
     @Schema(description = "备注信息", example = "备注内容")

@@ -2,8 +2,10 @@ package cn.iocoder.yudao.module.erp.controller.admin.transitsale;
 
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import cn.iocoder.yudao.module.erp.controller.admin.dropship.vo.ErpDropshipAssistExportVO;
@@ -91,6 +93,7 @@ public class ErpTransitSaleController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportTransitSaleExcel(@Valid ErpTransitSalePageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpTransitSaleRespVO> pageResult = transitSaleService.getTransitSaleVOPage(pageReqVO);
         // 转换为导出VO
         //List<ErpTransitSaleExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpTransitSaleExportVO.class);
@@ -121,7 +124,7 @@ public class ErpTransitSaleController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpTransitSaleImportExcelVO> list = ExcelUtils.read(inputStream, ErpTransitSaleImportExcelVO.class);
+            List<ErpTransitSaleImportExcelVO> list = ExcelUtils.read(inputStream, ErpTransitSaleImportExcelVO.class, new RowIndexListener<>());
             return success(transitSaleService.importTransitSaleList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

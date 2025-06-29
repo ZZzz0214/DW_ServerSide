@@ -6,6 +6,9 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.transitsale.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
@@ -14,18 +17,21 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.transitsale.ErpTransitSaleMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
+import cn.iocoder.yudao.module.system.api.dict.DictDataApi;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
+import static cn.iocoder.yudao.module.system.enums.DictTypeConstants.ERP_TRANSIT_PERSON;
 
 @Service
 @Validated
@@ -41,6 +47,9 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
 
     @Resource
     private ErpComboMapper erpComboMapper;
+
+    @Resource
+    private DictDataApi dictDataApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -190,7 +199,178 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 1. 批量预加载组品信息到缓存
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        String username = WebFrameworkUtils.getUsernameById(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        try {
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importList, isUpdateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量预加载组品信息到缓存
+            Set<String> groupProductNos = importList.stream()
+                    .map(ErpTransitSaleImportExcelVO::getGroupProductNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            Map<String, ErpComboProductDO> groupProductMap = preloadComboProducts(groupProductNos);
+
+            // 3. 批量查询已存在的中转销售记录
+            Set<String> noSet = importList.stream()
+                    .map(ErpTransitSaleImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            Map<String, ErpTransitSaleDO> existingTransitSaleMap = Collections.emptyMap();
+            if (CollUtil.isNotEmpty(noSet)) {
+                List<ErpTransitSaleDO> existList = transitSaleMapper.selectListByNoIn(noSet);
+                existingTransitSaleMap = convertMap(existList, ErpTransitSaleDO::getNo);
+            }
+
+            // 4. 批量处理数据
+            List<ErpTransitSaleDO> toCreateList = new ArrayList<>();
+            List<ErpTransitSaleDO> toUpdateList = new ArrayList<>();
+
+            for (int i = 0; i < importList.size(); i++) {
+                ErpTransitSaleImportExcelVO importVO = importList.get(i);
+                String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "第" + (i + 1) + "行";
+
+                try {
+                    // 验证组品编号
+                    ErpComboProductDO comboProduct = groupProductMap.get(importVO.getGroupProductNo());
+                    if (comboProduct == null) {
+                        throw exception(TRANSIT_SALE_GROUP_PRODUCT_ID_REQUIRED, "组品编号不存在: " + importVO.getGroupProductNo());
+                    }
+
+                    // 判断是否支持更新
+                    ErpTransitSaleDO existTransitSale = existingTransitSaleMap.get(importVO.getNo());
+
+                    if (existTransitSale == null) {
+                        // 创建新记录
+                        ErpTransitSaleDO transitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class);
+                        transitSale.setGroupProductId(comboProduct.getId())
+                                .setCreator(username)
+                                .setCreateTime(now);
+
+
+                            String newNo = noRedisDAO.generate(ErpNoRedisDAO.TRANSIT_SALE_NO_PREFIX);
+                            transitSale.setNo(newNo);
+
+
+                        toCreateList.add(transitSale);
+                        respVO.getCreateNames().add(transitSale.getNo());
+
+                    } else if (isUpdateSupport) {
+                        // 更新记录 - 只更新导入文件中提供的字段
+                        ErpTransitSaleDO updateTransitSale = new ErpTransitSaleDO();
+                        updateTransitSale.setId(existTransitSale.getId());
+                        updateTransitSale.setGroupProductId(comboProduct.getId())
+                                .setCreator(username)
+                                .setCreateTime(now);
+
+                        // 只更新导入文件中提供的字段
+                        if (importVO.getTransitPerson() != null) {
+                            updateTransitSale.setTransitPerson(importVO.getTransitPerson());
+                        }
+                        if (importVO.getDistributionPrice() != null) {
+                            updateTransitSale.setDistributionPrice(importVO.getDistributionPrice());
+                        }
+                        if (importVO.getWholesalePrice() != null) {
+                            updateTransitSale.setWholesalePrice(importVO.getWholesalePrice());
+                        }
+                        if (importVO.getShippingFeeType() != null) {
+                            updateTransitSale.setShippingFeeType(importVO.getShippingFeeType());
+                        }
+                        if (importVO.getFixedShippingFee() != null) {
+                            updateTransitSale.setFixedShippingFee(importVO.getFixedShippingFee());
+                        }
+                        if (importVO.getAdditionalItemQuantity() != null) {
+                            updateTransitSale.setAdditionalItemQuantity(importVO.getAdditionalItemQuantity());
+                        }
+                        if (importVO.getAdditionalItemPrice() != null) {
+                            updateTransitSale.setAdditionalItemPrice(importVO.getAdditionalItemPrice());
+                        }
+                        if (importVO.getFirstWeight() != null) {
+                            updateTransitSale.setFirstWeight(importVO.getFirstWeight());
+                        }
+                        if (importVO.getFirstWeightPrice() != null) {
+                            updateTransitSale.setFirstWeightPrice(importVO.getFirstWeightPrice());
+                        }
+                        if (importVO.getAdditionalWeight() != null) {
+                            updateTransitSale.setAdditionalWeight(importVO.getAdditionalWeight());
+                        }
+                        if (importVO.getAdditionalWeightPrice() != null) {
+                            updateTransitSale.setAdditionalWeightPrice(importVO.getAdditionalWeightPrice());
+                        }
+                        if (importVO.getRemark() != null) {
+                            updateTransitSale.setRemark(importVO.getRemark());
+                        }
+
+                        toUpdateList.add(updateTransitSale);
+                        respVO.getUpdateNames().add(existTransitSale.getNo());
+
+                    } else {
+                        throw exception(TRANSIT_SALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    }
+
+                } catch (ServiceException ex) {
+                    respVO.getFailureNames().put(errorKey, ex.getMessage());
+                } catch (Exception ex) {
+                    System.err.println("导入第" + (i + 1) + "行数据异常: " + ex.getMessage());
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                }
+            }
+
+            // 5. 批量执行数据库操作
+            try {
+                // 批量插入
+                if (CollUtil.isNotEmpty(toCreateList)) {
+                    batchInsertTransitSales(toCreateList);
+                }
+
+                // 批量更新
+                if (CollUtil.isNotEmpty(toUpdateList)) {
+                    batchUpdateTransitSales(toUpdateList);
+                }
+
+            } catch (Exception e) {
+                System.err.println("批量操作数据库失败: " + e.getMessage());
+                throw new RuntimeException("批量导入失败: " + e.getMessage(), e);
+            }
+
+        } catch (Exception ex) {
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
+        }
+
+        System.out.println("导入完成，成功创建：" + respVO.getCreateNames().size() +
+                          "，成功更新：" + respVO.getUpdateNames().size() +
+                          "，失败：" + respVO.getFailureNames().size());
+        return respVO;
+    }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpTransitSaleImportExcelVO> importList, boolean isUpdateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量预加载组品信息到缓存
         Set<String> groupProductNos = importList.stream()
                 .map(ErpTransitSaleImportExcelVO::getGroupProductNo)
                 .filter(StrUtil::isNotBlank)
@@ -198,7 +378,7 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
 
         Map<String, ErpComboProductDO> groupProductMap = preloadComboProducts(groupProductNos);
 
-        // 2. 批量查询已存在的中转销售记录
+        // 3. 批量查询已存在的中转销售记录
         Set<String> noSet = importList.stream()
                 .map(ErpTransitSaleImportExcelVO::getNo)
                 .filter(StrUtil::isNotBlank)
@@ -210,7 +390,7 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
             existingTransitSaleMap = convertMap(existList, ErpTransitSaleDO::getNo);
         }
 
-        // 2.1 批量查询已存在的中转人员+组品ID组合
+        // 4. 批量查询已存在的中转人员+组品ID组合
         List<ErpTransitSaleDO> allExistingTransitSales = transitSaleMapper.selectList(null);
         Map<String, Set<Long>> transitPersonProductMap = new HashMap<>();
         for (ErpTransitSaleDO transitSale : allExistingTransitSales) {
@@ -221,127 +401,192 @@ public class ErpTransitSaleServiceImpl implements ErpTransitSaleService {
             }
         }
 
-        // 3. 批量处理数据
-        List<ErpTransitSaleDO> toCreateList = new ArrayList<>();
-        List<ErpTransitSaleDO> toUpdateList = new ArrayList<>();
+        // 5. 批量查询所有中转人员名称，验证中转人员是否存在
+        Set<String> transitPersonNames = importList.stream()
+                .map(ErpTransitSaleImportExcelVO::getTransitPerson)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
 
+        Map<String, Boolean> transitPersonExistsMap = new HashMap<>();
+        for (String transitPersonName : transitPersonNames) {
+            try {
+                // 使用字典API校验中转人员是否存在
+                dictDataApi.validateDictDataList(ERP_TRANSIT_PERSON, Collections.singletonList(transitPersonName));
+                transitPersonExistsMap.put(transitPersonName, true);
+            } catch (Exception e) {
+                transitPersonExistsMap.put(transitPersonName, false);
+            }
+        }
+
+        // 用于跟踪Excel内部重复的编号
+        Set<String> processedNos = new HashSet<>();
+
+        // 6. 逐行校验业务逻辑
         for (int i = 0; i < importList.size(); i++) {
             ErpTransitSaleImportExcelVO importVO = importList.get(i);
-            String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "第" + (i + 1) + "行";
+            String errorKey = "第" + (i + 1) + "行组品编号" + "(" + importVO.getGroupProductNo() + ")";
 
             try {
-                // 验证组品编号
+                // 6.1 基础数据校验
+                if (StrUtil.isEmpty(importVO.getGroupProductNo())) {
+                    allErrors.put(errorKey, "组品编号不能为空");
+                    continue;
+                }
+
+                // 6.2 检查Excel内部编号重复
+                if (StrUtil.isNotBlank(importVO.getNo())) {
+                    if (processedNos.contains(importVO.getNo())) {
+                        allErrors.put(errorKey, "中转销售编号重复: " + importVO.getNo());
+                        continue;
+                    }
+                    processedNos.add(importVO.getNo());
+                }
+
+                // 6.3 校验组品编号是否存在
                 ErpComboProductDO comboProduct = groupProductMap.get(importVO.getGroupProductNo());
                 if (comboProduct == null) {
-                    throw exception(TRANSIT_SALE_GROUP_PRODUCT_ID_REQUIRED, "组品编号不存在: " + importVO.getGroupProductNo());
+                    allErrors.put(errorKey, "组品编号不存在: " + importVO.getGroupProductNo());
+                    continue;
                 }
 
-                // 判断是否支持更新
+                // 6.4 校验中转人员是否存在
+                Boolean transitPersonExists = transitPersonExistsMap.get(importVO.getTransitPerson());
+                if (transitPersonExists == null || !transitPersonExists) {
+                    allErrors.put(errorKey, "中转人员不存在,组品编号是: " + importVO.getGroupProductNo());
+                    continue;
+                }
+
+                // 6.5 数据转换校验（如果转换失败，记录错误并跳过）
+                try {
+                    ErpTransitSaleDO transitSale = convertImportVOToDO(importVO, comboProduct);
+                    if (transitSale == null) {
+                        allErrors.put(errorKey, "数据转换失败");
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    allErrors.put(errorKey, "数据转换异常: " + ex.getMessage());
+                    continue;
+                }
+
+                // 6.6 判断是新增还是更新，并进行相应校验
                 ErpTransitSaleDO existTransitSale = existingTransitSaleMap.get(importVO.getNo());
-
                 if (existTransitSale == null) {
-                    // 创建新记录时，校验中转人员+组品ID的唯一性
-                    validateTransitPersonProductUniqueWithCache(importVO.getTransitPerson(), comboProduct.getId(), transitPersonProductMap, null);
-
-                    // 创建新记录
-                    ErpTransitSaleDO transitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class)
-                            .setGroupProductId(comboProduct.getId());
-
-                    if (StrUtil.isEmpty(transitSale.getNo())) {
-                        String newNo = noRedisDAO.generate(ErpNoRedisDAO.TRANSIT_SALE_NO_PREFIX);
-                        transitSale.setNo(newNo);
+                    // 新增校验：校验中转人员+组品ID的唯一性
+                    try {
+                        validateTransitPersonProductUniqueWithCache(importVO.getTransitPerson(), comboProduct.getId(), transitPersonProductMap, null);
+                    } catch (ServiceException ex) {
+                        allErrors.put(errorKey, ex.getMessage());
                     }
-
-                    toCreateList.add(transitSale);
-                    respVO.getCreateNames().add(transitSale.getNo());
-
-                    // 更新缓存，确保同一批次导入的数据也能被正确校验
-                    if (StrUtil.isNotBlank(importVO.getTransitPerson())) {
-                        transitPersonProductMap.computeIfAbsent(importVO.getTransitPerson(), k -> new HashSet<>())
-                                .add(comboProduct.getId());
-                    }
-
                 } else if (isUpdateSupport) {
-                    // 更新记录 - 只更新导入文件中提供的字段
-                    ErpTransitSaleDO updateTransitSale = new ErpTransitSaleDO();
-                    updateTransitSale.setId(existTransitSale.getId());
-                    updateTransitSale.setGroupProductId(comboProduct.getId());
-                    validateTransitPersonProductUniqueWithCache(importVO.getTransitPerson(), comboProduct.getId(), transitPersonProductMap, updateTransitSale.getId());
-
-                    // 只更新导入文件中提供的字段
-                    if (importVO.getTransitPerson() != null) {
-                        updateTransitSale.setTransitPerson(importVO.getTransitPerson());
+                    // 更新校验：校验中转人员+组品ID的唯一性（排除自身）
+                    try {
+                        validateTransitPersonProductUniqueWithCache(importVO.getTransitPerson(), comboProduct.getId(), transitPersonProductMap, existTransitSale.getId());
+                    } catch (ServiceException ex) {
+                        allErrors.put(errorKey, ex.getMessage());
                     }
-                    if (importVO.getDistributionPrice() != null) {
-                        updateTransitSale.setDistributionPrice(importVO.getDistributionPrice());
-                    }
-                    if (importVO.getWholesalePrice() != null) {
-                        updateTransitSale.setWholesalePrice(importVO.getWholesalePrice());
-                    }
-                    if (importVO.getShippingFeeType() != null) {
-                        updateTransitSale.setShippingFeeType(importVO.getShippingFeeType());
-                    }
-                    if (importVO.getFixedShippingFee() != null) {
-                        updateTransitSale.setFixedShippingFee(importVO.getFixedShippingFee());
-                    }
-                    if (importVO.getAdditionalItemQuantity() != null) {
-                        updateTransitSale.setAdditionalItemQuantity(importVO.getAdditionalItemQuantity());
-                    }
-                    if (importVO.getAdditionalItemPrice() != null) {
-                        updateTransitSale.setAdditionalItemPrice(importVO.getAdditionalItemPrice());
-                    }
-                    if (importVO.getFirstWeight() != null) {
-                        updateTransitSale.setFirstWeight(importVO.getFirstWeight());
-                    }
-                    if (importVO.getFirstWeightPrice() != null) {
-                        updateTransitSale.setFirstWeightPrice(importVO.getFirstWeightPrice());
-                    }
-                    if (importVO.getAdditionalWeight() != null) {
-                        updateTransitSale.setAdditionalWeight(importVO.getAdditionalWeight());
-                    }
-                    if (importVO.getAdditionalWeightPrice() != null) {
-                        updateTransitSale.setAdditionalWeightPrice(importVO.getAdditionalWeightPrice());
-                    }
-                    if (importVO.getRemark() != null) {
-                        updateTransitSale.setRemark(importVO.getRemark());
-                    }
-
-                    toUpdateList.add(updateTransitSale);
-                    respVO.getUpdateNames().add(existTransitSale.getNo());
-
                 } else {
-                    throw exception(TRANSIT_SALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
+                    allErrors.put(errorKey, "中转销售编号不存在且不支持更新: " + importVO.getNo());
+                }
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpTransitSaleImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取中转人员名称 - 修复行号索引问题
+                String transitPerson = "未知组品编号";
+                // ConversionErrorHolder中的行号是从1开始的，数组索引是从0开始的
+                // 所以需要减1来访问数组，但要确保索引有效
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpTransitSaleImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getGroupProductNo())) {
+                        transitPerson = importVO.getGroupProductNo();
+                    }
                 }
 
-            } catch (ServiceException ex) {
-                respVO.getFailureNames().put(errorKey, ex.getMessage());
-            } catch (Exception ex) {
-                System.err.println("导入第" + (i + 1) + "行数据异常: " + ex.getMessage());
-                respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 行号显示，RowIndexListener已经设置为从1开始，直接使用
+                String errorKey = "第" + rowIndex + "行(" + transitPerson + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
             }
         }
 
-        // 4. 批量执行数据库操作
-        try {
-            // 批量插入
-            if (CollUtil.isNotEmpty(toCreateList)) {
-                batchInsertTransitSales(toCreateList);
-            }
+        return dataTypeErrors;
+    }
 
-            // 批量更新
-            if (CollUtil.isNotEmpty(toUpdateList)) {
-                batchUpdateTransitSales(toUpdateList);
-            }
-
-        } catch (Exception e) {
-            System.err.println("批量操作数据库失败: " + e.getMessage());
-            throw new RuntimeException("批量导入失败: " + e.getMessage(), e);
+    /**
+     * 将导入VO转换为DO
+     * 特别注意处理字段类型转换
+     */
+    private ErpTransitSaleDO convertImportVOToDO(ErpTransitSaleImportExcelVO importVO, ErpComboProductDO comboProduct) {
+        if (importVO == null) {
+            return null;
         }
 
-        System.out.println("导入完成，成功创建：" + respVO.getCreateNames().size() +
-                          "，成功更新：" + respVO.getUpdateNames().size() +
-                          "，失败：" + respVO.getFailureNames().size());
-        return respVO;
+        // 添加调试信息
+        System.out.println("=== 中转销售转换调试信息 ===");
+        System.out.println("中转人员: " + importVO.getTransitPerson());
+        System.out.println("组品编号: " + importVO.getGroupProductNo());
+        System.out.println("代发单价: " + importVO.getDistributionPrice() + " (类型: " + (importVO.getDistributionPrice() != null ? importVO.getDistributionPrice().getClass().getSimpleName() : "null") + ")");
+        System.out.println("批发单价: " + importVO.getWholesalePrice() + " (类型: " + (importVO.getWholesalePrice() != null ? importVO.getWholesalePrice().getClass().getSimpleName() : "null") + ")");
+        System.out.println("固定运费: " + importVO.getFixedShippingFee() + " (类型: " + (importVO.getFixedShippingFee() != null ? importVO.getFixedShippingFee().getClass().getSimpleName() : "null") + ")");
+        System.out.println("==================");
+
+        // 使用BeanUtils进行基础转换
+        ErpTransitSaleDO transitSale = BeanUtils.toBean(importVO, ErpTransitSaleDO.class);
+
+        // 手动设置转换器处理的字段，确保数据正确传递
+        transitSale.setDistributionPrice(importVO.getDistributionPrice());
+        transitSale.setWholesalePrice(importVO.getWholesalePrice());
+        transitSale.setShippingFeeType(importVO.getShippingFeeType());
+        transitSale.setFixedShippingFee(importVO.getFixedShippingFee());
+        transitSale.setAdditionalItemQuantity(importVO.getAdditionalItemQuantity());
+        transitSale.setAdditionalItemPrice(importVO.getAdditionalItemPrice());
+        transitSale.setFirstWeight(importVO.getFirstWeight());
+        transitSale.setFirstWeightPrice(importVO.getFirstWeightPrice());
+        transitSale.setAdditionalWeight(importVO.getAdditionalWeight());
+        transitSale.setAdditionalWeightPrice(importVO.getAdditionalWeightPrice());
+
+        // 设置组品ID
+        if (comboProduct != null) {
+            transitSale.setGroupProductId(comboProduct.getId());
+        }
+
+        // 添加转换后的调试信息
+        System.out.println("=== 转换后调试信息 ===");
+        System.out.println("中转人员: " + transitSale.getTransitPerson());
+        System.out.println("组品ID: " + transitSale.getGroupProductId());
+        System.out.println("代发单价: " + transitSale.getDistributionPrice() + " (类型: " + (transitSale.getDistributionPrice() != null ? transitSale.getDistributionPrice().getClass().getSimpleName() : "null") + ")");
+        System.out.println("批发单价: " + transitSale.getWholesalePrice() + " (类型: " + (transitSale.getWholesalePrice() != null ? transitSale.getWholesalePrice().getClass().getSimpleName() : "null") + ")");
+        System.out.println("固定运费: " + transitSale.getFixedShippingFee() + " (类型: " + (transitSale.getFixedShippingFee() != null ? transitSale.getFixedShippingFee().getClass().getSimpleName() : "null") + ")");
+        System.out.println("==================");
+
+        return transitSale;
     }
 
     /**
