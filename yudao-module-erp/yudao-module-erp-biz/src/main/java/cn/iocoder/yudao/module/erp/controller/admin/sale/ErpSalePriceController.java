@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboSearchReqVO;
@@ -199,7 +200,7 @@ public class ErpSalePriceController {
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
             System.out.println("调用导入");
-            List<ErpSalePriceImportExcelVO> list = ExcelUtils.read(inputStream, ErpSalePriceImportExcelVO.class);
+            List<ErpSalePriceImportExcelVO> list = ExcelUtils.read(inputStream, ErpSalePriceImportExcelVO.class, new RowIndexListener<>());
             return success(salePriceService.importSalePriceList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice;
 
 
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -34,47 +36,39 @@ public class ErpSalePriceImportExcelVO {
     private String customerName;
 
     @Schema(description = "代发单价（单位：元）", example = "100.00")
-    @ExcelProperty("代发单价")
+    @ExcelProperty(value = "代发单价", converter = BigDecimalConvert.class)
     private BigDecimal distributionPrice;
 
     @Schema(description = "批发单价（单位：元）", example = "80.00")
-    @ExcelProperty("批发单价")
+    @ExcelProperty(value = "批发单价", converter = BigDecimalConvert.class)
     private BigDecimal wholesalePrice;
 
     @Schema(description = "备注信息", example = "备注内容")
     @ExcelProperty("备注信息")
     private String remark;
 
-    @Schema(description = "运费类型（0：固定运费，1：按件计费，2：按重计费）", example = "0")
-    @ExcelProperty("运费类型(0-固定运费,1-按件运费,2-按重运费)")
+    @ExcelProperty(value = "运费类型(0-固定运费,1-按件运费,2-按重运费)", converter = IntegerConvert.class)
     private Integer shippingFeeType;
 
-    @Schema(description = "固定运费（单位：元）", example = "10.00")
-    @ExcelProperty("固定运费")
+    @ExcelProperty(value = "固定运费", converter = BigDecimalConvert.class)
     private BigDecimal fixedShippingFee;
 
-    @Schema(description = "按件数量", example = "10")
-    @ExcelProperty("按件数量")
+    @ExcelProperty(value = "按件数量", converter = IntegerConvert.class)
     private Integer additionalItemQuantity;
 
-    @Schema(description = "按件价格（单位：元）", example = "80.00")
-    @ExcelProperty("按件价格")
+    @ExcelProperty(value = "按件价格", converter = BigDecimalConvert.class)
     private BigDecimal additionalItemPrice;
 
-    @Schema(description = "首重重量", example = "1000")
-    @ExcelProperty("首重重量")
+    @ExcelProperty(value = "首重重量", converter = BigDecimalConvert.class)
     private BigDecimal firstWeight;
 
-    @Schema(description = "首重价格（单位：元）", example = "10.00")
-    @ExcelProperty("首重价格")
+    @ExcelProperty(value = "首重价格", converter = BigDecimalConvert.class)
     private BigDecimal firstWeightPrice;
 
-    @Schema(description = "续重重量", example = "500")
-    @ExcelProperty("续重重量")
+    @ExcelProperty(value = "续重重量", converter = BigDecimalConvert.class)
     private BigDecimal additionalWeight;
 
-    @Schema(description = "续重价格（单位：元）", example = "5.00")
-    @ExcelProperty("续重价格")
+    @ExcelProperty(value = "续重价格", converter = BigDecimalConvert.class)
     private BigDecimal additionalWeightPrice;
 
 }

@@ -10,6 +10,7 @@ import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.framework.common.util.collection.MapUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserRespVO;
@@ -1273,12 +1274,16 @@ public class ErpProductServiceImpl implements ErpProductService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        String username = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
+        LocalDateTime now = LocalDateTime.now();
+
         try {
-            // 2. 数据类型校验前置检查
-            Map<String, String> dataTypeErrors = validateDataTypeErrors(importProducts);
-            if (!dataTypeErrors.isEmpty()) {
-                // 如果有数据类型错误，直接返回错误信息，不进行后续导入
-                respVO.getFailureNames().putAll(dataTypeErrors);
+            // 2. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importProducts, isUpdateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
                 return respVO;
             }
 
@@ -1296,111 +1301,25 @@ public class ErpProductServiceImpl implements ErpProductService {
             Map<String, ErpProductDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(productMapper.selectListByNoIn(noSet), ErpProductDO::getNo);
 
-            // 4.1 批量查询所有采购人员名称，验证采购人员是否存在
-            Set<String> purchaserNames = importProducts.stream()
-                    .map(ErpProductImportExcelVO::getPurchaser)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-
-            Map<String, Boolean> purchaserExistsMap = new HashMap<>();
-            for (String purchaserName : purchaserNames) {
-                List<ErpPurchaserRespVO> purchasers = purchaserService.searchPurchasers(
-                        new ErpPurchaserPageReqVO().setPurchaserName(purchaserName));
-                purchaserExistsMap.put(purchaserName, CollUtil.isNotEmpty(purchasers));
-            }
-
-            // 4.2 批量查询所有供应商名称，验证供应商是否存在
-            Set<String> supplierNames = importProducts.stream()
-                    .map(ErpProductImportExcelVO::getSupplier)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-
-            Map<String, Boolean> supplierExistsMap = new HashMap<>();
-            for (String supplierName : supplierNames) {
-                List<ErpSupplierDO> suppliers = supplierService.searchSuppliers(
-                        new ErpSupplierPageReqVO().setName(supplierName));
-                supplierExistsMap.put(supplierName, CollUtil.isNotEmpty(suppliers));
-            }
-
-            // 用于跟踪Excel内部重复的编号
-            Set<String> processedNos = new HashSet<>();
-
-            // 5. 批量转换数据
+            // 5. 批量转换和保存数据
             for (int i = 0; i < importProducts.size(); i++) {
                 ErpProductImportExcelVO importVO = importProducts.get(i);
-                try {
-                    // 5.1 基础数据校验
-                    if (StrUtil.isEmpty(importVO.getName())) {
-                        String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
-                        respVO.getFailureNames().put(errorKey, "产品名称不能为空");
-                        continue;
-                    }
 
-                    // 5.2 检查Excel内部编号重复
-                    if (StrUtil.isNotBlank(importVO.getNo())) {
-                        if (processedNos.contains(importVO.getNo())) {
-                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
-                            respVO.getFailureNames().put(errorKey, "产品编号重复: " + importVO.getNo());
-                            continue;
-                        }
-                        processedNos.add(importVO.getNo());
-                    }
+                // 数据转换
+                ErpProductDO product = convertImportVOToDO(importVO);
 
-                    // 5.3 校验采购人员是否存在
-                    if (StrUtil.isNotBlank(importVO.getPurchaser())) {
-                        Boolean purchaserExists = purchaserExistsMap.get(importVO.getPurchaser());
-                        if (purchaserExists == null || !purchaserExists) {
-                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
-                            respVO.getFailureNames().put(errorKey, "采购人员不存在: " + importVO.getPurchaser());
-                            continue;
-                        }
-                    }
-
-                    // 5.4 校验供应商是否存在
-                    if (StrUtil.isNotBlank(importVO.getSupplier())) {
-                        Boolean supplierExists = supplierExistsMap.get(importVO.getSupplier());
-                        if (supplierExists == null || !supplierExists) {
-                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
-                            respVO.getFailureNames().put(errorKey, "供应商不存在: " + importVO.getSupplier());
-                            continue;
-                        }
-                    }
-
-                    // 5.5 判断是否支持更新
-                    ErpProductDO existProduct = existMap.get(importVO.getNo());
-                    if (existProduct == null) {
-                        // 创建产品
-                        ErpProductDO product = convertImportVOToDO(importVO);
-                        product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX));
-                        // 校验产品名称唯一性（对于新增的产品）
-                        try {
-                            validateProductNameUniqueForImport(product.getName(), null, createList, updateList);
-                            createList.add(product);
-                            respVO.getCreateNames().add(product.getName());
-                        } catch (ServiceException ex) {
-                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
-                            respVO.getFailureNames().put(errorKey, ex.getMessage());
-                        }
-                    } else if (isUpdateSupport) {
-                        // 更新产品
-                        ErpProductDO updateProduct = convertImportVOToDO(importVO);
-                        updateProduct.setId(existProduct.getId());
-                        // 校验产品名称唯一性（对于更新的产品）
-                        try {
-                            validateProductNameUniqueForImport(updateProduct.getName(), updateProduct.getId(), createList, updateList);
-                            updateList.add(updateProduct);
-                            respVO.getUpdateNames().add(updateProduct.getName());
-                        } catch (ServiceException ex) {
-                            String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
-                            respVO.getFailureNames().put(errorKey, ex.getMessage());
-                        }
-                    } else {
-                        String errorKey = "第" + (i + 1) + "行(" + importVO.getName() + ")";
-                        respVO.getFailureNames().put(errorKey, "产品编号不存在且不支持更新: " + importVO.getNo());
-                    }
-                } catch (Exception ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 判断是新增还是更新
+                ErpProductDO existProduct = existMap.get(importVO.getNo());
+                if (existProduct == null) {
+                    // 创建产品
+                    product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX)).setCreator(username).setCreateTime(now);
+                    createList.add(product);
+                    respVO.getCreateNames().add(product.getName());
+                } else if (isUpdateSupport) {
+                    // 更新产品
+                    product.setId(existProduct.getId()).setCreator(username).setCreateTime(now);
+                    updateList.add(product);
+                    respVO.getUpdateNames().add(product.getName());
                 }
             }
 
@@ -1427,6 +1346,136 @@ public class ErpProductServiceImpl implements ErpProductService {
         }
 
         return respVO;
+    }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpProductImportExcelVO> importProducts, boolean isUpdateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importProducts);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的产品
+        Set<String> noSet = importProducts.stream()
+                .map(ErpProductImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, ErpProductDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(productMapper.selectListByNoIn(noSet), ErpProductDO::getNo);
+
+        // 3. 批量查询所有采购人员名称，验证采购人员是否存在
+        Set<String> purchaserNames = importProducts.stream()
+                .map(ErpProductImportExcelVO::getPurchaser)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, Boolean> purchaserExistsMap = new HashMap<>();
+        for (String purchaserName : purchaserNames) {
+            List<ErpPurchaserRespVO> purchasers = purchaserService.searchPurchasers(
+                    new ErpPurchaserPageReqVO().setPurchaserName(purchaserName));
+            purchaserExistsMap.put(purchaserName, CollUtil.isNotEmpty(purchasers));
+        }
+
+        // 4. 批量查询所有供应商名称，验证供应商是否存在
+        Set<String> supplierNames = importProducts.stream()
+                .map(ErpProductImportExcelVO::getSupplier)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, Boolean> supplierExistsMap = new HashMap<>();
+        for (String supplierName : supplierNames) {
+            List<ErpSupplierDO> suppliers = supplierService.searchSuppliers(
+                    new ErpSupplierPageReqVO().setName(supplierName));
+            supplierExistsMap.put(supplierName, CollUtil.isNotEmpty(suppliers));
+        }
+
+        // 用于跟踪Excel内部重复的编号
+        Set<String> processedNos = new HashSet<>();
+
+        // 5. 逐行校验业务逻辑
+        for (int i = 0; i < importProducts.size(); i++) {
+            ErpProductImportExcelVO importVO = importProducts.get(i);
+            String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getName()) ? "(" + importVO.getName() + ")" : "");
+
+            try {
+                // 5.1 基础数据校验
+                if (StrUtil.isEmpty(importVO.getName())) {
+                    allErrors.put(errorKey, "产品名称不能为空");
+                    continue;
+                }
+
+                // 5.2 检查Excel内部编号重复
+                if (StrUtil.isNotBlank(importVO.getNo())) {
+                    if (processedNos.contains(importVO.getNo())) {
+                        allErrors.put(errorKey, "产品编号重复: " + importVO.getNo());
+                        continue;
+                    }
+                    processedNos.add(importVO.getNo());
+                }
+
+                // 5.3 校验采购人员是否存在
+                if (StrUtil.isNotBlank(importVO.getPurchaser())) {
+                    Boolean purchaserExists = purchaserExistsMap.get(importVO.getPurchaser());
+                    if (purchaserExists == null || !purchaserExists) {
+                        allErrors.put(errorKey, "采购人员不存在: " + importVO.getPurchaser());
+                        continue;
+                    }
+                }
+
+                // 5.4 校验供应商是否存在
+                if (StrUtil.isNotBlank(importVO.getSupplier())) {
+                    Boolean supplierExists = supplierExistsMap.get(importVO.getSupplier());
+                    if (supplierExists == null || !supplierExists) {
+                        allErrors.put(errorKey, "供应商不存在: " + importVO.getSupplier());
+                        continue;
+                    }
+                }
+
+                // 5.5 数据转换校验（如果转换失败，记录错误并跳过）
+                try {
+                    ErpProductDO product = convertImportVOToDO(importVO);
+                    if (product == null) {
+                        allErrors.put(errorKey, "数据转换失败");
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    allErrors.put(errorKey, "数据转换异常: " + ex.getMessage());
+                    continue;
+                }
+
+                // 5.6 判断是新增还是更新，并进行相应校验
+                ErpProductDO existProduct = existMap.get(importVO.getNo());
+                if (existProduct == null) {
+                    // 新增校验：校验产品名称唯一性
+                    try {
+                        validateProductNameUnique(importVO.getName(), null);
+                    } catch (ServiceException ex) {
+                        allErrors.put(errorKey, ex.getMessage());
+                    }
+                } else if (isUpdateSupport) {
+                    // 更新校验：校验产品名称唯一性（排除自身）
+                    try {
+                        validateProductNameUnique(importVO.getName(), existProduct.getId());
+                    } catch (ServiceException ex) {
+                        allErrors.put(errorKey, ex.getMessage());
+                    }
+                } else {
+                    allErrors.put(errorKey, "产品编号不存在且不支持更新: " + importVO.getNo());
+                }
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
     }
 
     /**
@@ -1837,22 +1886,25 @@ public class ErpProductServiceImpl implements ErpProductService {
     }
 
         /**
-     * 校验产品名称是否唯一（使用ES查询）
+     * 校验产品名称是否唯一
+     * 使用name_keyword字段进行精确查询，确保完全匹配
      */
     private void validateProductNameUnique(String name, Long excludeId) {
         if (StrUtil.isEmpty(name)) {
             return;
         }
 
+        // 使用name_keyword字段进行精确查询，而不是name字段的分词查询
         NativeSearchQuery query = new NativeSearchQueryBuilder()
-                .withQuery(QueryBuilders.matchPhraseQuery("name", name))
+                .withQuery(QueryBuilders.termQuery("name_keyword", name))
                 .build();
 
         SearchHits<ErpProductESDO> hits = elasticsearchRestTemplate.search(
                 query,
                 ErpProductESDO.class,
                 IndexCoordinates.of("erp_products"));
-        System.out.println("查询结果命中数: " + hits.getTotalHits());
+
+        System.out.println("产品名称唯一性校验 - 查询名称: " + name + ", 查询结果命中数: " + hits.getTotalHits());
         hits.getSearchHits().forEach(hit ->
             System.out.println("命中产品: ID=" + hit.getContent().getId() + ", 名称=" + hit.getContent().getName())
         );

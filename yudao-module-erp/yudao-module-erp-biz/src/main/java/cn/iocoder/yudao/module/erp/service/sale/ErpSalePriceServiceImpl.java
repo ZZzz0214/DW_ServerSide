@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
@@ -398,32 +399,43 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Override
     public PageResult<ErpSalePriceRespVO> getSalePriceVOPage(ErpSalePricePageReqVO pageReqVO) {
         try {
-            // 1. 检查数据库和ES索引状态
+            // 1. 检查数据库是否有数据
             long dbCount = erpSalePriceMapper.selectCount(null);
+
+            // 2. 检查ES索引是否存在
             IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpSalePriceESDO.class);
             boolean indexExists = indexOps.exists();
-            long esCount = indexExists ? elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class) : 0;
 
-            // 2. 处理数据不一致情况
+            // 3. 检查ES数据量
+            long esCount = 0;
+            if (indexExists) {
+                esCount = elasticsearchRestTemplate.count(new NativeSearchQueryBuilder().build(), ErpSalePriceESDO.class);
+            }
+
+            // 4. 处理数据库和ES数据不一致的情况
             if (dbCount == 0) {
                 if (indexExists && esCount > 0) {
+                    // 数据库为空但ES有数据，清空ES
                     salePriceESRepository.deleteAll();
                 }
                 return new PageResult<>(Collections.emptyList(), 0L);
             }
 
-            if (!indexExists || Math.abs(dbCount - esCount) > 100) { // 允许少量差异
+            if (!indexExists) {
                 initESIndex();
                 fullSyncToES();
-                // 如果ES数据为空，先从数据库查询
+                return getSalePriceVOPageFromDB(pageReqVO);
+            }
+
+            if (esCount == 0 || dbCount != esCount) {
+                fullSyncToES();
                 if (esCount == 0) {
                     return getSalePriceVOPageFromDB(pageReqVO);
                 }
             }
 
-            // 3. 使用优化的ES查询
+            // 5. 使用ES查询
             return getSalePriceVOPageFromES(pageReqVO);
-
         } catch (Exception e) {
             System.err.println("ES查询失败，回退到数据库查询: " + e.getMessage());
             return getSalePriceVOPageFromDB(pageReqVO);
@@ -434,8 +446,9 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
      * 优化的ES分页查询 - 参考产品表的智能搜索策略
      */
     private PageResult<ErpSalePriceRespVO> getSalePriceVOPageFromES(ErpSalePricePageReqVO pageReqVO) {
-        // 验证分页参数
-        if (pageReqVO.getPageSize() == null || pageReqVO.getPageSize() <= 0) {
+        // 🔥 关键修复：参考产品表的实现，正确处理导出场景
+        // 验证分页参数 - 但不覆盖PAGE_SIZE_NONE
+        if (pageReqVO.getPageSize() == null) {
             pageReqVO.setPageSize(10); // 设置默认页大小
         }
         if (pageReqVO.getPageNo() == null || pageReqVO.getPageNo() <= 0) {
@@ -636,6 +649,29 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             boolQuery.must(QueryBuilders.matchAllQuery());
         }
 
+        // 🔥 关键修复：参考产品表的导出处理逻辑
+        // 处理分页参数
+        // 检查是否是导出操作（pageSize为-1）
+        if (PageParam.PAGE_SIZE_NONE.equals(pageReqVO.getPageSize())) {
+            // 导出所有数据，不使用分页，但限制最大返回数量防止内存溢出
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000)) // 最多返回10000条
+                    .withTrackTotalHits(true)
+                    .withSort(Sort.by(Sort.Direction.DESC, "create_time")) // 按创建时间倒序排列
+                    .withSort(Sort.by(Sort.Direction.DESC, "id")); // 辅助排序：ID倒序
+
+            SearchHits<ErpSalePriceESDO> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpSalePriceESDO.class,
+                    IndexCoordinates.of("erp_sale_price"));
+
+            // 批量获取组合产品信息，减少重复查询
+            List<ErpSalePriceRespVO> voList = convertESToVO(searchHits);
+
+            return new PageResult<>(voList, searchHits.getTotalHits());
+        }
+
         // 处理深度分页问题
         if (pageReqVO.getPageNo() > 100) { // 超过100页使用scroll
             return handleDeepPaginationWithScroll(pageReqVO, boolQuery);
@@ -664,6 +700,12 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
      * 使用scroll处理深度分页
      */
     private PageResult<ErpSalePriceRespVO> handleDeepPaginationWithScroll(ErpSalePricePageReqVO pageReqVO, BoolQueryBuilder boolQuery) {
+        // 🔥 关键修复：确保深度分页不会影响导出功能
+        // 如果是导出操作（PAGE_SIZE_NONE），直接返回空结果，因为导出应该在前面处理
+        if (PageParam.PAGE_SIZE_NONE.equals(pageReqVO.getPageSize())) {
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+
         // 计算需要跳过的记录数
         int skip = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
 
@@ -697,33 +739,32 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
      * 数据库分页查询（回退方案）
      */
     private PageResult<ErpSalePriceRespVO> getSalePriceVOPageFromDB(ErpSalePricePageReqVO pageReqVO) {
-        PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
-        List<ErpSalePriceRespVO> voList = convertDOToVO(pageResult.getList());
-        return new PageResult<>(voList, pageResult.getTotal());
+        // 🔥 关键修复：正确处理PAGE_SIZE_NONE的情况
+        if (PageParam.PAGE_SIZE_NONE.equals(pageReqVO.getPageSize())) {
+            // 导出所有数据，不使用分页
+            List<ErpSalePriceDO> allSalePrices = erpSalePriceMapper.selectList(null);
+            List<ErpSalePriceRespVO> voList = convertDOToVO(allSalePrices);
+            return new PageResult<>(voList, (long) allSalePrices.size());
+        } else {
+            // 正常分页查询
+            PageResult<ErpSalePriceDO> pageResult = erpSalePriceMapper.selectPage(pageReqVO);
+            List<ErpSalePriceRespVO> voList = convertDOToVO(pageResult.getList());
+            return new PageResult<>(voList, pageResult.getTotal());
         }
+    }
 
     /**
      * 批量转换ES结果为VO
      */
     private List<ErpSalePriceRespVO> convertESToVO(SearchHits<ErpSalePriceESDO> searchHits) {
-        System.out.println("=== 开始转换ES结果到VO列表 ===");
-        System.out.println("ES结果数量: " + searchHits.getTotalHits());
-
         List<ErpSalePriceESDO> esList = searchHits.stream()
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
 
-        System.out.println("提取的ES记录数量: " + esList.size());
-
-        List<ErpSalePriceRespVO> result = esList.stream()
+        return esList.stream()
                 .map(this::convertESDOToVO)
                 .filter(Objects::nonNull) // 过滤掉null值
                 .collect(Collectors.toList());
-
-        System.out.println("转换后的VO数量: " + result.size());
-        System.out.println("=== 转换完成 ===");
-
-        return result;
     }
 
     /**
@@ -1109,12 +1150,8 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
                     // 创建新记录
                     ErpSalePriceDO salePrice = BeanUtils.toBean(importVO, ErpSalePriceDO.class)
                             .setGroupProductId(comboProduct.getId());
-
-                    if (StrUtil.isEmpty(salePrice.getNo())) {
                         String newNo = noRedisDAO.generate(ErpNoRedisDAO.SALE_PRICE_NO_PREFIX);
                         salePrice.setNo(newNo);
-                    }
-
                     // 设置组品相关信息（始终使用组品的数据）
                     salePrice.setProductName(comboProduct.getName());
                     salePrice.setProductShortName(comboProduct.getShortName());
