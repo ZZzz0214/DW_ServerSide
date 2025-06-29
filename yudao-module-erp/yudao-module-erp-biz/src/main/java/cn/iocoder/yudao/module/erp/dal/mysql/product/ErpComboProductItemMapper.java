@@ -15,7 +15,8 @@ import java.util.List;
 public interface ErpComboProductItemMapper extends BaseMapper<ErpComboProductItemDO> {
     default List<ErpComboProductItemDO> selectByComboProductId(Long comboProductId) {
         return selectList(new LambdaQueryWrapperX<ErpComboProductItemDO>()
-                .eq(ErpComboProductItemDO::getComboProductId, comboProductId));
+                .eq(ErpComboProductItemDO::getComboProductId, comboProductId)
+                .orderByAsc(ErpComboProductItemDO::getId));
     }
 
     default List<ErpComboProductItemDO> selectByComboProductIds(Collection<Long> comboProductIds) {
@@ -23,7 +24,8 @@ public interface ErpComboProductItemMapper extends BaseMapper<ErpComboProductIte
             return Collections.emptyList();
         }
         return selectList(new LambdaQueryWrapperX<ErpComboProductItemDO>()
-                .in(ErpComboProductItemDO::getComboProductId, comboProductIds));
+                .in(ErpComboProductItemDO::getComboProductId, comboProductIds)
+                .orderByAsc(ErpComboProductItemDO::getId));
     }
 
     default void deleteByComboProductId(Long comboProductId) {

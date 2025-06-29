@@ -25,11 +25,18 @@ public class ErpComboProductES {
     private String noKeyword;
 
     //@Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
-    @Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "name", type = FieldType.Keyword)
     private String name;
 
     @Field(name = "name_keyword", type = FieldType.Keyword)
     private String nameKeyword;
+
+    // 🔥 新增：原始名称字段，用于支持对原始名称的搜索
+    @Field(name = "original_name", type = FieldType.Text, analyzer = "ik_max_word")
+    private String originalName;
+
+    @Field(name = "original_name_keyword", type = FieldType.Keyword)
+    private String originalNameKeyword;
 
     @Field(name = "short_name", type = FieldType.Text, analyzer = "ik_smart")
     private String shortName;

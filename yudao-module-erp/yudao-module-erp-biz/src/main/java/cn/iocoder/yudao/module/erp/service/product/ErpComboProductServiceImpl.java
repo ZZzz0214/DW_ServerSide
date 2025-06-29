@@ -361,7 +361,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 keywordQuery.should(QueryBuilders.prefixQuery("name_keyword", keyword).boost(100000.0f));
 
                 // 3. 第三优先级：通配符包含匹配（支持中间字符搜索，关键修复）
-                keywordQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + keyword + "*").boost(10000.0f));
+                keywordQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + keyword + "*").boost(50000.0f));
 
                 // 4. 第四优先级：对于多字搜索，添加子字符串通配符匹配（支持"色口红"匹配"变色口红"）
                 if (keyword.length() >= 2) {
@@ -374,10 +374,9 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     }
                 }
 
-                // 5. 智能分词匹配 - 根据关键词长度调整策略
-                keywordQuery.should(createIntelligentMatchQuery("name", keyword, 800.0f, 600.0f, 500.0f));
+                // 注意：移除产品名称的分词匹配，因为产品名称不需要分词处理
 
-                // 6. 其他字段精确匹配
+                // 5. 其他字段精确匹配
                 keywordQuery.should(QueryBuilders.matchPhraseQuery("short_name", keyword).boost(5.0f));
                 keywordQuery.should(QueryBuilders.matchPhraseQuery("no", keyword).boost(4.0f));
                 keywordQuery.should(QueryBuilders.matchPhraseQuery("shipping_code", keyword).boost(4.0f));
@@ -385,7 +384,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 keywordQuery.should(QueryBuilders.matchPhraseQuery("supplier", keyword).boost(3.0f));
                 keywordQuery.should(QueryBuilders.matchPhraseQuery("creator", keyword).boost(2.5f));
 
-                // 7. 其他字段智能分词匹配
+                // 6. 其他字段智能分词匹配
                 keywordQuery.should(createIntelligentMatchQuery("short_name", keyword, 2.0f, 1.8f, 1.5f));
                 keywordQuery.should(createIntelligentMatchQuery("remark", keyword, 1.0f, 0.8f, 0.5f));
                 keywordQuery.minimumShouldMatch(1);
@@ -395,7 +394,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 // 分字段查询
                 BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-                // 组品编码查询 - 完全使用产品表的简化搜索策略
+                // 组品编码查询 - 保持现有的简化搜索策略不变
                 if (StringUtils.isNotBlank(pageReqVO.getNo())) {
                     BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
                     String no = pageReqVO.getNo().trim();
@@ -421,79 +420,50 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     boolQuery.must(noQuery);
                 }
 
-                // 产品名称查询 - 智能匹配策略
-        if (StringUtils.isNotBlank(pageReqVO.getName())) {
+                // 产品名称查询 - 不进行分词，只支持精确查询和组合模糊查询
+                if (StringUtils.isNotBlank(pageReqVO.getName())) {
                     BoolQueryBuilder nameQuery = QueryBuilders.boolQuery();
                     String name = pageReqVO.getName().trim();
 
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+
+                    // 🔥 产品名称不进行分词，只支持精确查询和组合模糊查询
+                    // 第一优先级：完全精确匹配（最高权重）
                     multiMatchQuery.should(QueryBuilders.termQuery("name_keyword", name).boost(1000000.0f));
+
+                    // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("name_keyword", name).boost(100000.0f));
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(10000.0f));
 
-                    // 第四优先级：对于多字搜索，添加子字符串通配符匹配（支持"色口红"匹配"变色口红"）
-                    if (name.length() >= 2) {
-                        // 添加从第二个字符开始的子字符串匹配，如"色口红"可以匹配"变色口红"
-                        for (int i = 1; i < name.length(); i++) {
-                            String substring = name.substring(i);
-                            if (substring.length() >= 2) { // 至少2个字符才有意义
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + substring + "*").boost(3000.0f));
-                            }
-                        }
-                    }
+                    // 第三优先级：通配符包含匹配（支持中间字符搜索）
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(50000.0f));
 
-                    // 智能分词匹配
-                    if (name.length() == 1) {
-                        // 单字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("name", name).operator(Operator.OR).boost(800.0f));
-                    } else if (name.length() == 2) {
-                        // 双字搜索，使用AND匹配避免误匹配，但也添加OR匹配作为兜底
-                        multiMatchQuery.should(QueryBuilders.matchQuery("name", name).operator(Operator.AND).boost(600.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("name", name).boost(1200.0f));
-                        // 添加OR匹配作为兜底，权重较低
-                        multiMatchQuery.should(QueryBuilders.matchQuery("name", name).operator(Operator.OR).boost(400.0f));
-                    } else {
-                        // 多字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("name", name).operator(Operator.AND).boost(500.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("name", name).boost(1000.0f));
-                    }
+                    // 注意：移除所有分词匹配，因为产品名称不需要分词处理
 
                     multiMatchQuery.minimumShouldMatch(1);
                     nameQuery.must(multiMatchQuery);
                     boolQuery.must(nameQuery);
                 }
 
-                // 产品简称查询 - 智能匹配策略
+                // 产品简称查询 - 参考产品表的搜索策略
                 if (StringUtils.isNotBlank(pageReqVO.getShortName())) {
                     BoolQueryBuilder shortNameQuery = QueryBuilders.boolQuery();
                     String shortName = pageReqVO.getShortName().trim();
 
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    // 第一优先级：完全精确匹配
                     multiMatchQuery.should(QueryBuilders.termQuery("short_name_keyword", shortName).boost(1000000.0f));
-                    // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("short_name_keyword", shortName).boost(100000.0f));
-                    // 第三优先级：通配符包含匹配
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("short_name_keyword", "*" + shortName + "*").boost(10000.0f));
-
-                    // 第四优先级：子字符串通配符匹配
-                    if (shortName.length() >= 2) {
-                        for (int i = 1; i < shortName.length(); i++) {
-                            String substring = shortName.substring(i);
-                            if (substring.length() >= 2) {
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("short_name_keyword", "*" + substring + "*").boost(3000.0f));
-                            }
-                        }
-                    }
 
                     // 智能分词匹配
                     if (shortName.length() == 1) {
+                        // 单字搜索，使用分词匹配，权重适中
                         multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.OR).boost(800.0f));
                     } else if (shortName.length() == 2) {
+                        // 双字搜索，使用AND匹配避免误匹配
                         multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.AND).boost(600.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("short_name", shortName).boost(1200.0f));
-                        multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.OR).boost(400.0f));
                     } else {
+                        // 多字搜索，使用严格匹配
                         multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("short_name", shortName).boost(1000.0f));
                     }
@@ -503,77 +473,48 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     boolQuery.must(shortNameQuery);
                 }
 
-                // 发货编码查询 - 智能匹配策略
+                // 发货编码查询 - 参考组品编号的简化搜索策略（数字型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getShippingCode())) {
                     BoolQueryBuilder codeQuery = QueryBuilders.boolQuery();
                     String code = pageReqVO.getShippingCode().trim();
 
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    // 第一优先级：完全精确匹配
+
+                    // 🔥 参考组品编号的简化搜索策略
+                    // 第一优先级：完全精确匹配（最高权重）
                     multiMatchQuery.should(QueryBuilders.termQuery("shipping_code_keyword", code).boost(1000000.0f));
+
                     // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("shipping_code_keyword", code).boost(100000.0f));
-                    // 第三优先级：通配符包含匹配
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(10000.0f));
 
-                    // 第四优先级：子字符串通配符匹配
-                    if (code.length() >= 2) {
-                        for (int i = 1; i < code.length(); i++) {
-                            String substring = code.substring(i);
-                            if (substring.length() >= 2) {
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + substring + "*").boost(3000.0f));
-                            }
-                        }
-                    }
-
-                    // 智能分词匹配
-                    if (code.length() == 1) {
-                        multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.OR).boost(800.0f));
-                    } else if (code.length() == 2) {
-                        multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.AND).boost(600.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("shipping_code", code).boost(1200.0f));
-                        multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.OR).boost(400.0f));
-                    } else {
-                        multiMatchQuery.should(QueryBuilders.matchQuery("shipping_code", code).operator(Operator.AND).boost(500.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("shipping_code", code).boost(1000.0f));
-                    }
+                    // 第三优先级：包含匹配（支持任意位置的模糊匹配）
+                    multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(50000.0f));
 
                     multiMatchQuery.minimumShouldMatch(1);
                     codeQuery.must(multiMatchQuery);
                     boolQuery.must(codeQuery);
                 }
 
-                // 采购人员查询 - 智能匹配策略
+                // 采购人员查询 - 参考产品表的搜索策略（文本型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getPurchaser())) {
                     BoolQueryBuilder purchaserQuery = QueryBuilders.boolQuery();
                     String purchaser = pageReqVO.getPurchaser().trim();
 
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    // 第一优先级：完全精确匹配
                     multiMatchQuery.should(QueryBuilders.termQuery("purchaser_keyword", purchaser).boost(1000000.0f));
-                    // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("purchaser_keyword", purchaser).boost(100000.0f));
-                    // 第三优先级：通配符包含匹配
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + purchaser + "*").boost(10000.0f));
-
-                    // 第四优先级：子字符串通配符匹配
-                    if (purchaser.length() >= 2) {
-                        for (int i = 1; i < purchaser.length(); i++) {
-                            String substring = purchaser.substring(i);
-                            if (substring.length() >= 2) {
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + substring + "*").boost(3000.0f));
-                            }
-                        }
-                    }
 
                     // 智能分词匹配
                     if (purchaser.length() == 1) {
+                        // 单字搜索
                         multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.OR).boost(800.0f));
                     } else if (purchaser.length() == 2) {
+                        // 双字搜索，使用AND匹配避免误匹配
                         multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.AND).boost(600.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("purchaser", purchaser).boost(1200.0f));
-                        multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.OR).boost(400.0f));
                     } else {
+                        // 多字搜索
                         multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("purchaser", purchaser).boost(1000.0f));
                     }
@@ -583,37 +524,26 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     boolQuery.must(purchaserQuery);
                 }
 
-                // 供应商名查询 - 智能匹配策略
+                // 供应商名查询 - 参考产品表的搜索策略（文本型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getSupplier())) {
                     BoolQueryBuilder supplierQuery = QueryBuilders.boolQuery();
                     String supplier = pageReqVO.getSupplier().trim();
 
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    // 第一优先级：完全精确匹配
                     multiMatchQuery.should(QueryBuilders.termQuery("supplier_keyword", supplier).boost(1000000.0f));
-                    // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("supplier_keyword", supplier).boost(100000.0f));
-                    // 第三优先级：通配符包含匹配
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + supplier + "*").boost(10000.0f));
-
-                    // 第四优先级：子字符串通配符匹配
-                    if (supplier.length() >= 2) {
-                        for (int i = 1; i < supplier.length(); i++) {
-                            String substring = supplier.substring(i);
-                            if (substring.length() >= 2) {
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + substring + "*").boost(3000.0f));
-                            }
-                        }
-                    }
 
                     // 智能分词匹配
                     if (supplier.length() == 1) {
+                        // 单字搜索
                         multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.OR).boost(800.0f));
                     } else if (supplier.length() == 2) {
+                        // 双字搜索，使用AND匹配避免误匹配
                         multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.AND).boost(600.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("supplier", supplier).boost(1200.0f));
-                        multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.OR).boost(400.0f));
                     } else {
+                        // 多字搜索
                         multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("supplier", supplier).boost(1000.0f));
                     }
@@ -623,37 +553,26 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     boolQuery.must(supplierQuery);
                 }
 
-                // 创建人员查询 - 智能匹配策略
+                // 创建人员查询 - 参考产品表的搜索策略（文本型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getCreator())) {
                     BoolQueryBuilder creatorQuery = QueryBuilders.boolQuery();
                     String creator = pageReqVO.getCreator().trim();
 
                     BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    // 第一优先级：完全精确匹配
                     multiMatchQuery.should(QueryBuilders.termQuery("creator_keyword", creator).boost(1000000.0f));
-                    // 第二优先级：前缀匹配
                     multiMatchQuery.should(QueryBuilders.prefixQuery("creator_keyword", creator).boost(100000.0f));
-                    // 第三优先级：通配符包含匹配
                     multiMatchQuery.should(QueryBuilders.wildcardQuery("creator_keyword", "*" + creator + "*").boost(10000.0f));
-
-                    // 第四优先级：子字符串通配符匹配
-                    if (creator.length() >= 2) {
-                        for (int i = 1; i < creator.length(); i++) {
-                            String substring = creator.substring(i);
-                            if (substring.length() >= 2) {
-                                multiMatchQuery.should(QueryBuilders.wildcardQuery("creator_keyword", "*" + substring + "*").boost(3000.0f));
-                            }
-                        }
-                    }
 
                     // 智能分词匹配
                     if (creator.length() == 1) {
+                        // 单字搜索
                         multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.OR).boost(800.0f));
                     } else if (creator.length() == 2) {
+                        // 双字搜索，使用AND匹配避免误匹配
                         multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.AND).boost(600.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("creator", creator).boost(1200.0f));
-                        multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.OR).boost(400.0f));
                     } else {
+                        // 多字搜索
                         multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.AND).boost(500.0f));
                         multiMatchQuery.should(QueryBuilders.matchPhraseQuery("creator", creator).boost(1000.0f));
                     }
@@ -711,6 +630,11 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 .map(SearchHit::getContent)
                 .collect(Collectors.groupingBy(ErpComboProductItemES::getComboProductId));
 
+        // 🔥 关键修复：对每个组合产品的关联项按ID排序，确保顺序与数据库一致
+        itemsMap.forEach((comboId, items) -> {
+            items.sort(Comparator.comparing(ErpComboProductItemES::getId));
+        });
+
         // 获取所有产品ID
         List<Long> productIds = itemHits.stream()
                 .map(hit -> hit.getContent().getItemProductId())
@@ -740,6 +664,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     StringBuilder nameBuilder = new StringBuilder();
                     StringBuilder itemsStringBuilder = new StringBuilder();
                     BigDecimal totalWeight = BigDecimal.ZERO;
+                    
                     for (int i = 0; i < items.size(); i++) {
                         ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
                             if (product == null) continue;
@@ -837,6 +762,11 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         Map<Long, List<ErpComboProductItemES>> itemsMap = itemHits.stream()
                 .map(SearchHit::getContent)
                 .collect(Collectors.groupingBy(ErpComboProductItemES::getComboProductId));
+
+        // 🔥 关键修复：对每个组合产品的关联项按ID排序，确保顺序与数据库一致
+        itemsMap.forEach((comboId, items) -> {
+            items.sort(Comparator.comparing(ErpComboProductItemES::getId));
+        });
 
         // 获取所有产品ID
         List<Long> productIds = itemHits.stream()
@@ -968,6 +898,145 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
     @Override
     public ErpComboRespVO getComboWithItems(Long id) {
+        try {
+            // 从ES查询组品基本信息
+            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(id);
+            if (!comboProductOpt.isPresent()) {
+                return null;
+            }
+            ErpComboProductES comboProduct = comboProductOpt.get();
+
+            // 从ES查询组品关联的单品项
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", id))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id")) // 按ID升序排序
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (itemHits.isEmpty()) {
+                // 如果没有关联项，返回基本信息
+                ErpComboRespVO comboRespVO = BeanUtils.toBean(comboProduct, ErpComboRespVO.class);
+                comboRespVO.setItems(Collections.emptyList());
+                return comboRespVO;
+            }
+
+            // 提取单品ID列表
+            List<Long> productIds = itemHits.stream()
+                    .map(hit -> hit.getContent().getItemProductId())
+                    .collect(Collectors.toList());
+
+            // 从ES查询单品详细信息
+            NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                    productQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            Map<Long, ErpProductESDO> productMap = productHits.stream()
+                    .collect(Collectors.toMap(
+                            hit -> hit.getContent().getId(),
+                            SearchHit::getContent));
+
+            // 组装单品名称字符串 (单品A*数量+单品B*数量)
+            StringBuilder nameBuilder = new StringBuilder();
+            List<ErpComboProductItemES> items = itemHits.stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < items.size(); i++) {
+                if (i > 0) {
+                    nameBuilder.append("+");
+                }
+                ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
+                if (product != null) {
+                    nameBuilder.append(product.getName())
+                              .append("×")
+                              .append(items.get(i).getItemQuantity());
+                }
+            }
+
+            // 计算总重量、采购总价、批发总价
+            BigDecimal totalWeight = BigDecimal.ZERO;
+            BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+            BigDecimal totalWholesalePrice = BigDecimal.ZERO;
+
+            for (ErpComboProductItemES item : items) {
+                ErpProductESDO product = productMap.get(item.getItemProductId());
+                if (product != null) {
+                    BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
+
+                    // 计算总重量
+                    if (product.getWeight() != null) {
+                        totalWeight = totalWeight.add(product.getWeight().multiply(itemQuantity));
+                    }
+
+                    // 计算采购总价
+                    if (product.getPurchasePrice() != null) {
+                        totalPurchasePrice = totalPurchasePrice.add(product.getPurchasePrice().multiply(itemQuantity));
+                    }
+
+                    // 计算批发总价
+                    if (product.getWholesalePrice() != null) {
+                        totalWholesalePrice = totalWholesalePrice.add(product.getWholesalePrice().multiply(itemQuantity));
+                    }
+                }
+            }
+
+            // 组装响应对象
+            ErpComboRespVO comboRespVO = BeanUtils.toBean(comboProduct, ErpComboRespVO.class);
+            comboRespVO.setName(nameBuilder.toString());
+            comboRespVO.setWeight(totalWeight);
+            comboRespVO.setPurchasePrice(totalPurchasePrice);
+            comboRespVO.setWholesalePrice(totalWholesalePrice);
+
+            // 组装单品列表
+            List<ErpProductRespVO> productVOs = new ArrayList<>();
+            for (int i = 0; i < items.size(); i++) {
+                ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
+                if (product != null) {
+                    ErpProductRespVO productVO = BeanUtils.toBean(product, ErpProductRespVO.class);
+                    productVO.setCount(items.get(i).getItemQuantity());
+                    productVOs.add(productVO);
+                }
+            }
+            comboRespVO.setItems(productVOs);
+
+            // 构建itemsString字段，格式为"产品编号,数量;产品编号,数量"
+            StringBuilder itemsStringBuilder = new StringBuilder();
+            for (int i = 0; i < items.size(); i++) {
+                if (i > 0) {
+                    itemsStringBuilder.append(";");
+                }
+                ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
+                if (product != null) {
+                    itemsStringBuilder.append(product.getNo())
+                                     .append(",")
+                                     .append(items.get(i).getItemQuantity());
+                }
+            }
+            comboRespVO.setItemsString(itemsStringBuilder.toString());
+
+            return comboRespVO;
+        } catch (Exception e) {
+            System.err.println("ES查询组合产品详情失败，ID: " + id + ", 错误: " + e.getMessage());
+            // 如果ES查询失败，回退到数据库查询
+            return getComboWithItemsFromDB(id);
+        }
+    }
+
+    /**
+     * 从数据库获取组合产品详情（ES查询失败时的回退方案）
+     */
+    private ErpComboRespVO getComboWithItemsFromDB(Long id) {
         // 查询组品基本信息
         ErpComboProductDO comboProduct = erpComboMapper.selectById(id);
         if (comboProduct == null) {
@@ -995,19 +1064,10 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                       .append("×")
                       .append(comboItems.get(i).getItemQuantity());
         }
-        // 计算总重量 (单品weight*数量)
-        BigDecimal totalWeight = BigDecimal.ZERO;
-//        for (int i = 0; i < products.size(); i++) {
-//            BigDecimal itemWeight = products.get(i).getWeight();
-//            if (itemWeight != null) {
-//                BigDecimal quantity = new BigDecimal(comboItems.get(i).getItemQuantity());
-//                totalWeight = totalWeight.add(itemWeight.multiply(quantity));
-//            }
-//        }
 
-        // 计算采购总价 (单品purchasePrice*数量)
+        // 计算总重量、采购总价、批发总价
+        BigDecimal totalWeight = BigDecimal.ZERO;
         BigDecimal totalPurchasePrice = BigDecimal.ZERO;
-        // 计算批发总价 (单品wholesalePrice*数量)
         BigDecimal totalWholesalePrice = BigDecimal.ZERO;
 
         for (int i = 0; i < products.size(); i++) {
@@ -1031,6 +1091,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 totalWholesalePrice = totalWholesalePrice.add(wholesalePrice.multiply(itemQuantity));
             }
         }
+
         // 组装响应对象
         ErpComboRespVO comboRespVO = BeanUtils.toBean(comboProduct, ErpComboRespVO.class);
         comboRespVO.setName(nameBuilder.toString());
@@ -1133,99 +1194,244 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         // 🔥 关键修复：实时计算采购单价、批发单价、重量等
         try {
-            // 查询组品关联的单品项
-            List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(combo.getId());
-            if (CollUtil.isNotEmpty(comboItems)) {
+            // 从ES查询组品关联的单品项
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", combo.getId()))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id")) // 按ID升序排序
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (!itemHits.isEmpty()) {
                 // 提取单品ID列表
-                List<Long> productIds = comboItems.stream()
-                        .map(ErpComboProductItemDO::getItemProductId)
+                List<Long> productIds = itemHits.stream()
+                        .map(hit -> hit.getContent().getItemProductId())
                         .collect(Collectors.toList());
 
-                // 查询单品详细信息
-                List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
-                if (CollUtil.isNotEmpty(products)) {
-                    // 创建单品ID到单品对象的映射
-                    Map<Long, ErpProductDO> productMap = products.stream()
-                            .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
+                if (!productIds.isEmpty()) {
+                    // 从ES查询单品详细信息
+                    NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                            .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                            .withPageable(PageRequest.of(0, 1000))
+                            .build();
 
-                    // 实时计算采购总价、批发总价、总重量
-                    BigDecimal totalPurchasePrice = BigDecimal.ZERO;
-                    BigDecimal totalWholesalePrice = BigDecimal.ZERO;
-                    BigDecimal totalWeight = BigDecimal.ZERO;
+                    SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                            productQuery,
+                            ErpProductESDO.class,
+                            IndexCoordinates.of("erp_products"));
 
-                    for (ErpComboProductItemDO item : comboItems) {
-                        ErpProductDO product = productMap.get(item.getItemProductId());
-                        if (product != null) {
-                            BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
+                    if (!productHits.isEmpty()) {
+                        // 创建单品ID到单品对象的映射
+                        Map<Long, ErpProductESDO> productMap = productHits.stream()
+                                .collect(Collectors.toMap(
+                                        hit -> hit.getContent().getId(),
+                                        SearchHit::getContent));
 
-                            // 计算采购总价
-                            if (product.getPurchasePrice() != null) {
-                                totalPurchasePrice = totalPurchasePrice.add(
-                                    product.getPurchasePrice().multiply(itemQuantity)
-                                );
-                            }
+                        // 实时计算采购总价、批发总价、总重量
+                        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+                        BigDecimal totalWholesalePrice = BigDecimal.ZERO;
+                        BigDecimal totalWeight = BigDecimal.ZERO;
 
-                            // 计算批发总价
-                            if (product.getWholesalePrice() != null) {
-                                totalWholesalePrice = totalWholesalePrice.add(
-                                    product.getWholesalePrice().multiply(itemQuantity)
-                                );
-                            }
+                        for (SearchHit<ErpComboProductItemES> itemHit : itemHits) {
+                            ErpComboProductItemES item = itemHit.getContent();
+                            ErpProductESDO product = productMap.get(item.getItemProductId());
+                            if (product != null) {
+                                BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
 
-                            // 计算总重量
-                            if (product.getWeight() != null) {
-                                totalWeight = totalWeight.add(
-                                    product.getWeight().multiply(itemQuantity)
-                                );
+                                // 计算采购总价
+                                if (product.getPurchasePrice() != null) {
+                                    totalPurchasePrice = totalPurchasePrice.add(
+                                        product.getPurchasePrice().multiply(itemQuantity)
+                                    );
+                                }
+
+                                // 计算批发总价
+                                if (product.getWholesalePrice() != null) {
+                                    totalWholesalePrice = totalWholesalePrice.add(
+                                        product.getWholesalePrice().multiply(itemQuantity)
+                                    );
+                                }
+
+                                // 计算总重量
+                                if (product.getWeight() != null) {
+                                    totalWeight = totalWeight.add(
+                                        product.getWeight().multiply(itemQuantity)
+                                    );
+                                }
                             }
                         }
-                    }
 
-                    // 🔥 核心：使用实时计算的价格和重量覆盖数据库中的值
-                    es.setPurchasePrice(totalPurchasePrice);
-                    es.setWholesalePrice(totalWholesalePrice);
-                    es.setWeight(totalWeight);
+                        // 🔥 核心：使用实时计算的价格和重量覆盖数据库中的值
+                        es.setPurchasePrice(totalPurchasePrice);
+                        es.setWholesalePrice(totalWholesalePrice);
+                        es.setWeight(totalWeight);
+                    }
                 }
             }
         } catch (Exception e) {
-            System.err.println("实时计算组品价格和重量失败，ID: " + combo.getId() + ", 错误: " + e.getMessage());
-            // 如果计算失败，保留数据库中的原值
+            System.err.println("ES实时计算组品价格和重量失败，ID: " + combo.getId() + ", 错误: " + e.getMessage());
+            // 如果ES计算失败，回退到数据库计算
+            calculatePricesAndWeightFromDB(combo.getId(), es);
         }
 
-        // 构建完整的组合名称
+        // 🔥 关键修复：构建完整的组合名称，确保与前端显示顺序一致
         try {
-            String fullComboName = buildComboName(combo.getId());
+            String fullComboName = buildComboNameWithOrder(combo.getId());
+            String originalName = combo.getName() != null ? combo.getName() : "";
 
             // 使用构建的完整组合名称作为name和name_keyword
             if (StrUtil.isNotBlank(fullComboName)) {
+                // 🔥 修复：同时设置构建名称和原始名称
+                // name字段：优先使用构建的完整名称，如果构建失败则使用原始名称
                 es.setName(fullComboName);
+                // name_keyword字段：使用构建的完整名称（用于精确匹配）
                 es.setNameKeyword(fullComboName);
+                // 设置normalizedName用于唯一性校验（标准化处理）
+                es.setNormalizedName(normalizeComboName(fullComboName));
+                
+                // 🔥 新增：如果原始名称与构建名称不同，添加原始名称到name字段的搜索支持
+                if (StrUtil.isNotBlank(originalName) && !originalName.equals(fullComboName)) {
+                    // 可以通过多值字段或者额外的搜索逻辑来处理
+                    // 这里我们通过搜索策略来处理，在name字段中同时支持两种名称
+                }
             } else {
                 // 如果构建失败，使用数据库中的name
-                es.setName(combo.getName() != null ? combo.getName() : "");
-                es.setNameKeyword(combo.getName() != null ? combo.getName() : "");
+                es.setName(originalName);
+                es.setNameKeyword(originalName);
+                es.setNormalizedName(normalizeComboName(originalName));
             }
         } catch (Exception e) {
             System.err.println("构建组合产品名称失败，ID: " + combo.getId() + ", 错误: " + e.getMessage());
             // 如果构建失败，使用原有的name字段
-            es.setName(combo.getName() != null ? combo.getName() : "");
-            es.setNameKeyword(combo.getName() != null ? combo.getName() : "");
+            String fallbackName = combo.getName() != null ? combo.getName() : "";
+            es.setName(fallbackName);
+            es.setNameKeyword(fallbackName);
+            es.setNormalizedName(normalizeComboName(fallbackName));
         }
 
         return es;
     }
 
     /**
-     * 构建组合产品名称
+     * 标准化组合产品名称，用于唯一性校验
+     * 移除空格、转换为小写、排序单品名称等
      */
-    private String buildComboName(Long comboId) {
-        // 查询组合产品关联的单品项
+    private String normalizeComboName(String comboName) {
+        if (StrUtil.isBlank(comboName)) {
+            return "";
+        }
+
+        try {
+            // 解析组合名称，提取单品和数量
+            Map<String, Integer> nameMap = extractNameMap(comboName);
+            
+            // 按单品名称排序，确保相同组合的不同顺序被视为相同
+            List<String> sortedItems = nameMap.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(entry -> entry.getKey() + "×" + entry.getValue())
+                    .collect(Collectors.toList());
+            
+            // 重新组合为标准格式
+            return String.join("+", sortedItems);
+        } catch (Exception e) {
+            // 如果解析失败，返回原名称的标准化版本
+            return comboName.trim().toLowerCase().replaceAll("\\s+", "");
+        }
+    }
+
+    /**
+     * 构建组合产品名称（确保与前端显示顺序一致）
+     * 🔥 关键修复：确保ES中存储的name_keyword字段与前端显示的产品名称顺序完全一致
+     * 🔥 性能优化：使用ES查询替代数据库查询，提高搜索效率
+     */
+    private String buildComboNameWithOrder(Long comboId) {
+        try {
+            // 从ES查询组合产品关联的单品项，按照ID顺序
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", comboId))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id")) // 按ID升序排序，确保顺序与插入顺序一致
+                    .withPageable(PageRequest.of(0, 1000)) // 限制最大数量
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (itemHits.isEmpty()) {
+                return "";
+            }
+
+            // 提取单品ID列表，保持ES返回的顺序
+            List<Long> productIds = itemHits.stream()
+                    .map(hit -> hit.getContent().getItemProductId())
+                    .collect(Collectors.toList());
+
+            if (productIds.isEmpty()) {
+                return "";
+            }
+
+            // 从ES查询所有产品信息
+            NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                    productQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            // 创建产品ID到产品对象的映射
+            Map<Long, ErpProductESDO> productMap = productHits.stream()
+                    .collect(Collectors.toMap(
+                            hit -> hit.getContent().getId(),
+                            SearchHit::getContent));
+
+            // 构建名称字符串，严格按照ES返回的关联项顺序
+            StringBuilder nameBuilder = new StringBuilder();
+            List<ErpComboProductItemES> items = itemHits.stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < items.size(); i++) {
+                ErpComboProductItemES item = items.get(i);
+                ErpProductESDO product = productMap.get(item.getItemProductId());
+                if (product == null) {
+                    continue;
+                }
+
+                if (i > 0) {
+                    nameBuilder.append("+");
+                }
+                nameBuilder.append(product.getName())
+                        .append("×")
+                        .append(item.getItemQuantity());
+            }
+
+            return nameBuilder.toString();
+        } catch (Exception e) {
+            System.err.println("ES构建组合产品名称失败，ID: " + comboId + ", 错误: " + e.getMessage());
+            // 如果ES查询失败，回退到数据库查询
+            return buildComboNameFromDB(comboId);
+        }
+    }
+
+    /**
+     * 从数据库构建组合产品名称（ES查询失败时的回退方案）
+     */
+    private String buildComboNameFromDB(Long comboId) {
+        // 查询组合产品关联的单品项，按照数据库中的顺序
         List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(comboId);
         if (CollUtil.isEmpty(comboItems)) {
             return "";
         }
 
-        // 提取单品ID列表
+        // 提取单品ID列表，保持原有顺序
         List<Long> productIds = comboItems.stream()
                 .map(ErpComboProductItemDO::getItemProductId)
                 .collect(Collectors.toList());
@@ -1236,7 +1442,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             return "";
         }
 
-        // 构建名称字符串
+        // 构建名称字符串，严格按照comboItems的顺序
         StringBuilder nameBuilder = new StringBuilder();
         Map<Long, ErpProductDO> productMap = products.stream()
                 .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
@@ -2102,6 +2308,115 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         intelligentQuery.minimumShouldMatch(1);
         return intelligentQuery;
+    }
+
+    /**
+     * 构建组合产品名称
+     */
+    private String buildComboName(Long comboId) {
+        // 查询组合产品关联的单品项
+        List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(comboId);
+        if (CollUtil.isEmpty(comboItems)) {
+            return "";
+        }
+
+        // 提取单品ID列表
+        List<Long> productIds = comboItems.stream()
+                .map(ErpComboProductItemDO::getItemProductId)
+                .collect(Collectors.toList());
+
+        // 查询单品详细信息
+        List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
+        if (CollUtil.isEmpty(products)) {
+            return "";
+        }
+
+        // 构建名称字符串
+        StringBuilder nameBuilder = new StringBuilder();
+        Map<Long, ErpProductDO> productMap = products.stream()
+                .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
+
+        for (int i = 0; i < comboItems.size(); i++) {
+            ErpComboProductItemDO item = comboItems.get(i);
+            ErpProductDO product = productMap.get(item.getItemProductId());
+            if (product == null) {
+                continue;
+            }
+
+            if (i > 0) {
+                nameBuilder.append("+");
+            }
+            nameBuilder.append(product.getName())
+                    .append("×")
+                    .append(item.getItemQuantity());
+        }
+
+        return nameBuilder.toString();
+    }
+
+    /**
+     * 从数据库计算组合产品的价格和重量（ES计算失败时的回退方案）
+     */
+    private void calculatePricesAndWeightFromDB(Long comboId, ErpComboProductES es) {
+        try {
+            // 查询组品关联的单品项
+            List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(comboId);
+            if (CollUtil.isNotEmpty(comboItems)) {
+                // 提取单品ID列表
+                List<Long> productIds = comboItems.stream()
+                        .map(ErpComboProductItemDO::getItemProductId)
+                        .collect(Collectors.toList());
+
+                // 查询单品详细信息
+                List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
+                if (CollUtil.isNotEmpty(products)) {
+                    // 创建单品ID到单品对象的映射
+                    Map<Long, ErpProductDO> productMap = products.stream()
+                            .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
+
+                    // 实时计算采购总价、批发总价、总重量
+                    BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+                    BigDecimal totalWholesalePrice = BigDecimal.ZERO;
+                    BigDecimal totalWeight = BigDecimal.ZERO;
+
+                    for (ErpComboProductItemDO item : comboItems) {
+                        ErpProductDO product = productMap.get(item.getItemProductId());
+                        if (product != null) {
+                            BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
+
+                            // 计算采购总价
+                            if (product.getPurchasePrice() != null) {
+                                totalPurchasePrice = totalPurchasePrice.add(
+                                    product.getPurchasePrice().multiply(itemQuantity)
+                                );
+                            }
+
+                            // 计算批发总价
+                            if (product.getWholesalePrice() != null) {
+                                totalWholesalePrice = totalWholesalePrice.add(
+                                    product.getWholesalePrice().multiply(itemQuantity)
+                                );
+                            }
+
+                            // 计算总重量
+                            if (product.getWeight() != null) {
+                                totalWeight = totalWeight.add(
+                                    product.getWeight().multiply(itemQuantity)
+                                );
+                            }
+                        }
+                    }
+
+                    // 使用实时计算的价格和重量覆盖数据库中的值
+                    es.setPurchasePrice(totalPurchasePrice);
+                    es.setWholesalePrice(totalWholesalePrice);
+                    es.setWeight(totalWeight);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("数据库计算组品价格和重量也失败，ID: " + comboId + ", 错误: " + e.getMessage());
+            // 如果数据库计算也失败，保留ES中的原值
+        }
     }
 }
 
