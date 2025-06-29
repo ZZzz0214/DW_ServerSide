@@ -32,21 +32,17 @@ public class ErpSalePriceESDO {
     @Field(name = "product_image", type = FieldType.Keyword, index = false)
     private String productImage;
 
-    @MultiField(
-        mainField = @Field(name = "product_name", type = FieldType.Text, analyzer = "ik_max_word"),
-        otherFields = {
-            @InnerField(suffix = "keyword", type = FieldType.Keyword)
-        }
-    )
+    @Field(name = "product_name", type = FieldType.Keyword)
     private String productName;
 
-    @MultiField(
-        mainField = @Field(name = "product_short_name", type = FieldType.Text, analyzer = "ik_max_word"),
-        otherFields = {
-            @InnerField(suffix = "keyword", type = FieldType.Keyword)
-        }
-    )
+    @Field(name = "product_name_keyword", type = FieldType.Keyword)
+    private String productNameKeyword;
+
+    @Field(name = "product_short_name", type = FieldType.Keyword)
     private String productShortName;
+
+    @Field(name = "product_short_name_keyword", type = FieldType.Keyword)
+    private String productShortNameKeyword;
 
     @MultiField(
         mainField = @Field(name = "customer_name", type = FieldType.Text, analyzer = "ik_max_word"),
