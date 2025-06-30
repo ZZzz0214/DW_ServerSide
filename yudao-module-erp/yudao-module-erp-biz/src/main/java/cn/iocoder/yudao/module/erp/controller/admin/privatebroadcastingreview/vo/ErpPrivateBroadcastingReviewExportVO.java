@@ -30,18 +30,14 @@ public class ErpPrivateBroadcastingReviewExportVO {
     @ExcelProperty("私播货盘编号")
     private String privateBroadcastingNo;
 
-    @Schema(description = "客户名称", example = "张三")
-    @ExcelProperty("客户名称")
-    private String customerName;
-
-    @Schema(description = "产品名称", example = "产品A")
-    @ExcelProperty("产品名称")
-    private String productName;
-
     @Schema(description = "品牌名称", example = "品牌A")
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
+
+    @Schema(description = "产品名称", example = "产品A")
+    @ExcelProperty("产品名称")
+    private String productName;
 
     @Schema(description = "产品规格", example = "标准规格")
     @ExcelProperty("产品规格")
@@ -50,6 +46,14 @@ public class ErpPrivateBroadcastingReviewExportVO {
     @Schema(description = "产品SKU", example = "SKU001")
     @ExcelProperty("产品SKU")
     private String productSku;
+
+    @Schema(description = "备注信息", example = "备注内容")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+    @Schema(description = "客户名称", example = "张三")
+    @ExcelProperty("客户名称")
+    private String customerName;
 
     @Schema(description = "直播价格", example = "100.00")
     @ExcelProperty("直播价格")
@@ -92,11 +96,11 @@ public class ErpPrivateBroadcastingReviewExportVO {
     @DictFormat(DictTypeConstants.ERP_PRIVATE_STATUS)
     private String privateStatus;
 
-    @Schema(description = "备注信息", example = "备注内容")
-    @ExcelProperty("备注信息")
-    private String remark;
+
+    @ExcelProperty(value = "创建人员")
+    private String creator;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}

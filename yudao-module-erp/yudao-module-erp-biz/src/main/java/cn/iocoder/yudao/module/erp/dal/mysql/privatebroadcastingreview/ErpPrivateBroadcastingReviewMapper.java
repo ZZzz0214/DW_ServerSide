@@ -141,4 +141,23 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
     default void insertBatch(List<ErpPrivateBroadcastingReviewDO> list) {
         list.forEach(this::insert);
     }
+
+    /**
+     * 根据私播货盘ID和客户ID查询记录（用于校验组合唯一性）
+     */
+    default ErpPrivateBroadcastingReviewDO selectByPrivateBroadcastingIdAndCustomerId(Long privateBroadcastingId, Long customerId) {
+        return selectOne(new MPJLambdaWrapperX<ErpPrivateBroadcastingReviewDO>()
+                .eq(ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId, privateBroadcastingId)
+                .eq(ErpPrivateBroadcastingReviewDO::getCustomerId, customerId));
+    }
+
+    /**
+     * 根据私播货盘ID和客户ID查询记录（排除指定ID，用于更新时的唯一性校验）
+     */
+    default ErpPrivateBroadcastingReviewDO selectByPrivateBroadcastingIdAndCustomerIdExcludeId(Long privateBroadcastingId, Long customerId, Long excludeId) {
+        return selectOne(new MPJLambdaWrapperX<ErpPrivateBroadcastingReviewDO>()
+                .eq(ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId, privateBroadcastingId)
+                .eq(ErpPrivateBroadcastingReviewDO::getCustomerId, customerId)
+                .ne(ErpPrivateBroadcastingReviewDO::getId, excludeId));
+    }
 }

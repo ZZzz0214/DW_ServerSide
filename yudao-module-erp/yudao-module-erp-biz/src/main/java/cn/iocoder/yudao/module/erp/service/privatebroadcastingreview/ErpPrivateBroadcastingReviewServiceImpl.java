@@ -38,7 +38,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
 
     @Resource
     private ErpPrivateBroadcastingReviewMapper privateBroadcastingReviewMapper;
-    
+
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -114,10 +114,10 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
         if (privateBroadcastingReview == null) {
             return null;
         }
-        
+
         // 转换为VO并填充关联信息
         ErpPrivateBroadcastingReviewRespVO respVO = BeanUtils.toBean(privateBroadcastingReview, ErpPrivateBroadcastingReviewRespVO.class);
-        
+
         // 填充关联信息
         if (privateBroadcastingReview.getPrivateBroadcastingId() != null) {
             ErpPrivateBroadcastingDO privateBroadcastingDO = privateBroadcastingMapper.selectById(privateBroadcastingReview.getPrivateBroadcastingId());
@@ -133,7 +133,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                 }
             }
         }
-        
+
         // 填充客户信息
         if (privateBroadcastingReview.getCustomerId() != null) {
             ErpCustomerDO customerDO = customerMapper.selectById(privateBroadcastingReview.getCustomerId());
@@ -141,7 +141,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                 respVO.setCustomerName(customerDO.getName());
             }
         }
-        
+
         return respVO;
     }
 
@@ -173,17 +173,17 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        
+
         // 使用Mapper方法获取完整信息，但需要过滤权限
         List<ErpPrivateBroadcastingReviewRespVO> list = privateBroadcastingReviewMapper.selectListByIds(ids);
-        
+
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
         if (!"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
         }
-        
+
         return list;
     }
 
@@ -223,6 +223,24 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
         ErpPrivateBroadcastingReviewDO privateBroadcastingReview = privateBroadcastingReviewMapper.selectByNo(reqVO.getNo());
         if (privateBroadcastingReview != null && !privateBroadcastingReview.getId().equals(id)) {
             throw exception(PRIVATE_BROADCASTING_REVIEW_NO_EXISTS);
+        }
+
+        // 2. 校验私播货盘表编号和客户名称组合唯一性
+        if (reqVO.getPrivateBroadcastingId() != null && reqVO.getCustomerId() != null) {
+            ErpPrivateBroadcastingReviewDO existingReview;
+            if (id != null) {
+                // 更新时，排除当前记录
+                existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerIdExcludeId(
+                        reqVO.getPrivateBroadcastingId(), reqVO.getCustomerId(), id);
+            } else {
+                // 新增时，查询全部数据
+                existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerId(
+                        reqVO.getPrivateBroadcastingId(), reqVO.getCustomerId());
+            }
+            
+            if (existingReview != null) {
+                throw exception(PRIVATE_BROADCASTING_REVIEW_PRIVATE_BROADCASTING_CUSTOMER_DUPLICATE);
+            }
         }
     }
 
@@ -421,11 +439,6 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
             String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
 
             try {
-                // 5.1 基础数据校验
-                if (StrUtil.isEmpty(importVO.getCustomerName())) {
-                    allErrors.put(errorKey, "客户名称不能为空");
-                    continue;
-                }
 
                 // 5.2 检查Excel内部编号重复
                 if (StrUtil.isNotBlank(importVO.getNo())) {
@@ -469,12 +482,38 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                 // 5.6 判断是新增还是更新，并进行相应校验
                 ErpPrivateBroadcastingReviewDO existReview = existMap.get(importVO.getNo());
                 if (existReview == null) {
-                    // 新增校验：可以添加特定的校验逻辑
+                    // 新增校验：校验私播货盘表编号和客户名称组合唯一性
+                    if (StrUtil.isNotBlank(importVO.getCustomerName()) && StrUtil.isNotBlank(importVO.getPrivateBroadcastingNo())) {
+                        Long customerId = customerIdMap.get(importVO.getCustomerName());
+                        Long privateBroadcastingId = privateBroadcastingIdMap.get(importVO.getPrivateBroadcastingNo());
+                        if (customerId != null && privateBroadcastingId != null) {
+                            ErpPrivateBroadcastingReviewDO existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerId(
+                                    privateBroadcastingId, customerId);
+                            if (existingReview != null) {
+                                allErrors.put(errorKey, "私播货盘和客户名称组合已存在");
+                                continue;
+                            }
+                        }
+                    }
                 } else if (isUpdateSupport) {
-                    // 更新校验：检查权限
+                    // 更新校验：检查权限和组合唯一性
                     if (!"admin".equals(currentUsername) && !ObjectUtil.equal(existReview.getCreator(), currentUsername)) {
                         allErrors.put(errorKey, "无权限更新该记录: " + importVO.getNo());
                         continue;
+                    }
+                    
+                    // 校验私播货盘表编号和客户名称组合唯一性（排除当前记录）
+                    if (StrUtil.isNotBlank(importVO.getCustomerName()) && StrUtil.isNotBlank(importVO.getPrivateBroadcastingNo())) {
+                        Long customerId = customerIdMap.get(importVO.getCustomerName());
+                        Long privateBroadcastingId = privateBroadcastingIdMap.get(importVO.getPrivateBroadcastingNo());
+                        if (customerId != null && privateBroadcastingId != null) {
+                            ErpPrivateBroadcastingReviewDO existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerIdExcludeId(
+                                    privateBroadcastingId, customerId, existReview.getId());
+                            if (existingReview != null) {
+                                allErrors.put(errorKey, "私播货盘和客户名称组合已存在");
+                                continue;
+                            }
+                        }
                     }
                 } else {
                     allErrors.put(errorKey, "私播复盘编号不存在且不支持更新: " + importVO.getNo());

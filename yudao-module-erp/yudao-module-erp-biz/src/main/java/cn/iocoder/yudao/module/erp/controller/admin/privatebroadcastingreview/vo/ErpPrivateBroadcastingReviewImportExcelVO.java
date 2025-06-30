@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo;
 
+import cn.iocoder.yudao.framework.excel.core.convert.*;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -22,33 +24,39 @@ public class ErpPrivateBroadcastingReviewImportExcelVO {
     @ExcelProperty("私播货盘编号")
     private String privateBroadcastingNo;
 
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @ExcelProperty("客户名称")
     private String customerName;
 
-    @ExcelProperty("产品裸价")
+    @ExcelProperty(value = "产品裸价", converter = BigDecimalConvert.class)
     private BigDecimal productNakedPrice;
 
-    @ExcelProperty("快递费用")
+    @ExcelProperty(value = "快递费用", converter = BigDecimalConvert.class)
     private BigDecimal expressFee;
 
-    @ExcelProperty("代发价格")
+    @ExcelProperty(value = "代发价格", converter = BigDecimalConvert.class)
     private BigDecimal dropshipPrice;
 
-    @ExcelProperty("寄样日期")
-    private String sampleSendDate;
+    @ExcelProperty(value = "寄样日期", converter = LocalDateConvert.class)
+    private LocalDate sampleSendDate;
 
-    @ExcelProperty("开团日期")
-    private String groupStartDate;
 
-    @ExcelProperty("开团销量")
+    @ExcelProperty(value = "开团日期", converter = LocalDateConvert.class)
+    private LocalDate groupStartDate;
+
+
+    @ExcelProperty(value = "开团销量", converter = IntegerConvert.class)
     private Integer groupSales;
 
-    @ExcelProperty("复团日期")
-    private String repeatGroupDate;
 
-    @ExcelProperty("复团销量")
+    @ExcelProperty(value = "复团日期", converter = LocalDateConvert.class)
+    private LocalDate repeatGroupDate;
+
+
+    @ExcelProperty(value = "复团销量", converter = IntegerConvert.class)
     private Integer repeatGroupSales;
 
-    @ExcelProperty("备注信息")
-    private String remark;
-} 
+
+}

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -62,12 +63,12 @@ public class ErpPrivateBroadcastingReviewDO extends BaseDO {
     /**
      * 寄样日期
      */
-    private LocalDateTime sampleSendDate;
+    private LocalDate sampleSendDate;
 
     /**
      * 开团日期
      */
-    private LocalDateTime groupStartDate;
+    private LocalDate groupStartDate;
 
     /**
      * 开团销量
@@ -77,7 +78,7 @@ public class ErpPrivateBroadcastingReviewDO extends BaseDO {
     /**
      * 复团日期
      */
-    private LocalDateTime repeatGroupDate;
+    private LocalDate repeatGroupDate;
 
     /**
      * 复团销量

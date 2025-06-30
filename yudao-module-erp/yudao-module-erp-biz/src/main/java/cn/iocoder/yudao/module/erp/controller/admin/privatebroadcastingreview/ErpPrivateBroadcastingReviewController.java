@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.vo.ErpPrivateBroadcastingReviewExportVO;
@@ -145,8 +146,11 @@ public class ErpPrivateBroadcastingReviewController {
                                                                                                        @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        List<ErpPrivateBroadcastingReviewImportExcelVO> list = ExcelUtils.read(file, ErpPrivateBroadcastingReviewImportExcelVO.class);
+
+        try (InputStream inputStream = file.getInputStream()) {
+        List<ErpPrivateBroadcastingReviewImportExcelVO> list = ExcelUtils.read(inputStream, ErpPrivateBroadcastingReviewImportExcelVO.class, new RowIndexListener<>());
         return success(privateBroadcastingReviewService.importPrivateBroadcastingReviewList(list, updateSupport, currentUsername));
+        }
     }
 
     @GetMapping("/get-import-template")

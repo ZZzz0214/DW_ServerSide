@@ -345,6 +345,7 @@ public interface ErrorCodeConstants {
     ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_115_010, "第{}行的客户名称({})不存在");
     ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_115_011, "第{}行的私播复盘编号({})已存在，且不支持更新");
     ErrorCode PRIVATE_BROADCASTING_REVIEW_IMPORT_NO_PERMISSION = new ErrorCode(1_030_115_012, "第{}行的私播复盘编号({})无权限修改");
+    ErrorCode PRIVATE_BROADCASTING_REVIEW_PRIVATE_BROADCASTING_CUSTOMER_DUPLICATE = new ErrorCode(1_030_115_013, "私播货盘和客户名称组合已存在");
 
     // ========== ERP 私播信息（1-030-116-000） ==========
     ErrorCode PRIVATE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_116_000, "私播信息不存在");

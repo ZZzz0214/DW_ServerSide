@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Schema(description = "管理后台 - ERP 私播复盘新增/修改 Request VO")
 @Data
@@ -33,16 +34,16 @@ public class ErpPrivateBroadcastingReviewSaveReqVO {
     private BigDecimal dropshipPrice;
 
     @Schema(description = "寄样日期", example = "2023-01-01")
-    private String sampleSendDate;
+    private LocalDate sampleSendDate;
 
     @Schema(description = "开团日期", example = "2023-01-10")
-    private String groupStartDate;
+    private LocalDate groupStartDate;
 
     @Schema(description = "开团销量", example = "100")
     private Integer groupSales;
 
     @Schema(description = "复团日期", example = "2023-02-01")
-    private String repeatGroupDate;
+    private LocalDate repeatGroupDate;
 
     @Schema(description = "复团销量", example = "50")
     private Integer repeatGroupSales;

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 私播复盘 Response VO")
@@ -44,11 +45,11 @@ public class ErpPrivateBroadcastingReviewRespVO {
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
-    private LocalDateTime sampleSendDate;
+    private LocalDate sampleSendDate;
 
     @Schema(description = "开团日期", example = "2023-01-10")
     @ExcelProperty("开团日期")
-    private LocalDateTime groupStartDate;
+    private LocalDate groupStartDate;
 
     @Schema(description = "开团销量", example = "100")
     @ExcelProperty("开团销量")
@@ -56,7 +57,7 @@ public class ErpPrivateBroadcastingReviewRespVO {
 
     @Schema(description = "复团日期", example = "2023-02-01")
     @ExcelProperty("复团日期")
-    private LocalDateTime repeatGroupDate;
+    private LocalDate repeatGroupDate;
 
     @Schema(description = "复团销量", example = "50")
     @ExcelProperty("复团销量")
