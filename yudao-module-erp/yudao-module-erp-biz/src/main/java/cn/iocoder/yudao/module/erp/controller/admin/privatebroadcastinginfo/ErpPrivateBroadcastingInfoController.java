@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastinginfo.vo.*;
 import cn.iocoder.yudao.module.erp.service.privatebroadcastinginfo.ErpPrivateBroadcastingInfoService;
@@ -115,7 +116,7 @@ public class ErpPrivateBroadcastingInfoController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpPrivateBroadcastingInfoImportExcelVO> list = ExcelUtils.read(inputStream, ErpPrivateBroadcastingInfoImportExcelVO.class);
+            List<ErpPrivateBroadcastingInfoImportExcelVO> list = ExcelUtils.read(inputStream, ErpPrivateBroadcastingInfoImportExcelVO.class, new RowIndexListener<>());
             return success(privateBroadcastingInfoService.importPrivateBroadcastingInfoList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
@@ -128,18 +129,6 @@ public class ErpPrivateBroadcastingInfoController {
         // 手动创建导出 demo
         List<ErpPrivateBroadcastingInfoExportVO> list = Arrays.asList(
                 ErpPrivateBroadcastingInfoExportVO.builder()
-                        .no("示例编号1")
-                        .customerName("张三")
-                        .customerPosition("主播") // 字典值：客户职位
-                        .customerWechat("zhangsan123")
-                        .platformName("抖音") // 字典值：平台名称
-                        .customerAttribute("KOL") // 字典值：客户属性
-                        .customerCity("北京") // 字典值：客户城市
-                        .customerDistrict("朝阳区") // 字典值：客户区县
-                        .userPortrait("时尚达人")
-                        .recruitmentCategory("美妆")
-                        .selectionCriteria("国货品牌")
-                        .remark("示例备注")
                         .build()
         );
         // 输出

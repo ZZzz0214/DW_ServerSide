@@ -158,8 +158,7 @@ public class ErpPrivateBroadcastingReviewController {
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
         List<ErpPrivateBroadcastingReviewExportVO> list = Arrays.asList(
-                ErpPrivateBroadcastingReviewExportVO.builder()
-                        .no("示例编号1").build()
+                ErpPrivateBroadcastingReviewExportVO.builder().build()
         );
         // 输出
         ExcelUtils.write(response, "私播复盘导入模板.xls", "私播复盘列表", ErpPrivateBroadcastingReviewExportVO.class, list);

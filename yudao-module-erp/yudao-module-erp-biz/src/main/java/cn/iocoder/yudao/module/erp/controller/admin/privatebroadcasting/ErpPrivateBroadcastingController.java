@@ -135,9 +135,6 @@ public class ErpPrivateBroadcastingController {
         // 手动创建导出 demo
         List<ErpPrivateBroadcastingExportVO> list = Arrays.asList(
                 ErpPrivateBroadcastingExportVO.builder()
-                        .no("示例编号1")
-                        .productName("示例产品")
-                        .privateStatus("未设置")
                         .build()
         );
         // 输出

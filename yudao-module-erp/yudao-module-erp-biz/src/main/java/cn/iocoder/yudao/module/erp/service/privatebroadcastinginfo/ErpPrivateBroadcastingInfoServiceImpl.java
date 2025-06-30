@@ -37,7 +37,7 @@ public class ErpPrivateBroadcastingInfoServiceImpl implements ErpPrivateBroadcas
 
     @Resource
     private ErpPrivateBroadcastingInfoMapper privateBroadcastingInfoMapper;
-    
+
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -268,10 +268,6 @@ public class ErpPrivateBroadcastingInfoServiceImpl implements ErpPrivateBroadcas
 
             try {
                 // 4.1 基础数据校验
-                if (StrUtil.isEmpty(importVO.getCustomerName())) {
-                    allErrors.put(errorKey, "客户名称不能为空");
-                    continue;
-                }
 
                 // 4.2 检查Excel内部编号重复
                 if (StrUtil.isNotBlank(importVO.getNo())) {
@@ -401,7 +397,7 @@ public class ErpPrivateBroadcastingInfoServiceImpl implements ErpPrivateBroadcas
         if (StrUtil.isBlank(value)) {
             return; // 空值不校验
         }
-        
+
         try {
             // 使用字典API校验数据有效性
             dictDataApi.validateDictDataList(dictType, Collections.singletonList(value));
