@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSampleImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.ErpSamplePageReqVO;
@@ -204,27 +205,27 @@ public class ErpSampleServiceImpl implements ErpSampleService {
             throw exception(SAMPLE_IMPORT_LIST_IS_EMPTY);
         }
 
-        // 初始化返回结果
+        // 1. 初始化返回结果
         ErpSampleImportRespVO respVO = ErpSampleImportRespVO.builder()
                 .createNames(new ArrayList<>())
                 .updateNames(new ArrayList<>())
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理
-        List<ErpSampleDO> createList = new ArrayList<>();
-        List<ErpSampleDO> updateList = new ArrayList<>();
-
         try {
-            // 批量查询组品信息
-            Set<String> comboProductNos = importList.stream()
-                    .map(ErpSampleImportExcelVO::getComboProductId)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-            Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
-                    convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
+            // 2. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importList, isUpdateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
 
-            // 批量查询已存在的记录
+            // 3. 批量处理列表
+            List<ErpSampleDO> createList = new ArrayList<>();
+            List<ErpSampleDO> updateList = new ArrayList<>();
+
+            // 4. 批量查询已存在的记录
             Set<String> noSet = importList.stream()
                     .map(ErpSampleImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -232,98 +233,53 @@ public class ErpSampleServiceImpl implements ErpSampleService {
             Map<String, ErpSampleDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(sampleMapper.selectListByNoIn(noSet), ErpSampleDO::getNo);
 
+            // 5. 批量查询组品信息
+            Set<String> comboProductNos = importList.stream()
+                    .map(ErpSampleImportExcelVO::getComboProductId)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+            Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
+                    convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
+
+            // 6. 批量查询客户信息
+            Set<String> customerNames = importList.stream()
+                    .map(ErpSampleImportExcelVO::getCustomerName)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            Map<String, Boolean> customerExistsMap = new HashMap<>();
+            for (String customerName : customerNames) {
+                List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
+                        new ErpCustomerPageReqVO().setName(customerName));
+                customerExistsMap.put(customerName, CollUtil.isNotEmpty(customers));
+            }
+
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
 
-            // 批量转换数据
+            // 7. 逐行校验业务逻辑
             for (int i = 0; i < importList.size(); i++) {
                 ErpSampleImportExcelVO importVO = importList.get(i);
-                try {
-                    // 校验必填字段
-                    if (StrUtil.isBlank(importVO.getLogisticsCompany())) {
-                        throw exception(SAMPLE_IMPORT_LOGISTICS_COMPANY_EMPTY, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getLogisticsNo())) {
-                        throw exception(SAMPLE_IMPORT_LOGISTICS_NO_EMPTY, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getReceiverName())) {
-                        throw exception(SAMPLE_IMPORT_RECEIVER_NAME_EMPTY, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getContactPhone())) {
-                        throw exception(SAMPLE_IMPORT_CONTACT_PHONE_EMPTY, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getAddress())) {
-                        throw exception(SAMPLE_IMPORT_ADDRESS_EMPTY, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getComboProductId())) {
-                        throw exception(SAMPLE_IMPORT_COMBO_PRODUCT_ID_EMPTY, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getProductSpec())) {
-                        throw exception(SAMPLE_IMPORT_PRODUCT_SPEC_EMPTY, i + 1);
-                    }
-                    if (importVO.getProductQuantity() == null || importVO.getProductQuantity() <= 0) {
-                        throw exception(SAMPLE_IMPORT_PRODUCT_QUANTITY_INVALID, i + 1);
-                    }
-                    if (StrUtil.isBlank(importVO.getCustomerName())) {
-                        throw exception(SAMPLE_IMPORT_CUSTOMER_NAME_EMPTY, i + 1);
-                    }
-                    if (importVO.getSampleStatus() == null) {
-                        throw exception(SAMPLE_IMPORT_SAMPLE_STATUS_INVALID, i + 1);
-                    }
 
-                    // 检查Excel内部编号重复
-                    if (StrUtil.isNotBlank(importVO.getNo())) {
-                        if (processedNos.contains(importVO.getNo())) {
-                            throw exception(SAMPLE_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
-                        }
-                        processedNos.add(importVO.getNo());
-                    }
+                // 数据转换
+                ErpSampleDO sample = convertImportVOToDO(importVO);
 
-                    // 校验客户是否存在
-                    if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                        List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
-                                new ErpCustomerPageReqVO().setName(importVO.getCustomerName()));
-                        if (CollUtil.isEmpty(customers)) {
-                            throw exception(SAMPLE_IMPORT_CUSTOMER_NOT_EXISTS, i + 1, importVO.getCustomerName());
-                        }
-                    }
-
-                    // 将组品业务编号转换为组品ID
-                    if (StrUtil.isNotBlank(importVO.getComboProductId())) {
-                        Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
-                        if (comboProductId == null) {
-                            throw exception(SAMPLE_IMPORT_COMBO_PRODUCT_NOT_EXISTS, i + 1, importVO.getComboProductId());
-                        }
-                        importVO.setComboProductId(comboProductId.toString());
-                    }
-
-                    // 判断是否支持更新
-                    ErpSampleDO existSample = existMap.get(importVO.getNo());
-                    if (existSample == null) {
-                        // 创建 - 自动生成新的no编号
-                        ErpSampleDO sample = BeanUtils.toBean(importVO, ErpSampleDO.class);
-                        sample.setNo(noRedisDAO.generate(ErpNoRedisDAO.SAMPLE_NO_PREFIX));
-                        createList.add(sample);
-                        respVO.getCreateNames().add(sample.getNo());
-                    } else if (isUpdateSupport) {
-                        // 更新
-                        ErpSampleDO updateSample = BeanUtils.toBean(importVO, ErpSampleDO.class);
-                        updateSample.setId(existSample.getId());
-                        updateList.add(updateSample);
-                        respVO.getUpdateNames().add(updateSample.getNo());
-                    } else {
-                        throw exception(SAMPLE_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 判断是新增还是更新
+                ErpSampleDO existSample = existMap.get(importVO.getNo());
+                if (existSample == null) {
+                    // 创建 - 自动生成新的no编号
+                    sample.setNo(noRedisDAO.generate(ErpNoRedisDAO.SAMPLE_NO_PREFIX));
+                    createList.add(sample);
+                    respVO.getCreateNames().add(sample.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新
+                    sample.setId(existSample.getId());
+                    updateList.add(sample);
+                    respVO.getUpdateNames().add(sample.getNo());
                 }
             }
 
-            // 批量保存到数据库
+            // 8. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 sampleMapper.insertBatch(createList);
             }
@@ -332,9 +288,237 @@ public class ErpSampleServiceImpl implements ErpSampleService {
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
+    }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpSampleImportExcelVO> importList, boolean isUpdateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpSampleImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, ErpSampleDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(sampleMapper.selectListByNoIn(noSet), ErpSampleDO::getNo);
+
+        // 3. 批量查询组品信息
+        Set<String> comboProductNos = importList.stream()
+                .map(ErpSampleImportExcelVO::getComboProductId)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
+                convertMap(erpComboMapper.selectListByNoIn(comboProductNos), ErpComboProductDO::getNo, ErpComboProductDO::getId);
+
+        // 4. 批量查询客户信息
+        Set<String> customerNames = importList.stream()
+                .map(ErpSampleImportExcelVO::getCustomerName)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, Boolean> customerExistsMap = new HashMap<>();
+        for (String customerName : customerNames) {
+            List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
+                    new ErpCustomerPageReqVO().setName(customerName));
+            customerExistsMap.put(customerName, CollUtil.isNotEmpty(customers));
+        }
+
+        // 用于跟踪Excel内部重复的编号
+        Set<String> processedNos = new HashSet<>();
+
+        // 5. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpSampleImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
+
+            try {
+                // 5.1 基础数据校验
+                if (StrUtil.isBlank(importVO.getLogisticsCompany())) {
+                    allErrors.put(errorKey, "物流公司不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getLogisticsNo())) {
+                    allErrors.put(errorKey, "物流单号不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getReceiverName())) {
+                    allErrors.put(errorKey, "收件姓名不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getContactPhone())) {
+                    allErrors.put(errorKey, "联系电话不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getAddress())) {
+                    allErrors.put(errorKey, "详细地址不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getComboProductId())) {
+                    allErrors.put(errorKey, "组品编号不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getProductSpec())) {
+                    allErrors.put(errorKey, "产品规格不能为空");
+                    continue;
+                }
+                if (importVO.getProductQuantity() == null || importVO.getProductQuantity() <= 0) {
+                    allErrors.put(errorKey, "产品数量必须大于0");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getCustomerName())) {
+                    allErrors.put(errorKey, "客户名称不能为空");
+                    continue;
+                }
+                if (importVO.getSampleStatus() == null) {
+                    allErrors.put(errorKey, "样品状态无效");
+                    continue;
+                }
+
+                // 5.2 检查Excel内部编号重复
+                if (StrUtil.isNotBlank(importVO.getNo())) {
+                    if (processedNos.contains(importVO.getNo())) {
+                        allErrors.put(errorKey, "样品编号重复: " + importVO.getNo());
+                        continue;
+                    }
+                    processedNos.add(importVO.getNo());
+                }
+
+                // 5.3 校验客户是否存在
+                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                    Boolean customerExists = customerExistsMap.get(importVO.getCustomerName());
+                    if (customerExists == null || !customerExists) {
+                        allErrors.put(errorKey, "客户不存在: " + importVO.getCustomerName());
+                        continue;
+                    }
+                }
+
+                // 5.4 校验组品是否存在
+                if (StrUtil.isNotBlank(importVO.getComboProductId())) {
+                    Long comboProductId = comboProductIdMap.get(importVO.getComboProductId());
+                    if (comboProductId == null) {
+                        allErrors.put(errorKey, "组品编号不存在: " + importVO.getComboProductId());
+                        continue;
+                    }
+                }
+
+                // 5.5 数据转换校验（如果转换失败，记录错误并跳过）
+                try {
+                    ErpSampleDO sample = convertImportVOToDO(importVO);
+                    if (sample == null) {
+                        allErrors.put(errorKey, "数据转换失败");
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    allErrors.put(errorKey, "数据转换异常: " + ex.getMessage());
+                    continue;
+                }
+
+                // 5.6 判断是新增还是更新，并进行相应校验
+                ErpSampleDO existSample = existMap.get(importVO.getNo());
+                if (existSample == null) {
+                    // 新增校验：无需额外校验
+                } else if (isUpdateSupport) {
+                    // 更新校验：无需额外校验
+                } else {
+                    allErrors.put(errorKey, "样品编号已存在，且不支持更新: " + importVO.getNo());
+                    continue;
+                }
+
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "校验异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 校验数据类型错误
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpSampleImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取样品编号 - 修复行号索引问题
+                String sampleNo = "未知样品";
+                // ConversionErrorHolder中的行号是从1开始的，数组索引是从0开始的
+                // 所以需要减1来访问数组，但要确保索引有效
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpSampleImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        sampleNo = importVO.getNo();
+                    }
+                }
+
+                // 行号显示，RowIndexListener已经设置为从1开始，直接使用
+                String errorKey = "第" + rowIndex + "行(" + sampleNo + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
+    }
+
+    /**
+     * 转换导入VO为DO对象
+     */
+    private ErpSampleDO convertImportVOToDO(ErpSampleImportExcelVO importVO) {
+        if (importVO == null) {
+            return null;
+        }
+
+        try {
+            ErpSampleDO sample = new ErpSampleDO();
+
+            // 复制基础属性
+            BeanUtils.copyProperties(importVO, sample);
+
+            // 将组品业务编号转换为组品ID
+            if (StrUtil.isNotBlank(importVO.getComboProductId())) {
+                ErpComboProductDO comboProduct = erpComboMapper.selectByNo(importVO.getComboProductId());
+                if (comboProduct != null) {
+                    sample.setComboProductId(comboProduct.getId().toString());
+                }
+            }
+
+            return sample;
+        } catch (Exception e) {
+            System.err.println("转换样品导入VO到DO对象失败，样品编号: " + 
+                    (importVO.getNo() != null ? importVO.getNo() : "null") + ", 错误: " + e.getMessage());
+            return null;
+        }
     }
 
     private void validateSampleForCreateOrUpdate(Long id, ErpSampleSaveReqVO reqVO) {

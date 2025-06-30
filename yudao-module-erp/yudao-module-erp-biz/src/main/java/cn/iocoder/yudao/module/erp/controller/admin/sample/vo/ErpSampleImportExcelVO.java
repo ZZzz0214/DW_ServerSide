@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.sample.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
@@ -35,13 +36,16 @@ public class ErpSampleImportExcelVO {
     @ExcelProperty("详细地址")
     private String address;
 
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @ExcelProperty("组品编号")
     private String comboProductId;
 
     @ExcelProperty("产品规格")
     private String productSpec;
 
-    @ExcelProperty("产品数量")
+    @ExcelProperty(value = "产品数量", converter = IntegerConvert.class)
     private Integer productQuantity;
 
     @ExcelProperty("客户名称")
@@ -51,9 +55,6 @@ public class ErpSampleImportExcelVO {
     @DictFormat(DictTypeConstants.ERP_SAMPLE_STATUS)
     private Integer sampleStatus;
 
-    @ExcelProperty("参考")
-    private String reference;
 
-    @ExcelProperty("备注信息")
-    private String remark;
+
 }

@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.sample.vo.*;
 import cn.iocoder.yudao.module.erp.service.sample.ErpSampleService;
@@ -115,7 +116,7 @@ public class ErpSampleController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpSampleImportExcelVO> list = ExcelUtils.read(inputStream, ErpSampleImportExcelVO.class);
+            List<ErpSampleImportExcelVO> list = ExcelUtils.read(inputStream, ErpSampleImportExcelVO.class, new RowIndexListener<>());
             return success(sampleService.importSampleList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
