@@ -1,8 +1,12 @@
 package cn.iocoder.yudao.module.erp.controller.admin.finance.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.AccountConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateConvert;
 import com.alibaba.excel.annotation.ExcelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,13 +28,13 @@ public class ErpFinanceImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("轮播图片")
+    @ExcelProperty("凭证图片")
     private String carouselImages;
 
     @ExcelProperty("账单名称")
     private String billName;
 
-    @ExcelProperty("收付金额")
+    @ExcelProperty(value = "收付金额", converter = BigDecimalConvert.class)
     private BigDecimal amount;
 
     @ExcelProperty(value = "收入支出", converter = DictConvert.class)
@@ -41,7 +45,7 @@ public class ErpFinanceImportExcelVO {
     @DictFormat(FINANCE_CATEGORY)
     private String category;
 
-    @ExcelProperty("收付账号")
+    @ExcelProperty(value = "收付账号", converter = AccountConvert.class)
     private String account;
 
     @ExcelProperty(value = "账单状态", converter = DictConvert.class)
@@ -51,6 +55,7 @@ public class ErpFinanceImportExcelVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-    @ExcelProperty("下单日期")
+    @ExcelProperty(value = "下单日期", converter = LocalDateConvert.class)
     private LocalDate orderDate;
-} 
+
+}

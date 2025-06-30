@@ -305,16 +305,13 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         if (!CollUtil.isEmpty(amountRecords)) {
             ErpFinanceAmountDO latestRecord = amountRecords.get(0);
             amountBalance = latestRecord.getAfterBalance() != null ? latestRecord.getAfterBalance() : BigDecimal.ZERO;
-            System.out.println("DEBUG - getChannelBalance: 用户=" + creator + ", 渠道=" + channelType + ", 财务金额表最新余额=" + amountBalance);
         }
         
         // 2. 获取财务表的收支影响
         BigDecimal financeBalance = getFinanceTableBalance(creator, channelType);
-        System.out.println("DEBUG - getChannelBalance: 用户=" + creator + ", 渠道=" + channelType + ", 财务表影响=" + financeBalance);
         
         // 3. 返回综合余额
         BigDecimal totalBalance = amountBalance.add(financeBalance);
-        System.out.println("DEBUG - getChannelBalance: 用户=" + creator + ", 渠道=" + channelType + ", 最终余额=" + totalBalance);
         return totalBalance;
     }
     
@@ -479,8 +476,6 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .map(ErpFinanceAmountDO::getAmount)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        System.out.println("DEBUG - getTotalRechargeByChannel: 用户=" + creator + ", 渠道=" + channelType + ", 充值记录数=" + records.size() + ", 累计充值=" + totalRecharge);
         
         return totalRecharge;
     }

@@ -4,6 +4,8 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.*;
@@ -88,9 +90,7 @@ public class ErpFinanceController {
     public CommonResult<PageResult<ErpFinanceRespVO>> getFinancePage(@Valid ErpFinancePageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        System.out.println("当前用户名"+currentUsername);
         PageResult<ErpFinanceRespVO> pageResult = financeService.getFinanceVOPage(pageReqVO, currentUsername);
-        System.out.println("查看财务" + pageResult.getList());
         return success(pageResult);
     }
 
@@ -111,24 +111,16 @@ public class ErpFinanceController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportFinanceExcel(@Valid ErpFinancePageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
-        try {
-            Long userId = SecurityFrameworkUtils.getLoginUserId();
-            String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-            pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-            PageResult<ErpFinanceRespVO> pageResult = financeService.getFinanceVOPage(pageReqVO, currentUsername);
-            System.out.println("查看财务" + pageResult.getList());
-            
-            // 转换为导出VO
-            List<ErpFinanceExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpFinanceExportVO.class);
-            
-            // 导出 Excel
-            ExcelUtils.write(response, "财务信息.xlsx", "数据", ErpFinanceExportVO.class, exportList);
-        } catch (Exception e) {
-            // 记录错误日志
-            System.err.println("导出财务Excel时发生错误: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("导出失败: " + e.getMessage(), e);
-        }
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        PageResult<ErpFinanceRespVO> pageResult = financeService.getFinanceVOPage(pageReqVO, currentUsername);
+
+        // 转换为导出VO
+        List<ErpFinanceExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpFinanceExportVO.class);
+
+        // 导出 Excel
+        ExcelUtils.write(response, "财务信息.xlsx", "数据", ErpFinanceExportVO.class, exportList);
     }
 
     @PostMapping("/import")
@@ -143,7 +135,9 @@ public class ErpFinanceController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpFinanceImportExcelVO> list = ExcelUtils.read(inputStream, ErpFinanceImportExcelVO.class);
+            // 清除之前的错误信息
+            ConversionErrorHolder.clearErrors();
+            List<ErpFinanceImportExcelVO> list = ExcelUtils.read(inputStream, ErpFinanceImportExcelVO.class, new RowIndexListener<>());
             return success(financeService.importFinanceList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
@@ -161,14 +155,14 @@ public class ErpFinanceController {
                 .amount(new BigDecimal("1000.00"))
                 .incomeExpense(1) // 将显示为"收入"
                 .category("办公费用")
-                .account("微信")
+                .account("微信") // 添加收付账号示例
                 .status(1) // 将显示为"待处理"
                 .remark("采购办公用品")
                 .orderDate(java.time.LocalDate.now())
                 .build();
-        
+
         List<ErpFinanceImportExcelVO> list = Arrays.asList(demo);
-        
+
         // 输出
         ExcelUtils.write(response, "财务导入模板.xls", "财务列表", ErpFinanceImportExcelVO.class, list);
     }

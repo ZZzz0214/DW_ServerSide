@@ -66,8 +66,6 @@ public class ErpFinanceExportVO {
     @DictFormat(AUDIT_STATUS)
     private Integer auditStatus;
 
-
-
     @Schema(description = "创建者")
     @ExcelProperty("创建人员")
     private String creator;

@@ -6,10 +6,13 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.iocoder.yudao.module.system.api.dict.DictDataApi;
+import cn.iocoder.yudao.module.system.api.dict.dto.DictDataRespDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -18,10 +21,12 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
+import static cn.iocoder.yudao.module.erp.enums.DictTypeConstants.*;
 
 @Service
 @Validated
@@ -35,6 +40,9 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
 
     @Resource
     private ErpFinanceAmountService financeAmountService;
+
+    @Resource
+    private DictDataApi dictDataApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -67,12 +75,12 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
     public void updateFinance(ErpFinanceSaveReqVO updateReqVO, String currentUsername) {
         // 1.1 校验存在
         ErpFinanceDO oldFinance = validateFinance(updateReqVO.getId(), currentUsername);
-        
+
         // 1.2 校验审核状态，已审核的记录不能修改
         if (oldFinance.getAuditStatus() != null && oldFinance.getAuditStatus() == 20) {
             throw exception(FINANCE_AUDIT_STATUS_NOT_ALLOW_UPDATE);
         }
-        
+
         // 1.3 校验数据
         validateFinanceForCreateOrUpdate(updateReqVO.getId(), updateReqVO);
 
@@ -103,10 +111,10 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             }
             finances.add(finance);
         }
-        
+
         // 2. 删除财务记录
         financeMapper.deleteBatchIds(ids);
-        
+
         // 3. 同步余额变化（触发前端刷新）
         // 由于余额是实时计算的，只需要触发一次同步即可
         for (ErpFinanceDO finance : finances) {
@@ -206,12 +214,20 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理
-        List<ErpFinanceDO> createList = new ArrayList<>();
-        List<ErpFinanceDO> updateList = new ArrayList<>();
-
         try {
-            // 批量查询已存在的记录
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importList, isUpdateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量处理列表
+            List<ErpFinanceDO> createList = new ArrayList<>();
+            List<ErpFinanceDO> updateList = new ArrayList<>();
+
+            // 3. 批量查询已存在的记录
             Set<String> noSet = importList.stream()
                     .map(ErpFinanceImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -219,48 +235,30 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             Map<String, ErpFinanceDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(financeMapper.selectListByNoIn(noSet), ErpFinanceDO::getNo);
 
-            // 用于跟踪Excel内部重复的编号
-            Set<String> processedNos = new HashSet<>();
-            
-            // 批量转换数据
+            // 4. 批量转换和保存数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpFinanceImportExcelVO importVO = importList.get(i);
-                try {
-                    // 检查Excel内部编号重复
-                    if (StrUtil.isNotBlank(importVO.getNo())) {
-                        if (processedNos.contains(importVO.getNo())) {
-                            throw exception(FINANCE_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
-                        }
-                        processedNos.add(importVO.getNo());
-                    }
 
-                    // 判断是否支持更新
-                    ErpFinanceDO existFinance = existMap.get(importVO.getNo());
-                    if (existFinance == null) {
-                       // 创建 - 自动生成新的no编号
-                       ErpFinanceDO finance = BeanUtils.toBean(importVO, ErpFinanceDO.class);
-                       finance.setNo(noRedisDAO.generate(ErpNoRedisDAO.FINANCE_NO_PREFIX));
-                        createList.add(finance);
-                        respVO.getCreateNames().add(finance.getNo());
-                    } else if (isUpdateSupport) {
-                        // 更新
-                        ErpFinanceDO updateFinance = BeanUtils.toBean(importVO, ErpFinanceDO.class);
-                        updateFinance.setId(existFinance.getId());
-                        updateList.add(updateFinance);
-                        respVO.getUpdateNames().add(updateFinance.getNo());
-                    } else {
-                        throw exception(FINANCE_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 数据转换
+                ErpFinanceDO finance = convertImportVOToDO(importVO);
+
+                // 判断是新增还是更新
+                ErpFinanceDO existFinance = existMap.get(importVO.getNo());
+                if (existFinance == null) {
+                    // 创建财务记录
+                    finance.setNo(noRedisDAO.generate(ErpNoRedisDAO.FINANCE_NO_PREFIX));
+                    finance.setAuditStatus(10); // 默认待审核
+                    createList.add(finance);
+                    respVO.getCreateNames().add(finance.getBillName());
+                } else if (isUpdateSupport) {
+                    // 更新财务记录
+                    finance.setId(existFinance.getId());
+                    updateList.add(finance);
+                    respVO.getUpdateNames().add(finance.getBillName());
                 }
             }
 
-            // 批量保存到数据库
+            // 5. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 financeMapper.insertBatch(createList);
             }
@@ -269,9 +267,164 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
+    }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpFinanceImportExcelVO> importList, boolean isUpdateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpFinanceImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, ErpFinanceDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(financeMapper.selectListByNoIn(noSet), ErpFinanceDO::getNo);
+
+        // 3. 批量查询收入支出字典数据
+        List<DictDataRespDTO> incomeExpenseDictList = dictDataApi.getDictDataList(FINANCE_INCOME_EXPENSE);
+        Set<String> validIncomeExpenseSet = incomeExpenseDictList.stream()
+                .map(DictDataRespDTO::getValue)
+                .collect(Collectors.toSet());
+
+        // 4. 批量查询收付类目字典数据
+        List<DictDataRespDTO> categoryDictList = dictDataApi.getDictDataList(FINANCE_CATEGORY);
+        Set<String> validCategorySet = categoryDictList.stream()
+                .map(DictDataRespDTO::getValue)
+                .collect(Collectors.toSet());
+
+        // 5. 批量查询账单状态字典数据
+        List<DictDataRespDTO> billStatusDictList = dictDataApi.getDictDataList(FINANCE_BILL_STATUS);
+        Set<String> validBillStatusSet = billStatusDictList.stream()
+                .map(DictDataRespDTO::getValue)
+                .collect(Collectors.toSet());
+
+        // 用于跟踪Excel内部重复的编号
+        Set<String> processedNos = new HashSet<>();
+
+        // 6. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpFinanceImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getBillName()) ? "(" + importVO.getBillName() + ")" : "");
+
+            try {
+
+                // 6.2 检查Excel内部编号重复
+                if (StrUtil.isNotBlank(importVO.getNo())) {
+                    if (processedNos.contains(importVO.getNo())) {
+                        allErrors.put(errorKey, "财务编号重复: " + importVO.getNo());
+                        continue;
+                    }
+                    processedNos.add(importVO.getNo());
+                }
+
+                // 6.6 数据转换校验（如果转换失败，记录错误并跳过）
+                try {
+                    ErpFinanceDO finance = convertImportVOToDO(importVO);
+                    if (finance == null) {
+                        allErrors.put(errorKey, "数据转换失败");
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    allErrors.put(errorKey, "数据转换异常: " + ex.getMessage());
+                    continue;
+                }
+
+                // 6.7 判断是新增还是更新，并进行相应校验
+                ErpFinanceDO existFinance = existMap.get(importVO.getNo());
+                if (existFinance == null) {
+                    // 新增校验：无需额外校验
+                } else if (isUpdateSupport) {
+                    // 更新校验：无需额外校验
+                } else {
+                    allErrors.put(errorKey, "财务编号不存在且不支持更新: " + importVO.getNo());
+                    continue;
+                }
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpFinanceImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取财务名称 - 修复行号索引问题
+                String financeName = "未知财务记录";
+                // ConversionErrorHolder中的行号是从1开始的，数组索引是从0开始的
+                // 所以需要减1来访问数组，但要确保索引有效
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpFinanceImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getBillName())) {
+                        financeName = importVO.getBillName();
+                    } else if (StrUtil.isNotBlank(importVO.getNo())) {
+                        financeName = importVO.getNo();
+                    }
+                }
+
+                // 行号显示，RowIndexListener已经设置为从1开始，直接使用
+                String errorKey = "第" + rowIndex + "行(" + financeName + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
+    }
+
+    /**
+     * 将导入VO转换为DO
+     */
+    private ErpFinanceDO convertImportVOToDO(ErpFinanceImportExcelVO importVO) {
+        if (importVO == null) {
+            return null;
+        }
+
+        try {
+            // 使用BeanUtils进行基础转换
+            ErpFinanceDO finance = BeanUtils.toBean(importVO, ErpFinanceDO.class);
+            return finance;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
@@ -280,7 +433,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
         if (CollUtil.isEmpty(auditReqVO.getIds())) {
             return;
         }
-        
+
         // 1. 校验记录存在且属于当前用户
         List<ErpFinanceDO> finances = new ArrayList<>();
         for (Long id : auditReqVO.getIds()) {
@@ -291,7 +444,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             }
             finances.add(finance);
         }
-        
+
         // 2. 批量更新审核状态
         for (ErpFinanceDO finance : finances) {
             finance.setAuditStatus(auditReqVO.getAuditStatus());
@@ -308,7 +461,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
         if (CollUtil.isEmpty(ids)) {
             return;
         }
-        
+
         // 1. 校验记录存在且属于当前用户
         List<ErpFinanceDO> finances = new ArrayList<>();
         for (Long id : ids) {
@@ -319,7 +472,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             }
             finances.add(finance);
         }
-        
+
         // 2. 批量更新审核状态为待审核
         for (ErpFinanceDO finance : finances) {
             finance.setAuditStatus(10);
@@ -329,4 +482,4 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             financeMapper.updateById(finance);
         }
     }
-} 
+}

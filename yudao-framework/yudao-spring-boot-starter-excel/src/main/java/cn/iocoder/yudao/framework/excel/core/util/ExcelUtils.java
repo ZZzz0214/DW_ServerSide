@@ -1,10 +1,12 @@
 package cn.iocoder.yudao.framework.excel.core.util;
 
 import cn.iocoder.yudao.framework.excel.core.handler.SelectSheetWriteHandler;
+import cn.iocoder.yudao.framework.excel.core.convert.AccountConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DoubleConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.LocalDateTimeConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateConvert;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter;
 import com.alibaba.excel.converters.longconverter.LongStringConverter;
@@ -66,6 +68,8 @@ public class ExcelUtils {
                 .registerConverter(new BigDecimalConvert())
                 .registerConverter(new DoubleConvert())
                 .registerConverter(new LocalDateTimeConvert())
+                .registerConverter(new LocalDateConvert())
+                .registerConverter(new AccountConvert())
                 .doReadAllSync();
     }
 
@@ -77,6 +81,8 @@ public class ExcelUtils {
                 .registerConverter(new BigDecimalConvert())
                 .registerConverter(new DoubleConvert())
                 .registerConverter(new LocalDateTimeConvert())
+                .registerConverter(new LocalDateConvert())
+                .registerConverter(new AccountConvert())
                 .doReadAllSync();
     }
 
@@ -98,6 +104,8 @@ public class ExcelUtils {
         BigDecimalConvert bigDecimalConvert = new BigDecimalConvert();
         DoubleConvert doubleConvert = new DoubleConvert();
         LocalDateTimeConvert localDateTimeConvert = new LocalDateTimeConvert();
+        LocalDateConvert localDateConvert = new LocalDateConvert();
+        AccountConvert accountConvert = new AccountConvert();
         
         log.info("[ExcelUtils] 转换器实例创建完成");
         
@@ -109,6 +117,10 @@ public class ExcelUtils {
                 .registerConverter(bigDecimalConvert)
                 .registerConverter(doubleConvert)
                 .registerConverter(localDateTimeConvert)
+                .registerConverter(localDateConvert)
+                .registerConverter(accountConvert)
+                .headRowNumber(1) // 设置表头行数为第1行
+                .ignoreEmptyRow(true) // 忽略空行
                 .doReadAllSync();
     }
 
@@ -129,6 +141,8 @@ public class ExcelUtils {
                 .registerConverter(new BigDecimalConvert())
                 .registerConverter(new DoubleConvert())
                 .registerConverter(new LocalDateTimeConvert())
+                .registerConverter(new LocalDateConvert())
+                .registerConverter(new AccountConvert())
                 .doReadAllSync();
     }
 

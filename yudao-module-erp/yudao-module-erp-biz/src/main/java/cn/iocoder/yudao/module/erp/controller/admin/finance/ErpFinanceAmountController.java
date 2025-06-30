@@ -184,24 +184,16 @@ public class ErpFinanceAmountController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportFinanceAmountExcel(@Valid ErpFinanceAmountPageReqVO pageReqVO,
                                           HttpServletResponse response) throws IOException {
-        try {
-            Long userId = SecurityFrameworkUtils.getLoginUserId();
-            String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-            pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-            PageResult<ErpFinanceAmountRespVO> pageResult = financeAmountService.getFinanceAmountVOPage(pageReqVO, currentUsername);
-            System.out.println("财务金额导出的数据"+pageResult.getList());
-            
-            // 转换为导出VO
-            List<ErpFinanceAmountExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpFinanceAmountExportVO.class);
-            
-            // 导出 Excel
-            ExcelUtils.write(response, "财务金额.xlsx", "数据", ErpFinanceAmountExportVO.class, exportList);
-        } catch (Exception e) {
-            // 记录错误日志
-            System.err.println("导出财务金额Excel时发生错误: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("导出失败: " + e.getMessage(), e);
-        }
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        PageResult<ErpFinanceAmountRespVO> pageResult = financeAmountService.getFinanceAmountVOPage(pageReqVO, currentUsername);
+        
+        // 转换为导出VO
+        List<ErpFinanceAmountExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpFinanceAmountExportVO.class);
+        
+        // 导出 Excel
+        ExcelUtils.write(response, "财务金额.xlsx", "数据", ErpFinanceAmountExportVO.class, exportList);
     }
 
     @GetMapping("/get-import-template")
@@ -237,7 +229,6 @@ public class ErpFinanceAmountController {
                                                                                @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
             List<ErpFinanceAmountImportExcelVO> list = ExcelUtils.read(inputStream, ErpFinanceAmountImportExcelVO.class);
-            System.out.println("前端拿到的数据"+list);
             Long userId = SecurityFrameworkUtils.getLoginUserId();
             String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
             return success(financeAmountService.importFinanceAmountList(list, updateSupport, currentUsername));
