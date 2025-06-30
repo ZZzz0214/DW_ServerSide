@@ -150,7 +150,6 @@ public class ErpFinanceController {
         // 手工创建导入模板示例数据
         ErpFinanceImportExcelVO demo = ErpFinanceImportExcelVO.builder()
                 .no("CW202403250001")
-                .carouselImages("http://example.com/image1.jpg")
                 .billName("办公用品采购")
                 .amount(new BigDecimal("1000.00"))
                 .incomeExpense(1) // 将显示为"收入"

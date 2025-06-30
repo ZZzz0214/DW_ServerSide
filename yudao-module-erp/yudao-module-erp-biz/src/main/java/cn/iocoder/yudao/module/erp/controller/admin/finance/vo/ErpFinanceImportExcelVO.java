@@ -28,9 +28,6 @@ public class ErpFinanceImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("凭证图片")
-    private String carouselImages;
-
     @ExcelProperty("账单名称")
     private String billName;
 
