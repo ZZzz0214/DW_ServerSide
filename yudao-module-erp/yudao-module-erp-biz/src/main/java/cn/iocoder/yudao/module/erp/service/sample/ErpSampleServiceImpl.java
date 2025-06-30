@@ -348,47 +348,6 @@ public class ErpSampleServiceImpl implements ErpSampleService {
             String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
 
             try {
-                // 5.1 基础数据校验
-                if (StrUtil.isBlank(importVO.getLogisticsCompany())) {
-                    allErrors.put(errorKey, "物流公司不能为空");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getLogisticsNo())) {
-                    allErrors.put(errorKey, "物流单号不能为空");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getReceiverName())) {
-                    allErrors.put(errorKey, "收件姓名不能为空");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getContactPhone())) {
-                    allErrors.put(errorKey, "联系电话不能为空");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getAddress())) {
-                    allErrors.put(errorKey, "详细地址不能为空");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getComboProductId())) {
-                    allErrors.put(errorKey, "组品编号不能为空");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getProductSpec())) {
-                    allErrors.put(errorKey, "产品规格不能为空");
-                    continue;
-                }
-                if (importVO.getProductQuantity() == null || importVO.getProductQuantity() <= 0) {
-                    allErrors.put(errorKey, "产品数量必须大于0");
-                    continue;
-                }
-                if (StrUtil.isBlank(importVO.getCustomerName())) {
-                    allErrors.put(errorKey, "客户名称不能为空");
-                    continue;
-                }
-                if (importVO.getSampleStatus() == null) {
-                    allErrors.put(errorKey, "样品状态无效");
-                    continue;
-                }
 
                 // 5.2 检查Excel内部编号重复
                 if (StrUtil.isNotBlank(importVO.getNo())) {
@@ -515,7 +474,7 @@ public class ErpSampleServiceImpl implements ErpSampleService {
 
             return sample;
         } catch (Exception e) {
-            System.err.println("转换样品导入VO到DO对象失败，样品编号: " + 
+            System.err.println("转换样品导入VO到DO对象失败，样品编号: " +
                     (importVO.getNo() != null ? importVO.getNo() : "null") + ", 错误: " + e.getMessage());
             return null;
         }

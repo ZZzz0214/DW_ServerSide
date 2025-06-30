@@ -16,6 +16,7 @@ import java.util.Set;
 /**
  * Excel 收付账号转换器
  * 只允许微信、支付宝、银行卡三个值，其他值返回null，并记录错误
+ * 只处理特定的收付账号字段，避免影响其他表的字段
  *
  * @author 芋道源码
  */
@@ -23,6 +24,9 @@ import java.util.Set;
 public class AccountConvert implements Converter<String> {
 
     private static final Set<String> VALID_ACCOUNTS = new HashSet<>(Arrays.asList("微信", "支付宝", "银行卡"));
+    
+    // 定义允许使用此转换器的字段名
+    private static final Set<String> ALLOWED_FIELD_NAMES = new HashSet<>(Arrays.asList("account", "收付账号"));
 
     public AccountConvert() {
         log.info("[AccountConvert] 转换器被实例化");
@@ -43,8 +47,22 @@ public class AccountConvert implements Converter<String> {
     @Override
     public String convertToJavaData(ReadCellData readCellData, ExcelContentProperty contentProperty,
                                     GlobalConfiguration globalConfiguration) {
-        // 添加调试日志，确认转换器是否被调用
+        // 获取字段名
         String fieldName = contentProperty != null ? contentProperty.getField().getName() : "未知字段";
+        
+        // 检查是否是允许的字段，如果不是，返回原始值，不进行处理
+        if (!isAllowedField(fieldName)) {
+            log.debug("[AccountConvert] 字段[{}]不在允许列表中，返回原始值", fieldName);
+            // 返回原始值，让EasyExcel使用默认转换逻辑
+            if (readCellData.getType() == CellDataTypeEnum.NUMBER) {
+                return readCellData.getNumberValue().toString();
+            } else if (readCellData.getType() == CellDataTypeEnum.STRING) {
+                return readCellData.getStringValue();
+            } else {
+                return readCellData.getStringValue();
+            }
+        }
+        
         log.info("[AccountConvert] 转换器被调用 - 字段: {}, 类型: {}", fieldName, readCellData.getType());
         
         // 如果单元格为空，返回null（空值允许）
@@ -200,5 +218,15 @@ public class AccountConvert implements Converter<String> {
         // 如果都无法获取，返回1作为默认值（避免返回0）
         log.warn("[AccountConvert] 无法获取行号，使用默认值1");
         return 1;
+    }
+
+    /**
+     * 检查字段是否允许使用此转换器
+     */
+    private boolean isAllowedField(String fieldName) {
+        if (StrUtil.isBlank(fieldName)) {
+            return false;
+        }
+        return ALLOWED_FIELD_NAMES.contains(fieldName);
     }
 } 
