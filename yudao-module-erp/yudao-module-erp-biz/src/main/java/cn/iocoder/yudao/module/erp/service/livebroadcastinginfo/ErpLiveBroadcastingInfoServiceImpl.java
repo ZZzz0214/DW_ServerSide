@@ -168,13 +168,7 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
             List<ErpLiveBroadcastingInfoDO> createList = new ArrayList<>();
             List<ErpLiveBroadcastingInfoDO> updateList = new ArrayList<>();
 
-            // 3. 批量查询客户信息 - 通过客户名称查询
-            Set<String> customerNames = importList.stream()
-                    .map(ErpLiveBroadcastingInfoImportExcelVO::getCustomerName)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-            Map<String, ErpCustomerDO> customerMap = customerNames.isEmpty() ? Collections.emptyMap() :
-                    convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName);
+                    // 3. 客户名称直接使用，不再查询客户表
 
             // 4. 批量查询已存在的记录
             Set<String> noSet = importList.stream()
@@ -188,14 +182,7 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
             for (int i = 0; i < importList.size(); i++) {
                 ErpLiveBroadcastingInfoImportExcelVO importVO = importList.get(i);
 
-                // 校验客户名称是否存在，并获取客户ID
-                Long customerId = null;
-                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                    ErpCustomerDO customer = customerMap.get(importVO.getCustomerName());
-                    if (customer != null) {
-                        customerId = customer.getId();
-                    }
-                }
+                // 客户名称直接使用，不再需要客户ID
 
                 // 判断是否支持更新
                 ErpLiveBroadcastingInfoDO existLiveBroadcastingInfo = existMap.get(importVO.getNo());
@@ -203,14 +190,12 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
                     // 创建 - 自动生成新的no编号
                     ErpLiveBroadcastingInfoDO liveBroadcastingInfo = BeanUtils.toBean(importVO, ErpLiveBroadcastingInfoDO.class);
                     liveBroadcastingInfo.setNo(noRedisDAO.generate(ErpNoRedisDAO.LIVE_BROADCASTING_INFO_NO_PREFIX));
-                    liveBroadcastingInfo.setCustomerId(customerId); // 设置客户ID
                     createList.add(liveBroadcastingInfo);
                     respVO.getCreateNames().add(liveBroadcastingInfo.getNo());
                 } else if (isUpdateSupport) {
                     // 更新
                     ErpLiveBroadcastingInfoDO updateLiveBroadcastingInfo = BeanUtils.toBean(importVO, ErpLiveBroadcastingInfoDO.class);
                     updateLiveBroadcastingInfo.setId(existLiveBroadcastingInfo.getId());
-                    updateLiveBroadcastingInfo.setCustomerId(customerId); // 设置客户ID
                     updateList.add(updateLiveBroadcastingInfo);
                     respVO.getUpdateNames().add(updateLiveBroadcastingInfo.getNo());
                 }
@@ -247,13 +232,7 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
             return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
         }
 
-        // 2. 批量查询客户信息
-        Set<String> customerNames = importList.stream()
-                .map(ErpLiveBroadcastingInfoImportExcelVO::getCustomerName)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toSet());
-        Map<String, ErpCustomerDO> customerMap = customerNames.isEmpty() ? Collections.emptyMap() :
-                convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName);
+        // 2. 客户名称直接使用，不再查询客户表
 
         // 3. 批量查询已存在的记录
         Set<String> noSet = importList.stream()
@@ -272,11 +251,6 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
             String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getCustomerName()) ? "(" + importVO.getCustomerName() + ")" : "");
 
             try {
-                // 4.1 基础数据校验
-                if (StrUtil.isBlank(importVO.getCustomerName())) {
-                    allErrors.put(errorKey, "客户名称不能为空");
-                    continue;
-                }
 
                 // 4.2 检查Excel内部编号重复
                 if (StrUtil.isNotBlank(importVO.getNo())) {
@@ -287,14 +261,7 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
                     processedNos.add(importVO.getNo());
                 }
 
-                // 4.3 校验客户名称是否存在
-                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                    ErpCustomerDO customer = customerMap.get(importVO.getCustomerName());
-                    if (customer == null) {
-                        allErrors.put(errorKey, "客户名称不存在: " + importVO.getCustomerName());
-                        continue;
-                    }
-                }
+                // 4.3 客户名称直接使用，不再校验
 
                 // 4.4 数据转换校验（如果转换失败，记录错误并跳过）
                 try {

@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpLiveBroadcastingInfoExportVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpLiveBroadcastingInfoImportExcelVO;
@@ -123,7 +124,7 @@ public class ErpLiveBroadcastingInfoController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpLiveBroadcastingInfoImportExcelVO> list = ExcelUtils.read(inputStream, ErpLiveBroadcastingInfoImportExcelVO.class);
+            List<ErpLiveBroadcastingInfoImportExcelVO> list = ExcelUtils.read(inputStream, ErpLiveBroadcastingInfoImportExcelVO.class, new RowIndexListener<>());
             return success(liveBroadcastingInfoService.importLiveBroadcastingInfoList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
@@ -136,8 +137,6 @@ public class ErpLiveBroadcastingInfoController {
         // 手动创建导出 demo
         List<ErpLiveBroadcastingInfoExportVO> list = Arrays.asList(
                 ErpLiveBroadcastingInfoExportVO.builder()
-                        .no("示例编号1")
-                        .customerName("示例客户名称")
                         .build()
         );
         // 输出

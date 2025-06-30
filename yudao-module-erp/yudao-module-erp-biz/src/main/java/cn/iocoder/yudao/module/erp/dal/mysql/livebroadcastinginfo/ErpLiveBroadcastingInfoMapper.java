@@ -7,7 +7,6 @@ import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpLiveBroadcastingInfoPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpLiveBroadcastingInfoRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastinginfo.ErpLiveBroadcastingInfoDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import org.apache.ibatis.annotations.Mapper;
 import cn.hutool.core.collection.CollUtil;
 
@@ -21,6 +20,7 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
     default PageResult<ErpLiveBroadcastingInfoRespVO> selectPage(ErpLiveBroadcastingInfoPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpLiveBroadcastingInfoDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingInfoDO>()
                 .likeIfPresent(ErpLiveBroadcastingInfoDO::getNo, reqVO.getNo())
+                .likeIfPresent(ErpLiveBroadcastingInfoDO::getCustomerName, reqVO.getCustomerName())
                 .likeIfPresent(ErpLiveBroadcastingInfoDO::getCustomerPosition, reqVO.getCustomerPosition())
                 .likeIfPresent(ErpLiveBroadcastingInfoDO::getPlatformName, reqVO.getPlatformName())
                 .likeIfPresent(ErpLiveBroadcastingInfoDO::getCustomerAttribute, reqVO.getCustomerAttribute())
@@ -31,7 +31,7 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
                 // 直播信息表字段映射
                 .selectAs(ErpLiveBroadcastingInfoDO::getId, ErpLiveBroadcastingInfoRespVO::getId)
                 .selectAs(ErpLiveBroadcastingInfoDO::getNo, ErpLiveBroadcastingInfoRespVO::getNo)
-                .selectAs(ErpLiveBroadcastingInfoDO::getCustomerId, ErpLiveBroadcastingInfoRespVO::getCustomerId)
+                .selectAs(ErpLiveBroadcastingInfoDO::getCustomerName, ErpLiveBroadcastingInfoRespVO::getCustomerName)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCustomerPosition, ErpLiveBroadcastingInfoRespVO::getCustomerPosition)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCustomerWechat, ErpLiveBroadcastingInfoRespVO::getCustomerWechat)
                 .selectAs(ErpLiveBroadcastingInfoDO::getPlatformName, ErpLiveBroadcastingInfoRespVO::getPlatformName)
@@ -44,16 +44,6 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
                 .selectAs(ErpLiveBroadcastingInfoDO::getRemark, ErpLiveBroadcastingInfoRespVO::getRemark)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCreator, ErpLiveBroadcastingInfoRespVO::getCreator)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCreateTime, ErpLiveBroadcastingInfoRespVO::getCreateTime);
-
-        // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingInfoDO::getCustomerId);
-        
-        // 客户名称搜索条件
-        if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
-            query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
-        }
-        
-        query.selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingInfoRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpLiveBroadcastingInfoRespVO.class, query);
     }
@@ -69,7 +59,7 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
                 // 直播信息表字段映射
                 .selectAs(ErpLiveBroadcastingInfoDO::getId, ErpLiveBroadcastingInfoRespVO::getId)
                 .selectAs(ErpLiveBroadcastingInfoDO::getNo, ErpLiveBroadcastingInfoRespVO::getNo)
-                .selectAs(ErpLiveBroadcastingInfoDO::getCustomerId, ErpLiveBroadcastingInfoRespVO::getCustomerId)
+                .selectAs(ErpLiveBroadcastingInfoDO::getCustomerName, ErpLiveBroadcastingInfoRespVO::getCustomerName)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCustomerPosition, ErpLiveBroadcastingInfoRespVO::getCustomerPosition)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCustomerWechat, ErpLiveBroadcastingInfoRespVO::getCustomerWechat)
                 .selectAs(ErpLiveBroadcastingInfoDO::getPlatformName, ErpLiveBroadcastingInfoRespVO::getPlatformName)
@@ -80,11 +70,8 @@ public interface ErpLiveBroadcastingInfoMapper extends BaseMapperX<ErpLiveBroadc
                 .selectAs(ErpLiveBroadcastingInfoDO::getRecruitmentCategory, ErpLiveBroadcastingInfoRespVO::getRecruitmentCategory)
                 .selectAs(ErpLiveBroadcastingInfoDO::getSelectionCriteria, ErpLiveBroadcastingInfoRespVO::getSelectionCriteria)
                 .selectAs(ErpLiveBroadcastingInfoDO::getRemark, ErpLiveBroadcastingInfoRespVO::getRemark)
+                .selectAs(ErpLiveBroadcastingInfoDO::getCreator, ErpLiveBroadcastingInfoRespVO::getCreator)
                 .selectAs(ErpLiveBroadcastingInfoDO::getCreateTime, ErpLiveBroadcastingInfoRespVO::getCreateTime);
-
-        // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingInfoDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingInfoRespVO::getCustomerName);
 
         return selectJoinList(ErpLiveBroadcastingInfoRespVO.class, query);
     }

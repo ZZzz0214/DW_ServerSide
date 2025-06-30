@@ -25,20 +25,11 @@ public class ErpLiveBroadcastingReviewExportVO {
     private String no;
 
     @Schema(description = "货盘编号", example = "LP001")
-    @ExcelProperty("货盘编号")
+    @ExcelProperty("直播货盘编号")
     private String liveBroadcastingNo;
 
-    @Schema(description = "客户名称", example = "客户A")
-    @ExcelProperty("客户名称")
-    private String customerName;
-
-    @Schema(description = "直播平台", example = "抖音")
-    @ExcelProperty(value = "直播平台", converter = DictConvert.class)
-    @DictFormat("erp_platform_name")
-    private String livePlatform;
-
     @Schema(description = "品牌名称", example = "品牌A")
-    @ExcelProperty("品牌名称")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
 
@@ -54,14 +45,26 @@ public class ErpLiveBroadcastingReviewExportVO {
     @ExcelProperty("产品SKU")
     private String productSku;
 
+    @Schema(description = "备注信息", example = "备注内容")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+
+
+
+    @Schema(description = "客户名称", example = "客户A")
+    @ExcelProperty(value = "客户名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_LIVE_CUSTOMER_NAME)
+    private String customerName;
+
+    @Schema(description = "直播平台", example = "抖音")
+    @ExcelProperty(value = "直播平台", converter = DictConvert.class)
+    @DictFormat("erp_live_platform")
+    private String livePlatform;
+
     @Schema(description = "直播价格", example = "100.00")
     @ExcelProperty("直播价格")
     private BigDecimal livePrice;
-
-    @Schema(description = "货盘状态", example = "上架")
-    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
-    @DictFormat("erp_live_status")
-    private String liveStatus;
 
     @Schema(description = "直播佣金", example = "10.00")
     @ExcelProperty("直播佣金")
@@ -95,9 +98,11 @@ public class ErpLiveBroadcastingReviewExportVO {
     @ExcelProperty("复播销量")
     private Integer repeatLiveSales;
 
-    @Schema(description = "备注信息", example = "备注内容")
-    @ExcelProperty("备注信息")
-    private String remark;
+    @Schema(description = "货盘状态", example = "上架")
+    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @DictFormat("erp_live_status")
+    private String liveStatus;
+
 
     @Schema(description = "创建者")
     @ExcelProperty("创建人员")

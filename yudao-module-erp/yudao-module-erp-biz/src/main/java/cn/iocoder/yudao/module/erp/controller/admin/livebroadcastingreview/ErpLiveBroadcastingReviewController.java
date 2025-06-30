@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewPageReqVO;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.math.BigDecimal;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.IMPORT;
@@ -148,9 +150,12 @@ public class ErpLiveBroadcastingReviewController {
                                                                                                  @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        List<ErpLiveBroadcastingReviewImportExcelVO> list = ExcelUtils.read(file, ErpLiveBroadcastingReviewImportExcelVO.class);
+
+        try (InputStream inputStream = file.getInputStream()) {
+        List<ErpLiveBroadcastingReviewImportExcelVO> list = ExcelUtils.read(inputStream, ErpLiveBroadcastingReviewImportExcelVO.class, new RowIndexListener<>());
         return success(liveBroadcastingReviewService.importLiveBroadcastingReviewList(list, updateSupport, currentUsername));
-    }
+        }
+        }
 
     @GetMapping("/get-import-template")
     @Operation(summary = "获得导入直播复盘模板")
@@ -158,10 +163,6 @@ public class ErpLiveBroadcastingReviewController {
         // 手动创建导出 demo
         List<ErpLiveBroadcastingReviewExportVO> list = Arrays.asList(
                 ErpLiveBroadcastingReviewExportVO.builder()
-                        .no("示例编号1")
-                        .liveBroadcastingNo("LP001")
-                        .customerName("示例客户")
-                        .livePlatform("抖音")
                         .build()
         );
         // 输出

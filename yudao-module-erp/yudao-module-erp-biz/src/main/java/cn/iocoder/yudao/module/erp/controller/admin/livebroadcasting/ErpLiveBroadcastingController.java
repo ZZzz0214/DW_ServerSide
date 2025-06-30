@@ -131,8 +131,6 @@ public class ErpLiveBroadcastingController {
         // 手动创建导出 demo
         List<ErpLiveBroadcastingExportVO> list = Arrays.asList(
                 ErpLiveBroadcastingExportVO.builder()
-                        .no("示例编号1")
-                        .productName("示例产品")
                         .build()
         );
         // 输出

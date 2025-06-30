@@ -32,9 +32,9 @@ public class ErpLiveBroadcastingInfoDO extends BaseDO {
     private String no;
 
     /**
-     * 客户ID
+     * 客户名称
      */
-    private Long customerId;
+    private String customerName;
 
     /**
      * 客户职位

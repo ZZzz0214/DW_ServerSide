@@ -26,8 +26,8 @@ public class ErpLiveBroadcastingReviewSaveReqVO {
     @Schema(description = "备注信息", example = "备注内容")
     private String remark;
 
-    @Schema(description = "客户ID", example = "1")
-    private Long customerId;
+    @Schema(description = "客户名称", example = "张三")
+    private String customerName;
 
     @Schema(description = "直播平台", example = "抖音")
     private String livePlatform;

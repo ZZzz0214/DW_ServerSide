@@ -179,6 +179,15 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
         if (liveBroadcastingReview != null && !liveBroadcastingReview.getId().equals(id)) {
             throw exception(LIVE_BROADCASTING_REVIEW_NO_EXISTS);
         }
+        
+        // 2. 校验直播货盘编号和客户名称组合唯一性
+        if (reqVO.getLiveBroadcastingId() != null && StrUtil.isNotBlank(reqVO.getCustomerName())) {
+            ErpLiveBroadcastingReviewDO existReview = liveBroadcastingReviewMapper.selectByLiveBroadcastingIdAndCustomerName(
+                    reqVO.getLiveBroadcastingId(), reqVO.getCustomerName(), id);
+            if (existReview != null) {
+                throw exception(LIVE_BROADCASTING_REVIEW_LIVE_BROADCASTING_ID_CUSTOMER_NAME_EXISTS);
+            }
+        }
     }
 
     @Override
@@ -208,13 +217,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
             List<ErpLiveBroadcastingReviewDO> createList = new ArrayList<>();
             List<ErpLiveBroadcastingReviewDO> updateList = new ArrayList<>();
 
-            // 3. 批量查询客户信息
-            Set<String> customerNames = importList.stream()
-                    .map(ErpLiveBroadcastingReviewImportExcelVO::getCustomerName)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-            Map<String, Long> customerIdMap = customerNames.isEmpty() ? Collections.emptyMap() :
-                    convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName, ErpCustomerDO::getId);
+            // 3. 客户名称直接使用，不再查询客户表
 
             // 4. 批量查询直播货盘信息
             Set<String> liveBroadcastingNos = importList.stream()
@@ -236,16 +239,21 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
             for (int i = 0; i < importList.size(); i++) {
                 ErpLiveBroadcastingReviewImportExcelVO importVO = importList.get(i);
 
-                // 转换客户名称为客户ID
-                Long customerId = null;
-                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                    customerId = customerIdMap.get(importVO.getCustomerName());
-                }
+                // 客户名称直接使用，不再需要客户ID
 
                 // 转换货盘编号为货盘ID
                 Long liveBroadcastingId = null;
                 if (StrUtil.isNotBlank(importVO.getLiveBroadcastingNo())) {
                     liveBroadcastingId = liveBroadcastingIdMap.get(importVO.getLiveBroadcastingNo());
+                    // 确保货盘编号存在
+                    if (liveBroadcastingId == null) {
+                        respVO.getFailureNames().put("第" + (i + 1) + "行", "直播货盘编号不存在: " + importVO.getLiveBroadcastingNo());
+                        continue;
+                    }
+                } else {
+                    // 货盘编号不能为空
+                    respVO.getFailureNames().put("第" + (i + 1) + "行", "直播货盘编号不能为空");
+                    continue;
                 }
 
                 // 判断是否支持更新
@@ -254,7 +262,6 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                     // 创建 - 自动生成新的no编号
                     ErpLiveBroadcastingReviewDO review = BeanUtils.toBean(importVO, ErpLiveBroadcastingReviewDO.class);
                     review.setNo(noRedisDAO.generate(ErpNoRedisDAO.LIVE_BROADCASTING_REVIEW_NO_PREFIX));
-                    review.setCustomerId(customerId);
                     review.setLiveBroadcastingId(liveBroadcastingId);
                     createList.add(review);
                     respVO.getCreateNames().add(review.getNo());
@@ -262,7 +269,6 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                     // 更新
                     ErpLiveBroadcastingReviewDO updateReview = BeanUtils.toBean(importVO, ErpLiveBroadcastingReviewDO.class);
                     updateReview.setId(existReview.getId());
-                    updateReview.setCustomerId(customerId);
                     updateReview.setLiveBroadcastingId(liveBroadcastingId);
                     updateList.add(updateReview);
                     respVO.getUpdateNames().add(updateReview.getNo());
@@ -300,13 +306,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
             return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
         }
 
-        // 2. 批量查询客户信息
-        Set<String> customerNames = importList.stream()
-                .map(ErpLiveBroadcastingReviewImportExcelVO::getCustomerName)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toSet());
-        Map<String, Long> customerIdMap = customerNames.isEmpty() ? Collections.emptyMap() :
-                convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName, ErpCustomerDO::getId);
+        // 2. 客户名称直接使用，不再查询客户表
 
         // 3. 批量查询直播货盘信息
         Set<String> liveBroadcastingNos = importList.stream()
@@ -342,25 +342,32 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                     processedNos.add(importVO.getNo());
                 }
 
-                // 5.2 校验客户名称是否存在
-                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                    Long customerId = customerIdMap.get(importVO.getCustomerName());
-                    if (customerId == null) {
-                        allErrors.put(errorKey, "客户名称不存在: " + importVO.getCustomerName());
-                        continue;
-                    }
-                }
+                // 5.2 客户名称直接使用，不再校验
 
                 // 5.3 校验货盘编号是否存在
+                Long liveBroadcastingId = null;
                 if (StrUtil.isNotBlank(importVO.getLiveBroadcastingNo())) {
-                    Long liveBroadcastingId = liveBroadcastingIdMap.get(importVO.getLiveBroadcastingNo());
+                    liveBroadcastingId = liveBroadcastingIdMap.get(importVO.getLiveBroadcastingNo());
                     if (liveBroadcastingId == null) {
                         allErrors.put(errorKey, "直播货盘编号不存在: " + importVO.getLiveBroadcastingNo());
                         continue;
                     }
                 }
 
-                // 5.4 数据转换校验（如果转换失败，记录错误并跳过）
+                // 5.4 校验直播货盘编号和客户名称组合唯一性
+                if (liveBroadcastingId != null && StrUtil.isNotBlank(importVO.getCustomerName())) {
+                    ErpLiveBroadcastingReviewDO existReview = existMap.get(importVO.getNo());
+                    Long excludeId = existReview != null ? existReview.getId() : null;
+                    
+                    ErpLiveBroadcastingReviewDO duplicateReview = liveBroadcastingReviewMapper.selectByLiveBroadcastingIdAndCustomerName(
+                            liveBroadcastingId, importVO.getCustomerName(), excludeId);
+                    if (duplicateReview != null) {
+                        allErrors.put(errorKey, "直播货盘编号和客户名称组合已存在: " + importVO.getLiveBroadcastingNo() + " + " + importVO.getCustomerName());
+                        continue;
+                    }
+                }
+
+                // 5.5 数据转换校验（如果转换失败，记录错误并跳过）
                 try {
                     ErpLiveBroadcastingReviewDO review = BeanUtils.toBean(importVO, ErpLiveBroadcastingReviewDO.class);
                     if (review == null) {
@@ -372,7 +379,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                     continue;
                 }
 
-                // 5.5 判断是新增还是更新，并进行相应校验
+                // 5.6 判断是新增还是更新，并进行相应校验
                 ErpLiveBroadcastingReviewDO existReview = existMap.get(importVO.getNo());
                 if (existReview == null) {
                     // 新增校验：无需额外校验

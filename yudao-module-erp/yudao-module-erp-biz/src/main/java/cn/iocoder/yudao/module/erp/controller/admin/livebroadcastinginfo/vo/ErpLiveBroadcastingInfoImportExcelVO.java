@@ -24,7 +24,8 @@ public class ErpLiveBroadcastingInfoImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("客户名称")
+    @ExcelProperty(value = "客户名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_LIVE_CUSTOMER_NAME)
     @NotBlank(message = "客户名称不能为空")
     private String customerName;
 

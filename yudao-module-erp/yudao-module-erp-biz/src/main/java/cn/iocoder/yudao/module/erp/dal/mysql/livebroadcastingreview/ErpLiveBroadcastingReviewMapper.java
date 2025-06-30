@@ -4,6 +4,7 @@ package cn.iocoder.yudao.module.erp.dal.mysql.livebroadcastingreview;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo.ErpLiveBroadcastingReviewRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcasting.ErpLiveBroadcastingDO;
@@ -39,7 +40,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getNo, ErpLiveBroadcastingReviewRespVO::getNo)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveBroadcastingId, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingId)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRemark, ErpLiveBroadcastingReviewRespVO::getRemark)
-                .selectAs(ErpLiveBroadcastingReviewDO::getCustomerId, ErpLiveBroadcastingReviewRespVO::getCustomerId)
+                .selectAs(ErpLiveBroadcastingReviewDO::getCustomerName, ErpLiveBroadcastingReviewRespVO::getCustomerName)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLivePlatform, ErpLiveBroadcastingReviewRespVO::getLivePlatform)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveCommission, ErpLiveBroadcastingReviewRespVO::getLiveCommission)
                 .selectAs(ErpLiveBroadcastingReviewDO::getPublicCommission, ErpLiveBroadcastingReviewRespVO::getPublicCommission)
@@ -80,15 +81,12 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingDO::getPublicCommission, ErpLiveBroadcastingReviewRespVO::getPublicCommission)
                 .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingReviewRespVO::getLiveStatus);
 
-        // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingReviewDO::getCustomerId);
-        
-        // 添加客户查询条件
+        // 客户名称直接使用，不再联表查询客户信息
         if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
-            query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
+            query.like(ErpLiveBroadcastingReviewDO::getCustomerName, reqVO.getCustomerName());
         }
         
-        query.selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
+        query.selectAs(ErpLiveBroadcastingReviewDO::getCustomerName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpLiveBroadcastingReviewRespVO.class, query);
     }
@@ -110,7 +108,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getNo, ErpLiveBroadcastingReviewRespVO::getNo)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveBroadcastingId, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingId)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRemark, ErpLiveBroadcastingReviewRespVO::getRemark)
-                .selectAs(ErpLiveBroadcastingReviewDO::getCustomerId, ErpLiveBroadcastingReviewRespVO::getCustomerId)
+                .selectAs(ErpLiveBroadcastingReviewDO::getCustomerName, ErpLiveBroadcastingReviewRespVO::getCustomerName)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLivePlatform, ErpLiveBroadcastingReviewRespVO::getLivePlatform)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveCommission, ErpLiveBroadcastingReviewRespVO::getLiveCommission)
                 .selectAs(ErpLiveBroadcastingReviewDO::getPublicCommission, ErpLiveBroadcastingReviewRespVO::getPublicCommission)
@@ -133,9 +131,8 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingReviewRespVO::getLiveStatus);
 
-        // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpLiveBroadcastingReviewDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
+        // 客户名称直接使用，不再联表查询客户信息
+        query.selectAs(ErpLiveBroadcastingReviewDO::getCustomerName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
 
         return selectJoinList(ErpLiveBroadcastingReviewRespVO.class, query);
     }
@@ -146,5 +143,15 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
 
     default void insertBatch(List<ErpLiveBroadcastingReviewDO> list) {
         list.forEach(this::insert);
+    }
+
+    /**
+     * 根据直播货盘ID和客户名称查询记录（用于校验组合唯一性）
+     */
+    default ErpLiveBroadcastingReviewDO selectByLiveBroadcastingIdAndCustomerName(Long liveBroadcastingId, String customerName, Long excludeId) {
+        return selectOne(new LambdaQueryWrapperX<ErpLiveBroadcastingReviewDO>()
+                .eq(ErpLiveBroadcastingReviewDO::getLiveBroadcastingId, liveBroadcastingId)
+                .eq(ErpLiveBroadcastingReviewDO::getCustomerName, customerName)
+                .neIfPresent(ErpLiveBroadcastingReviewDO::getId, excludeId));
     }
 }

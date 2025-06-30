@@ -45,9 +45,9 @@ public class ErpLiveBroadcastingReviewDO extends BaseDO {
     private String remark;
 
     /**
-     * 客户ID
+     * 客户名称
      */
-    private Long customerId;
+    private String customerName;
 
     /**
      * 直播平台

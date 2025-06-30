@@ -20,10 +20,9 @@ public class ErpLiveBroadcastingInfoExportVO {
     @ExcelProperty("编号")
     private String no;
 
-
-
     @Schema(description = "客户名称", example = "张三")
-    @ExcelProperty("客户名称")
+    @ExcelProperty(value = "客户名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_LIVE_CUSTOMER_NAME)
     private String customerName;
 
     @Schema(description = "客户职位", example = "运营总监")

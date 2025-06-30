@@ -16,9 +16,9 @@ public class ErpLiveBroadcastingInfoSaveReqVO {
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "ZBXX001")
     private String no;
 
-    @Schema(description = "客户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "客户ID不能为空")
-    private Long customerId;
+    @Schema(description = "客户名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
+    @NotNull(message = "客户名称不能为空")
+    private String customerName;
 
     @Schema(description = "客户职位", example = "运营总监")
     private String customerPosition;

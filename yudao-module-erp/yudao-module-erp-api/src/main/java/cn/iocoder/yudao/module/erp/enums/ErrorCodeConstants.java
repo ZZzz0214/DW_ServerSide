@@ -400,6 +400,7 @@ public interface ErrorCodeConstants {
     ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_118_010, "第{}行的客户名称({})不存在");
     ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_118_011, "第{}行的直播复盘编号({})已存在，且不支持更新");
     ErrorCode LIVE_BROADCASTING_REVIEW_IMPORT_NO_PERMISSION = new ErrorCode(1_030_118_012, "第{}行的直播复盘编号({})无权限修改");
+    ErrorCode LIVE_BROADCASTING_REVIEW_LIVE_BROADCASTING_ID_CUSTOMER_NAME_EXISTS = new ErrorCode(1_030_118_013, "直播货盘编号和客户名称组合已存在");
 
     // ========== ERP 直播信息（1-030-119-000） ==========
     ErrorCode LIVE_BROADCASTING_INFO_NOT_EXISTS = new ErrorCode(1_030_119_000, "直播信息不存在");
