@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.inventory.vo;
 
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,12 +21,9 @@ public class ErpInventoryImportExcelVO {
     @ExcelProperty("产品编号")
     private String productNo;
 
-    @ExcelProperty("现货库存")
+    @ExcelProperty(value = "现货库存", converter = IntegerConvert.class)
     private Integer spotInventory;
-
-    @ExcelProperty("剩余库存")
-    private Integer remainingInventory;
 
     @ExcelProperty("备注信息")
     private String remark;
-} 
+}

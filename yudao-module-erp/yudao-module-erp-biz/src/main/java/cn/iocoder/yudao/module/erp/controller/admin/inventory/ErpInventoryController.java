@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.inventory.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.inventory.ErpInventoryDO;
@@ -119,7 +120,7 @@ public class ErpInventoryController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpInventoryImportExcelVO> list = ExcelUtils.read(inputStream, ErpInventoryImportExcelVO.class);
+            List<ErpInventoryImportExcelVO> list = ExcelUtils.read(inputStream, ErpInventoryImportExcelVO.class, new RowIndexListener<>());
             return success(inventoryService.importInventoryList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
@@ -131,11 +132,7 @@ public class ErpInventoryController {
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
         List<ErpInventoryExportVO> list = Arrays.asList(
-                ErpInventoryExportVO.builder()
-                        .no("示例库存1")
-                        .productNo("SP001")
-                        .spotInventory(100)
-                        .remark("示例备注（剩余库存由系统自动计算）").build()
+                ErpInventoryExportVO.builder().build()
         );
         // 输出
         ExcelUtils.write(response, "库存导入模板.xls", "库存列表", ErpInventoryExportVO.class, list);

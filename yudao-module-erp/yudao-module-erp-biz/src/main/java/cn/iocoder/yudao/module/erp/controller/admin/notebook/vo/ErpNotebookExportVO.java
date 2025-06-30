@@ -25,7 +25,7 @@ public class ErpNotebookExportVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("图片列表")
+    @ExcelProperty("图片")
     private String images;
 
     @ExcelProperty("任务名称")

@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.notebook.vo.*;
 import cn.iocoder.yudao.module.erp.service.notebook.ErpNotebookService;
@@ -115,7 +116,7 @@ public class ErpNotebookController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpNotebookImportExcelVO> list = ExcelUtils.read(inputStream, ErpNotebookImportExcelVO.class);
+            List<ErpNotebookImportExcelVO> list = ExcelUtils.read(inputStream, ErpNotebookImportExcelVO.class, new RowIndexListener<>());
             return success(notebookService.importNotebookList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
@@ -128,11 +129,6 @@ public class ErpNotebookController {
         // 手动创建导出 demo
         List<ErpNotebookExportVO> list = Arrays.asList(
                 ErpNotebookExportVO.builder()
-                        .no("示例编号1")
-                        .taskName("示例任务")
-                        .taskStatus(1)
-                        .taskPerson("张三")
-                        .remark("示例备注")
                         .build()
         );
         // 输出

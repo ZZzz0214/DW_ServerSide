@@ -20,9 +20,6 @@ public class ErpNotebookImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("图片列表")
-    private String images;
-
     @ExcelProperty("任务名称")
     private String taskName;
 
