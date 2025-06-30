@@ -1,7 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateTimeConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
@@ -23,9 +26,6 @@ public class ErpGroupBuyingImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("产品图片")
-    private String productImage;
-
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
@@ -39,40 +39,37 @@ public class ErpGroupBuyingImportExcelVO {
     @ExcelProperty("产品SKU")
     private String productSku;
 
-    @ExcelProperty("市场价格")
+    @ExcelProperty(value = "市场价格", converter = BigDecimalConvert.class)
     private BigDecimal marketPrice;
 
-    @ExcelProperty("保质日期")
+    @ExcelProperty(value = "保质日期", converter = LocalDateTimeConvert.class)
     private LocalDateTime shelfLife;
 
-    @ExcelProperty("产品库存")
+    @ExcelProperty(value = "产品库存", converter = IntegerConvert.class)
     private Integer productStock;
 
     @ExcelProperty("备注信息")
     private String remark;
 
-    @ExcelProperty("核心价格")
+    @ExcelProperty(value = "核心价格", converter = BigDecimalConvert.class)
     private BigDecimal corePrice;
 
-    @ExcelProperty("分发价格")
+    @ExcelProperty(value = "分发价格", converter = BigDecimalConvert.class)
     private BigDecimal distributionPrice;
 
-    @ExcelProperty("供团价格")
+    @ExcelProperty(value = "供团价格", converter = BigDecimalConvert.class)
     private BigDecimal supplyGroupPrice;
 
-    @ExcelProperty("帮卖佣金")
+    @ExcelProperty(value = "帮卖佣金", converter = BigDecimalConvert.class)
     private BigDecimal sellingCommission;
 
-    @ExcelProperty("开团价格")
+    @ExcelProperty(value = "开团价格", converter = BigDecimalConvert.class)
     private BigDecimal groupPrice;
-
-    @ExcelProperty("渠道毛利")
-    private BigDecimal channelProfit;
 
     @ExcelProperty("开团机制")
     private String groupMechanism;
 
-    @ExcelProperty("快递费用")
+    @ExcelProperty(value = "快递费用", converter = BigDecimalConvert.class)
     private BigDecimal expressFee;
 
     @ExcelProperty("天猫京东")

@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.ErpGroupBuyingReviewImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.ErpGroupBuyingReviewImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.ErpGroupBuyingReviewPageReqVO;
@@ -194,28 +195,20 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据转换
-        List<ErpGroupBuyingReviewDO> createList = new ArrayList<>();
-        List<ErpGroupBuyingReviewDO> updateList = new ArrayList<>();
-
         try {
-            // 批量查询团购货盘信息
-            Set<String> groupBuyingNos = importList.stream()
-                    .map(ErpGroupBuyingReviewImportExcelVO::getGroupBuyingId)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-            Map<String, Long> groupBuyingIdMap = groupBuyingNos.isEmpty() ? Collections.emptyMap() :
-                    convertMap(groupBuyingMapper.selectListByNoIn(groupBuyingNos), ErpGroupBuyingDO::getNo, ErpGroupBuyingDO::getId);
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importList, isUpdateSupport, currentUsername);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
 
-            // 批量查询客户信息
-            Set<String> customerNames = importList.stream()
-                    .map(ErpGroupBuyingReviewImportExcelVO::getCustomerName)
-                    .filter(StrUtil::isNotBlank)
-                    .collect(Collectors.toSet());
-            Map<String, Long> customerIdMap = customerNames.isEmpty() ? Collections.emptyMap() :
-                    convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName, ErpCustomerDO::getId);
+            // 2. 批量处理
+            List<ErpGroupBuyingReviewDO> createList = new ArrayList<>();
+            List<ErpGroupBuyingReviewDO> updateList = new ArrayList<>();
 
-            // 批量查询已存在的记录
+            // 3. 批量查询已存在的记录
             Set<String> noSet = importList.stream()
                     .map(ErpGroupBuyingReviewImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -223,83 +216,29 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
             Map<String, ErpGroupBuyingReviewDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(groupBuyingReviewMapper.selectListByNoIn(noSet), ErpGroupBuyingReviewDO::getNo);
 
-            // 用于跟踪Excel内部重复的编号
-            Set<String> processedNos = new HashSet<>();
-
-            // 批量转换数据
+            // 4. 批量转换和保存数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpGroupBuyingReviewImportExcelVO importVO = importList.get(i);
-                try {
-                    // 检查Excel内部编号重复
-                    if (StrUtil.isNotBlank(importVO.getNo())) {
-                        if (processedNos.contains(importVO.getNo())) {
-                            throw exception(GROUP_BUYING_REVIEW_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
-                        }
-                        processedNos.add(importVO.getNo());
-                    }
 
-                    // 将团购货盘编号转换为团购货盘ID
-                    if (StrUtil.isNotBlank(importVO.getGroupBuyingId())) {
-                        Long groupBuyingId = groupBuyingIdMap.get(importVO.getGroupBuyingId());
-                        if (groupBuyingId == null) {
-                            throw exception(GROUP_BUYING_REVIEW_IMPORT_GROUP_BUYING_NOT_EXISTS, i + 1, importVO.getGroupBuyingId());
-                        }
-                        importVO.setGroupBuyingId(groupBuyingId.toString());
-                    }
+                // 数据转换
+                ErpGroupBuyingReviewDO groupBuyingReview = BeanUtils.toBean(importVO, ErpGroupBuyingReviewDO.class);
 
-                    // 将客户名称转换为客户ID
-                    Long customerId = null;
-                    if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                        customerId = customerIdMap.get(importVO.getCustomerName());
-                        if (customerId == null) {
-                            throw exception(GROUP_BUYING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS, i + 1, importVO.getCustomerName());
-                        }
-                    }
-
-                    // 判断是否支持更新
-                    ErpGroupBuyingReviewDO existGroupBuyingReview = existMap.get(importVO.getNo());
-                    if (existGroupBuyingReview == null) {
-                        // 创建 - 自动生成新的no编号
-                        ErpGroupBuyingReviewDO groupBuyingReview = BeanUtils.toBean(importVO, ErpGroupBuyingReviewDO.class);
-                        groupBuyingReview.setNo(noRedisDAO.generate(ErpNoRedisDAO.GROUP_BUYING_REVIEW_NO_PREFIX));
-                        // 转换字段类型
-                        if (StrUtil.isNotBlank(importVO.getGroupBuyingId())) {
-                            groupBuyingReview.setGroupBuyingId(Long.parseLong(importVO.getGroupBuyingId()));
-                        }
-                        if (customerId != null) {
-                            groupBuyingReview.setCustomerId(customerId);
-                        }
-                        createList.add(groupBuyingReview);
-                        respVO.getCreateNames().add(groupBuyingReview.getNo());
-                    } else if (isUpdateSupport) {
-                        // 更新 - 检查权限
-                        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(existGroupBuyingReview.getCreator(), currentUsername)) {
-                            throw exception(GROUP_BUYING_REVIEW_IMPORT_NO_PERMISSION, i + 1, importVO.getNo());
-                        }
-                        ErpGroupBuyingReviewDO updateGroupBuyingReview = BeanUtils.toBean(importVO, ErpGroupBuyingReviewDO.class);
-                        updateGroupBuyingReview.setId(existGroupBuyingReview.getId());
-                        // 转换字段类型
-                        if (StrUtil.isNotBlank(importVO.getGroupBuyingId())) {
-                            updateGroupBuyingReview.setGroupBuyingId(Long.parseLong(importVO.getGroupBuyingId()));
-                        }
-                        if (customerId != null) {
-                            updateGroupBuyingReview.setCustomerId(customerId);
-                        }
-                        updateList.add(updateGroupBuyingReview);
-                        respVO.getUpdateNames().add(updateGroupBuyingReview.getNo());
-                    } else {
-                        throw exception(GROUP_BUYING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 判断是新增还是更新
+                ErpGroupBuyingReviewDO existGroupBuyingReview = existMap.get(importVO.getNo());
+                if (existGroupBuyingReview == null) {
+                    // 创建 - 自动生成新的no编号
+                    groupBuyingReview.setNo(noRedisDAO.generate(ErpNoRedisDAO.GROUP_BUYING_REVIEW_NO_PREFIX));
+                    createList.add(groupBuyingReview);
+                    respVO.getCreateNames().add(groupBuyingReview.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新
+                    groupBuyingReview.setId(existGroupBuyingReview.getId());
+                    updateList.add(groupBuyingReview);
+                    respVO.getUpdateNames().add(groupBuyingReview.getNo());
                 }
             }
 
-            // 批量保存到数据库
+            // 5. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 groupBuyingReviewMapper.insertBatch(createList);
             }
@@ -308,8 +247,169 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
+    }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpGroupBuyingReviewImportExcelVO> importList, boolean isUpdateSupport, String currentUsername) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpGroupBuyingReviewImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, ErpGroupBuyingReviewDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(groupBuyingReviewMapper.selectListByNoIn(noSet), ErpGroupBuyingReviewDO::getNo);
+
+        // 3. 批量查询团购货盘信息
+        Set<String> groupBuyingNos = importList.stream()
+                .map(ErpGroupBuyingReviewImportExcelVO::getGroupBuyingId)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, Long> groupBuyingIdMap = groupBuyingNos.isEmpty() ? Collections.emptyMap() :
+                convertMap(groupBuyingMapper.selectListByNoIn(groupBuyingNos), ErpGroupBuyingDO::getNo, ErpGroupBuyingDO::getId);
+
+        // 4. 批量查询客户信息
+        Set<String> customerNames = importList.stream()
+                .map(ErpGroupBuyingReviewImportExcelVO::getCustomerName)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, Long> customerIdMap = customerNames.isEmpty() ? Collections.emptyMap() :
+                convertMap(customerMapper.selectListByNameIn(customerNames), ErpCustomerDO::getName, ErpCustomerDO::getId);
+
+        // 用于跟踪Excel内部重复的编号
+        Set<String> processedNos = new HashSet<>();
+
+        // 5. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpGroupBuyingReviewImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
+
+            try {
+                // 5.1 基础数据校验
+                if (StrUtil.isBlank(importVO.getGroupBuyingId())) {
+                    allErrors.put(errorKey, "团购货盘编号不能为空");
+                    continue;
+                }
+
+                // 5.2 检查Excel内部编号重复
+                if (StrUtil.isNotBlank(importVO.getNo())) {
+                    if (processedNos.contains(importVO.getNo())) {
+                        allErrors.put(errorKey, "团购复盘编号重复: " + importVO.getNo());
+                        continue;
+                    }
+                    processedNos.add(importVO.getNo());
+                }
+
+                // 5.3 校验团购货盘是否存在
+                if (StrUtil.isNotBlank(importVO.getGroupBuyingId())) {
+                    Long groupBuyingId = groupBuyingIdMap.get(importVO.getGroupBuyingId());
+                    if (groupBuyingId == null) {
+                        allErrors.put(errorKey, "团购货盘不存在: " + importVO.getGroupBuyingId());
+                        continue;
+                    }
+                }
+
+                // 5.4 校验客户是否存在
+                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                    Long customerId = customerIdMap.get(importVO.getCustomerName());
+                    if (customerId == null) {
+                        allErrors.put(errorKey, "客户不存在: " + importVO.getCustomerName());
+                        continue;
+                    }
+                }
+
+                // 5.5 数据转换校验（如果转换失败，记录错误并跳过）
+                try {
+                    ErpGroupBuyingReviewDO groupBuyingReview = BeanUtils.toBean(importVO, ErpGroupBuyingReviewDO.class);
+                    if (groupBuyingReview == null) {
+                        allErrors.put(errorKey, "数据转换失败");
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    allErrors.put(errorKey, "数据转换异常: " + ex.getMessage());
+                    continue;
+                }
+
+                // 5.6 判断是新增还是更新，并进行相应校验
+                ErpGroupBuyingReviewDO existGroupBuyingReview = existMap.get(importVO.getNo());
+                if (existGroupBuyingReview == null) {
+                    // 新增校验：可以添加其他业务校验逻辑
+                } else if (!isUpdateSupport) {
+                    // 更新校验：如果不支持更新，记录错误
+                    allErrors.put(errorKey, "团购复盘编号已存在且不支持更新: " + importVO.getNo());
+                    continue;
+                } else {
+                    // 更新权限校验
+                    if (!"admin".equals(currentUsername) && !ObjectUtil.equal(existGroupBuyingReview.getCreator(), currentUsername)) {
+                        allErrors.put(errorKey, "无权限更新此记录: " + importVO.getNo());
+                        continue;
+                    }
+                }
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "校验异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 校验数据类型错误
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpGroupBuyingReviewImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取团购复盘编号 - 修复行号索引问题
+                String groupBuyingReviewNo = "未知编号";
+                // ConversionErrorHolder中的行号是从1开始的，数组索引是从0开始的
+                // 所以需要减1来访问数组，但要确保索引有效
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpGroupBuyingReviewImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        groupBuyingReviewNo = importVO.getNo();
+                    }
+                }
+
+                // 行号显示，RowIndexListener已经设置为从1开始，直接使用
+                String errorKey = "第" + rowIndex + "行(" + groupBuyingReviewNo + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
     }
 }

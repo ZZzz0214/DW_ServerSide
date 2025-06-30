@@ -269,11 +269,12 @@ public interface ErrorCodeConstants {
     // ========== ERP 团购货盘（1-030-111-000） ==========
     ErrorCode GROUP_BUYING_NOT_EXISTS = new ErrorCode(1_030_111_000, "团购货盘不存在");
     ErrorCode GROUP_BUYING_NO_EXISTS = new ErrorCode(1_030_111_001, "团购货盘编号已存在");
-    ErrorCode GROUP_BUYING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_111_002, "团购货盘({})已审核，无法修改");
-    ErrorCode GROUP_BUYING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_111_003, "团购货盘({})已审核，无法删除");
-    ErrorCode GROUP_BUYING_NOT_APPROVE = new ErrorCode(1_030_111_004, "团购货盘未审核，无法操作");
-    ErrorCode GROUP_BUYING_APPROVE_FAIL = new ErrorCode(1_030_111_005, "审核失败，只有未审核的团购货盘才能审核");
-    ErrorCode GROUP_BUYING_PROCESS_FAIL = new ErrorCode(1_030_111_006, "反审核失败，只有已审核的团购货盘才能反审核");
+    ErrorCode GROUP_BUYING_PRODUCT_NAME_DUPLICATE = new ErrorCode(1_030_111_002, "团购货盘产品名称({})已存在");
+    ErrorCode GROUP_BUYING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_111_003, "团购货盘({})已审核，无法修改");
+    ErrorCode GROUP_BUYING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_111_004, "团购货盘({})已审核，无法删除");
+    ErrorCode GROUP_BUYING_NOT_APPROVE = new ErrorCode(1_030_111_005, "团购货盘未审核，无法操作");
+    ErrorCode GROUP_BUYING_APPROVE_FAIL = new ErrorCode(1_030_111_006, "审核失败，只有未审核的团购货盘才能审核");
+    ErrorCode GROUP_BUYING_PROCESS_FAIL = new ErrorCode(1_030_111_007, "反审核失败，只有已审核的团购货盘才能反审核");
 
     // ========== ERP 团购货盘导入（1-030-111-007） ==========
     ErrorCode GROUP_BUYING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_111_007, "导入团购货盘数据不能为空");

@@ -72,6 +72,14 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
         return selectList(ErpGroupBuyingDO::getNo, nos);
     }
 
+    default ErpGroupBuyingDO selectByProductName(String productName) {
+        return selectOne(ErpGroupBuyingDO::getProductName, productName);
+    }
+
+    default List<ErpGroupBuyingDO> selectListByProductNameIn(Collection<String> productNames) {
+        return selectList(ErpGroupBuyingDO::getProductName, productNames);
+    }
+
     default void insertBatch(List<ErpGroupBuyingDO> list) {
         list.forEach(this::insert);
     }

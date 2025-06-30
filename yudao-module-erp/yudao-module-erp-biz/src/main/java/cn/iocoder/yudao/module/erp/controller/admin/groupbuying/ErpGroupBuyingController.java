@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingExportVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo.ErpGroupBuyingImportExcelVO;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +42,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/erp/group-buying")
 @Validated
+@Slf4j
 public class ErpGroupBuyingController {
 
     @Resource
@@ -121,10 +124,12 @@ public class ErpGroupBuyingController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpGroupBuyingImportExcelVO> list = ExcelUtils.read(inputStream, ErpGroupBuyingImportExcelVO.class);
+            List<ErpGroupBuyingImportExcelVO> list = ExcelUtils.read(inputStream, ErpGroupBuyingImportExcelVO.class, new RowIndexListener<>());
             return success(groupBuyingService.importGroupBuyingList(list, updateSupport));
         } catch (Exception e) {
-            throw new RuntimeException("导入失败: " + e.getMessage());
+            // 记录详细错误信息
+            log.error("导入团购货盘失败", e);
+            throw new RuntimeException("导入失败: " + e.getMessage(), e);
         }
     }
 

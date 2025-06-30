@@ -51,15 +51,6 @@ public class BigDecimalConvert implements Converter<BigDecimal> {
             return null;
         }
         
-        // 如果单元格包含错误，返回null并记录错误
-        if (readCellData.getType() == CellDataTypeEnum.ERROR) {
-            log.warn("[BigDecimalConvert] 单元格包含错误，返回null");
-            String errorMsg = String.format("字段[%s]的单元格包含错误", fieldName);
-            int rowIndex = getRowIndexFromReadCellData(readCellData);
-            ConversionErrorHolder.addError(fieldName, "错误单元格", errorMsg, rowIndex);
-            return null;
-        }
-        
         // 处理NUMBER类型的单元格
         if (readCellData.getType() == CellDataTypeEnum.NUMBER) {
             Number numberValue = readCellData.getNumberValue();
@@ -105,38 +96,30 @@ public class BigDecimalConvert implements Converter<BigDecimal> {
         }
 
         // 其他类型，尝试转换为字符串再处理
+        String stringValue = readCellData.getStringValue();
+        log.info("[BigDecimalConvert] 其他类型单元格值: '{}'", stringValue);
+        
+        if (StrUtil.isBlank(stringValue)) {
+            log.info("[BigDecimalConvert] 其他类型字符串为空，返回null");
+            return null;
+        }
+        
         try {
-            String stringValue = readCellData.getStringValue();
-            log.info("[BigDecimalConvert] 其他类型单元格值: '{}'", stringValue);
+            BigDecimal result = new BigDecimal(stringValue.trim());
+            log.info("[BigDecimalConvert] 其他类型转换成功: '{}' -> {}", stringValue, result);
+            return result;
+        } catch (NumberFormatException e) {
+            // 记录错误信息，但不抛出异常，返回null让后续处理
+            String errorMsg = String.format("字段[%s]的值[%s]不是有效的数字格式", fieldName, stringValue);
+            log.warn("[convertToJavaData]{}", errorMsg);
             
-            if (StrUtil.isBlank(stringValue)) {
-                log.info("[BigDecimalConvert] 其他类型字符串为空，返回null");
-                return null;
-            }
-            
-            try {
-                BigDecimal result = new BigDecimal(stringValue.trim());
-                log.info("[BigDecimalConvert] 其他类型转换成功: '{}' -> {}", stringValue, result);
-                return result;
-            } catch (NumberFormatException e) {
-                // 记录错误信息，但不抛出异常，返回null让后续处理
-                String errorMsg = String.format("字段[%s]的值[%s]不是有效的数字格式", fieldName, stringValue);
-                log.warn("[convertToJavaData]{}", errorMsg);
-                
-                // 尝试从ReadCellData中获取行号信息
-                int rowIndex = getRowIndexFromReadCellData(readCellData);
-                
-                // 将错误信息存储到ThreadLocal中，供后续处理使用
-                ConversionErrorHolder.addError(fieldName, stringValue, errorMsg, rowIndex);
-                
-                // 返回null，不抛出异常
-                return null;
-            }
-        } catch (Exception e) {
-            log.warn("[BigDecimalConvert] 无法获取其他类型单元格的字符串值: {}", e.getMessage());
-            String errorMsg = String.format("字段[%s]无法转换为字符串: %s", fieldName, e.getMessage());
+            // 尝试从ReadCellData中获取行号信息
             int rowIndex = getRowIndexFromReadCellData(readCellData);
-            ConversionErrorHolder.addError(fieldName, "无法转换", errorMsg, rowIndex);
+            
+            // 将错误信息存储到ThreadLocal中，供后续处理使用
+            ConversionErrorHolder.addError(fieldName, stringValue, errorMsg, rowIndex);
+            
+            // 返回null，不抛出异常
             return null;
         }
     }
@@ -154,16 +137,6 @@ public class BigDecimalConvert implements Converter<BigDecimal> {
      * 尝试从ReadCellData中获取行号信息
      */
     private int getRowIndexFromReadCellData(ReadCellData readCellData) {
-        // 优先使用ConversionErrorHolder中的当前行号，这是最可靠的
-        int currentRowIndex = ConversionErrorHolder.getCurrentRowIndex();
-        log.debug("[BigDecimalConvert] 使用ConversionErrorHolder中的当前行号: {}", currentRowIndex);
-        
-        // 如果当前行号有效（大于0），直接使用
-        if (currentRowIndex > 0) {
-            return currentRowIndex;
-        }
-        
-        // 如果当前行号无效，尝试从ReadCellData中获取
         try {
             // 尝试通过反射获取行号信息
             java.lang.reflect.Field rowIndexField = readCellData.getClass().getDeclaredField("rowIndex");
@@ -172,18 +145,17 @@ public class BigDecimalConvert implements Converter<BigDecimal> {
             if (rowIndexObj instanceof Integer) {
                 int rowIndex = (Integer) rowIndexObj;
                 // EasyExcel的行号从0开始，转换为从1开始
-                int convertedRowIndex = rowIndex + 1;
-                log.debug("[BigDecimalConvert] 从ReadCellData获取行号: {} -> {}", rowIndex, convertedRowIndex);
-                return convertedRowIndex;
+                return rowIndex + 1;
             }
         } catch (Exception e) {
-            // 如果无法获取行号，记录日志
-            log.debug("[BigDecimalConvert] 无法从ReadCellData获取行号: {}", e.getMessage());
+            // 如果无法获取行号，使用当前设置的行号
+            log.debug("无法从ReadCellData获取行号，使用当前设置的行号: {}", e.getMessage());
         }
-
-        // 如果都无法获取，返回1作为默认值（避免返回0）
-        log.warn("[BigDecimalConvert] 无法获取行号，使用默认值1");
-        return 1;
+        
+        // 如果无法获取行号，使用当前设置的行号
+        int currentRowIndex = ConversionErrorHolder.getCurrentRowIndex();
+        log.debug("使用ConversionErrorHolder中的当前行号: {}", currentRowIndex);
+        return currentRowIndex;
     }
 
 } 
