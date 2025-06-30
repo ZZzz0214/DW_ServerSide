@@ -47,7 +47,7 @@ public class ErpGroupBuyingReviewRespVO {
     private String customerName;
 
     @Schema(description = "客户ID", example = "1")
-    private Long customerId;
+    private String customerId;
 
     @Schema(description = "供团价格", example = "100.00")
     @ExcelProperty("供团价格")
@@ -93,8 +93,8 @@ public class ErpGroupBuyingReviewRespVO {
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
-    @Schema(description = "团购货盘表ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    private Long groupBuyingId;
+    @Schema(description = "团购货盘表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "GB001")
+    private String groupBuyingId;
 
     @Schema(description = "团购货盘表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private String groupBuyingNo;

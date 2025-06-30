@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo.*;
@@ -147,9 +148,11 @@ public class ErpGroupBuyingReviewController {
                                                                                        @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
-        List<ErpGroupBuyingReviewImportExcelVO> list = ExcelUtils.read(file, ErpGroupBuyingReviewImportExcelVO.class);
-        return success(groupBuyingReviewService.importGroupBuyingReviewList(list, updateSupport, currentUsername));
-    }
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpGroupBuyingReviewImportExcelVO> list = ExcelUtils.read(inputStream, ErpGroupBuyingReviewImportExcelVO.class, new RowIndexListener<>());
+            return success(groupBuyingReviewService.importGroupBuyingReviewList(list, updateSupport, currentUsername));
+        }
+        }
 
     @GetMapping("/get-import-template")
     @Operation(summary = "获得导入团购复盘模板")

@@ -298,6 +298,7 @@ public interface ErrorCodeConstants {
     ErrorCode GROUP_BUYING_REVIEW_IMPORT_CUSTOMER_NOT_EXISTS = new ErrorCode(1_030_112_010, "第{}行的客户名称({})不存在");
     ErrorCode GROUP_BUYING_REVIEW_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_112_011, "第{}行的团购复盘编号({})已存在，且不支持更新");
     ErrorCode GROUP_BUYING_REVIEW_IMPORT_NO_PERMISSION = new ErrorCode(1_030_112_012, "第{}行的团购复盘编号({})无权限修改");
+    ErrorCode GROUP_BUYING_REVIEW_GROUP_BUYING_CUSTOMER_DUPLICATE = new ErrorCode(1_030_112_013, "团购货盘和客户名称组合已存在");
 
     // ========== ERP 团购信息（1-030-113-000） ==========
     ErrorCode GROUP_BUYING_INFO_NOT_EXISTS = new ErrorCode(1_030_113_000, "团购信息不存在");

@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.groupbuyingreview;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
@@ -27,12 +28,12 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
                 .likeIfPresent(ErpGroupBuyingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getCreateTime, reqVO.getCreateTime());
-        
+
         // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
         if (!"admin".equals(currentUsername)) {
             query.eq(ErpGroupBuyingReviewDO::getCreator, currentUsername);
         }
-        
+
         query.orderByDesc(ErpGroupBuyingReviewDO::getId)
                 // 团购复盘表字段映射
                 .selectAs(ErpGroupBuyingReviewDO::getId, ErpGroupBuyingReviewRespVO::getId)
@@ -51,8 +52,8 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getCreateTime, ErpGroupBuyingReviewRespVO::getCreateTime);
 
         // 联表查询团购货盘信息
-        query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getId, ErpGroupBuyingReviewDO::getGroupBuyingId);
-        
+        query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewDO::getGroupBuyingId);
+
         // 团购货盘搜索条件
         if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
             query.like(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName());
@@ -69,7 +70,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
         if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
             query.eq(ErpGroupBuyingDO::getStatus, reqVO.getStatus());
         }
-        
+
         query.selectAs(ErpGroupBuyingDO::getBrandName, ErpGroupBuyingReviewRespVO::getBrandName)
                 .selectAs(ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewRespVO::getGroupBuyingNo)
                 .selectAs(ErpGroupBuyingDO::getProductName, ErpGroupBuyingReviewRespVO::getProductName)
@@ -80,13 +81,13 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus);
 
         // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpGroupBuyingReviewDO::getCustomerId);
-        
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getName, ErpGroupBuyingReviewDO::getCustomerId);
+
         // 客户名称搜索条件
         if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
             query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
         }
-        
+
         query.selectAs(ErpCustomerDO::getName, ErpGroupBuyingReviewRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpGroupBuyingReviewRespVO.class, query);
@@ -125,7 +126,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getCreateTime, ErpGroupBuyingReviewRespVO::getCreateTime);
 
         // 联表查询团购货盘信息
-        query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getId, ErpGroupBuyingReviewDO::getGroupBuyingId)
+        query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewDO::getGroupBuyingId)
                 .selectAs(ErpGroupBuyingDO::getBrandName, ErpGroupBuyingReviewRespVO::getBrandName)
                 .selectAs(ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewRespVO::getGroupBuyingNo)
                 .selectAs(ErpGroupBuyingDO::getProductName, ErpGroupBuyingReviewRespVO::getProductName)
@@ -136,7 +137,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingDO::getExpressFee, ErpGroupBuyingReviewRespVO::getExpressFee);
 
         // 联表查询客户信息
-        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpGroupBuyingReviewDO::getCustomerId)
+        query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getName, ErpGroupBuyingReviewDO::getCustomerId)
                 .selectAs(ErpCustomerDO::getName, ErpGroupBuyingReviewRespVO::getCustomerName);
 
         return selectJoinList(ErpGroupBuyingReviewRespVO.class, query);
@@ -144,5 +145,30 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
 
     default void insertBatch(List<ErpGroupBuyingReviewDO> list) {
         list.forEach(this::insert);
+    }
+
+    default ErpGroupBuyingReviewDO selectByGroupBuyingIdAndCustomerId(String groupBuyingId, String customerId) {
+        return selectOne(new MPJLambdaWrapperX<ErpGroupBuyingReviewDO>()
+                .eq(ErpGroupBuyingReviewDO::getGroupBuyingId, groupBuyingId)
+                .eq(ErpGroupBuyingReviewDO::getCustomerId, customerId));
+    }
+
+    /**
+     * 根据团购货盘ID和客户ID查询记录，排除指定ID的记录（用于更新时的重复校验）
+     */
+    default ErpGroupBuyingReviewDO selectByGroupBuyingIdAndCustomerIdExcludeId(String groupBuyingId, String customerId, Long excludeId) {
+        return selectOne(new MPJLambdaWrapperX<ErpGroupBuyingReviewDO>()
+                .eq(ErpGroupBuyingReviewDO::getGroupBuyingId, groupBuyingId)
+                .eq(ErpGroupBuyingReviewDO::getCustomerId, customerId)
+                .ne(ErpGroupBuyingReviewDO::getId, excludeId));
+    }
+
+    default List<ErpGroupBuyingReviewDO> selectListByGroupBuyingIdAndCustomerIdIn(Collection<String> groupBuyingIds, Collection<String> customerIds) {
+        if (CollUtil.isEmpty(groupBuyingIds) || CollUtil.isEmpty(customerIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new MPJLambdaWrapperX<ErpGroupBuyingReviewDO>()
+                .in(ErpGroupBuyingReviewDO::getGroupBuyingId, groupBuyingIds)
+                .in(ErpGroupBuyingReviewDO::getCustomerId, customerIds));
     }
 }

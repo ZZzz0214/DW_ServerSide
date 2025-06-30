@@ -41,14 +41,14 @@ public class ErpGroupBuyingReviewDO extends BaseDO {
     private String remark;
 
     /**
-     * 客户编号
+     * 客户名称
      */
-    private Long customerId;
+    private String customerId;
 
     /**
      * 团购货盘表ID
      */
-    private Long groupBuyingId;
+    private String groupBuyingId;
 
     /**
      * 供团价格
