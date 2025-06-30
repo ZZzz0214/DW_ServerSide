@@ -247,13 +247,6 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                 // 手动设置客户名称字段
                 groupBuyingReview.setCustomerId(importVO.getCustomerName());
                 
-                // 确保日期字段正确设置
-                groupBuyingReview.setSampleSendDate(importVO.getSampleSendDate());
-                groupBuyingReview.setGroupStartDate(importVO.getGroupStartDate());
-                groupBuyingReview.setGroupSales(importVO.getGroupSales());
-                groupBuyingReview.setRepeatGroupDate(importVO.getRepeatGroupDate());
-                groupBuyingReview.setRepeatGroupSales(importVO.getRepeatGroupSales());
-
                 // 判断是新增还是更新
                 ErpGroupBuyingReviewDO existGroupBuyingReview = existMap.get(importVO.getNo());
                 if (existGroupBuyingReview == null) {
@@ -262,8 +255,33 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                     groupBuyingReviewMapper.insert(groupBuyingReview);
                     respVO.getCreateNames().add(groupBuyingReview.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新 - 保留原有ID，确保所有字段都能更新
+                    // 更新 - 保留原有ID，只更新非空字段
                     groupBuyingReview.setId(existGroupBuyingReview.getId());
+                    
+                    // 对于更新操作，只更新Excel中非空的字段，保持原有字段不变
+                    // 如果Excel中字段为空，则保持数据库中的原有值
+                    if (importVO.getSupplyGroupPrice() == null) {
+                        groupBuyingReview.setSupplyGroupPrice(existGroupBuyingReview.getSupplyGroupPrice());
+                    }
+                    if (importVO.getExpressFee() == null) {
+                        groupBuyingReview.setExpressFee(existGroupBuyingReview.getExpressFee());
+                    }
+                    if (importVO.getSampleSendDate() == null) {
+                        groupBuyingReview.setSampleSendDate(existGroupBuyingReview.getSampleSendDate());
+                    }
+                    if (importVO.getGroupStartDate() == null) {
+                        groupBuyingReview.setGroupStartDate(existGroupBuyingReview.getGroupStartDate());
+                    }
+                    if (importVO.getGroupSales() == null) {
+                        groupBuyingReview.setGroupSales(existGroupBuyingReview.getGroupSales());
+                    }
+                    if (importVO.getRepeatGroupDate() == null) {
+                        groupBuyingReview.setRepeatGroupDate(existGroupBuyingReview.getRepeatGroupDate());
+                    }
+                    if (importVO.getRepeatGroupSales() == null) {
+                        groupBuyingReview.setRepeatGroupSales(existGroupBuyingReview.getRepeatGroupSales());
+                    }
+                    
                     groupBuyingReviewMapper.updateById(groupBuyingReview);
                     respVO.getUpdateNames().add(groupBuyingReview.getNo());
                 }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyinginfo.vo.ErpGroupBuyingInfoExportVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyinginfo.vo.ErpGroupBuyingInfoImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.groupbuyinginfo.vo.ErpGroupBuyingInfoImportRespVO;
@@ -121,7 +122,7 @@ public class ErpGroupBuyingInfoController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpGroupBuyingInfoImportExcelVO> list = ExcelUtils.read(inputStream, ErpGroupBuyingInfoImportExcelVO.class);
+            List<ErpGroupBuyingInfoImportExcelVO> list = ExcelUtils.read(inputStream, ErpGroupBuyingInfoImportExcelVO.class, new RowIndexListener<>());
             return success(groupBuyingInfoService.importGroupBuyingInfoList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

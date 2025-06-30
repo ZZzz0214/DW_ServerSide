@@ -36,7 +36,7 @@ public class ErpGroupBuyingInfoServiceImpl implements ErpGroupBuyingInfoService 
 
     @Resource
     private ErpGroupBuyingInfoMapper groupBuyingInfoMapper;
-    
+
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -267,11 +267,6 @@ public class ErpGroupBuyingInfoServiceImpl implements ErpGroupBuyingInfoService 
             String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
 
             try {
-                // 4.1 基础数据校验
-                if (StrUtil.isBlank(importVO.getCustomerName())) {
-                    allErrors.put(errorKey, "客户名称不能为空");
-                    continue;
-                }
 
                 // 4.2 检查Excel内部编号重复
                 if (StrUtil.isNotBlank(importVO.getNo())) {
@@ -382,7 +377,7 @@ public class ErpGroupBuyingInfoServiceImpl implements ErpGroupBuyingInfoService 
         if (StrUtil.isBlank(value)) {
             return; // 空值不校验
         }
-        
+
         try {
             // 使用字典API校验数据有效性
             dictDataApi.validateDictDataList(dictType, Collections.singletonList(value));
