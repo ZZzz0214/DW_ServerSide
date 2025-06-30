@@ -1,5 +1,7 @@
 package cn.iocoder.yudao.module.erp.controller.admin.finance.vo;
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -7,6 +9,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import static cn.iocoder.yudao.module.erp.enums.DictTypeConstants.AUDIT_STATUS;
 
 @Schema(description = "管理后台 - ERP 财务金额导出 VO")
 @Data
@@ -29,24 +33,14 @@ public class ErpFinanceAmountExportVO {
     @ExcelProperty("金额")
     private BigDecimal amount;
 
-    @Schema(description = "操作类型", example = "1")
-    @ExcelProperty("操作类型")
-    private Integer operationType;
-
-//    @Schema(description = "操作前余额", example = "500.00")
-//    @ExcelProperty("操作前余额")
-//    private BigDecimal beforeBalance;
-//
-//    @Schema(description = "操作后余额", example = "600.00")
-//    @ExcelProperty("操作后余额")
-//    private BigDecimal afterBalance;
 
     @Schema(description = "备注信息", example = "充值记录")
     @ExcelProperty("备注信息")
     private String remark;
 
-    @Schema(description = "审核状态", example = "1")
-    @ExcelProperty("审核状态")
+    @Schema(description = "审核状态", example = "10")
+    @ExcelProperty(value = "审核状态", converter = DictConvert.class)
+    @DictFormat(AUDIT_STATUS)
     private Integer auditStatus;
 
     @Schema(description = "审核人")
