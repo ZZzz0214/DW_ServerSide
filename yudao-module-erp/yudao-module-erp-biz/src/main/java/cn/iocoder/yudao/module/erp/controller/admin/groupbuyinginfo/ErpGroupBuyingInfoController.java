@@ -135,18 +135,6 @@ public class ErpGroupBuyingInfoController {
         // 手动创建导出 demo
         List<ErpGroupBuyingInfoExportVO> list = Arrays.asList(
                 ErpGroupBuyingInfoExportVO.builder()
-                        .no("示例编号1")
-                        .customerName("示例客户")
-                        .customerPosition("采购经理")
-                        .customerWechat("wechat123")
-                        .platformName("美团")
-                        .customerAttribute("KA客户")
-                        .customerCity("北京市")
-                        .customerDistrict("朝阳区")
-                        .userPortrait("高端用户")
-                        .recruitmentCategory("食品饮料")
-                        .selectionCriteria("高毛利")
-                        .remark("示例备注")
                         .build()
         );
         // 输出

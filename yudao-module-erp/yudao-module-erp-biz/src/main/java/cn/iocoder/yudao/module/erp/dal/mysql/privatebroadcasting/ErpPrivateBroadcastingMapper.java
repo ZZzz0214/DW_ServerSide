@@ -65,4 +65,12 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
     default List<ErpPrivateBroadcastingDO> selectListByNoIn(Collection<String> nos) {
         return selectList(ErpPrivateBroadcastingDO::getNo, nos);
     }
+
+    default ErpPrivateBroadcastingDO selectByProductName(String productName) {
+        return selectOne(ErpPrivateBroadcastingDO::getProductName, productName);
+    }
+
+    default List<ErpPrivateBroadcastingDO> selectListByProductNameIn(Collection<String> productNames) {
+        return selectList(ErpPrivateBroadcastingDO::getProductName, productNames);
+    }
 }

@@ -25,7 +25,8 @@ public class ErpPrivateBroadcastingExportVO {
     private String productImage;
 
     @Schema(description = "品牌名称", example = "品牌A")
-    @ExcelProperty("品牌名称")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
 
     @Schema(description = "产品名称", example = "产品A")
@@ -104,4 +105,4 @@ public class ErpPrivateBroadcastingExportVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}

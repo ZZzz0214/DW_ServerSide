@@ -160,10 +160,6 @@ public class ErpGroupBuyingReviewController {
         // 手动创建导入模板 demo
         List<ErpGroupBuyingReviewImportExcelVO> list = Arrays.asList(
                 ErpGroupBuyingReviewImportExcelVO.builder()
-                        .no("示例编号1")
-                        .remark("示例备注")
-                        .customerName("示例客户")
-                        .groupBuyingId("示例团购货盘编号")
                         .build()
         );
         // 输出

@@ -319,14 +319,15 @@ public interface ErrorCodeConstants {
     // ========== ERP 私播货盘（1-030-114-000） ==========
     ErrorCode PRIVATE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_114_000, "私播货盘不存在");
     ErrorCode PRIVATE_BROADCASTING_NO_EXISTS = new ErrorCode(1_030_114_001, "私播货盘编号已存在");
-    ErrorCode PRIVATE_BROADCASTING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_114_002, "私播货盘({})已审核，无法修改");
-    ErrorCode PRIVATE_BROADCASTING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_114_003, "私播货盘({})已审核，无法删除");
-    ErrorCode PRIVATE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_114_004, "私播货盘未审核，无法操作");
-    ErrorCode PRIVATE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_114_005, "审核失败，只有未审核的私播货盘才能审核");
-    ErrorCode PRIVATE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_114_006, "反审核失败，只有已审核的私播货盘才能反审核");
-    ErrorCode PRIVATE_BROADCASTING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_114_002, "导入私播货盘数据不能为空");
-    ErrorCode PRIVATE_BROADCASTING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_114_003, "第{}行的私播货盘编号({})在Excel中重复");
-    ErrorCode PRIVATE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_114_004, "第{}行的私播货盘编号({})已存在，且不支持更新");
+    ErrorCode PRIVATE_BROADCASTING_PRODUCT_NAME_DUPLICATE = new ErrorCode(1_030_114_002, "私播货盘产品名称({})已存在");
+    ErrorCode PRIVATE_BROADCASTING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_114_003, "私播货盘({})已审核，无法修改");
+    ErrorCode PRIVATE_BROADCASTING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_114_004, "私播货盘({})已审核，无法删除");
+    ErrorCode PRIVATE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_114_005, "私播货盘未审核，无法操作");
+    ErrorCode PRIVATE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_114_006, "审核失败，只有未审核的私播货盘才能审核");
+    ErrorCode PRIVATE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_114_007, "反审核失败，只有已审核的私播货盘才能反审核");
+    ErrorCode PRIVATE_BROADCASTING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_114_008, "导入私播货盘数据不能为空");
+    ErrorCode PRIVATE_BROADCASTING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_114_009, "第{}行的私播货盘编号({})在Excel中重复");
+    ErrorCode PRIVATE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_114_010, "第{}行的私播货盘编号({})已存在，且不支持更新");
 
     // ========== ERP 私播复盘（1-030-115-000） ==========
     ErrorCode PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_115_000, "私播复盘不存在");

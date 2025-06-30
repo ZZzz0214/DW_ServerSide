@@ -139,10 +139,6 @@ public class ErpGroupBuyingController {
         // 手动创建导出 demo
         List<ErpGroupBuyingExportVO> list = Arrays.asList(
                 ErpGroupBuyingExportVO.builder()
-                        .no("示例编号GB001")
-                        .productName("示例产品")
-                        .brandName("示例品牌")
-                        .status("上架")
                         .build()
         );
         // 输出

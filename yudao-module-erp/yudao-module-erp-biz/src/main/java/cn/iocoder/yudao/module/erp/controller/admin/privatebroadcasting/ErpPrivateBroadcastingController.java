@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo.ErpPrivateBroadcastingExportVO;
 import cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo.ErpPrivateBroadcastingImportExcelVO;
@@ -121,7 +122,7 @@ public class ErpPrivateBroadcastingController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpPrivateBroadcastingImportExcelVO> list = ExcelUtils.read(inputStream, ErpPrivateBroadcastingImportExcelVO.class);
+            List<ErpPrivateBroadcastingImportExcelVO> list = ExcelUtils.read(inputStream, ErpPrivateBroadcastingImportExcelVO.class, new RowIndexListener<>());
             return success(privateBroadcastingService.importPrivateBroadcastingList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());

@@ -1,7 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateTimeConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
@@ -23,9 +26,6 @@ public class ErpPrivateBroadcastingImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @ExcelProperty("产品图片")
-    private String productImage;
-
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
@@ -39,25 +39,34 @@ public class ErpPrivateBroadcastingImportExcelVO {
     @ExcelProperty("产品SKU")
     private String productSku;
 
-    @ExcelProperty("市场价格")
+
+    @ExcelProperty(value = "市场价格", converter = BigDecimalConvert.class)
     private BigDecimal marketPrice;
 
-    @ExcelProperty("保质日期")
+
+    @ExcelProperty(value = "保质日期", converter = LocalDateTimeConvert.class)
     private LocalDateTime shelfLife;
 
-    @ExcelProperty("产品库存")
+    @ExcelProperty(value = "产品库存", converter = IntegerConvert.class)
     private Integer productStock;
 
-    @ExcelProperty("直播价格")
+    @ExcelProperty("备注信息")
+    private String remark;
+
+
+    @ExcelProperty(value = "直播价格", converter = BigDecimalConvert.class)
     private BigDecimal livePrice;
 
-    @ExcelProperty("产品裸价")
+
+    @ExcelProperty(value = "产品裸价", converter = BigDecimalConvert.class)
     private BigDecimal productNakedPrice;
 
-    @ExcelProperty("快递费用")
+
+    @ExcelProperty(value = "快递费用", converter = BigDecimalConvert.class)
     private BigDecimal expressFee;
 
-    @ExcelProperty("代发价格")
+
+    @ExcelProperty(value = "代发价格", converter = BigDecimalConvert.class)
     private BigDecimal dropshipPrice;
 
     @ExcelProperty("公域链接")
@@ -75,10 +84,7 @@ public class ErpPrivateBroadcastingImportExcelVO {
     @ExcelProperty("发货地区")
     private String shippingArea;
 
-    @ExcelProperty("备注信息")
-    private String remark;
-
     @ExcelProperty(value = "私播货盘状态", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRIVATE_STATUS)
     private String privateStatus;
-} 
+}

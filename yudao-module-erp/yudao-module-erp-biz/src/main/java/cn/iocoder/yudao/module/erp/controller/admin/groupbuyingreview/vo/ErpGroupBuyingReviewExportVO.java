@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,9 @@ public class ErpGroupBuyingReviewExportVO {
 
     @ExcelProperty("编号")
     private String no;
+
+    @ExcelProperty("团购货盘表编号")
+    private String groupBuyingId;
 
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
@@ -42,8 +46,6 @@ public class ErpGroupBuyingReviewExportVO {
     @ExcelProperty("客户名称")
     private String customerName;
 
-    @ExcelProperty("团购货盘表编号")
-    private String groupBuyingNo;
 
     @ExcelProperty("供团价格")
     private BigDecimal supplyGroupPrice;
@@ -53,10 +55,6 @@ public class ErpGroupBuyingReviewExportVO {
 
     @ExcelProperty("开团机制")
     private String groupMechanism;
-
-    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_GROUP_BUYING_STATUS)
-    private String status;
 
     @ExcelProperty("寄样日期")
     private LocalDateTime sampleSendDate;
@@ -72,6 +70,10 @@ public class ErpGroupBuyingReviewExportVO {
 
     @ExcelProperty("复团销量")
     private Integer repeatGroupSales;
+
+    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_GROUP_BUYING_STATUS)
+    private String status;
 
     @ExcelProperty("创建人员")
     private String creator;
