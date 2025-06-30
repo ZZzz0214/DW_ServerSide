@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo.ErpLiveBroadcastingPageReqVO;
@@ -33,7 +34,7 @@ public class ErpLiveBroadcastingServiceImpl implements ErpLiveBroadcastingServic
 
     @Resource
     private ErpLiveBroadcastingMapper liveBroadcastingMapper;
-    
+
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -143,6 +144,14 @@ public class ErpLiveBroadcastingServiceImpl implements ErpLiveBroadcastingServic
         if (liveBroadcasting != null && !liveBroadcasting.getId().equals(id)) {
             throw exception(LIVE_BROADCASTING_NO_EXISTS);
         }
+        
+        // 2. 校验产品名称唯一
+        if (StrUtil.isNotBlank(reqVO.getProductName())) {
+            ErpLiveBroadcastingDO existProductName = liveBroadcastingMapper.selectByProductName(reqVO.getProductName());
+            if (existProductName != null && !existProductName.getId().equals(id)) {
+                throw exception(LIVE_BROADCASTING_PRODUCT_NAME_DUPLICATE, reqVO.getProductName());
+            }
+        }
     }
 
     @Override
@@ -159,12 +168,20 @@ public class ErpLiveBroadcastingServiceImpl implements ErpLiveBroadcastingServic
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据
-        List<ErpLiveBroadcastingDO> createList = new ArrayList<>();
-        List<ErpLiveBroadcastingDO> updateList = new ArrayList<>();
-
         try {
-            // 批量查询已存在的记录
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importList, isUpdateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量处理数据
+            List<ErpLiveBroadcastingDO> createList = new ArrayList<>();
+            List<ErpLiveBroadcastingDO> updateList = new ArrayList<>();
+
+            // 3. 批量查询已存在的记录
             Set<String> noSet = importList.stream()
                     .map(ErpLiveBroadcastingImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -172,51 +189,28 @@ public class ErpLiveBroadcastingServiceImpl implements ErpLiveBroadcastingServic
             Map<String, ErpLiveBroadcastingDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(liveBroadcastingMapper.selectListByNoIn(noSet), ErpLiveBroadcastingDO::getNo);
 
-            // 用于跟踪Excel内部重复的编号
-            Set<String> processedNos = new HashSet<>();
-            
-            // 批量转换数据
+            // 4. 批量转换和保存数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpLiveBroadcastingImportExcelVO importVO = importList.get(i);
-                try {
-                    // 检查Excel内部编号重复
-                    if (StrUtil.isNotBlank(importVO.getNo())) {
-                        if (processedNos.contains(importVO.getNo())) {
-                            throw exception(LIVE_BROADCASTING_IMPORT_NO_DUPLICATE, i + 1, importVO.getNo());
-                        }
-                        processedNos.add(importVO.getNo());
-                    }
-                    
-                    // 数据校验
-                    validateImportData(importVO, i + 1);
 
-                    // 判断是否支持更新
-                    ErpLiveBroadcastingDO existLiveBroadcasting = existMap.get(importVO.getNo());
-                    if (existLiveBroadcasting == null) {
-                       // 创建 - 自动生成新的no编号
-                       ErpLiveBroadcastingDO liveBroadcasting = BeanUtils.toBean(importVO, ErpLiveBroadcastingDO.class);
-                       liveBroadcasting.setNo(noRedisDAO.generate(ErpNoRedisDAO.LIVE_BROADCASTING_NO_PREFIX));
-                        createList.add(liveBroadcasting);
-                        respVO.getCreateNames().add(liveBroadcasting.getNo());
-                    } else if (isUpdateSupport) {
-                        // 更新
-                        ErpLiveBroadcastingDO updateLiveBroadcasting = BeanUtils.toBean(importVO, ErpLiveBroadcastingDO.class);
-                        updateLiveBroadcasting.setId(existLiveBroadcasting.getId());
-                        updateList.add(updateLiveBroadcasting);
-                        respVO.getUpdateNames().add(updateLiveBroadcasting.getNo());
-                    } else {
-                        throw exception(LIVE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getNo()) ? "(" + importVO.getNo() + ")" : "");
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 判断是否支持更新
+                ErpLiveBroadcastingDO existLiveBroadcasting = existMap.get(importVO.getNo());
+                if (existLiveBroadcasting == null) {
+                    // 创建 - 自动生成新的no编号
+                    ErpLiveBroadcastingDO liveBroadcasting = BeanUtils.toBean(importVO, ErpLiveBroadcastingDO.class);
+                    liveBroadcasting.setNo(noRedisDAO.generate(ErpNoRedisDAO.LIVE_BROADCASTING_NO_PREFIX));
+                    createList.add(liveBroadcasting);
+                    respVO.getCreateNames().add(liveBroadcasting.getNo());
+                } else if (isUpdateSupport) {
+                    // 更新
+                    ErpLiveBroadcastingDO updateLiveBroadcasting = BeanUtils.toBean(importVO, ErpLiveBroadcastingDO.class);
+                    updateLiveBroadcasting.setId(existLiveBroadcasting.getId());
+                    updateList.add(updateLiveBroadcasting);
+                    respVO.getUpdateNames().add(updateLiveBroadcasting.getNo());
                 }
             }
 
-            // 批量保存到数据库
+            // 5. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 liveBroadcastingMapper.insertBatch(createList);
             }
@@ -225,38 +219,159 @@ public class ErpLiveBroadcastingServiceImpl implements ErpLiveBroadcastingServic
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
     }
 
     /**
-     * 校验导入数据
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
      */
-    private void validateImportData(ErpLiveBroadcastingImportExcelVO importVO, int rowIndex) {
-        // 1. 校验产品名称
-        if (StrUtil.isBlank(importVO.getProductName())) {
-            throw exception(LIVE_BROADCASTING_IMPORT_PRODUCT_NAME_EMPTY, rowIndex);
+    private Map<String, String> validateAllImportData(List<ErpLiveBroadcastingImportExcelVO> importList, boolean isUpdateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
         }
 
-        // 2. 校验市场价格
-        if (importVO.getMarketPrice() == null || importVO.getMarketPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw exception(LIVE_BROADCASTING_IMPORT_MARKET_PRICE_INVALID, rowIndex);
+        // 2. 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpLiveBroadcastingImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, ErpLiveBroadcastingDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(liveBroadcastingMapper.selectListByNoIn(noSet), ErpLiveBroadcastingDO::getNo);
+
+        // 2.1 批量查询已存在的产品名称
+        Set<String> productNameSet = importList.stream()
+                .map(ErpLiveBroadcastingImportExcelVO::getProductName)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, ErpLiveBroadcastingDO> existProductNameMap = productNameSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(liveBroadcastingMapper.selectListByProductNameIn(productNameSet), ErpLiveBroadcastingDO::getProductName);
+
+        // 用于跟踪Excel内部重复的编号和产品名称
+        Set<String> processedNos = new HashSet<>();
+        Set<String> processedProductNames = new HashSet<>();
+
+        // 3. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpLiveBroadcastingImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importVO.getProductName()) ? "(" + importVO.getProductName() + ")" : "");
+
+            try {
+                // 3.2 检查Excel内部编号重复
+                if (StrUtil.isNotBlank(importVO.getNo())) {
+                    if (processedNos.contains(importVO.getNo())) {
+                        allErrors.put(errorKey, "直播货盘编号重复: " + importVO.getNo());
+                        continue;
+                    }
+                    processedNos.add(importVO.getNo());
+                }
+
+                // 3.3 检查Excel内部产品名称重复
+                if (StrUtil.isNotBlank(importVO.getProductName())) {
+                    if (processedProductNames.contains(importVO.getProductName())) {
+                        allErrors.put(errorKey, "产品名称重复: " + importVO.getProductName());
+                        continue;
+                    }
+                    processedProductNames.add(importVO.getProductName());
+                }
+
+
+                // 3.7 数据转换校验（如果转换失败，记录错误并跳过）
+                try {
+                    ErpLiveBroadcastingDO liveBroadcasting = BeanUtils.toBean(importVO, ErpLiveBroadcastingDO.class);
+                    if (liveBroadcasting == null) {
+                        allErrors.put(errorKey, "数据转换失败");
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    allErrors.put(errorKey, "数据转换异常: " + ex.getMessage());
+                    continue;
+                }
+
+                // 3.8 判断是新增还是更新，并进行相应校验
+                ErpLiveBroadcastingDO existLiveBroadcasting = existMap.get(importVO.getNo());
+                if (existLiveBroadcasting == null) {
+                    // 新增校验：检查产品名称是否已存在
+                    if (StrUtil.isNotBlank(importVO.getProductName())) {
+                        ErpLiveBroadcastingDO existProductName = existProductNameMap.get(importVO.getProductName());
+                        if (existProductName != null) {
+                            allErrors.put(errorKey, "产品名称已存在: " + importVO.getProductName());
+                            continue;
+                        }
+                    }
+                } else if (isUpdateSupport) {
+                    // 更新校验：检查产品名称是否与其他记录重复
+                    if (StrUtil.isNotBlank(importVO.getProductName())) {
+                        ErpLiveBroadcastingDO existProductName = existProductNameMap.get(importVO.getProductName());
+                        if (existProductName != null && !existProductName.getId().equals(existLiveBroadcasting.getId())) {
+                            allErrors.put(errorKey, "产品名称已存在: " + importVO.getProductName());
+                            continue;
+                        }
+                    }
+                } else {
+                    allErrors.put(errorKey, "直播货盘编号不存在且不支持更新: " + importVO.getNo());
+                }
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
         }
 
-        // 3. 校验直播价格
-        if (importVO.getLivePrice() == null || importVO.getLivePrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw exception(LIVE_BROADCASTING_IMPORT_LIVE_PRICE_INVALID, rowIndex);
-        }
-
-        // 4. 校验直播佣金
-        if (importVO.getLiveCommission() == null || importVO.getLiveCommission().compareTo(BigDecimal.ZERO) < 0) {
-            throw exception(LIVE_BROADCASTING_IMPORT_LIVE_COMMISSION_INVALID, rowIndex);
-        }
-
-        // 5. 校验产品库存
-        if (importVO.getProductStock() == null || importVO.getProductStock() < 0) {
-            throw exception(LIVE_BROADCASTING_IMPORT_PRODUCT_STOCK_INVALID, rowIndex);
-        }
+        return allErrors;
     }
+
+    /**
+     * 数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpLiveBroadcastingImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取产品名称 - 修复行号索引问题
+                String productName = "未知产品";
+                // ConversionErrorHolder中的行号是从1开始的，数组索引是从0开始的
+                // 所以需要减1来访问数组，但要确保索引有效
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpLiveBroadcastingImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getProductName())) {
+                        productName = importVO.getProductName();
+                    }
+                }
+
+                // 行号显示，RowIndexListener已经设置为从1开始，直接使用
+                String errorKey = "第" + rowIndex + "行(" + productName + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
+    }
+
+
 }

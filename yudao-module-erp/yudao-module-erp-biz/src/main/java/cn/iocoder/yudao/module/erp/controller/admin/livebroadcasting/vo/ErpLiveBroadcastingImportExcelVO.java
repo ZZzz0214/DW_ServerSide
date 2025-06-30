@@ -1,7 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.LocalDateConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
@@ -25,12 +28,9 @@ public class ErpLiveBroadcastingImportExcelVO {
     @ExcelProperty("编号")
     private String no;
 
-    @Schema(description = "产品图片", example = "https://example.com/image.jpg")
-    @ExcelProperty("产品图片")
-    private String productImage;
 
-    @Schema(description = "品牌名称", example = "品牌A")
-    @ExcelProperty("品牌名称")
+    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
 
     @ExcelProperty("产品名称")
@@ -42,13 +42,15 @@ public class ErpLiveBroadcastingImportExcelVO {
     @ExcelProperty("产品SKU")
     private String productSku;
 
-    @ExcelProperty("市场价格")
+    @ExcelProperty(value = "市场价格", converter = BigDecimalConvert.class)
     private BigDecimal marketPrice;
 
-    @ExcelProperty("保质日期")
+
+    @ExcelProperty(value = "保质日期", converter = LocalDateConvert.class)
     private LocalDate shelfLife;
 
-    @ExcelProperty("产品库存")
+
+    @ExcelProperty(value = "产品库存", converter = IntegerConvert.class)
     private Integer productStock;
 
     @ExcelProperty("核心卖点")
@@ -57,16 +59,20 @@ public class ErpLiveBroadcastingImportExcelVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-    @ExcelProperty("直播价格")
+
+    @ExcelProperty(value = "直播价格", converter = BigDecimalConvert.class)
     private BigDecimal livePrice;
 
-    @ExcelProperty("直播佣金")
+
+    @ExcelProperty(value = "直播佣金", converter = BigDecimalConvert.class)
     private BigDecimal liveCommission;
 
-    @ExcelProperty("公开佣金")
+
+    @ExcelProperty(value = "公开佣金", converter = BigDecimalConvert.class)
     private BigDecimal publicCommission;
 
-    @ExcelProperty("返点佣金")
+
+    @ExcelProperty(value = "返点佣金", converter = BigDecimalConvert.class)
     private BigDecimal rebateCommission;
 
     @ExcelProperty("快递公司")
@@ -81,4 +87,4 @@ public class ErpLiveBroadcastingImportExcelVO {
     @ExcelProperty(value = "直播货盘状态", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_LIVE_STATUS)
     private String liveStatus;
-} 
+}

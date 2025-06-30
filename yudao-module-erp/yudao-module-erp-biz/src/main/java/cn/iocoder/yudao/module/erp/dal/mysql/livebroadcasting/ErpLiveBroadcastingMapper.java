@@ -63,4 +63,12 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
     default List<ErpLiveBroadcastingDO> selectListByNoIn(Collection<String> nos) {
         return selectList(ErpLiveBroadcastingDO::getNo, nos);
     }
+
+    default ErpLiveBroadcastingDO selectByProductName(String productName) {
+        return selectOne(ErpLiveBroadcastingDO::getProductName, productName);
+    }
+
+    default List<ErpLiveBroadcastingDO> selectListByProductNameIn(Collection<String> productNames) {
+        return selectList(ErpLiveBroadcastingDO::getProductName, productNames);
+    }
 }

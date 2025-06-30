@@ -366,21 +366,23 @@ public interface ErrorCodeConstants {
     // ========== ERP 直播货盘（1-030-117-000） ==========
     ErrorCode LIVE_BROADCASTING_NOT_EXISTS = new ErrorCode(1_030_117_000, "直播货盘不存在");
     ErrorCode LIVE_BROADCASTING_NO_EXISTS = new ErrorCode(1_030_117_001, "直播货盘编号已存在");
-    ErrorCode LIVE_BROADCASTING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_117_002, "直播货盘({})已审核，无法修改");
-    ErrorCode LIVE_BROADCASTING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_117_003, "直播货盘({})已审核，无法删除");
-    ErrorCode LIVE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_117_004, "直播货盘未审核，无法操作");
-    ErrorCode LIVE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_117_005, "审核失败，只有未审核的直播货盘才能审核");
-    ErrorCode LIVE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_117_006, "反审核失败，只有已审核的直播货盘才能反审核");
+    ErrorCode LIVE_BROADCASTING_PRODUCT_NAME_DUPLICATE = new ErrorCode(1_030_117_002, "直播货盘产品名称({})已存在");
+    ErrorCode LIVE_BROADCASTING_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_117_003, "直播货盘({})已审核，无法修改");
+    ErrorCode LIVE_BROADCASTING_DELETE_FAIL_APPROVE = new ErrorCode(1_030_117_004, "直播货盘({})已审核，无法删除");
+    ErrorCode LIVE_BROADCASTING_NOT_APPROVE = new ErrorCode(1_030_117_005, "直播货盘未审核，无法操作");
+    ErrorCode LIVE_BROADCASTING_APPROVE_FAIL = new ErrorCode(1_030_117_006, "审核失败，只有未审核的直播货盘才能审核");
+    ErrorCode LIVE_BROADCASTING_PROCESS_FAIL = new ErrorCode(1_030_117_007, "反审核失败，只有已审核的直播货盘才能反审核");
 
-    // ========== ERP 直播货盘导入（1-030-117-007） ==========
-    ErrorCode LIVE_BROADCASTING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_117_007, "导入直播货盘数据不能为空");
-    ErrorCode LIVE_BROADCASTING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_117_008, "第{}行的直播货盘编号({})在Excel中重复");
-    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_NAME_EMPTY = new ErrorCode(1_030_117_009, "第{}行的产品名称不能为空");
-    ErrorCode LIVE_BROADCASTING_IMPORT_MARKET_PRICE_INVALID = new ErrorCode(1_030_117_010, "第{}行的市场价格必须大于0");
-    ErrorCode LIVE_BROADCASTING_IMPORT_LIVE_PRICE_INVALID = new ErrorCode(1_030_117_011, "第{}行的直播价格必须大于0");
-    ErrorCode LIVE_BROADCASTING_IMPORT_LIVE_COMMISSION_INVALID = new ErrorCode(1_030_117_012, "第{}行的直播佣金必须大于等于0");
-    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_STOCK_INVALID = new ErrorCode(1_030_117_013, "第{}行的产品库存必须大于等于0");
-    ErrorCode LIVE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_117_014, "第{}行的直播货盘编号({})已存在，且不支持更新");
+    // ========== ERP 直播货盘导入（1-030-117-008） ==========
+    ErrorCode LIVE_BROADCASTING_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_117_008, "导入直播货盘数据不能为空");
+    ErrorCode LIVE_BROADCASTING_IMPORT_NO_DUPLICATE = new ErrorCode(1_030_117_009, "第{}行的直播货盘编号({})在Excel中重复");
+    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_NAME_EMPTY = new ErrorCode(1_030_117_010, "第{}行的产品名称不能为空");
+    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_NAME_DUPLICATE = new ErrorCode(1_030_117_011, "第{}行的产品名称({})在Excel中重复");
+    ErrorCode LIVE_BROADCASTING_IMPORT_MARKET_PRICE_INVALID = new ErrorCode(1_030_117_012, "第{}行的市场价格必须大于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_LIVE_PRICE_INVALID = new ErrorCode(1_030_117_013, "第{}行的直播价格必须大于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_LIVE_COMMISSION_INVALID = new ErrorCode(1_030_117_014, "第{}行的直播佣金必须大于等于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_PRODUCT_STOCK_INVALID = new ErrorCode(1_030_117_015, "第{}行的产品库存必须大于等于0");
+    ErrorCode LIVE_BROADCASTING_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT = new ErrorCode(1_030_117_016, "第{}行的直播货盘编号({})已存在，且不支持更新");
 
     // ========== ERP 直播复盘（1-030-118-000） ==========
     ErrorCode LIVE_BROADCASTING_REVIEW_NOT_EXISTS = new ErrorCode(1_030_118_000, "直播复盘不存在");
