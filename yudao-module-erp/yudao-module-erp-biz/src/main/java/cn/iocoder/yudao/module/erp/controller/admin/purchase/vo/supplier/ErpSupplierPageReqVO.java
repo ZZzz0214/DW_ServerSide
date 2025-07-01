@@ -18,10 +18,22 @@ public class ErpSupplierPageReqVO extends PageParam {
     @Schema(description = "供应商名称", example = "芋道源码")
     private String name;
 
-    @Schema(description = "手机号码", example = "15601691300")
-    private String mobile;
+    @Schema(description = "收件姓名", example = "李四")
+    private String receiverName;
 
     @Schema(description = "联系电话", example = "18818288888")
     private String telephone;
+
+    @Schema(description = "详细地址", example = "北京市朝阳区xxx街道xxx号")
+    private String address;
+
+    @Schema(description = "微信账号", example = "wechat123")
+    private String wechatAccount;
+
+    @Schema(description = "支付宝号", example = "alipay@example.com")
+    private String alipayAccount;
+
+    @Schema(description = "银行账号", example = "622908212277228617")
+    private String bankAccount;
 
 }

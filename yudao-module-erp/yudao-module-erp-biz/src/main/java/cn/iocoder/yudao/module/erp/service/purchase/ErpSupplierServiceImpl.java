@@ -106,9 +106,6 @@ public class ErpSupplierServiceImpl implements ErpSupplierService {
         if (supplier == null) {
             throw exception(SUPPLIER_NOT_EXISTS);
         }
-        if (CommonStatusEnum.isDisable(supplier.getStatus())) {
-            throw exception(SUPPLIER_NOT_ENABLE, supplier.getName());
-        }
         return supplier;
     }
 
@@ -124,7 +121,7 @@ public class ErpSupplierServiceImpl implements ErpSupplierService {
 
     @Override
     public List<ErpSupplierDO> getSupplierListByStatus(Integer status) {
-        return supplierMapper.selectListByStatus(status);
+        return supplierMapper.selectList();
     }
     @Override
     public List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
@@ -230,10 +227,6 @@ public class ErpSupplierServiceImpl implements ErpSupplierService {
                     ErpSupplierDO supplier = BeanUtils.toBean(importSupplier, ErpSupplierDO.class);
                     // 生成供应商编号
                     supplier.setNo(generateSupplierNo());
-                    // 设置默认状态为启用
-                    supplier.setStatus(CommonStatusEnum.ENABLE.getStatus());
-                    // 设置默认排序
-                    supplier.setSort(1);
                     createList.add(supplier);
                     respVO.getCreateNames().add(supplier.getName());
                 } catch (ServiceException ex) {

@@ -22,13 +22,17 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpSupplierDO>()
                 .likeIfPresent(ErpSupplierDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpSupplierDO::getName, reqVO.getName())
-                .likeIfPresent(ErpSupplierDO::getMobile, reqVO.getMobile())
+                .likeIfPresent(ErpSupplierDO::getReceiverName, reqVO.getReceiverName())
                 .likeIfPresent(ErpSupplierDO::getTelephone, reqVO.getTelephone())
+                .likeIfPresent(ErpSupplierDO::getAddress, reqVO.getAddress())
+                .likeIfPresent(ErpSupplierDO::getWechatAccount, reqVO.getWechatAccount())
+                .likeIfPresent(ErpSupplierDO::getAlipayAccount, reqVO.getAlipayAccount())
+                .likeIfPresent(ErpSupplierDO::getBankAccount, reqVO.getBankAccount())
                 .orderByDesc(ErpSupplierDO::getId));
     }
 
     default List<ErpSupplierDO> selectListByStatus(Integer status) {
-        return selectList(ErpSupplierDO::getStatus, status);
+        return selectList();
     }
     
     default ErpSupplierDO selectByNo(String no) {
@@ -39,8 +43,13 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
     default List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
         return selectList(new LambdaQueryWrapperX<ErpSupplierDO>()
                 .likeIfPresent(ErpSupplierDO::getNo, searchReqVO.getNo())
-                .likeIfPresent(ErpSupplierDO::getMobile, searchReqVO.getMobile())
+                .likeIfPresent(ErpSupplierDO::getName, searchReqVO.getName())
+                .likeIfPresent(ErpSupplierDO::getReceiverName, searchReqVO.getReceiverName())
                 .likeIfPresent(ErpSupplierDO::getTelephone, searchReqVO.getTelephone())
+                .likeIfPresent(ErpSupplierDO::getAddress, searchReqVO.getAddress())
+                .likeIfPresent(ErpSupplierDO::getWechatAccount, searchReqVO.getWechatAccount())
+                .likeIfPresent(ErpSupplierDO::getAlipayAccount, searchReqVO.getAlipayAccount())
+                .likeIfPresent(ErpSupplierDO::getBankAccount, searchReqVO.getBankAccount())
                 .orderByDesc(ErpSupplierDO::getId));
     }
 
