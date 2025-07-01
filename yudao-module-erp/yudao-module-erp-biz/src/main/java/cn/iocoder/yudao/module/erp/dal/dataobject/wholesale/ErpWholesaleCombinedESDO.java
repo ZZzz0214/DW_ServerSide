@@ -90,7 +90,7 @@ public class ErpWholesaleCombinedESDO {
     @Field(name = "after_sales_status_keyword", type = FieldType.Keyword)
     private String afterSalesStatusKeyword;
 
-    @Field(name = "after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime afterSalesTime;
 
     @Field(name = "remark", type = FieldType.Text, analyzer = "ik_max_word")
@@ -127,16 +127,16 @@ public class ErpWholesaleCombinedESDO {
     @Field(name = "purchase_after_sales_amount", type = FieldType.Double)
     private BigDecimal purchaseAfterSalesAmount;
 
-    @Field(name = "purchase_after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "purchase_after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime purchaseAfterSalesTime;
 
     @Field(name = "purchase_audit_status", type = FieldType.Integer)
     private Integer purchaseAuditStatus;
 
-    @Field(name = "purchase_approval_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "purchase_approval_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime purchaseApprovalTime;
 
-    @Field(name = "purchase_unapprove_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "purchase_unapprove_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime purchaseUnapproveTime;
 
     // 销售信息字段
@@ -176,23 +176,23 @@ public class ErpWholesaleCombinedESDO {
     @Field(name = "sale_after_sales_amount", type = FieldType.Double)
     private BigDecimal saleAfterSalesAmount;
 
-    @Field(name = "sale_after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "sale_after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime saleAfterSalesTime;
 
     @Field(name = "sale_audit_status", type = FieldType.Integer)
     private Integer saleAuditStatus;
 
-    @Field(name = "sale_approval_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "sale_approval_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime saleApprovalTime;
 
-    @Field(name = "sale_unapprove_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "sale_unapprove_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime saleUnapproveTime;
 
     // 系统字段
-    @Field(name = "create_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "create_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createTime;
 
-    @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updateTime;
 
     @Field(name = "creator", type = FieldType.Text, analyzer = "ik_max_word")

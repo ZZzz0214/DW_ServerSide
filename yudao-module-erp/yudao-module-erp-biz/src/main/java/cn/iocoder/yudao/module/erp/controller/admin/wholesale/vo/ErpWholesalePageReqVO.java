@@ -48,8 +48,7 @@ public class ErpWholesalePageReqVO extends PageParam {
     private String afterSalesStatus;
 
     @Schema(description = "售后时间")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime[] afterSalesTime;
+    private String[] afterSalesTime;
 
     @Schema(description = "采购人员", example = "李四")
     private String purchaser;
@@ -70,8 +69,7 @@ public class ErpWholesalePageReqVO extends PageParam {
     private String creator;
 
     @Schema(description = "创建时间")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime[] createTime;
+    private String[] createTime;
 
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;

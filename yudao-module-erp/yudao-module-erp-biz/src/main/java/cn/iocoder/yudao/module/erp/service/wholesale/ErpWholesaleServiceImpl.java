@@ -636,6 +636,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
             // 时间范围查询
             if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
+                // 前端传递的是字符串数组，直接使用字符串进行范围查询
+                System.out.println("创建时间查询: [" + pageReqVO.getCreateTime()[0] + ", " + pageReqVO.getCreateTime()[1] + "]");
                 boolQuery.must(QueryBuilders.rangeQuery("create_time")
                         .gte(pageReqVO.getCreateTime()[0])
                         .lte(pageReqVO.getCreateTime()[1]));
@@ -643,6 +645,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
             // 售后时间范围查询
             if (pageReqVO.getAfterSalesTime() != null && pageReqVO.getAfterSalesTime().length == 2) {
+                // 前端传递的是字符串数组，直接使用字符串进行范围查询
+                System.out.println("售后时间查询: [" + pageReqVO.getAfterSalesTime()[0] + ", " + pageReqVO.getAfterSalesTime()[1] + "]");
                 boolQuery.must(QueryBuilders.rangeQuery("after_sales_time")
                         .gte(pageReqVO.getAfterSalesTime()[0])
                         .lte(pageReqVO.getAfterSalesTime()[1]));
@@ -1799,6 +1803,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 if (importVO.getPurchaseAfterSalesAmount() != null) {
                     combined.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
                 }
+                LocalDateTime now = LocalDateTime.now();
+                combined.setAfterSalesTime(now);
 
                 updateList.add(combined);
 
@@ -1813,6 +1819,9 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 if (importVO.getPurchaseAfterSalesAmount() != null) {
                     esUpdateDO.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
                 }
+
+
+                esUpdateDO.setAfterSalesTime(now);
 
                 esUpdateList.add(esUpdateDO);
                 respVO.getUpdateNames().add(existRecord.getNo());
@@ -1893,6 +1902,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     combined.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
                 }
 
+                LocalDateTime now = LocalDateTime.now();
+                combined.setAfterSalesTime(now);
                 updateList.add(combined);
 
                 // ES更新数据
@@ -1906,7 +1917,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 if (importVO.getSaleAfterSalesAmount() != null) {
                     esUpdateDO.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
                 }
-
+                esUpdateDO.setAfterSalesTime(now);
                 esUpdateList.add(esUpdateDO);
                 respVO.getUpdateNames().add(existRecord.getNo());
             }
