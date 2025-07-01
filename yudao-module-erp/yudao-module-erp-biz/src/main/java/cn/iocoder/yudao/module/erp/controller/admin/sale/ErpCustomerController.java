@@ -103,7 +103,6 @@ public class ErpCustomerController {
         // 手动创建导出 demo
         List<ErpCustomerImportExcelVO> list = Arrays.asList(
             ErpCustomerImportExcelVO.builder()
-                .no("KH20241201000001")
                 .name("张三")
                 .receiverName("李四")
                 .telephone("13800138000")
@@ -121,17 +120,14 @@ public class ErpCustomerController {
     @PostMapping("/import")
     @Operation(summary = "导入客户")
     @Parameters({
-        @Parameter(name = "file", description = "Excel 文件", required = true),
-        @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
+        @Parameter(name = "file", description = "Excel 文件", required = true)
     })
     @PreAuthorize("@ss.hasPermission('erp:customer:import')")
     @ApiAccessLog(operateType = IMPORT)
-    public CommonResult<ErpCustomerImportRespVO> importExcel(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
+    public CommonResult<ErpCustomerImportRespVO> importExcel(@RequestParam("file") MultipartFile file) {
         try (InputStream inputStream = file.getInputStream()) {
             List<ErpCustomerImportExcelVO> list = ExcelUtils.read(inputStream, ErpCustomerImportExcelVO.class);
-            return success(customerService.importCustomers(list, updateSupport));
+            return success(customerService.importCustomers(list));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
         }

@@ -13,11 +13,8 @@ import java.util.Map;
 public class ErpCustomerImportRespVO {
 
     @Schema(description = "创建成功的客户名称数组", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<String> createCustomers;
-
-    @Schema(description = "更新成功的客户名称数组", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<String> updateCustomers;
+    private List<String> createNames;
 
     @Schema(description = "导入失败的客户集合，key 为客户名称，value 为失败原因", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Map<String, String> failureCustomers;
+    private Map<String, String> failureNames;
 } 

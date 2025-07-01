@@ -10,22 +10,29 @@ import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierImportRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpSupplierService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.IMPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertList;
 
@@ -107,6 +114,42 @@ public class ErpSupplierController {
         List<ErpSupplierDO> list = supplierService.searchSuppliers(searchReqVO);
         System.out.println("返回的数据"+list);
         return success(BeanUtils.toBean(list, ErpSupplierRespVO.class));
+    }
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得供应商导入模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpSupplierImportExcelVO> list = Arrays.asList(
+            ErpSupplierImportExcelVO.builder()
+                .name("供应商A")
+                .receiverName("李四")
+                .telephone("13800138000")
+                .address("北京市朝阳区xxx街道xxx号")
+                .wechatAccount("wechat123")
+                .alipayAccount("alipay@example.com")
+                .bankAccount("622908212277228617")
+                .remark("重要供应商")
+                .build()
+        );
+        // 输出
+        ExcelUtils.write(response, "供应商导入模板.xls", "供应商列表", ErpSupplierImportExcelVO.class, list);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "导入供应商")
+    @Parameters({
+        @Parameter(name = "file", description = "Excel 文件", required = true)
+    })
+    @PreAuthorize("@ss.hasPermission('erp:supplier:import')")
+    @ApiAccessLog(operateType = IMPORT)
+    public CommonResult<ErpSupplierImportRespVO> importExcel(@RequestParam("file") MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpSupplierImportExcelVO> list = ExcelUtils.read(inputStream, ErpSupplierImportExcelVO.class);
+            return success(supplierService.importSuppliers(list));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
     }
 
 }

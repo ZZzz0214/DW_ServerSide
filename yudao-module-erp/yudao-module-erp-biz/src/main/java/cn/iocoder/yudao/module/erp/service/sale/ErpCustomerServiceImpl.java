@@ -43,6 +43,8 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
 
     @Override
     public Long createCustomer(ErpCustomerSaveReqVO createReqVO) {
+        // 校验客户名称不能重复
+        validateCustomerNameUnique(null, createReqVO.getName());
         // 插入
         ErpCustomerDO customer = BeanUtils.toBean(createReqVO, ErpCustomerDO.class);
         // 生成客户编号
@@ -56,6 +58,8 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
     public void updateCustomer(ErpCustomerSaveReqVO updateReqVO) {
         // 校验存在
         validateCustomerExists(updateReqVO.getId());
+        // 校验客户名称不能重复
+        validateCustomerNameUnique(updateReqVO.getId(), updateReqVO.getName());
         // 更新
         ErpCustomerDO updateObj = BeanUtils.toBean(updateReqVO, ErpCustomerDO.class);
         customerMapper.updateById(updateObj);
@@ -72,6 +76,23 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
     private void validateCustomerExists(Long id) {
         if (customerMapper.selectById(id) == null) {
             throw exception(CUSTOMER_NOT_EXISTS);
+        }
+    }
+
+    private void validateCustomerNameUnique(Long id, String name) {
+        if (StrUtil.isBlank(name)) {
+            return;
+        }
+        ErpCustomerDO customer = customerMapper.selectByName(name);
+        if (customer == null) {
+            return;
+        }
+        // 如果 id 为空，说明不用比较是否为相同 id 的客户
+        if (id == null) {
+            throw exception(CUSTOMER_NAME_EXISTS);
+        }
+        if (!customer.getId().equals(id)) {
+            throw exception(CUSTOMER_NAME_EXISTS);
         }
     }
 
@@ -125,21 +146,19 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ErpCustomerImportRespVO importCustomers(List<ErpCustomerImportExcelVO> importCustomers, boolean isUpdateSupport) {
+    public ErpCustomerImportRespVO importCustomers(List<ErpCustomerImportExcelVO> importCustomers) {
         if (CollUtil.isEmpty(importCustomers)) {
             throw exception(CUSTOMER_IMPORT_LIST_IS_EMPTY);
         }
 
         // 初始化返回结果
         ErpCustomerImportRespVO respVO = ErpCustomerImportRespVO.builder()
-                .createCustomers(new ArrayList<>())
-                .updateCustomers(new ArrayList<>())
-                .failureCustomers(new LinkedHashMap<>())
+                .createNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
                 .build();
 
         // 批量处理
         List<ErpCustomerDO> createList = new ArrayList<>();
-        List<ErpCustomerDO> updateList = new ArrayList<>();
 
         try {
             // 批量查询已存在的客户
@@ -168,30 +187,24 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
                     }
                     processedNames.add(importCustomer.getName());
 
-                    // 判断是否支持更新
+                    // 检查客户名称是否已存在
                     ErpCustomerDO existCustomer = existMap.get(importCustomer.getName());
-                    if (existCustomer == null) {
-                        // 创建
-                        ErpCustomerDO customer = BeanUtils.toBean(importCustomer, ErpCustomerDO.class);
-                        // 生成客户编号
-                        customer.setNo(noRedisDAO.generate(ErpNoRedisDAO.CUSTOMER_NO_PREFIX));
-                        createList.add(customer);
-                        respVO.getCreateCustomers().add(customer.getName());
-                    } else if (isUpdateSupport) {
-                        // 更新
-                        ErpCustomerDO updateCustomer = BeanUtils.toBean(importCustomer, ErpCustomerDO.class);
-                        updateCustomer.setId(existCustomer.getId());
-                        updateList.add(updateCustomer);
-                        respVO.getUpdateCustomers().add(updateCustomer.getName());
-                    } else {
-                        throw exception(CUSTOMER_IMPORT_NAME_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importCustomer.getName());
+                    if (existCustomer != null) {
+                        throw exception(CUSTOMER_NAME_EXISTS, i + 1, importCustomer.getName());
                     }
+
+                    // 创建
+                    ErpCustomerDO customer = BeanUtils.toBean(importCustomer, ErpCustomerDO.class);
+                    // 生成客户编号
+                    customer.setNo(noRedisDAO.generate(ErpNoRedisDAO.CUSTOMER_NO_PREFIX));
+                    createList.add(customer);
+                    respVO.getCreateNames().add(customer.getName());
                 } catch (ServiceException ex) {
                     String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importCustomer.getName()) ? "(" + importCustomer.getName() + ")" : "");
-                    respVO.getFailureCustomers().put(errorKey, ex.getMessage());
+                    respVO.getFailureNames().put(errorKey, ex.getMessage());
                 } catch (Exception ex) {
                     String errorKey = "第" + (i + 1) + "行" + (StrUtil.isNotBlank(importCustomer.getName()) ? "(" + importCustomer.getName() + ")" : "");
-                    respVO.getFailureCustomers().put(errorKey, "系统异常: " + ex.getMessage());
+                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
                 }
             }
 
@@ -199,11 +212,8 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
             if (CollUtil.isNotEmpty(createList)) {
                 customerMapper.insertBatch(createList);
             }
-            if (CollUtil.isNotEmpty(updateList)) {
-                updateList.forEach(customerMapper::updateById);
-            }
         } catch (Exception ex) {
-            respVO.getFailureCustomers().put("批量导入", "系统异常: " + ex.getMessage());
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
         }
 
         return respVO;

@@ -13,6 +13,12 @@ public interface ErrorCodeConstants {
     ErrorCode SUPPLIER_NOT_EXISTS = new ErrorCode(1_030_100_000, "供应商不存在");
     ErrorCode SUPPLIER_NOT_ENABLE = new ErrorCode(1_030_100_001, "供应商({})未启用");
     ErrorCode SUPPLIER_NO_DUPLICATE = new ErrorCode(1_030_100_002, "供应商编号({})已存在");
+    ErrorCode SUPPLIER_NAME_EXISTS = new ErrorCode(1_030_100_003, "供应商名称({})已存在");
+    
+    // ========== ERP 供应商导入（1-030-100-004） ==========
+    ErrorCode SUPPLIER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_100_004, "导入供应商数据不能为空");
+    ErrorCode SUPPLIER_IMPORT_NAME_EMPTY = new ErrorCode(1_030_100_005, "第{}行的供应商名称不能为空");
+    ErrorCode SUPPLIER_IMPORT_NAME_DUPLICATE = new ErrorCode(1_030_100_006, "第{}行的供应商名称({})在Excel中重复");
 
     // ========== ERP 采购订单（1-030-101-000） ==========
     ErrorCode PURCHASE_ORDER_NOT_EXISTS = new ErrorCode(1_030_101_000, "采购订单不存在");
@@ -52,6 +58,7 @@ public interface ErrorCodeConstants {
     // ========== ERP 客户（1-030-200-000）==========
     ErrorCode CUSTOMER_NOT_EXISTS = new ErrorCode(1_020_200_000, "客户不存在");
     ErrorCode CUSTOMER_NOT_ENABLE = new ErrorCode(1_020_200_001, "客户({})未启用");
+    ErrorCode CUSTOMER_NAME_EXISTS = new ErrorCode(1_030_200_001, "客户名称({})已存在");
     
     // ========== ERP 客户导入（1-030-200-002） ==========
     ErrorCode CUSTOMER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_030_200_002, "导入客户数据不能为空");

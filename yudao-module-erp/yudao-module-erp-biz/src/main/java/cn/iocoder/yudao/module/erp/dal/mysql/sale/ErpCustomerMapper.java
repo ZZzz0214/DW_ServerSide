@@ -35,4 +35,8 @@ public interface ErpCustomerMapper extends BaseMapperX<ErpCustomerDO> {
         return selectList(ErpCustomerDO::getName, names);
     }
 
+    default ErpCustomerDO selectByName(String name) {
+        return selectOne(ErpCustomerDO::getName, name);
+    }
+
 }

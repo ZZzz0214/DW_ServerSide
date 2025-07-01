@@ -93,9 +93,8 @@ public interface ErpCustomerService {
      * 导入客户
      *
      * @param importCustomers 导入客户列表
-     * @param isUpdateSupport 是否支持更新
      * @return 导入结果
      */
-    ErpCustomerImportRespVO importCustomers(List<ErpCustomerImportExcelVO> importCustomers, boolean isUpdateSupport);
+    ErpCustomerImportRespVO importCustomers(List<ErpCustomerImportExcelVO> importCustomers);
 
 }

@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupp
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -38,10 +39,17 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
     default List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
         return selectList(new LambdaQueryWrapperX<ErpSupplierDO>()
                 .likeIfPresent(ErpSupplierDO::getNo, searchReqVO.getNo())
-                .likeIfPresent(ErpSupplierDO::getName, searchReqVO.getName())
                 .likeIfPresent(ErpSupplierDO::getMobile, searchReqVO.getMobile())
                 .likeIfPresent(ErpSupplierDO::getTelephone, searchReqVO.getTelephone())
                 .orderByDesc(ErpSupplierDO::getId));
+    }
+
+    default ErpSupplierDO selectByName(String name) {
+        return selectOne(ErpSupplierDO::getName, name);
+    }
+
+    default List<ErpSupplierDO> selectListByNameIn(Collection<String> names) {
+        return selectList(ErpSupplierDO::getName, names);
     }
 
 }

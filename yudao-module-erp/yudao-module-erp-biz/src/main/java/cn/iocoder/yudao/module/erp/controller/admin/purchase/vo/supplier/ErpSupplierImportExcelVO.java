@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer;
+package cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,19 +8,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.NotEmpty;
-
-/**
- * ERP 客户 Excel 导入 VO
- */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Accessors(chain = false)
-public class ErpCustomerImportExcelVO {
+@Accessors(chain = false) // 设置 chain = false，避免用户导入有问题
+public class ErpSupplierImportExcelVO {
 
-    @ExcelProperty("客户名称")
+    @ExcelProperty("供应商名")
     private String name;
 
     @ExcelProperty("收件姓名")
@@ -44,4 +39,4 @@ public class ErpCustomerImportExcelVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-}
+} 
