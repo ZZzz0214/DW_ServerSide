@@ -714,6 +714,34 @@ public class ErpDistributionController {
         }
     }
 
+    @GetMapping("/logistics/get-import-template")
+    @Operation(summary = "获得导入代发物流信息模板")
+    public void importLogisticsTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<ErpDistributionLogisticsImportTemplateVO> list = Arrays.asList(
+                ErpDistributionLogisticsImportTemplateVO.builder()
+                .build()
+        );
+        // 输出
+        ExcelUtils.write(response, "代发物流信息导入模板.xlsx", "物流信息列表", ErpDistributionLogisticsImportTemplateVO.class, list);
+    }
+
+    @PostMapping("/logistics/import")
+    @Operation(summary = "导入代发物流信息")
+    @Parameters({
+            @Parameter(name = "file", description = "Excel 文件", required = true)
+    })
+    @PreAuthorize("@ss.hasPermission('erp:distribution:importLogistics')")
+    public CommonResult<ErpDistributionImportRespVO> importLogisticsExcel(
+            @RequestParam("file") MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            List<ErpDistributionLogisticsImportExcelVO> list = ExcelUtils.read(inputStream, ErpDistributionLogisticsImportExcelVO.class);
+            return success(distributionService.importLogisticsList(list));
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败: " + e.getMessage());
+        }
+    }
+
 
 
 }

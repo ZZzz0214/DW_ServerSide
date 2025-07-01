@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.Erp
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionPurchaseAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionLogisticsImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpDistributionMissingPriceVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePricePageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
@@ -146,6 +147,14 @@ public interface ErpDistributionService {
      * @return 导入结果
      */
     ErpDistributionImportRespVO importSaleAuditList(List<ErpDistributionSaleAuditImportExcelVO> importList);
+
+    /**
+     * 导入代发物流信息
+     *
+     * @param importList 导入列表
+     * @return 导入结果
+     */
+    ErpDistributionImportRespVO importLogisticsList(List<ErpDistributionLogisticsImportExcelVO> importList);
 
     ErpDistributionRespVO getDistribution(Long id);
 

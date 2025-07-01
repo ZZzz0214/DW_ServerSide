@@ -17,6 +17,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.Erp
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionPurchaseAuditImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionLogisticsImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpDistributionMissingPriceVO;
@@ -2387,5 +2388,86 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             System.err.println("时间格式转换失败: " + dateTimeStr + ", 错误: " + e.getMessage());
             return dateTimeStr; // 如果转换失败，返回原字符串
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ErpDistributionImportRespVO importLogisticsList(List<ErpDistributionLogisticsImportExcelVO> importList) {
+        if (CollUtil.isEmpty(importList)) {
+            throw exception(DISTRIBUTION_IMPORT_LIST_IS_EMPTY);
+        }
+
+        // 初始化返回结果
+        ErpDistributionImportRespVO respVO = ErpDistributionImportRespVO.builder()
+                .createNames(new ArrayList<>())
+                .updateNames(new ArrayList<>())
+                .failureNames(new LinkedHashMap<>())
+                .build();
+
+        try {
+            // 批量查询已存在的记录
+            Set<String> noSet = importList.stream()
+                    .map(ErpDistributionLogisticsImportExcelVO::getNo)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            if (CollUtil.isEmpty(noSet)) {
+                respVO.getFailureNames().put("全部", "订单编号不能为空");
+                return respVO;
+            }
+
+            // 从ES查询已存在的记录
+            List<ErpDistributionCombinedESDO> existList = distributionCombinedESRepository.findByNoIn(new ArrayList<>(noSet));
+            Map<String, ErpDistributionCombinedESDO> existMap = convertMap(existList, ErpDistributionCombinedESDO::getNo);
+
+            // 批量更新数据
+            List<ErpDistributionCombinedDO> updateList = new ArrayList<>();
+            List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
+
+            for (ErpDistributionLogisticsImportExcelVO importVO : importList) {
+                try {
+                    // 校验订单是否存在
+                    ErpDistributionCombinedESDO existDistribution = existMap.get(importVO.getNo());
+                    if (existDistribution == null) {
+                        throw exception(DISTRIBUTION_NOT_EXISTS);
+                    }
+
+                    // 更新物流信息
+                    existDistribution.setLogisticsCompany(importVO.getLogisticsCompany());
+                    existDistribution.setTrackingNumber(importVO.getTrackingNumber());
+
+                    // 添加到更新列表
+                    ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
+                    updateList.add(updateDO);
+                    esUpdateList.add(existDistribution);
+
+                    respVO.getUpdateNames().add(importVO.getNo());
+                } catch (ServiceException ex) {
+                    respVO.getFailureNames().put(importVO.getNo(), ex.getMessage());
+                } catch (Exception ex) {
+                    respVO.getFailureNames().put(importVO.getNo(), "系统异常: " + ex.getMessage());
+                }
+            }
+
+            // 批量更新数据库
+            if (CollUtil.isNotEmpty(updateList)) {
+                updateList.forEach(distributionCombinedMapper::updateById);
+            }
+
+            // 批量更新ES
+            if (CollUtil.isNotEmpty(esUpdateList)) {
+                distributionCombinedESRepository.saveAll(esUpdateList);
+                // 刷新ES索引
+                elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
+            }
+
+        } catch (Exception ex) {
+            respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
+        }
+
+        return respVO;
     }
 }
