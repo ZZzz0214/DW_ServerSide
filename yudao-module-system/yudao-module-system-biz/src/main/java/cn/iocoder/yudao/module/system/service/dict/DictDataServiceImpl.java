@@ -68,6 +68,8 @@ public class DictDataServiceImpl implements DictDataService {
         validateDictTypeExists(createReqVO.getDictType());
         // 校验字典数据的值的唯一性
         validateDictDataValueUnique(null, createReqVO.getDictType(), createReqVO.getValue());
+        // 校验字典数据的标签的唯一性
+        validateDictDataLabelUnique(null, createReqVO.getDictType(), createReqVO.getLabel());
 
         // 插入字典类型
         DictDataDO dictData = BeanUtils.toBean(createReqVO, DictDataDO.class);
@@ -83,6 +85,8 @@ public class DictDataServiceImpl implements DictDataService {
         validateDictTypeExists(updateReqVO.getDictType());
         // 校验字典数据的值的唯一性
         validateDictDataValueUnique(updateReqVO.getId(), updateReqVO.getDictType(), updateReqVO.getValue());
+        // 校验字典数据的标签的唯一性
+        validateDictDataLabelUnique(updateReqVO.getId(), updateReqVO.getDictType(), updateReqVO.getLabel());
 
         // 更新字典类型
         DictDataDO updateObj = BeanUtils.toBean(updateReqVO, DictDataDO.class);
@@ -115,6 +119,21 @@ public class DictDataServiceImpl implements DictDataService {
         }
         if (!dictData.getId().equals(id)) {
             throw exception(DICT_DATA_VALUE_DUPLICATE);
+        }
+    }
+
+    @VisibleForTesting
+    public void validateDictDataLabelUnique(Long id, String dictType, String label) {
+        DictDataDO dictData = dictDataMapper.selectByDictTypeAndLabel(dictType, label);
+        if (dictData == null) {
+            return;
+        }
+        // 如果 id 为空，说明不用比较是否为相同 id 的字典数据
+        if (id == null) {
+            throw exception(DICT_DATA_LABEL_DUPLICATE);
+        }
+        if (!dictData.getId().equals(id)) {
+            throw exception(DICT_DATA_LABEL_DUPLICATE);
         }
     }
 
