@@ -692,16 +692,6 @@ public class ErpDistributionController {
         // 手动创建导出 demo
         List<ErpDistributionSaleAuditImportExcelVO> list = Arrays.asList(
                 ErpDistributionSaleAuditImportExcelVO.builder()
-                .no("DF202403250001")
-                .saleOtherFees(new BigDecimal("50.00"))
-                .saleAfterSalesAmount(new BigDecimal("30.00"))
-                .afterSalesStatus("正常")
-                .build(),
-                ErpDistributionSaleAuditImportExcelVO.builder()
-                .no("DF202403250002")
-                .saleOtherFees(new BigDecimal("80.00"))
-                .saleAfterSalesAmount(new BigDecimal("60.00"))
-                .afterSalesStatus("售后中")
                 .build()
         );
         // 输出

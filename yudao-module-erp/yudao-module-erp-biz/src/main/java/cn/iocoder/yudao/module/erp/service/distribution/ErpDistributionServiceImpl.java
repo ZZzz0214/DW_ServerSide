@@ -453,14 +453,15 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     shippingFee = comboProduct.getFirstWeightPrice();
                 } else {
                     BigDecimal additionalWeight = totalWeight.subtract(comboProduct.getFirstWeight());
-                    BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 0, RoundingMode.UP);
+                    BigDecimal additionalUnits = additionalWeight.divide(comboProduct.getAdditionalWeight(), 2, RoundingMode.UP);
                     shippingFee = comboProduct.getFirstWeightPrice().add(
                             comboProduct.getAdditionalWeightPrice().multiply(additionalUnits)
                     );
                 }
                 break;
         }
-        return shippingFee;
+        //return shippingFee;
+        return shippingFee.setScale(2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateSaleShippingFee(ErpSalePriceESDO salePrice, Integer quantity, Long comboProductId) {
@@ -485,7 +486,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         shippingFee = salePrice.getFirstWeightPrice();
                     } else {
                         BigDecimal additionalWeight = totalWeight.subtract(salePrice.getFirstWeight());
-                        BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 0, RoundingMode.UP);
+                        BigDecimal additionalUnits = additionalWeight.divide(salePrice.getAdditionalWeight(), 2, RoundingMode.UP);
                         shippingFee = salePrice.getFirstWeightPrice().add(
                                 salePrice.getAdditionalWeightPrice().multiply(additionalUnits)
                         );
@@ -493,7 +494,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 }
                 break;
         }
-        return shippingFee;
+        //return shippingFee;
+        return shippingFee.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override
@@ -1558,12 +1560,65 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         esCreateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class).setCreator(username).setCreateTime(now));
                         respVO.getCreateNames().add(combined.getNo());
                     } else if (isUpdateSupport) {
-                        // 更新逻辑
-                        ErpDistributionCombinedDO combined = BeanUtils.toBean(importVO, ErpDistributionCombinedDO.class);
-                        combined.setId(existDistribution.getId());
+                        // 更新逻辑 - 保留原有数据，只更新导入的字段
+                        ErpDistributionCombinedDO combined = existDistribution; // 使用原有对象
+
+                        // 只更新导入的字段，保留其他字段的原有值
+                        if (StrUtil.isNotBlank(importVO.getOrderNumber())) {
+                            combined.setOrderNumber(importVO.getOrderNumber());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getLogisticsCompany())) {
+                            combined.setLogisticsCompany(importVO.getLogisticsCompany());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getTrackingNumber())) {
+                            combined.setTrackingNumber(importVO.getTrackingNumber());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverName())) {
+                            combined.setReceiverName(importVO.getReceiverName());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
+                            combined.setReceiverPhone(importVO.getReceiverPhone());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
+                            combined.setReceiverAddress(importVO.getReceiverAddress());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getOriginalProductName())) {
+                            combined.setOriginalProductName(importVO.getOriginalProductName());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getOriginalStandard())) {
+                            combined.setOriginalStandard(importVO.getOriginalStandard());
+                        }
+                        if (importVO.getOriginalQuantity() != null) {
+                            combined.setOriginalQuantity(importVO.getOriginalQuantity());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getRemark())) {
+                            combined.setRemark(importVO.getRemark());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
+                            combined.setProductSpecification(importVO.getProductSpecification());
+                        }
+                        if (importVO.getProductQuantity() != null) {
+                            combined.setProductQuantity(importVO.getProductQuantity());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                            combined.setSalesperson(importVO.getSalesperson());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                            combined.setCustomerName(importVO.getCustomerName());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                            combined.setTransferPerson(importVO.getTransferPerson());
+                        }
+
+                        // 更新组品ID
                         combined.setComboProductId(comboProductId);
+
+                        // 设置更新时间和更新人
+                        combined.setUpdateTime(now);
+                        combined.setUpdater(username);
+
                         updateList.add(combined);
-                        esUpdateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class).setCreator(username).setCreateTime(now));
+                        esUpdateList.add(convertCombinedToES(combined));
                         respVO.getUpdateNames().add(combined.getNo());
                     }
                     else {
@@ -1844,11 +1899,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 if (existDistribution == null) {
                     throw exception(DISTRIBUTION_NOT_EXISTS);
                 }
-
+                LocalDateTime now = LocalDateTime.now();
                 // 更新采购杂费、售后审核费用和售后状况
                 existDistribution.setPurchaseOtherFees(importVO.getOtherFees());
                 existDistribution.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
                 existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                existDistribution.setAfterSalesTime(now);
 
                 // 添加到更新列表
                 ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
@@ -1918,11 +1974,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 if (existDistribution == null) {
                     throw exception(DISTRIBUTION_NOT_EXISTS);
                 }
-
+                LocalDateTime now = LocalDateTime.now();
                 // 更新销售杂费、销售售后金额和售后状况
                 existDistribution.setSaleOtherFees(importVO.getSaleOtherFees());
                 existDistribution.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
                 existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                existDistribution.setAfterSalesTime(now);
 
                 // 添加到更新列表
                 ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
