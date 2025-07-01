@@ -191,8 +191,9 @@ public class ErpProductServiceImpl implements ErpProductService {
         // 同步到ES
         syncProductToES(updateReqVO.getId());
 
-        // 🔥 关键：单品更新后，需要同步所有相关的组品ES索引
-        syncRelatedCombosToES(updateReqVO.getId());
+        // 🔥 注释掉：单品更新后，需要同步所有相关的组品ES索引
+        // 这个同步会导致大量不必要的ES操作，影响性能
+        // syncRelatedCombosToES(updateReqVO.getId());
     }
 
     @Override

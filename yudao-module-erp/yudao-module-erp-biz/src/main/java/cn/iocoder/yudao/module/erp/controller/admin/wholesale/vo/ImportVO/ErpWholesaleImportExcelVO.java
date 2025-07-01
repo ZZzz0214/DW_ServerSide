@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO;
 
+import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 import lombok.Builder;
@@ -42,26 +43,9 @@ public class ErpWholesaleImportExcelVO {
     @ExcelProperty("产品规格")
     private String productSpecification;
 
-    @ExcelProperty("产品数量")
+    @ExcelProperty(value = "产品数量", converter = IntegerConvert.class)
     private Integer productQuantity;
 
-    @ExcelProperty("售后状况")
-    private String afterSalesStatus;
-
-    @ExcelProperty("售后时间")
-    private LocalDateTime afterSalesTime;
-
-    @ExcelProperty("采购货拉拉费")
-    private BigDecimal purchaseTruckFee;
-
-    @ExcelProperty("采购物流费用")
-    private BigDecimal purchaseLogisticsFee;
-
-    @ExcelProperty("采购杂费")
-    private BigDecimal purchaseOtherFees;
-
-    @ExcelProperty("采购备注")
-    private String purchaseRemark;
 
     @ExcelProperty("销售人员")
     private String salesperson;
@@ -69,17 +53,6 @@ public class ErpWholesaleImportExcelVO {
     @ExcelProperty("客户名称")
     private String customerName;
 
-    @ExcelProperty("出货货拉拉费")
-    private BigDecimal saleTruckFee;
-
-    @ExcelProperty("出货物流费用")
-    private BigDecimal saleLogisticsFee;
-
-    @ExcelProperty("出货杂费")
-    private BigDecimal saleOtherFees;
-
-    @ExcelProperty("出货备注")
-    private String saleRemark;
 
     @ExcelProperty("中转人员")
     private String transferPerson;

@@ -9,6 +9,7 @@ import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.customer.ErpCustomerSaveReqVO;
@@ -25,12 +26,14 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCo
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.*;
 import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesaleCombinedMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesaleMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesalePurchaseMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.wholesale.ErpWholesaleSaleMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpCustomerMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductESRepository;
 import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
@@ -122,6 +125,9 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     @Resource
     private ErpSalePriceMapper salePriceMapper;
 
+    @Resource
+    private ErpCustomerMapper customerMapper;
+
     // 初始化ES索引
     @EventListener(ApplicationReadyEvent.class)
     public void initESIndex() {
@@ -189,7 +195,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 esDO.setPurchaserKeyword(comboProduct.getPurchaser());
                 esDO.setSupplier(comboProduct.getSupplier());
                 esDO.setSupplierKeyword(comboProduct.getSupplier());
-                
+
                 // 添加调试信息
                 System.out.println("转换批发表到ES: ID=" + combined.getId() +
                                  ", no='" + combined.getNo() + "'" +
@@ -483,7 +489,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
                 // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
                 // 由于no字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-                
+
                 System.out.println("使用简化的编号匹配策略，查询词长度: " + no.length());
 
                 // 第一优先级：完全精确匹配（最高权重）
@@ -1196,14 +1202,22 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据
-        List<ErpWholesaleCombinedDO> createList = new ArrayList<>();
-        List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
-        List<ErpWholesaleCombinedESDO> esCreateList = new ArrayList<>();
-        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
-
         try {
-            // 批量查询组品信息
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(list, updateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量处理数据
+            List<ErpWholesaleCombinedDO> createList = new ArrayList<>();
+            List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
+            List<ErpWholesaleCombinedESDO> esCreateList = new ArrayList<>();
+            List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+
+            // 3. 批量查询组品信息
             Set<String> comboProductNos = list.stream()
                     .map(ErpWholesaleImportExcelVO::getComboProductNo)
                     .filter(StrUtil::isNotBlank)
@@ -1212,7 +1226,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     convertMap(comboProductESRepository.findByNoIn(new ArrayList<>(comboProductNos)),
                             ErpComboProductES::getNo, ErpComboProductES::getId);
 
-            // 批量查询已存在的记录
+            // 4. 批量查询已存在的记录
             Set<String> noSet = list.stream()
                     .map(ErpWholesaleImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -1220,219 +1234,122 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
 
-            // 批量转换数据
+            // 5. 批量转换数据
             for (int i = 0; i < list.size(); i++) {
                 ErpWholesaleImportExcelVO importVO = list.get(i);
-                try {
-                    String username = SecurityFrameworkUtils.getLoginUsername();
-                    LocalDateTime now = LocalDateTime.now();
-                    // 校验销售人员是否存在
+                Long userId = SecurityFrameworkUtils.getLoginUserId();
+                String username = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
+                LocalDateTime now = LocalDateTime.now();
+
+                // 判断是否支持更新
+                ErpWholesaleCombinedDO existDistribution = existMap.get(importVO.getNo());
+                if (existDistribution == null) {
+                    // 创建逻辑
+                    ErpWholesaleCombinedDO combined = BeanUtils.toBean(importVO, ErpWholesaleCombinedDO.class)
+                            .setId(IdUtil.getSnowflakeNextId()).setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())  // 设置采购审核状态
+                            .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus()).setPurchaseAfterSalesStatus(30).setSaleAfterSalesStatus(30);;
+                    combined.setComboProductId(comboProductIdMap.get(importVO.getComboProductNo()));
+                        combined.setNo(noRedisDAO.generate(ErpNoRedisDAO.WHOLESALE_NO_PREFIX));
+                    createList.add(combined);
+                    esCreateList.add(BeanUtils.toBean(combined, ErpWholesaleCombinedESDO.class).setCreator(username).setCreateTime(now));
+                    respVO.getCreateNames().add(combined.getNo());
+                } else if (updateSupport) {
+                    // 更新逻辑 - 只更新导入的字段，保留其他字段的原有数据
+                    // 1. 数据库更新：从现有数据复制，然后只更新导入的字段
+                    ErpWholesaleCombinedDO combined = BeanUtils.toBean(existDistribution, ErpWholesaleCombinedDO.class);
+
+                    // 只更新导入的字段，且只有当导入值不为空时才更新
+                    if (StrUtil.isNotBlank(importVO.getLogisticsNumber())) {
+                        combined.setLogisticsNumber(importVO.getLogisticsNumber());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getReceiverName())) {
+                        combined.setReceiverName(importVO.getReceiverName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
+                        combined.setReceiverPhone(importVO.getReceiverPhone());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
+                        combined.setReceiverAddress(importVO.getReceiverAddress());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        combined.setRemark(importVO.getRemark());
+                    }
+                    if (comboProductIdMap.get(importVO.getComboProductNo()) != null) {
+                        combined.setComboProductId(comboProductIdMap.get(importVO.getComboProductNo()));
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
+                        combined.setProductSpecification(importVO.getProductSpecification());
+                    }
+                    if (importVO.getProductQuantity() != null) {
+                        combined.setProductQuantity(importVO.getProductQuantity());
+                    }
+                    // 销售相关字段 - 只有当值不为null时才更新
                     if (StrUtil.isNotBlank(importVO.getSalesperson())) {
-                        List<ErpSalespersonRespVO> salespersons = salespersonService.searchSalespersons(
-                                new ErpSalespersonPageReqVO().setSalespersonName(importVO.getSalesperson()));
-                        if (CollUtil.isEmpty(salespersons)) {
-                            throw exception(DISTRIBUTION_SALESPERSON_NOT_EXISTS, importVO.getSalesperson());
-                        }
+                        combined.setSalesperson(importVO.getSalesperson());
                     }
-                    // 校验客户是否存在
                     if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                        List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
-                                new ErpCustomerPageReqVO().setName(importVO.getCustomerName()));
-                        if (CollUtil.isEmpty(customers)) {
-                            throw exception(WHOLESALE_CUSTOMER_NOT_EXISTS, importVO.getCustomerName());
-                        }
+                        combined.setCustomerName(importVO.getCustomerName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                        combined.setTransferPerson(importVO.getTransferPerson());
                     }
 
-                    // 获取组品ID
-                    Long comboProductId = null;
-                    if (StrUtil.isNotBlank(importVO.getComboProductNo())) {
-                        comboProductId = comboProductIdMap.get(importVO.getComboProductNo());
-                        if (comboProductId == null) {
-                            throw exception(WHOLESALE_COMBO_PRODUCT_NOT_EXISTS, importVO.getComboProductNo());
-                        }
+                    // 添加到批量更新列表
+                    updateList.add(combined);
+
+                    // 2. ES更新：从现有数据复制，然后只更新导入的字段
+                    ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existDistribution, ErpWholesaleCombinedESDO.class);
+                    // 更新导入的字段 - 只有当值不为空时才更新
+                    if (StrUtil.isNotBlank(importVO.getLogisticsNumber())) {
+                        esUpdateDO.setLogisticsNumber(importVO.getLogisticsNumber());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getReceiverName())) {
+                        esUpdateDO.setReceiverName(importVO.getReceiverName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
+                        esUpdateDO.setReceiverPhone(importVO.getReceiverPhone());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
+                        esUpdateDO.setReceiverAddress(importVO.getReceiverAddress());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        esUpdateDO.setRemark(importVO.getRemark());
+                    }
+                    if (comboProductIdMap.get(importVO.getComboProductNo()) != null) {
+                        esUpdateDO.setComboProductId(comboProductIdMap.get(importVO.getComboProductNo()));
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
+                        esUpdateDO.setProductSpecification(importVO.getProductSpecification());
+                    }
+                    if (importVO.getProductQuantity() != null) {
+                        esUpdateDO.setProductQuantity(importVO.getProductQuantity());
+                    }
+                    // 销售相关字段 - 只有当值不为null时才更新
+                    if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                        esUpdateDO.setSalesperson(importVO.getSalesperson());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                        esUpdateDO.setCustomerName(importVO.getCustomerName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                        esUpdateDO.setTransferPerson(importVO.getTransferPerson());
                     }
 
-                    // 判断是否支持更新
-                    ErpWholesaleCombinedDO existDistribution = existMap.get(importVO.getNo());
-                    if (existDistribution == null) {
-                        // 创建逻辑
-                        ErpWholesaleCombinedDO combined = BeanUtils.toBean(importVO, ErpWholesaleCombinedDO.class)
-                                .setId(IdUtil.getSnowflakeNextId()).setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())  // 设置采购审核状态
-                                .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus()).setPurchaseAfterSalesStatus(30).setSaleAfterSalesStatus(30);;
-                        combined.setComboProductId(comboProductId);
-                        if (StrUtil.isEmpty(combined.getNo())) {
-                            combined.setNo(noRedisDAO.generate(ErpNoRedisDAO.WHOLESALE_NO_PREFIX));
-                        }
-                        createList.add(combined);
-                        esCreateList.add(BeanUtils.toBean(combined, ErpWholesaleCombinedESDO.class).setCreator(username).setCreateTime(now));
-                        respVO.getCreateNames().add(combined.getNo());
-                    } else if (updateSupport) {
-                        // 更新逻辑 - 只更新导入的字段，保留其他字段的原有数据
-                        ErpWholesaleCombinedDO combined = new ErpWholesaleCombinedDO();
-                        combined.setId(existDistribution.getId());
-                        // 只设置需要更新的字段，且只有当导入值不为空时才设置
-                        combined.setNo(importVO.getNo());
-                        if (StrUtil.isNotBlank(importVO.getLogisticsNumber())) {
-                            combined.setLogisticsNumber(importVO.getLogisticsNumber());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getReceiverName())) {
-                            combined.setReceiverName(importVO.getReceiverName());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
-                            combined.setReceiverPhone(importVO.getReceiverPhone());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
-                            combined.setReceiverAddress(importVO.getReceiverAddress());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getRemark())) {
-                            combined.setRemark(importVO.getRemark());
-                        }
-                        if (comboProductId != null) {
-                            combined.setComboProductId(comboProductId);
-                        }
-                        if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
-                            combined.setProductSpecification(importVO.getProductSpecification());
-                        }
-                        if (importVO.getProductQuantity() != null) {
-                            combined.setProductQuantity(importVO.getProductQuantity());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
-                            combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                        }
-                        if (importVO.getAfterSalesTime() != null) {
-                            combined.setAfterSalesTime(importVO.getAfterSalesTime());
-                        }
-                        // 采购相关字段 - 只有当值不为null时才设置
-                        if (importVO.getPurchaseTruckFee() != null) {
-                            combined.setPurchaseTruckFee(importVO.getPurchaseTruckFee());
-                        }
-                        if (importVO.getPurchaseLogisticsFee() != null) {
-                            combined.setPurchaseLogisticsFee(importVO.getPurchaseLogisticsFee());
-                        }
-                        if (importVO.getPurchaseOtherFees() != null) {
-                            combined.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getPurchaseRemark())) {
-                            combined.setPurchaseRemark(importVO.getPurchaseRemark());
-                        }
-                        // 销售相关字段 - 只有当值不为null时才设置
-                        if (StrUtil.isNotBlank(importVO.getSalesperson())) {
-                            combined.setSalesperson(importVO.getSalesperson());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                            combined.setCustomerName(importVO.getCustomerName());
-                        }
-                        if (importVO.getSaleTruckFee() != null) {
-                            combined.setSaleTruckFee(importVO.getSaleTruckFee());
-                        }
-                        if (importVO.getSaleLogisticsFee() != null) {
-                            combined.setSaleLogisticsFee(importVO.getSaleLogisticsFee());
-                        }
-                        if (importVO.getSaleOtherFees() != null) {
-                            combined.setSaleOtherFees(importVO.getSaleOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getSaleRemark())) {
-                            combined.setSaleRemark(importVO.getSaleRemark());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
-                            combined.setTransferPerson(importVO.getTransferPerson());
-                        }
-
-                        updateList.add(combined);
-
-                        // ES更新数据需要包含所有字段，所以需要从存在的数据中复制
-                        ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existDistribution, ErpWholesaleCombinedESDO.class);
-                        // 更新导入的字段 - 只有当值不为空时才更新
-                        if (StrUtil.isNotBlank(importVO.getLogisticsNumber())) {
-                            esUpdateDO.setLogisticsNumber(importVO.getLogisticsNumber());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getReceiverName())) {
-                            esUpdateDO.setReceiverName(importVO.getReceiverName());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getReceiverPhone())) {
-                            esUpdateDO.setReceiverPhone(importVO.getReceiverPhone());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getReceiverAddress())) {
-                            esUpdateDO.setReceiverAddress(importVO.getReceiverAddress());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getRemark())) {
-                            esUpdateDO.setRemark(importVO.getRemark());
-                        }
-                        if (comboProductId != null) {
-                            esUpdateDO.setComboProductId(comboProductId);
-                        }
-                        if (StrUtil.isNotBlank(importVO.getProductSpecification())) {
-                            esUpdateDO.setProductSpecification(importVO.getProductSpecification());
-                        }
-                        if (importVO.getProductQuantity() != null) {
-                            esUpdateDO.setProductQuantity(importVO.getProductQuantity());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
-                            esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                        }
-                        if (importVO.getAfterSalesTime() != null) {
-                            esUpdateDO.setAfterSalesTime(importVO.getAfterSalesTime());
-                        }
-                        // 采购相关字段 - 只有当值不为null时才更新
-                        if (importVO.getPurchaseTruckFee() != null) {
-                            esUpdateDO.setPurchaseTruckFee(importVO.getPurchaseTruckFee());
-                        }
-                        if (importVO.getPurchaseLogisticsFee() != null) {
-                            esUpdateDO.setPurchaseLogisticsFee(importVO.getPurchaseLogisticsFee());
-                        }
-                        if (importVO.getPurchaseOtherFees() != null) {
-                            esUpdateDO.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getPurchaseRemark())) {
-                            esUpdateDO.setPurchaseRemark(importVO.getPurchaseRemark());
-                        }
-                        // 销售相关字段 - 只有当值不为null时才更新
-                        if (StrUtil.isNotBlank(importVO.getSalesperson())) {
-                            esUpdateDO.setSalesperson(importVO.getSalesperson());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                            esUpdateDO.setCustomerName(importVO.getCustomerName());
-                        }
-                        if (importVO.getSaleTruckFee() != null) {
-                            esUpdateDO.setSaleTruckFee(importVO.getSaleTruckFee());
-                        }
-                        if (importVO.getSaleLogisticsFee() != null) {
-                            esUpdateDO.setSaleLogisticsFee(importVO.getSaleLogisticsFee());
-                        }
-                        if (importVO.getSaleOtherFees() != null) {
-                            esUpdateDO.setSaleOtherFees(importVO.getSaleOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getSaleRemark())) {
-                            esUpdateDO.setSaleRemark(importVO.getSaleRemark());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
-                            esUpdateDO.setTransferPerson(importVO.getTransferPerson());
-                        }
-
-                        esUpdateList.add(esUpdateDO);
-                        respVO.getUpdateNames().add(combined.getNo());
-                    }
-                    else {
-                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                    esUpdateList.add(esUpdateDO);
+                    respVO.getUpdateNames().add(existDistribution.getNo());
                 }
             }
 
-            // 批量保存到数据库
+            // 6. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 wholesaleCombinedMapper.insertBatch(createList);
             }
             if (CollUtil.isNotEmpty(updateList)) {
-                updateList.forEach(wholesaleCombinedMapper::updateById);
+                // 批量更新 - 使用批量更新操作
+                wholesaleCombinedMapper.updateBatch(updateList);
             }
 
-            // 批量保存到ES
+            // 7. 批量保存到ES
             if (CollUtil.isNotEmpty(esCreateList)) {
                 wholesaleCombinedESRepository.saveAll(esCreateList);
             }
@@ -1441,10 +1358,391 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
     }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpWholesaleImportExcelVO> importList, Boolean updateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的批发订单
+        Set<String> noSet = importList.stream()
+                .map(ErpWholesaleImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
+
+        // 3. 批量查询所有组品编号，验证组品是否存在
+        Set<String> comboProductNos = importList.stream()
+                .map(ErpWholesaleImportExcelVO::getComboProductNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, Long> comboProductIdMap = new HashMap<>();
+        if (!comboProductNos.isEmpty()) {
+            List<ErpComboProductES> comboProducts = comboProductESRepository.findByNoIn(new ArrayList<>(comboProductNos));
+            comboProductIdMap = convertMap(comboProducts, ErpComboProductES::getNo, ErpComboProductES::getId);
+        }
+
+        // 4. 批量查询所有销售人员名称，验证销售人员是否存在
+        Set<String> salespersonNames = importList.stream()
+                .map(ErpWholesaleImportExcelVO::getSalesperson)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, Boolean> salespersonExistsMap = new HashMap<>();
+        for (String salespersonName : salespersonNames) {
+            List<ErpSalespersonRespVO> salespersons = salespersonService.searchSalespersons(
+                    new ErpSalespersonPageReqVO().setSalespersonName(salespersonName));
+            salespersonExistsMap.put(salespersonName, CollUtil.isNotEmpty(salespersons));
+        }
+
+        // 5. 批量查询所有客户名称，验证客户是否存在
+        Set<String> customerNames = importList.stream()
+                .map(ErpWholesaleImportExcelVO::getCustomerName)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, Boolean> customerExistsMap = new HashMap<>();
+        if (!customerNames.isEmpty()) {
+            // 使用精确查询验证客户是否存在
+            List<ErpCustomerDO> customers = customerMapper.selectListByNameIn(customerNames);
+            Set<String> existingCustomerNames = customers.stream()
+                    .map(ErpCustomerDO::getName)
+                    .collect(Collectors.toSet());
+
+            for (String customerName : customerNames) {
+                customerExistsMap.put(customerName, existingCustomerNames.contains(customerName));
+            }
+        }
+
+        // 6. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpWholesaleImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行";
+
+            try {
+                // 6.1 基础数据校验
+
+                // 6.2 校验组品编号是否存在
+                if (StrUtil.isNotBlank(importVO.getComboProductNo())) {
+                    if (!comboProductIdMap.containsKey(importVO.getComboProductNo())) {
+                        allErrors.put(errorKey, "组品编号不存在: " + importVO.getComboProductNo());
+                        continue;
+                    }
+                }
+
+                // 6.3 校验销售人员是否存在
+                if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                    Boolean salespersonExists = salespersonExistsMap.get(importVO.getSalesperson());
+                    if (salespersonExists == null || !salespersonExists) {
+                        allErrors.put(errorKey, "销售人员不存在: " + importVO.getSalesperson());
+                        continue;
+                    }
+                }
+
+                // 6.4 校验客户是否存在
+                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                    Boolean customerExists = customerExistsMap.get(importVO.getCustomerName());
+                    if (customerExists == null || !customerExists) {
+                        allErrors.put(errorKey, "客户名称不存在: " + importVO.getCustomerName());
+                        continue;
+                    }
+                }
+
+                // 6.5 校验产品数量
+                if (importVO.getProductQuantity() != null && importVO.getProductQuantity() <= 0) {
+                    allErrors.put(errorKey, "产品数量必须大于0");
+                    continue;
+                }
+
+
+                // 6.7 判断是新增还是更新，并进行相应校验
+                ErpWholesaleCombinedDO existWholesale = existMap.get(importVO.getNo());
+                if (existWholesale == null) {
+                    // 新增校验：校验批发订单编号唯一性
+                    ErpWholesaleCombinedDO wholesale = wholesaleCombinedMapper.selectByNo(importVO.getNo());
+                    if (wholesale != null) {
+                        allErrors.put(errorKey, "批发订单编号已存在: " + importVO.getNo());
+                        continue;
+                    }
+                } else if (updateSupport) {
+                    // 更新校验：检查是否支持更新
+                    // 这里可以添加更多的更新校验逻辑，比如检查审核状态等
+                } else {
+                    allErrors.put(errorKey, "批发订单编号已存在，不支持更新: " + importVO.getNo());
+                    continue;
+                }
+
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpWholesaleImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取批发订单编号
+                String wholesaleNo = "未知批发订单编号";
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpWholesaleImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        wholesaleNo = importVO.getNo();
+                    }
+                }
+
+                String errorKey = "第" + rowIndex + "行(" + wholesaleNo + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
+    }
+
+    /**
+     * 统一校验采购审核导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validatePurchaseAuditImportData(List<ErpWholesalePurchaseAuditImportExcelVO> importList, Boolean updateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validatePurchaseAuditDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的批发订单
+        Set<String> noSet = importList.stream()
+                .map(ErpWholesalePurchaseAuditImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
+
+        // 3. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpWholesalePurchaseAuditImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行";
+
+            try {
+                // 3.1 基础数据校验
+                if (StrUtil.isBlank(importVO.getNo())) {
+                    allErrors.put(errorKey, "批发订单编号不能为空");
+                    continue;
+                }
+
+                // 3.2 校验批发订单是否存在
+                ErpWholesaleCombinedDO existWholesale = existMap.get(importVO.getNo());
+                if (existWholesale == null) {
+                    allErrors.put(errorKey, "批发订单不存在: " + importVO.getNo());
+                    continue;
+                }
+
+                // 3.3 校验金额字段
+                if (importVO.getPurchaseOtherFees() != null && importVO.getPurchaseOtherFees().compareTo(BigDecimal.ZERO) < 0) {
+                    allErrors.put(errorKey, "采购其他费用不能为负数");
+                    continue;
+                }
+                if (importVO.getPurchaseAfterSalesAmount() != null && importVO.getPurchaseAfterSalesAmount().compareTo(BigDecimal.ZERO) < 0) {
+                    allErrors.put(errorKey, "采购售后金额不能为负数");
+                    continue;
+                }
+
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 采购审核数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validatePurchaseAuditDataTypeErrors(List<ErpWholesalePurchaseAuditImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取批发订单编号
+                String wholesaleNo = "未知批发订单编号";
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpWholesalePurchaseAuditImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        wholesaleNo = importVO.getNo();
+                    }
+                }
+
+                String errorKey = "第" + rowIndex + "行(" + wholesaleNo + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
+    }
+
+    /**
+     * 统一校验销售审核导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateSaleAuditImportData(List<ErpWholesaleSaleAuditImportExcelVO> importList, Boolean updateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateSaleAuditDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的批发订单
+        Set<String> noSet = importList.stream()
+                .map(ErpWholesaleSaleAuditImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+
+        Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
+
+        // 3. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpWholesaleSaleAuditImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行";
+
+            try {
+                // 3.1 基础数据校验
+                if (StrUtil.isBlank(importVO.getNo())) {
+                    allErrors.put(errorKey, "批发订单编号不能为空");
+                    continue;
+                }
+
+                // 3.2 校验批发订单是否存在
+                ErpWholesaleCombinedDO existWholesale = existMap.get(importVO.getNo());
+                if (existWholesale == null) {
+                    allErrors.put(errorKey, "批发订单不存在: " + importVO.getNo());
+                    continue;
+                }
+
+                // 3.3 校验金额字段
+                if (importVO.getSaleOtherFees() != null && importVO.getSaleOtherFees().compareTo(BigDecimal.ZERO) < 0) {
+                    allErrors.put(errorKey, "销售其他费用不能为负数");
+                    continue;
+                }
+                if (importVO.getSaleAfterSalesAmount() != null && importVO.getSaleAfterSalesAmount().compareTo(BigDecimal.ZERO) < 0) {
+                    allErrors.put(errorKey, "销售售后金额不能为负数");
+                    continue;
+                }
+
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 销售审核数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateSaleAuditDataTypeErrors(List<ErpWholesaleSaleAuditImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取批发订单编号
+                String wholesaleNo = "未知批发订单编号";
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpWholesaleSaleAuditImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        wholesaleNo = importVO.getNo();
+                    }
+                }
+
+                String errorKey = "第" + rowIndex + "行(" + wholesaleNo + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
+    }
+
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -1460,12 +1758,20 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据
-        List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
-        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
-
         try {
-            // 批量查询已存在的记录
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validatePurchaseAuditImportData(list, updateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量处理数据
+            List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
+            List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+
+            // 3. 批量查询已存在的记录
             Set<String> noSet = list.stream()
                     .map(ErpWholesalePurchaseAuditImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -1473,72 +1779,59 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
 
-            // 批量转换数据
+            // 4. 批量转换数据
             for (int i = 0; i < list.size(); i++) {
                 ErpWholesalePurchaseAuditImportExcelVO importVO = list.get(i);
-                try {
-                    // 判断记录是否存在
-                    ErpWholesaleCombinedDO existRecord = existMap.get(importVO.getNo());
-                    if (existRecord == null) {
-                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-                    }
 
-                    if (updateSupport) {
-                        // 更新逻辑 - 只更新采购审核相关字段
-                        ErpWholesaleCombinedDO combined = new ErpWholesaleCombinedDO();
-                        combined.setId(existRecord.getId());
-                        combined.setNo(importVO.getNo());
+                // 更新逻辑 - 只更新采购审核相关字段
+                ErpWholesaleCombinedDO existRecord = existMap.get(importVO.getNo());
 
-                        // 只有当值不为null时才设置
-                        if (importVO.getPurchaseOtherFees() != null) {
-                            combined.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
-                            combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                        }
-                        if (importVO.getPurchaseAfterSalesAmount() != null) {
-                            combined.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
-                        }
+                // 从现有数据复制，然后只更新导入的字段
+                ErpWholesaleCombinedDO combined = BeanUtils.toBean(existRecord, ErpWholesaleCombinedDO.class);
 
-                        updateList.add(combined);
-
-                        // ES更新数据
-                        ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existRecord, ErpWholesaleCombinedESDO.class);
-                        if (importVO.getPurchaseOtherFees() != null) {
-                            esUpdateDO.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
-                            esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                        }
-                        if (importVO.getPurchaseAfterSalesAmount() != null) {
-                            esUpdateDO.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
-                        }
-
-                        esUpdateList.add(esUpdateDO);
-                        respVO.getUpdateNames().add(combined.getNo());
-                    } else {
-                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 只有当值不为null时才更新
+                if (importVO.getPurchaseOtherFees() != null) {
+                    combined.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
                 }
+                if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                    combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                }
+                if (importVO.getPurchaseAfterSalesAmount() != null) {
+                    combined.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
+                }
+
+                updateList.add(combined);
+
+                // ES更新数据
+                ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existRecord, ErpWholesaleCombinedESDO.class);
+                if (importVO.getPurchaseOtherFees() != null) {
+                    esUpdateDO.setPurchaseOtherFees(importVO.getPurchaseOtherFees());
+                }
+                if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                    esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                }
+                if (importVO.getPurchaseAfterSalesAmount() != null) {
+                    esUpdateDO.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
+                }
+
+                esUpdateList.add(esUpdateDO);
+                respVO.getUpdateNames().add(existRecord.getNo());
             }
 
-            // 批量保存到数据库
+            // 5. 批量保存到数据库
             if (CollUtil.isNotEmpty(updateList)) {
-                updateList.forEach(wholesaleCombinedMapper::updateById);
+                wholesaleCombinedMapper.updateBatch(updateList);
             }
 
-            // 批量保存到ES
+            // 6. 批量保存到ES
             if (CollUtil.isNotEmpty(esUpdateList)) {
                 wholesaleCombinedESRepository.saveAll(esUpdateList);
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
@@ -1558,12 +1851,20 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据
-        List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
-        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
-
         try {
-            // 批量查询已存在的记录
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateSaleAuditImportData(list, updateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量处理数据
+            List<ErpWholesaleCombinedDO> updateList = new ArrayList<>();
+            List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+
+            // 3. 批量查询已存在的记录
             Set<String> noSet = list.stream()
                     .map(ErpWholesaleSaleAuditImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -1571,72 +1872,59 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             Map<String, ErpWholesaleCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(wholesaleCombinedMapper.selectListByNoIn(noSet), ErpWholesaleCombinedDO::getNo);
 
-            // 批量转换数据
+            // 4. 批量转换数据
             for (int i = 0; i < list.size(); i++) {
                 ErpWholesaleSaleAuditImportExcelVO importVO = list.get(i);
-                try {
-                    // 判断记录是否存在
-                    ErpWholesaleCombinedDO existRecord = existMap.get(importVO.getNo());
-                    if (existRecord == null) {
-                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-                    }
 
-                    if (updateSupport) {
-                        // 更新逻辑 - 只更新销售审核相关字段
-                        ErpWholesaleCombinedDO combined = new ErpWholesaleCombinedDO();
-                        combined.setId(existRecord.getId());
-                        combined.setNo(importVO.getNo());
+                // 更新逻辑 - 只更新销售审核相关字段
+                ErpWholesaleCombinedDO existRecord = existMap.get(importVO.getNo());
 
-                        // 只有当值不为null时才设置
-                        if (importVO.getSaleOtherFees() != null) {
-                            combined.setSaleOtherFees(importVO.getSaleOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
-                            combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                        }
-                        if (importVO.getSaleAfterSalesAmount() != null) {
-                            combined.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
-                        }
+                // 从现有数据复制，然后只更新导入的字段
+                ErpWholesaleCombinedDO combined = BeanUtils.toBean(existRecord, ErpWholesaleCombinedDO.class);
 
-                        updateList.add(combined);
-
-                        // ES更新数据
-                        ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existRecord, ErpWholesaleCombinedESDO.class);
-                        if (importVO.getSaleOtherFees() != null) {
-                            esUpdateDO.setSaleOtherFees(importVO.getSaleOtherFees());
-                        }
-                        if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
-                            esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                        }
-                        if (importVO.getSaleAfterSalesAmount() != null) {
-                            esUpdateDO.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
-                        }
-
-                        esUpdateList.add(esUpdateDO);
-                        respVO.getUpdateNames().add(combined.getNo());
-                    } else {
-                        throw exception(WHOLESALE_IMPORT_NO_EXISTS, i + 1, importVO.getNo());
-                    }
-                } catch (ServiceException ex) {
-                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
-                    respVO.getFailureNames().put(errorKey, ex.getMessage());
-                } catch (Exception ex) {
-                    String errorKey = StrUtil.isNotBlank(importVO.getNo()) ? importVO.getNo() : "未知批发订单";
-                    respVO.getFailureNames().put(errorKey, "系统异常: " + ex.getMessage());
+                // 只有当值不为null时才更新
+                if (importVO.getSaleOtherFees() != null) {
+                    combined.setSaleOtherFees(importVO.getSaleOtherFees());
                 }
+                if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                    combined.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                }
+                if (importVO.getSaleAfterSalesAmount() != null) {
+                    combined.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                }
+
+                updateList.add(combined);
+
+                // ES更新数据
+                ErpWholesaleCombinedESDO esUpdateDO = BeanUtils.toBean(existRecord, ErpWholesaleCombinedESDO.class);
+                if (importVO.getSaleOtherFees() != null) {
+                    esUpdateDO.setSaleOtherFees(importVO.getSaleOtherFees());
+                }
+                if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                    esUpdateDO.setAfterSalesStatus(importVO.getAfterSalesStatus());
+                }
+                if (importVO.getSaleAfterSalesAmount() != null) {
+                    esUpdateDO.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                }
+
+                esUpdateList.add(esUpdateDO);
+                respVO.getUpdateNames().add(existRecord.getNo());
             }
 
-            // 批量保存到数据库
+            // 5. 批量保存到数据库
             if (CollUtil.isNotEmpty(updateList)) {
-                updateList.forEach(wholesaleCombinedMapper::updateById);
+                wholesaleCombinedMapper.updateBatch(updateList);
             }
 
-            // 批量保存到ES
+            // 6. 批量保存到ES
             if (CollUtil.isNotEmpty(esUpdateList)) {
                 wholesaleCombinedESRepository.saveAll(esUpdateList);
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
@@ -1707,13 +1995,13 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
         // 由于字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-        
+
         // 第一优先级：完全精确匹配（最高权重）
         multiMatchQuery.should(QueryBuilders.termQuery(keywordFieldName, keyword).boost(1000000.0f));
-        
+
         // 第二优先级：前缀匹配
         multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(100000.0f));
-        
+
         // 第三优先级：包含匹配（支持任意位置的模糊匹配）
         multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + keyword + "*").boost(50000.0f));
 
@@ -1795,7 +2083,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             Map<String, List<ErpWholesaleCombinedESDO>> groupedData = searchHits.getSearchHits().stream()
                 .map(SearchHit::getContent)
                 .filter(esDO -> esDO.getComboProductId() != null && StrUtil.isNotBlank(esDO.getCustomerName()))
-                .collect(Collectors.groupingBy(esDO -> 
+                .collect(Collectors.groupingBy(esDO ->
                     esDO.getComboProductId() + "_" + esDO.getCustomerName()));
 
             // 转换为VO并过滤出没有价格的记录
@@ -1803,13 +2091,13 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .map(entry -> {
                     List<ErpWholesaleCombinedESDO> orders = entry.getValue();
                     ErpWholesaleCombinedESDO firstOrder = orders.get(0);
-                    
+
                     ErpWholesaleMissingPriceVO vo = new ErpWholesaleMissingPriceVO();
                     vo.setComboProductId(firstOrder.getComboProductId());
                     vo.setComboProductNo(firstOrder.getComboProductNo());
                     vo.setProductName(firstOrder.getProductName());
                     vo.setCustomerName(firstOrder.getCustomerName());
-                    
+
                     // 统计信息
                     vo.setOrderCount(orders.size());
                     vo.setTotalProductQuantity(orders.stream()
@@ -1821,7 +2109,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     vo.setOrderIds(orders.stream()
                         .map(ErpWholesaleCombinedESDO::getId)
                         .collect(Collectors.toList()));
-                    
+
                     // 时间信息
                     List<LocalDateTime> createTimes = orders.stream()
                         .map(ErpWholesaleCombinedESDO::getCreateTime)
@@ -1832,7 +2120,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         vo.setEarliestCreateTime(createTimes.get(0));
                         vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
                     }
-                    
+
                     // 查询销售价格表，检查是否有批发单价
                     try {
                         LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
@@ -1845,11 +2133,11 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     } catch (Exception e) {
                         System.err.println("查询销售价格失败: " + e.getMessage());
                     }
-                    
+
                     return vo;
                 })
                 .filter(vo -> vo.getWholesalePrice() == null || vo.getWholesalePrice().compareTo(BigDecimal.ZERO) == 0)
-                .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime, 
+                .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
@@ -1858,8 +2146,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             int size = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
             int start = page * size;
             int end = Math.min(start + size, allVoList.size());
-            
-            List<ErpWholesaleMissingPriceVO> pagedVoList = start < allVoList.size() ? 
+
+            List<ErpWholesaleMissingPriceVO> pagedVoList = start < allVoList.size() ?
                 allVoList.subList(start, end) : Collections.emptyList();
 
             return new PageResult<>(pagedVoList, (long) allVoList.size());
@@ -1896,7 +2184,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             // 按组品ID和客户名称分组
             Map<String, List<ErpWholesaleCombinedDO>> groupedData = allRecords.stream()
                 .filter(combinedDO -> combinedDO.getComboProductId() != null && StrUtil.isNotBlank(combinedDO.getCustomerName()))
-                .collect(Collectors.groupingBy(combinedDO -> 
+                .collect(Collectors.groupingBy(combinedDO ->
                     combinedDO.getComboProductId() + "_" + combinedDO.getCustomerName()));
 
             // 转换为VO并过滤出没有价格的记录
@@ -1904,11 +2192,11 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .map(entry -> {
                     List<ErpWholesaleCombinedDO> orders = entry.getValue();
                     ErpWholesaleCombinedDO firstOrder = orders.get(0);
-                    
+
                     ErpWholesaleMissingPriceVO vo = new ErpWholesaleMissingPriceVO();
                     vo.setComboProductId(firstOrder.getComboProductId());
                     vo.setCustomerName(firstOrder.getCustomerName());
-                    
+
                     // 统计信息
                     vo.setOrderCount(orders.size());
                     vo.setTotalProductQuantity(orders.stream()
@@ -1920,7 +2208,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     vo.setOrderIds(orders.stream()
                         .map(ErpWholesaleCombinedDO::getId)
                         .collect(Collectors.toList()));
-                    
+
                     // 时间信息
                     List<LocalDateTime> createTimes = orders.stream()
                         .map(ErpWholesaleCombinedDO::getCreateTime)
@@ -1931,7 +2219,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         vo.setEarliestCreateTime(createTimes.get(0));
                         vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
                     }
-                    
+
                     // 从组品表获取组品编号和产品名称
                     if (firstOrder.getComboProductId() != null) {
                         Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(firstOrder.getComboProductId());
@@ -1941,7 +2229,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                             vo.setProductName(comboProduct.getName());
                         }
                     }
-                    
+
                     // 查询销售价格表，检查是否有批发单价
                     try {
                         LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
@@ -1954,11 +2242,11 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     } catch (Exception e) {
                         System.err.println("查询销售价格失败: " + e.getMessage());
                     }
-                    
+
                     return vo;
                 })
                 .filter(vo -> vo.getWholesalePrice() == null || vo.getWholesalePrice().compareTo(BigDecimal.ZERO) == 0)
-                .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime, 
+                .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
@@ -1967,8 +2255,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             int size = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
             int start = page * size;
             int end = Math.min(start + size, allVoList.size());
-            
-            List<ErpWholesaleMissingPriceVO> pagedVoList = start < allVoList.size() ? 
+
+            List<ErpWholesaleMissingPriceVO> pagedVoList = start < allVoList.size() ?
                 allVoList.subList(start, end) : Collections.emptyList();
 
             return new PageResult<>(pagedVoList, (long) allVoList.size());

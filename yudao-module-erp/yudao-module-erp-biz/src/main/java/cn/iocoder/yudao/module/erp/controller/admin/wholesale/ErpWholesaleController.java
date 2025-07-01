@@ -2,13 +2,11 @@ package cn.iocoder.yudao.module.erp.controller.admin.wholesale;
 
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import cn.iocoder.yudao.framework.common.pojo.*;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.*;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportExcelVO;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleImportRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesalePurchaseAuditImportExcelVO;
-import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.ErpWholesaleSaleAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ImportVO.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
@@ -812,10 +810,8 @@ public class ErpWholesaleController {
 
         // 获取分页数据
         PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
-
         // 转换为导出VO
         List<ErpWholesaleShipExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpWholesaleShipExportExcelVO.class);
-
         // 导出Excel
         ExcelUtils.write(response, "批发发货订单信息.xlsx", "数据", ErpWholesaleShipExportExcelVO.class, exportList);
     }
@@ -888,10 +884,10 @@ public class ErpWholesaleController {
         @Operation(summary = "获得导入批发模板")
         public void importTemplate(HttpServletResponse response) throws IOException {
             // 手动创建导出 demo
-            List<ErpWholesaleImportExcelVO> list = Arrays.asList(
+            List<ErpWholesaleImportTemplateExcelVO> list = Arrays.asList(
             );
             // 输出
-            ExcelUtils.write(response, "批发导入模板.xlsx", "批发列表", ErpWholesaleImportExcelVO.class, list);
+            ExcelUtils.write(response, "批发导入模板.xlsx", "批发列表", ErpWholesaleImportTemplateExcelVO.class, list);
         }
 
         @PostMapping("/import")
@@ -905,7 +901,7 @@ public class ErpWholesaleController {
                 @RequestParam("file") MultipartFile file,
                 @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
             try (InputStream inputStream = file.getInputStream()) {
-                List<ErpWholesaleImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleImportExcelVO.class);
+                List<ErpWholesaleImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleImportExcelVO.class, new RowIndexListener<>());
                 return success(wholesaleService.importWholesaleList(list, updateSupport));
             } catch (Exception e) {
                 throw new RuntimeException("导入失败: " + e.getMessage());
@@ -918,16 +914,8 @@ public class ErpWholesaleController {
             // 手动创建导出 demo
             List<ErpWholesalePurchaseAuditImportExcelVO> list = Arrays.asList(
                     ErpWholesalePurchaseAuditImportExcelVO.builder()
-                            .no("示例订单1")
-                            .purchaseOtherFees(new BigDecimal("20.00"))
-                            .afterSalesStatus("正常")
-                            .purchaseAfterSalesAmount(new BigDecimal("0.00"))
                             .build(),
                     ErpWholesalePurchaseAuditImportExcelVO.builder()
-                            .no("示例订单2")
-                            .purchaseOtherFees(new BigDecimal("15.00"))
-                            .afterSalesStatus("正常")
-                            .purchaseAfterSalesAmount(new BigDecimal("0.00"))
                             .build()
             );
             // 输出
@@ -945,7 +933,7 @@ public class ErpWholesaleController {
                 @RequestParam("file") MultipartFile file,
                 @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
             try (InputStream inputStream = file.getInputStream()) {
-                List<ErpWholesalePurchaseAuditImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesalePurchaseAuditImportExcelVO.class);
+                List<ErpWholesalePurchaseAuditImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesalePurchaseAuditImportExcelVO.class, new RowIndexListener<>());
                 return success(wholesaleService.importWholesalePurchaseAuditList(list, updateSupport));
             } catch (Exception e) {
                 throw new RuntimeException("导入失败: " + e.getMessage());
@@ -958,16 +946,8 @@ public class ErpWholesaleController {
             // 手动创建导出 demo
             List<ErpWholesaleSaleAuditImportExcelVO> list = Arrays.asList(
                     ErpWholesaleSaleAuditImportExcelVO.builder()
-                            .no("示例订单1")
-                            .saleOtherFees(new BigDecimal("25.00"))
-                            .afterSalesStatus("正常")
-                            .saleAfterSalesAmount(new BigDecimal("0.00"))
                             .build(),
                     ErpWholesaleSaleAuditImportExcelVO.builder()
-                            .no("示例订单2")
-                            .saleOtherFees(new BigDecimal("30.00"))
-                            .afterSalesStatus("正常")
-                            .saleAfterSalesAmount(new BigDecimal("0.00"))
                             .build()
             );
             // 输出
@@ -985,7 +965,7 @@ public class ErpWholesaleController {
                 @RequestParam("file") MultipartFile file,
                 @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
             try (InputStream inputStream = file.getInputStream()) {
-                List<ErpWholesaleSaleAuditImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleSaleAuditImportExcelVO.class);
+                List<ErpWholesaleSaleAuditImportExcelVO> list = ExcelUtils.read(inputStream, ErpWholesaleSaleAuditImportExcelVO.class, new RowIndexListener<>());
                 return success(wholesaleService.importWholesaleSaleAuditList(list, updateSupport));
             } catch (Exception e) {
                 throw new RuntimeException("导入失败: " + e.getMessage());
