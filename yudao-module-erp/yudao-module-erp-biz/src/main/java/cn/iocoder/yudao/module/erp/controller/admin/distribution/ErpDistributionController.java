@@ -1,11 +1,9 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution;
 import cn.iocoder.yudao.framework.common.pojo.*;
+import cn.iocoder.yudao.framework.excel.core.listener.RowIndexListener;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionPurchaseAuditImportExcelVO;
-import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionSaleAuditImportExcelVO;
+import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.*;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpComboRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePriceRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.*;
@@ -634,12 +632,12 @@ public class ErpDistributionController {
     @Operation(summary = "获得导入代发模板")
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导出 demo
-        List<ErpDistributionExportExcelVO> list = Arrays.asList(
-                ErpDistributionExportExcelVO.builder()
+        List<ErpDistributionImportExcelTemplateVO> list = Arrays.asList(
+                ErpDistributionImportExcelTemplateVO.builder()
                 .build()
         );
         // 输出
-        ExcelUtils.write(response, "代发导入模板.xlsx", "代发列表", ErpDistributionExportExcelVO.class, list);
+        ExcelUtils.write(response, "代发导入模板.xlsx", "代发列表", ErpDistributionImportExcelTemplateVO.class, list);
     }
 
     @PostMapping("/import")
@@ -653,7 +651,7 @@ public class ErpDistributionController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
         try (InputStream inputStream = file.getInputStream()) {
-            List<ErpDistributionImportExcelVO> list = ExcelUtils.read(inputStream, ErpDistributionImportExcelVO.class);
+            List<ErpDistributionImportExcelVO> list = ExcelUtils.read(inputStream, ErpDistributionImportExcelVO.class, new RowIndexListener<>());
             return success(distributionService.importDistributionList(list, updateSupport));
         } catch (Exception e) {
             throw new RuntimeException("导入失败: " + e.getMessage());
@@ -666,16 +664,6 @@ public class ErpDistributionController {
         // 手动创建导出 demo
         List<ErpDistributionPurchaseAuditImportExcelVO> list = Arrays.asList(
                 ErpDistributionPurchaseAuditImportExcelVO.builder()
-                .no("DF202403250001")
-                .otherFees(new BigDecimal("100.00"))
-                .purchaseAfterSalesAmount(new BigDecimal("50.00"))
-                .afterSalesStatus("正常")
-                .build(),
-                ErpDistributionPurchaseAuditImportExcelVO.builder()
-                .no("DF202403250002")
-                .otherFees(new BigDecimal("200.00"))
-                .purchaseAfterSalesAmount(new BigDecimal("80.00"))
-                .afterSalesStatus("售后中")
                 .build()
         );
         // 输出

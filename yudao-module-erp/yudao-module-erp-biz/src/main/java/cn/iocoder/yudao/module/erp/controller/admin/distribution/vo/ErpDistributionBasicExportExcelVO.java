@@ -37,15 +37,6 @@ public class ErpDistributionBasicExportExcelVO {
     @ExcelProperty("详细地址")
     private String receiverAddress;
 
-    @ExcelProperty("原表商品")
-    private String originalProductName;
-
-    @ExcelProperty("原表规格")
-    private String originalStandard;
-
-    @ExcelProperty("原表数量")
-    private Integer originalQuantity;
-
     @ExcelProperty("备注信息")
     private String remark;
 
@@ -73,9 +64,6 @@ public class ErpDistributionBasicExportExcelVO {
     @ExcelProperty("中转人员")
     private String transferPerson;
 
-    @ExcelProperty("创建人员")
-    private String creator;
-
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}

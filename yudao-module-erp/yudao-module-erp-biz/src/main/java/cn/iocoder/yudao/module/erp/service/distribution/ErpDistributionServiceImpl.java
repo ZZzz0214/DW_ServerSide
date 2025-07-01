@@ -11,6 +11,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.*;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO.ErpDistributionImportRespVO;
@@ -189,9 +190,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
             // 重新创建索引映射
             IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class);
-            if (!indexOps.exists()) {
-                indexOps.create();
+            if (indexOps.exists()) {
+                indexOps.delete();
+                System.out.println("已删除旧索引");
             }
+            indexOps.create();
+            System.out.println("已创建新索引");
             indexOps.putMapping(indexOps.createMapping(ErpDistributionCombinedESDO.class));
             System.out.println("已重新创建索引映射");
 
@@ -599,7 +603,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                 // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
                 // 由于no字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-                
+
                 System.out.println("使用简化的编号匹配策略，查询词长度: " + no.length());
 
                 // 第一优先级：完全精确匹配（最高权重）
@@ -807,6 +811,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
             // 时间范围查询
             if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
+                // 前端传递的是字符串数组，直接使用字符串进行范围查询
+                System.out.println("创建时间查询: [" + pageReqVO.getCreateTime()[0] + ", " + pageReqVO.getCreateTime()[1] + "]");
                 boolQuery.must(QueryBuilders.rangeQuery("create_time")
                         .gte(pageReqVO.getCreateTime()[0])
                         .lte(pageReqVO.getCreateTime()[1]));
@@ -814,32 +820,14 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
             // 售后时间范围查询
             if (pageReqVO.getAfterSalesTime() != null && pageReqVO.getAfterSalesTime().length == 2) {
+                // 前端传递的是字符串数组，直接使用字符串进行范围查询
+                System.out.println("售后时间查询: [" + pageReqVO.getAfterSalesTime()[0] + ", " + pageReqVO.getAfterSalesTime()[1] + "]");
                 boolQuery.must(QueryBuilders.rangeQuery("after_sales_time")
                         .gte(pageReqVO.getAfterSalesTime()[0])
                         .lte(pageReqVO.getAfterSalesTime()[1]));
             }
 
             queryBuilder.withQuery(boolQuery);
-
-            // 在执行主查询前，先测试精确匹配是否工作
-            if (StrUtil.isNotBlank(pageReqVO.getNo())) {
-                System.out.println("=== 测试精确匹配 ===");
-                NativeSearchQuery exactTestQuery = new NativeSearchQueryBuilder()
-                        .withQuery(QueryBuilders.termQuery("no_keyword", pageReqVO.getNo().trim()))
-                        .withPageable(PageRequest.of(0, 10))
-                        .build();
-
-                SearchHits<ErpDistributionCombinedESDO> exactHits = elasticsearchRestTemplate.search(
-                        exactTestQuery,
-                        ErpDistributionCombinedESDO.class,
-                        IndexCoordinates.of("erp_distribution_combined"));
-
-                System.out.println("精确匹配测试结果: " + exactHits.getTotalHits() + " 条记录");
-                for (SearchHit<ErpDistributionCombinedESDO> hit : exactHits) {
-                    System.out.println("  精确匹配到: ID=" + hit.getContent().getId() + ", no='" + hit.getContent().getNo() + "', 评分=" + hit.getScore());
-                }
-                System.out.println("=== 精确匹配测试结束 ===");
-            }
 
             if (pageReqVO.getPageNo() > 1) {
                 return handleDeepPagination(pageReqVO, queryBuilder);
@@ -1509,14 +1497,22 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .failureNames(new LinkedHashMap<>())
                 .build();
 
-        // 批量处理数据
-        List<ErpDistributionCombinedDO> createList = new ArrayList<>();
-        List<ErpDistributionCombinedDO> updateList = new ArrayList<>();
-        List<ErpDistributionCombinedESDO> esCreateList = new ArrayList<>();
-        List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
-
         try {
-            // 批量查询组品信息
+            // 1. 统一校验所有数据（包括数据类型校验和业务逻辑校验）
+            Map<String, String> allErrors = validateAllImportData(importList, isUpdateSupport);
+            if (!allErrors.isEmpty()) {
+                // 如果有任何错误，直接返回错误信息，不进行后续导入
+                respVO.getFailureNames().putAll(allErrors);
+                return respVO;
+            }
+
+            // 2. 批量处理数据
+            List<ErpDistributionCombinedDO> createList = new ArrayList<>();
+            List<ErpDistributionCombinedDO> updateList = new ArrayList<>();
+            List<ErpDistributionCombinedESDO> esCreateList = new ArrayList<>();
+            List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
+
+            // 3. 批量查询组品信息
             Set<String> comboProductNos = importList.stream()
                     .map(ErpDistributionImportExcelVO::getComboProductNo)
                     .filter(StrUtil::isNotBlank)
@@ -1525,7 +1521,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     convertMap(comboProductESRepository.findByNoIn(new ArrayList<>(comboProductNos)),
                             ErpComboProductES::getNo, ErpComboProductES::getId);
 
-            // 批量查询已存在的记录
+            // 4. 批量查询已存在的记录
             Set<String> noSet = importList.stream()
                     .map(ErpDistributionImportExcelVO::getNo)
                     .filter(StrUtil::isNotBlank)
@@ -1533,29 +1529,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             Map<String, ErpDistributionCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
                     convertMap(distributionCombinedMapper.selectListByNoIn(noSet), ErpDistributionCombinedDO::getNo);
 
-            // 批量转换数据
+            // 5. 批量转换数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpDistributionImportExcelVO importVO = importList.get(i);
                 try {
-                    String username = SecurityFrameworkUtils.getLoginUsername();
+                    Long userId = SecurityFrameworkUtils.getLoginUserId();
+                    String username = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
                     LocalDateTime now = LocalDateTime.now();
-                                    // 校验销售人员是否存在
-                if (StrUtil.isNotBlank(importVO.getSalesperson())) {
-                    List<ErpSalespersonRespVO> salespersons = salespersonService.searchSalespersons(
-                            new ErpSalespersonPageReqVO().setSalespersonName(importVO.getSalesperson()));
-                    if (CollUtil.isEmpty(salespersons)) {
-                        throw exception(DISTRIBUTION_SALESPERSON_NOT_EXISTS, importVO.getSalesperson());
-                    }
-                }
-
-                // 校验客户是否存在
-                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
-                    List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
-                            new ErpCustomerPageReqVO().setName(importVO.getCustomerName()));
-                    if (CollUtil.isEmpty(customers)) {
-                        throw exception(DISTRIBUTION_CUSTOMER_NOT_EXISTS, importVO.getCustomerName());
-                    }
-                }
 
                     // 获取组品ID
                     Long comboProductId = null;
@@ -1573,9 +1553,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         ErpDistributionCombinedDO combined = BeanUtils.toBean(importVO, ErpDistributionCombinedDO.class).setId(IdUtil.getSnowflakeNextId()).setPurchaseAuditStatus(ErpAuditStatus.PROCESS.getStatus())  // 设置采购审核状态
                                 .setSaleAuditStatus(ErpAuditStatus.PROCESS.getStatus()).setPurchaseAfterSalesStatus(30).setSaleAfterSalesStatus(30);
                         combined.setComboProductId(comboProductId);
-                        if (StrUtil.isEmpty(combined.getNo())) {
-                            combined.setNo(noRedisDAO.generate(ErpNoRedisDAO.DISTRIBUTION_NO_PREFIX));
-                        }
+                        combined.setNo(noRedisDAO.generate(ErpNoRedisDAO.DISTRIBUTION_NO_PREFIX));
                         createList.add(combined);
                         esCreateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class).setCreator(username).setCreateTime(now));
                         respVO.getCreateNames().add(combined.getNo());
@@ -1585,7 +1563,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         combined.setId(existDistribution.getId());
                         combined.setComboProductId(comboProductId);
                         updateList.add(combined);
-                        esUpdateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class));
+                        esUpdateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class).setCreator(username).setCreateTime(now));
                         respVO.getUpdateNames().add(combined.getNo());
                     }
                     else {
@@ -1600,7 +1578,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 }
             }
 
-            // 批量保存到数据库
+            // 6. 批量保存到数据库
             if (CollUtil.isNotEmpty(createList)) {
                 distributionCombinedMapper.insertBatch(createList);
             }
@@ -1608,7 +1586,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 updateList.forEach(distributionCombinedMapper::updateById);
             }
 
-            // 批量保存到ES
+            // 7. 批量保存到ES
             if (CollUtil.isNotEmpty(esCreateList)) {
                 distributionCombinedESRepository.saveAll(esCreateList);
             }
@@ -1616,15 +1594,214 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 distributionCombinedESRepository.saveAll(esUpdateList);
             }
 
-            // 刷新ES索引
+            // 8. 刷新ES索引
             if (CollUtil.isNotEmpty(esCreateList) || CollUtil.isNotEmpty(esUpdateList)) {
                 elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
             }
         } catch (Exception ex) {
             respVO.getFailureNames().put("批量导入", "系统异常: " + ex.getMessage());
+        } finally {
+            // 清除转换错误
+            ConversionErrorHolder.clearErrors();
         }
 
         return respVO;
+    }
+
+    /**
+     * 统一校验所有导入数据（包括数据类型校验和业务逻辑校验）
+     * 如果出现任何错误信息都记录下来并返回，后续操作就不进行了
+     */
+    private Map<String, String> validateAllImportData(List<ErpDistributionImportExcelVO> importList, boolean isUpdateSupport) {
+        Map<String, String> allErrors = new LinkedHashMap<>();
+
+        // 1. 数据类型校验前置检查
+        Map<String, String> dataTypeErrors = validateDataTypeErrors(importList);
+        if (!dataTypeErrors.isEmpty()) {
+            allErrors.putAll(dataTypeErrors);
+            return allErrors; // 如果有数据类型错误，直接返回，不进行后续校验
+        }
+
+        // 2. 批量查询已存在的记录
+        Set<String> noSet = importList.stream()
+                .map(ErpDistributionImportExcelVO::getNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, ErpDistributionCombinedDO> existMap = noSet.isEmpty() ? Collections.emptyMap() :
+                convertMap(distributionCombinedMapper.selectListByNoIn(noSet), ErpDistributionCombinedDO::getNo);
+
+        // 3. 批量查询组品信息
+        Set<String> comboProductNos = importList.stream()
+                .map(ErpDistributionImportExcelVO::getComboProductNo)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, Long> comboProductIdMap = comboProductNos.isEmpty() ? Collections.emptyMap() :
+                convertMap(comboProductESRepository.findByNoIn(new ArrayList<>(comboProductNos)),
+                        ErpComboProductES::getNo, ErpComboProductES::getId);
+
+        // 4. 批量查询销售人员信息
+        Set<String> salespersonNames = importList.stream()
+                .map(ErpDistributionImportExcelVO::getSalesperson)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, Boolean> salespersonExistsMap = new HashMap<>();
+        for (String salespersonName : salespersonNames) {
+            List<ErpSalespersonRespVO> salespersons = salespersonService.searchSalespersons(
+                    new ErpSalespersonPageReqVO().setSalespersonName(salespersonName));
+            salespersonExistsMap.put(salespersonName, CollUtil.isNotEmpty(salespersons));
+        }
+
+        // 5. 批量查询客户信息
+        Set<String> customerNames = importList.stream()
+                .map(ErpDistributionImportExcelVO::getCustomerName)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, Boolean> customerExistsMap = new HashMap<>();
+        for (String customerName : customerNames) {
+            List<ErpCustomerSaveReqVO> customers = customerService.searchCustomers(
+                    new ErpCustomerPageReqVO().setName(customerName));
+            customerExistsMap.put(customerName, CollUtil.isNotEmpty(customers));
+        }
+
+        // 6. 逐行校验业务逻辑
+        for (int i = 0; i < importList.size(); i++) {
+            ErpDistributionImportExcelVO importVO = importList.get(i);
+            String errorKey = "第" + (i + 1) + "行";
+
+            try {
+                // 6.1 基础数据校验
+                if (StrUtil.isBlank(importVO.getOrderNumber())) {
+                    allErrors.put(errorKey, "订单号不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getReceiverName())) {
+                    allErrors.put(errorKey, "收件姓名不能为空");
+                    continue;
+                }
+
+                if (StrUtil.isBlank(importVO.getReceiverPhone())) {
+                    allErrors.put(errorKey, "联系电话不能为空");
+                    continue;
+                }
+
+                if (StrUtil.isBlank(importVO.getReceiverAddress())) {
+                    allErrors.put(errorKey, "详细地址不能为空");
+                    continue;
+                }
+
+                if (importVO.getOriginalQuantity() != null && importVO.getOriginalQuantity() <= 0) {
+                    allErrors.put(errorKey, "原表数量必须大于0");
+                    continue;
+                }
+
+                if (StrUtil.isBlank(importVO.getComboProductNo())) {
+                    allErrors.put(errorKey, "组品编号不能为空");
+                    continue;
+                }
+
+                // 6.5 校验数量字段
+                if (importVO.getProductQuantity() != null && importVO.getProductQuantity() <= 0) {
+                    allErrors.put(errorKey, "产品数量必须大于0");
+                    continue;
+                }
+
+
+
+                // 6.2 校验组品编号是否存在
+                if (StrUtil.isNotBlank(importVO.getComboProductNo())) {
+                    Long comboProductId = comboProductIdMap.get(importVO.getComboProductNo());
+                    if (comboProductId == null) {
+                        allErrors.put(errorKey, "组品编号不存在: " + importVO.getComboProductNo());
+                        continue;
+                    }
+                }
+
+                // 6.3 校验销售人员是否存在
+                if (StrUtil.isNotBlank(importVO.getSalesperson())) {
+                    Boolean salespersonExists = salespersonExistsMap.get(importVO.getSalesperson());
+                    if (salespersonExists == null || !salespersonExists) {
+                        allErrors.put(errorKey, "销售人员不存在: " + importVO.getSalesperson());
+                        continue;
+                    }
+                }
+
+                // 6.4 校验客户是否存在
+                if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                    Boolean customerExists = customerExistsMap.get(importVO.getCustomerName());
+                    if (customerExists == null || !customerExists) {
+                        allErrors.put(errorKey, "客户名称不存在: " + importVO.getCustomerName());
+                        continue;
+                    }
+                }
+
+
+
+                // 6.7 判断是新增还是更新，并进行相应校验
+                ErpDistributionCombinedDO existDistribution = existMap.get(importVO.getNo());
+                if (existDistribution == null) {
+                    // 新增校验：校验订单编号唯一性
+                    try {
+                        validateDistributionForCreateOrUpdate(null, BeanUtils.toBean(importVO, ErpDistributionSaveReqVO.class));
+                    } catch (ServiceException ex) {
+                        allErrors.put(errorKey, ex.getMessage());
+                    }
+                } else if (isUpdateSupport) {
+                    // 更新校验：校验订单编号唯一性（排除自身）
+                    try {
+                        validateDistributionForCreateOrUpdate(existDistribution.getId(), BeanUtils.toBean(importVO, ErpDistributionSaveReqVO.class));
+                    } catch (ServiceException ex) {
+                        allErrors.put(errorKey, ex.getMessage());
+                    }
+                } else {
+                    allErrors.put(errorKey, "订单编号已存在，不支持更新: " + importVO.getNo());
+                }
+            } catch (Exception ex) {
+                allErrors.put(errorKey, "系统异常: " + ex.getMessage());
+            }
+        }
+
+        return allErrors;
+    }
+
+    /**
+     * 数据类型校验前置检查
+     * 检查所有转换错误，如果有错误则返回错误信息，不进行后续导入
+     */
+    private Map<String, String> validateDataTypeErrors(List<ErpDistributionImportExcelVO> importList) {
+        Map<String, String> dataTypeErrors = new LinkedHashMap<>();
+
+        // 检查是否有转换错误
+        Map<Integer, List<ConversionErrorHolder.ConversionError>> allErrors = ConversionErrorHolder.getAllErrors();
+
+        if (!allErrors.isEmpty()) {
+            // 收集所有转换错误
+            for (Map.Entry<Integer, List<ConversionErrorHolder.ConversionError>> entry : allErrors.entrySet()) {
+                int rowIndex = entry.getKey();
+                List<ConversionErrorHolder.ConversionError> errors = entry.getValue();
+
+                // 获取订单编号
+                String orderNo = "未知订单编号";
+                int arrayIndex = rowIndex - 1;
+                if (arrayIndex >= 0 && arrayIndex < importList.size()) {
+                    ErpDistributionImportExcelVO importVO = importList.get(arrayIndex);
+                    if (StrUtil.isNotBlank(importVO.getNo())) {
+                        orderNo = importVO.getNo();
+                    }
+                }
+
+                String errorKey = "第" + rowIndex + "行(" + orderNo + ")";
+                List<String> errorMessages = new ArrayList<>();
+
+                for (ConversionErrorHolder.ConversionError error : errors) {
+                    errorMessages.add(error.getErrorMessage());
+                }
+
+                String errorMsg = String.join("; ", errorMessages);
+                dataTypeErrors.put(errorKey, "数据类型错误: " + errorMsg);
+            }
+        }
+
+        return dataTypeErrors;
     }
 
     @Override
@@ -1840,7 +2017,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
         // 由于字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-        
+
         System.out.println("使用简化的编号匹配策略，查询词长度: " + keyword.length());
 
         // 第一优先级：完全精确匹配（最高权重）
@@ -1933,7 +2110,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             Map<String, List<ErpDistributionCombinedESDO>> groupedData = searchHits.getSearchHits().stream()
                 .map(SearchHit::getContent)
                 .filter(esDO -> esDO.getComboProductId() != null && StrUtil.isNotBlank(esDO.getCustomerName()))
-                .collect(Collectors.groupingBy(esDO -> 
+                .collect(Collectors.groupingBy(esDO ->
                     esDO.getComboProductId() + "_" + esDO.getCustomerName()));
 
             // 转换为VO并过滤出没有价格的记录
@@ -1941,13 +2118,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .map(entry -> {
                     List<ErpDistributionCombinedESDO> orders = entry.getValue();
                     ErpDistributionCombinedESDO firstOrder = orders.get(0);
-                    
+
                     ErpDistributionMissingPriceVO vo = new ErpDistributionMissingPriceVO();
                     vo.setComboProductId(firstOrder.getComboProductId());
                     vo.setComboProductNo(firstOrder.getComboProductNo());
                     vo.setProductName(firstOrder.getProductName());
                     vo.setCustomerName(firstOrder.getCustomerName());
-                    
+
                     // 统计信息
                     vo.setOrderCount(orders.size());
                     vo.setTotalProductQuantity(orders.stream()
@@ -1959,7 +2136,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     vo.setOrderIds(orders.stream()
                         .map(ErpDistributionCombinedESDO::getId)
                         .collect(Collectors.toList()));
-                    
+
                     // 时间信息
                     List<LocalDateTime> createTimes = orders.stream()
                         .map(ErpDistributionCombinedESDO::getCreateTime)
@@ -1970,7 +2147,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setEarliestCreateTime(createTimes.get(0));
                         vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
                     }
-                    
+
                     // 查询销售价格表，检查是否有代发单价
                     try {
                         LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
@@ -1983,11 +2160,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     } catch (Exception e) {
                         System.err.println("查询销售价格失败: " + e.getMessage());
                     }
-                    
+
                     return vo;
                 })
                 .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
-                .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime, 
+                .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
@@ -1996,8 +2173,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             int size = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
             int start = page * size;
             int end = Math.min(start + size, allVoList.size());
-            
-            List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ? 
+
+            List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ?
                 allVoList.subList(start, end) : Collections.emptyList();
 
             return new PageResult<>(pagedVoList, (long) allVoList.size());
@@ -2034,7 +2211,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 按组品ID和客户名称分组
             Map<String, List<ErpDistributionCombinedDO>> groupedData = allRecords.stream()
                 .filter(combinedDO -> combinedDO.getComboProductId() != null && StrUtil.isNotBlank(combinedDO.getCustomerName()))
-                .collect(Collectors.groupingBy(combinedDO -> 
+                .collect(Collectors.groupingBy(combinedDO ->
                     combinedDO.getComboProductId() + "_" + combinedDO.getCustomerName()));
 
             // 转换为VO并过滤出没有价格的记录
@@ -2042,11 +2219,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .map(entry -> {
                     List<ErpDistributionCombinedDO> orders = entry.getValue();
                     ErpDistributionCombinedDO firstOrder = orders.get(0);
-                    
+
                     ErpDistributionMissingPriceVO vo = new ErpDistributionMissingPriceVO();
                     vo.setComboProductId(firstOrder.getComboProductId());
                     vo.setCustomerName(firstOrder.getCustomerName());
-                    
+
                     // 统计信息
                     vo.setOrderCount(orders.size());
                     vo.setTotalProductQuantity(orders.stream()
@@ -2058,7 +2235,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     vo.setOrderIds(orders.stream()
                         .map(ErpDistributionCombinedDO::getId)
                         .collect(Collectors.toList()));
-                    
+
                     // 时间信息
                     List<LocalDateTime> createTimes = orders.stream()
                         .map(ErpDistributionCombinedDO::getCreateTime)
@@ -2069,7 +2246,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setEarliestCreateTime(createTimes.get(0));
                         vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
                     }
-                    
+
                     // 从组品表获取组品编号和产品名称
                     if (firstOrder.getComboProductId() != null) {
                         Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(firstOrder.getComboProductId());
@@ -2079,7 +2256,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                             vo.setProductName(comboProduct.getName());
                         }
                     }
-                    
+
                     // 查询销售价格表，检查是否有代发单价
                     try {
                         LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
@@ -2092,11 +2269,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     } catch (Exception e) {
                         System.err.println("查询销售价格失败: " + e.getMessage());
                     }
-                    
+
                     return vo;
                 })
                 .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
-                .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime, 
+                .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
@@ -2105,8 +2282,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             int size = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
             int start = page * size;
             int end = Math.min(start + size, allVoList.size());
-            
-            List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ? 
+
+            List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ?
                 allVoList.subList(start, end) : Collections.emptyList();
 
             return new PageResult<>(pagedVoList, (long) allVoList.size());
@@ -2114,6 +2291,44 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         } catch (Exception e) {
             System.err.println("从数据库查询代发缺失价格记录失败: " + e.getMessage());
             return new PageResult<>(Collections.emptyList(), 0L);
+        }
+    }
+
+    /**
+     * 将LocalDateTime转换为ES期望的时间格式
+     * 前端格式: yyyy-MM-dd HH:mm:ss (如: 2025-07-01 00:00:00)
+     * ES格式: yyyy-MM-dd HH:mm:ss (如: 2025-07-01 00:00:00)
+     */
+    private String convertLocalDateTimeToESFormat(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+
+        try {
+            // 使用前端期望的格式 yyyy-MM-dd HH:mm:ss
+            return localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            System.err.println("LocalDateTime格式转换失败: " + localDateTime + ", 错误: " + e.getMessage());
+            return localDateTime.toString(); // 如果转换失败，返回toString结果
+        }
+    }
+
+    /**
+     * 将前端传递的时间格式转换为ES期望的时间格式
+     * 前端格式: YYYY-MM-DD HH:mm:ss (如: 2025-07-01 21:02:21)
+     * ES格式: yyyy-MM-dd'T'HH:mm:ss (如: 2025-07-01T21:02:21)
+     */
+    private String convertToESDateTimeFormat(String dateTimeStr) {
+        if (StrUtil.isBlank(dateTimeStr)) {
+            return null;
+        }
+
+        try {
+            // 将 YYYY-MM-DD HH:mm:ss 格式转换为 yyyy-MM-dd'T'HH:mm:ss 格式
+            return dateTimeStr.replace(" ", "T");
+        } catch (Exception e) {
+            System.err.println("时间格式转换失败: " + dateTimeStr + ", 错误: " + e.getMessage());
+            return dateTimeStr; // 如果转换失败，返回原字符串
         }
     }
 }

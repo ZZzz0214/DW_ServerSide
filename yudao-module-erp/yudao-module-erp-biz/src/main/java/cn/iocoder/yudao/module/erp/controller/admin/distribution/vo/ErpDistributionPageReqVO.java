@@ -5,11 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.time.LocalDateTime;
-
-import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
 
 @Schema(description = "管理后台 - ERP 代发分页 Request VO")
 @Data
@@ -60,8 +55,7 @@ public class ErpDistributionPageReqVO extends PageParam {
     private String afterSalesStatus;
 
     @Schema(description = "售后时间")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime[] afterSalesTime;
+    private String[] afterSalesTime;
 
     @Schema(description = "采购人员", example = "张三")
     private String purchaser;
@@ -82,8 +76,7 @@ public class ErpDistributionPageReqVO extends PageParam {
     private String creator;
 
     @Schema(description = "创建时间")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime[] createTime;
+    private String[] createTime;
 
     @Schema(description = "租户编号", example = "1")
     private Long tenantId;
