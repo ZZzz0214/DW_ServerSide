@@ -469,8 +469,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                 respVO.setShippingFee(shippingFee);
                 respVO.setTotalPurchaseAmount(totalPurchaseAmount);
-                System.out.println(respVO.getShippingFee());
-                System.out.println(respVO.getTotalPurchaseAmount());
+//                System.out.println(respVO.getShippingFee());
+//                System.out.println(respVO.getTotalPurchaseAmount());
+//                System.out.println(combined.getCustomerName());
 
                 // 4. 根据组品ID和客户名称获取销售价格
                 if (combined.getCustomerName() != null) {
@@ -486,10 +487,14 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                                 .multiply(new BigDecimal(respVO.getProductQuantity()))
                                 .add(saleShippingFee)
                                 .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-                        System.out.println("服务层销售总额："+totalSaleAmount);
                         respVO.setSaleShippingFee(saleShippingFee);
                         respVO.setTotalSaleAmount(totalSaleAmount);
                     }
+                    else {
+                        BigDecimal saleShippingFee = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
+                        respVO.setTotalSaleAmount(saleShippingFee);
+                    }
+
                 }
             }
         }

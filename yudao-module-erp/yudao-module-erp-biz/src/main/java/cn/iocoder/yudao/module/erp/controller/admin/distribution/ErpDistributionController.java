@@ -389,6 +389,7 @@ public class ErpDistributionController {
         }
 
         // 2. 转换为VO对象
+        System.out.println("总额"+distribution.getTotalSaleAmount());
         ErpDistributionSaleAuditVO respVO = BeanUtils.toBean(distribution, ErpDistributionSaleAuditVO.class);
         System.out.println("销售总额："+respVO.getTotalSaleAmount());
 
