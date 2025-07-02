@@ -58,6 +58,11 @@ public class ErpDistributionWholesaleStatisticsController {
         return success(statisticsService.getDetailStatistics(reqVO, categoryName));
     }
 
-
+    @GetMapping("/get-audit-statistics")
+    @Operation(summary = "获得代发批发审核数量统计")
+    @PreAuthorize("@ss.hasPermission('erp:statistics:query')")
+    public CommonResult<ErpDistributionWholesaleStatisticsRespVO.AuditStatistics> getAuditStatistics(@Valid ErpDistributionWholesaleStatisticsReqVO reqVO) {
+        return success(statisticsService.getAuditStatistics(reqVO));
+    }
 
 }

@@ -287,23 +287,81 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         // 1.4 校验数据
         validateWholesaleForCreateOrUpdate(combined.getId(), updateReqVO);
 
-        // 2. 更新数据库记录
-        ErpWholesaleCombinedDO updateDO = BeanUtils.toBean(updateReqVO, ErpWholesaleCombinedDO.class)
-                .setId(combined.getId())
-                .setPurchaseOtherFees(updateReqVO.getOtherFees())
-                .setPurchaseTruckFee(updateReqVO.getTruckFee())
-                .setPurchaseLogisticsFee(updateReqVO.getLogisticsFee())
-                .setNo(combined.getNo())
-                .setPurchaseAuditStatus(combined.getPurchaseAuditStatus())
-                .setSaleAuditStatus(combined.getSaleAuditStatus());
+        // 2. 更新数据库记录 - 将ES数据转换为DO，然后有选择性地更新
+        ErpWholesaleCombinedDO updateDO = BeanUtils.toBean(combined, ErpWholesaleCombinedDO.class);
+        
+        // 有选择性地更新字段，只更新前端传入的有值字段
+        if (updateReqVO.getLogisticsNumber() != null) {
+            updateDO.setLogisticsNumber(updateReqVO.getLogisticsNumber());
+        }
+        if (updateReqVO.getReceiverName() != null) {
+            updateDO.setReceiverName(updateReqVO.getReceiverName());
+        }
+        if (updateReqVO.getReceiverPhone() != null) {
+            updateDO.setReceiverPhone(updateReqVO.getReceiverPhone());
+        }
+        if (updateReqVO.getReceiverAddress() != null) {
+            updateDO.setReceiverAddress(updateReqVO.getReceiverAddress());
+        }
+        if (updateReqVO.getComboProductId() != null) {
+            updateDO.setComboProductId(updateReqVO.getComboProductId());
+        }
+        if (updateReqVO.getProductSpecification() != null) {
+            updateDO.setProductSpecification(updateReqVO.getProductSpecification());
+        }
+        if (updateReqVO.getProductQuantity() != null) {
+            updateDO.setProductQuantity(updateReqVO.getProductQuantity());
+        }
+        if (updateReqVO.getAfterSalesStatus() != null) {
+            updateDO.setAfterSalesStatus(updateReqVO.getAfterSalesStatus());
+        }
+        if (updateReqVO.getAfterSalesTime() != null) {
+            updateDO.setAfterSalesTime(parseDateTime(updateReqVO.getAfterSalesTime()));
+        }
+        if (updateReqVO.getRemark() != null) {
+            updateDO.setRemark(updateReqVO.getRemark());
+        }
+        if (updateReqVO.getPurchaseRemark() != null) {
+            updateDO.setPurchaseRemark(updateReqVO.getPurchaseRemark());
+        }
+        if (updateReqVO.getSalesperson() != null) {
+            updateDO.setSalesperson(updateReqVO.getSalesperson());
+        }
+        if (updateReqVO.getCustomerName() != null) {
+            updateDO.setCustomerName(updateReqVO.getCustomerName());
+        }
+        if (updateReqVO.getTransferPerson() != null) {
+            updateDO.setTransferPerson(updateReqVO.getTransferPerson());
+        }
+        if (updateReqVO.getSaleRemark() != null) {
+            updateDO.setSaleRemark(updateReqVO.getSaleRemark());
+        }
+        if (updateReqVO.getOtherFees() != null) {
+            updateDO.setPurchaseOtherFees(updateReqVO.getOtherFees());
+        }
+        if (updateReqVO.getTruckFee() != null) {
+            updateDO.setPurchaseTruckFee(updateReqVO.getTruckFee());
+        }
+        if (updateReqVO.getLogisticsFee() != null) {
+            updateDO.setPurchaseLogisticsFee(updateReqVO.getLogisticsFee());
+        }
+        if (updateReqVO.getSaleOtherFees() != null) {
+            updateDO.setSaleOtherFees(updateReqVO.getSaleOtherFees());
+        }
+        if (updateReqVO.getSaleTruckFee() != null) {
+            updateDO.setSaleTruckFee(updateReqVO.getSaleTruckFee());
+        }
+        if (updateReqVO.getSaleLogisticsFee() != null) {
+            updateDO.setSaleLogisticsFee(updateReqVO.getSaleLogisticsFee());
+        }
 
         wholesaleCombinedMapper.updateById(updateDO);
-        ErpWholesaleCombinedDO dbCombined = wholesaleCombinedMapper.selectById(updateDO.getId());
-
-        // 3. 更新ES记录
+        
+        // 3. 更新ES记录 - 直接使用更新后的DO转换为ES
         ErpWholesaleCombinedESDO combinedESDO = convertCombinedToES(updateDO);
-        combinedESDO.setCreator(dbCombined.getCreator());
-        combinedESDO.setCreateTime(dbCombined.getCreateTime());
+        // 保留原有的创建者和创建时间
+        combinedESDO.setCreator(combined.getCreator());
+        combinedESDO.setCreateTime(combined.getCreateTime());
         wholesaleCombinedESRepository.save(combinedESDO);
     }
 

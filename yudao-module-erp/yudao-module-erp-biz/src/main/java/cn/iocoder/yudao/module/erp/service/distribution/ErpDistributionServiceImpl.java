@@ -331,19 +331,80 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 1.4 校验数据
         validateDistributionForCreateOrUpdate(combined.getId(), updateReqVO);
 
-        // 2. 更新数据库记录
-        ErpDistributionCombinedDO updateDO = BeanUtils.toBean(updateReqVO, ErpDistributionCombinedDO.class)
-                .setId(combined.getId())
-                .setPurchaseOtherFees(updateReqVO.getOtherFees())
-                .setNo(combined.getNo())
-                .setPurchaseAuditStatus(combined.getPurchaseAuditStatus())
-                .setSaleAuditStatus(combined.getSaleAuditStatus());
+        // 2. 更新数据库记录 - 将ES数据转换为DO，然后有选择性地更新
+        ErpDistributionCombinedDO updateDO = convertESToCombinedDO(combined);
+        
+        // 有选择性地更新字段，只更新前端传入的有值字段
+        if (updateReqVO.getOrderNumber() != null) {
+            updateDO.setOrderNumber(updateReqVO.getOrderNumber());
+        }
+        if (updateReqVO.getLogisticsCompany() != null) {
+            updateDO.setLogisticsCompany(updateReqVO.getLogisticsCompany());
+        }
+        if (updateReqVO.getTrackingNumber() != null) {
+            updateDO.setTrackingNumber(updateReqVO.getTrackingNumber());
+        }
+        if (updateReqVO.getReceiverName() != null) {
+            updateDO.setReceiverName(updateReqVO.getReceiverName());
+        }
+        if (updateReqVO.getReceiverPhone() != null) {
+            updateDO.setReceiverPhone(updateReqVO.getReceiverPhone());
+        }
+        if (updateReqVO.getReceiverAddress() != null) {
+            updateDO.setReceiverAddress(updateReqVO.getReceiverAddress());
+        }
+        if (updateReqVO.getOriginalProductName() != null) {
+            updateDO.setOriginalProductName(updateReqVO.getOriginalProductName());
+        }
+        if (updateReqVO.getOriginalStandard() != null) {
+            updateDO.setOriginalStandard(updateReqVO.getOriginalStandard());
+        }
+        if (updateReqVO.getOriginalQuantity() != null) {
+            updateDO.setOriginalQuantity(updateReqVO.getOriginalQuantity());
+        }
+        if (updateReqVO.getRemark() != null) {
+            updateDO.setRemark(updateReqVO.getRemark());
+        }
+        if (updateReqVO.getComboProductId() != null) {
+            updateDO.setComboProductId(updateReqVO.getComboProductId());
+        }
+        if (updateReqVO.getProductQuantity() != null) {
+            updateDO.setProductQuantity(updateReqVO.getProductQuantity());
+        }
+        if (updateReqVO.getAfterSalesStatus() != null) {
+            updateDO.setAfterSalesStatus(updateReqVO.getAfterSalesStatus());
+        }
+        if (updateReqVO.getAfterSalesTime() != null) {
+            updateDO.setAfterSalesTime(parseDateTime(updateReqVO.getAfterSalesTime()));
+        }
+        if (updateReqVO.getPurchaseRemark() != null) {
+            updateDO.setPurchaseRemark(updateReqVO.getPurchaseRemark());
+        }
+        if (updateReqVO.getSalesperson() != null) {
+            updateDO.setSalesperson(updateReqVO.getSalesperson());
+        }
+        if (updateReqVO.getCustomerName() != null) {
+            updateDO.setCustomerName(updateReqVO.getCustomerName());
+        }
+        if (updateReqVO.getSaleRemark() != null) {
+            updateDO.setSaleRemark(updateReqVO.getSaleRemark());
+        }
+        if (updateReqVO.getTransferPerson() != null) {
+            updateDO.setTransferPerson(updateReqVO.getTransferPerson());
+        }
+        if (updateReqVO.getOtherFees() != null) {
+            updateDO.setPurchaseOtherFees(updateReqVO.getOtherFees());
+        }
+        if (updateReqVO.getSaleOtherFees() != null) {
+            updateDO.setSaleOtherFees(updateReqVO.getSaleOtherFees());
+        }
         distributionCombinedMapper.updateById(updateDO);
-        ErpDistributionCombinedDO dbCombined = distributionCombinedMapper.selectById(updateDO.getId());
-        // 3. 更新ES记录
+        
+        // 3. 更新ES记录 - 直接使用更新后的DO转换为ES
         ErpDistributionCombinedESDO combinedESDO = convertCombinedToES(updateDO);
-        combinedESDO.setCreator(dbCombined.getCreator());
-         combinedESDO.setCreateTime(dbCombined.getCreateTime());
+        // 保留原有的创建者和创建时间
+        combinedESDO.setCreator(combined.getCreator());
+        combinedESDO.setCreateTime(combined.getCreateTime());
         distributionCombinedESRepository.save(combinedESDO);
 
         // 4. 刷新ES索引

@@ -188,4 +188,70 @@ public class ErpDistributionWholesaleStatisticsRespVO {
         private LocalDateTime createTime;
     }
 
+    /**
+     * 审核数量统计
+     */
+    @Data
+    public static class AuditStatistics {
+        @Schema(description = "代发采购未审核数量", example = "10")
+        private Integer distributionPurchaseUnauditedCount = 0;
+
+        @Schema(description = "代发采购已审核数量", example = "20")
+        private Integer distributionPurchaseAuditedCount = 0;
+
+        @Schema(description = "代发采购未售后数量", example = "15")
+        private Integer distributionPurchaseNoAfterSalesCount = 0;
+
+        @Schema(description = "代发采购已售后数量", example = "5")
+        private Integer distributionPurchaseAfterSalesCount = 0;
+
+        @Schema(description = "代发销售未审核数量", example = "8")
+        private Integer distributionSaleUnauditedCount = 0;
+
+        @Schema(description = "代发销售已审核数量", example = "18")
+        private Integer distributionSaleAuditedCount = 0;
+
+        @Schema(description = "代发销售未售后数量", example = "12")
+        private Integer distributionSaleNoAfterSalesCount = 0;
+
+        @Schema(description = "代发销售已售后数量", example = "6")
+        private Integer distributionSaleAfterSalesCount = 0;
+
+        @Schema(description = "批发采购未审核数量", example = "5")
+        private Integer wholesalePurchaseUnauditedCount = 0;
+
+        @Schema(description = "批发采购已审核数量", example = "15")
+        private Integer wholesalePurchaseAuditedCount = 0;
+
+        @Schema(description = "批发采购未售后数量", example = "10")
+        private Integer wholesalePurchaseNoAfterSalesCount = 0;
+
+        @Schema(description = "批发采购已售后数量", example = "5")
+        private Integer wholesalePurchaseAfterSalesCount = 0;
+
+        @Schema(description = "批发销售未审核数量", example = "3")
+        private Integer wholesaleSaleUnauditedCount = 0;
+
+        @Schema(description = "批发销售已审核数量", example = "12")
+        private Integer wholesaleSaleAuditedCount = 0;
+
+        @Schema(description = "批发销售未售后数量", example = "8")
+        private Integer wholesaleSaleNoAfterSalesCount = 0;
+
+        @Schema(description = "批发销售已售后数量", example = "4")
+        private Integer wholesaleSaleAfterSalesCount = 0;
+
+        @Schema(description = "代发采购总数", example = "30")
+        private Integer distributionPurchaseTotalCount = 0;
+
+        @Schema(description = "代发销售总数", example = "26")
+        private Integer distributionSaleTotalCount = 0;
+
+        @Schema(description = "批发采购总数", example = "20")
+        private Integer wholesalePurchaseTotalCount = 0;
+
+        @Schema(description = "批发销售总数", example = "15")
+        private Integer wholesaleSaleTotalCount = 0;
+    }
+
 } 

@@ -244,6 +244,144 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public ErpDistributionWholesaleStatisticsRespVO.AuditStatistics getAuditStatistics(ErpDistributionWholesaleStatisticsReqVO reqVO) {
+        ErpDistributionWholesaleStatisticsRespVO.AuditStatistics auditStatistics = new ErpDistributionWholesaleStatisticsRespVO.AuditStatistics();
+
+        try {
+            // 获取代发数据
+            List<ErpDistributionCombinedESDO> distributionData = getDistributionDataFromES(reqVO);
+            
+            // 获取批发数据
+            List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataFromES(reqVO);
+
+            // 统计代发数据
+            for (ErpDistributionCombinedESDO distribution : distributionData) {
+                // 代发采购审核状态统计
+                Integer purchaseAuditStatus = distribution.getPurchaseAuditStatus();
+                if (purchaseAuditStatus != null) {
+                    if (purchaseAuditStatus == 10) { // 未审核
+                        auditStatistics.setDistributionPurchaseUnauditedCount(
+                            auditStatistics.getDistributionPurchaseUnauditedCount() + 1);
+                    } else if (purchaseAuditStatus == 20) { // 已审核
+                        auditStatistics.setDistributionPurchaseAuditedCount(
+                            auditStatistics.getDistributionPurchaseAuditedCount() + 1);
+                    }
+                }
+
+                // 代发采购售后状态统计
+                Integer purchaseAfterSalesStatus = distribution.getPurchaseAfterSalesStatus();
+                if (purchaseAfterSalesStatus != null) {
+                    if (purchaseAfterSalesStatus == 30) { // 未售后
+                        auditStatistics.setDistributionPurchaseNoAfterSalesCount(
+                            auditStatistics.getDistributionPurchaseNoAfterSalesCount() + 1);
+                    } else if (purchaseAfterSalesStatus == 40) { // 已售后
+                        auditStatistics.setDistributionPurchaseAfterSalesCount(
+                            auditStatistics.getDistributionPurchaseAfterSalesCount() + 1);
+                    }
+                }
+
+                // 代发销售审核状态统计
+                Integer saleAuditStatus = distribution.getSaleAuditStatus();
+                if (saleAuditStatus != null) {
+                    if (saleAuditStatus == 10) { // 未审核
+                        auditStatistics.setDistributionSaleUnauditedCount(
+                            auditStatistics.getDistributionSaleUnauditedCount() + 1);
+                    } else if (saleAuditStatus == 20) { // 已审核
+                        auditStatistics.setDistributionSaleAuditedCount(
+                            auditStatistics.getDistributionSaleAuditedCount() + 1);
+                    }
+                }
+
+                // 代发销售售后状态统计
+                Integer saleAfterSalesStatus = distribution.getSaleAfterSalesStatus();
+                if (saleAfterSalesStatus != null) {
+                    if (saleAfterSalesStatus == 30) { // 未售后
+                        auditStatistics.setDistributionSaleNoAfterSalesCount(
+                            auditStatistics.getDistributionSaleNoAfterSalesCount() + 1);
+                    } else if (saleAfterSalesStatus == 40) { // 已售后
+                        auditStatistics.setDistributionSaleAfterSalesCount(
+                            auditStatistics.getDistributionSaleAfterSalesCount() + 1);
+                    }
+                }
+            }
+
+            // 统计批发数据
+            for (ErpWholesaleCombinedESDO wholesale : wholesaleData) {
+                // 批发采购审核状态统计
+                Integer purchaseAuditStatus = wholesale.getPurchaseAuditStatus();
+                if (purchaseAuditStatus != null) {
+                    if (purchaseAuditStatus == 10) { // 未审核
+                        auditStatistics.setWholesalePurchaseUnauditedCount(
+                            auditStatistics.getWholesalePurchaseUnauditedCount() + 1);
+                    } else if (purchaseAuditStatus == 20) { // 已审核
+                        auditStatistics.setWholesalePurchaseAuditedCount(
+                            auditStatistics.getWholesalePurchaseAuditedCount() + 1);
+                    }
+                }
+
+                // 批发采购售后状态统计
+                Integer purchaseAfterSalesStatus = wholesale.getPurchaseAfterSalesStatus();
+                if (purchaseAfterSalesStatus != null) {
+                    if (purchaseAfterSalesStatus == 30) { // 未售后
+                        auditStatistics.setWholesalePurchaseNoAfterSalesCount(
+                            auditStatistics.getWholesalePurchaseNoAfterSalesCount() + 1);
+                    } else if (purchaseAfterSalesStatus == 40) { // 已售后
+                        auditStatistics.setWholesalePurchaseAfterSalesCount(
+                            auditStatistics.getWholesalePurchaseAfterSalesCount() + 1);
+                    }
+                }
+
+                // 批发销售审核状态统计
+                Integer saleAuditStatus = wholesale.getSaleAuditStatus();
+                if (saleAuditStatus != null) {
+                    if (saleAuditStatus == 10) { // 未审核
+                        auditStatistics.setWholesaleSaleUnauditedCount(
+                            auditStatistics.getWholesaleSaleUnauditedCount() + 1);
+                    } else if (saleAuditStatus == 20) { // 已审核
+                        auditStatistics.setWholesaleSaleAuditedCount(
+                            auditStatistics.getWholesaleSaleAuditedCount() + 1);
+                    }
+                }
+
+                // 批发销售售后状态统计
+                Integer saleAfterSalesStatus = wholesale.getSaleAfterSalesStatus();
+                if (saleAfterSalesStatus != null) {
+                    if (saleAfterSalesStatus == 30) { // 未售后
+                        auditStatistics.setWholesaleSaleNoAfterSalesCount(
+                            auditStatistics.getWholesaleSaleNoAfterSalesCount() + 1);
+                    } else if (saleAfterSalesStatus == 40) { // 已售后
+                        auditStatistics.setWholesaleSaleAfterSalesCount(
+                            auditStatistics.getWholesaleSaleAfterSalesCount() + 1);
+                    }
+                }
+            }
+
+            // 计算总数
+            auditStatistics.setDistributionPurchaseTotalCount(
+                auditStatistics.getDistributionPurchaseUnauditedCount() + 
+                auditStatistics.getDistributionPurchaseAuditedCount());
+            
+            auditStatistics.setDistributionSaleTotalCount(
+                auditStatistics.getDistributionSaleUnauditedCount() + 
+                auditStatistics.getDistributionSaleAuditedCount());
+            
+            auditStatistics.setWholesalePurchaseTotalCount(
+                auditStatistics.getWholesalePurchaseUnauditedCount() + 
+                auditStatistics.getWholesalePurchaseAuditedCount());
+            
+            auditStatistics.setWholesaleSaleTotalCount(
+                auditStatistics.getWholesaleSaleUnauditedCount() + 
+                auditStatistics.getWholesaleSaleAuditedCount());
+
+        } catch (Exception e) {
+            System.err.println("获取审核统计数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return auditStatistics;
+    }
+
     /**
      * 从ES获取代发数据
      */
@@ -1191,8 +1329,6 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
     // 移除getRecentOrders方法，根据需求不再需要最近订单明细
 
-
-
     /**
      * 添加时间范围查询条件
      */
@@ -1305,5 +1441,7 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             }
         }
     }
+
+
 
 }

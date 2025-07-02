@@ -38,4 +38,12 @@ public interface ErpDistributionWholesaleStatisticsService {
      */
     ErpDistributionWholesaleStatisticsRespVO.DetailStatistics getDetailStatistics(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName);
 
+    /**
+     * 获取代发批发审核数量统计数据
+     *
+     * @param reqVO 统计请求参数
+     * @return 审核数量统计结果
+     */
+    ErpDistributionWholesaleStatisticsRespVO.AuditStatistics getAuditStatistics(ErpDistributionWholesaleStatisticsReqVO reqVO);
+
 } 
