@@ -63,8 +63,18 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
         // 获取直播复盘统计
         respVO.setLiveBroadcastingStats(getLiveBroadcastingReviewStats(reqVO));
 
-        // 获取客户选项
-        respVO.setCustomerOptions(getCustomerOptions(reqVO));
+        // 获取产品选项
+        respVO.setProductOptions(getProductOptions(reqVO));
+
+        // 设置分页信息
+        respVO.setPageNo(reqVO.getPageNo());
+        respVO.setPageSize(reqVO.getPageSize());
+        
+        // 计算总条数
+        long total = respVO.getGroupBuyingStats().size() + 
+                    respVO.getPrivateBroadcastingStats().size() + 
+                    respVO.getLiveBroadcastingStats().size();
+        respVO.setTotal(total);
 
         return respVO;
     }
@@ -75,9 +85,6 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
     private List<ErpReviewStatisticsRespVO.GroupBuyingReviewStat> getGroupBuyingReviewStats(ErpReviewStatisticsReqVO reqVO) {
         LambdaQueryWrapper<ErpGroupBuyingReviewDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.between(ErpGroupBuyingReviewDO::getCreateTime, LocalDate.parse(reqVO.getBeginDate()).atStartOfDay(), LocalDate.parse(reqVO.getEndDate()).atTime(23, 59, 59));
-        if (reqVO.getCustomerName() != null) {
-            wrapper.like(ErpGroupBuyingReviewDO::getCustomerId, reqVO.getCustomerName());
-        }
         List<ErpGroupBuyingReviewDO> reviews = groupBuyingReviewMapper.selectList(wrapper);
 
         // 获取相关的团购货盘数据
@@ -105,7 +112,7 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
                     return groupBuying != null ? groupBuying.getProductName() : "未知产品";
                 }));
 
-        return productGroups.entrySet().stream()
+        List<ErpReviewStatisticsRespVO.GroupBuyingReviewStat> stats = productGroups.entrySet().stream()
                 .map(entry -> {
                     String productName = entry.getKey();
                     List<ErpGroupBuyingReviewDO> productReviews = entry.getValue();
@@ -155,6 +162,23 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
                     return stat;
                 })
                 .collect(Collectors.toList());
+
+        // 产品名称过滤
+        if (reqVO.getProductName() != null && !reqVO.getProductName().trim().isEmpty()) {
+            stats = stats.stream()
+                    .filter(stat -> stat.getProductName().contains(reqVO.getProductName().trim()))
+                    .collect(Collectors.toList());
+        }
+
+        // 分页处理
+        int startIndex = (reqVO.getPageNo() - 1) * reqVO.getPageSize();
+        int endIndex = Math.min(startIndex + reqVO.getPageSize(), stats.size());
+        
+        if (startIndex < stats.size()) {
+            return stats.subList(startIndex, endIndex);
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -163,7 +187,6 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
     private List<ErpReviewStatisticsRespVO.PrivateBroadcastingReviewStat> getPrivateBroadcastingReviewStats(ErpReviewStatisticsReqVO reqVO) {
         LambdaQueryWrapper<ErpPrivateBroadcastingReviewDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.between(ErpPrivateBroadcastingReviewDO::getCreateTime, LocalDate.parse(reqVO.getBeginDate()).atStartOfDay(), LocalDate.parse(reqVO.getEndDate()).atTime(23, 59, 59));
-        // 注意：私播复盘表中没有客户名称字段，只有customerId，所以这里暂时不添加客户名称过滤
         List<ErpPrivateBroadcastingReviewDO> reviews = privateBroadcastingReviewMapper.selectList(wrapper);
 
         // 获取相关的私播货盘数据
@@ -191,7 +214,7 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
                     return privateBroadcasting != null ? privateBroadcasting.getProductName() : "未知产品";
                 }));
 
-        return productGroups.entrySet().stream()
+        List<ErpReviewStatisticsRespVO.PrivateBroadcastingReviewStat> stats = productGroups.entrySet().stream()
                 .map(entry -> {
                     String productName = entry.getKey();
                     List<ErpPrivateBroadcastingReviewDO> productReviews = entry.getValue();
@@ -241,6 +264,23 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
                     return stat;
                 })
                 .collect(Collectors.toList());
+
+        // 产品名称过滤
+        if (reqVO.getProductName() != null && !reqVO.getProductName().trim().isEmpty()) {
+            stats = stats.stream()
+                    .filter(stat -> stat.getProductName().contains(reqVO.getProductName().trim()))
+                    .collect(Collectors.toList());
+        }
+
+        // 分页处理
+        int startIndex = (reqVO.getPageNo() - 1) * reqVO.getPageSize();
+        int endIndex = Math.min(startIndex + reqVO.getPageSize(), stats.size());
+        
+        if (startIndex < stats.size()) {
+            return stats.subList(startIndex, endIndex);
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -249,9 +289,6 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
     private List<ErpReviewStatisticsRespVO.LiveBroadcastingReviewStat> getLiveBroadcastingReviewStats(ErpReviewStatisticsReqVO reqVO) {
         LambdaQueryWrapper<ErpLiveBroadcastingReviewDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.between(ErpLiveBroadcastingReviewDO::getCreateTime, LocalDate.parse(reqVO.getBeginDate()).atStartOfDay(), LocalDate.parse(reqVO.getEndDate()).atTime(23, 59, 59));
-        if (reqVO.getCustomerName() != null) {
-            wrapper.like(ErpLiveBroadcastingReviewDO::getCustomerName, reqVO.getCustomerName());
-        }
         List<ErpLiveBroadcastingReviewDO> reviews = liveBroadcastingReviewMapper.selectList(wrapper);
 
         // 获取相关的直播货盘数据
@@ -279,7 +316,7 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
                     return liveBroadcasting != null ? liveBroadcasting.getProductName() : "未知产品";
                 }));
 
-        return productGroups.entrySet().stream()
+        List<ErpReviewStatisticsRespVO.LiveBroadcastingReviewStat> stats = productGroups.entrySet().stream()
                 .map(entry -> {
                     String productName = entry.getKey();
                     List<ErpLiveBroadcastingReviewDO> productReviews = entry.getValue();
@@ -329,45 +366,126 @@ public class ErpReviewStatisticsServiceImpl implements ErpReviewStatisticsServic
                     return stat;
                 })
                 .collect(Collectors.toList());
+
+        // 产品名称过滤
+        if (reqVO.getProductName() != null && !reqVO.getProductName().trim().isEmpty()) {
+            stats = stats.stream()
+                    .filter(stat -> stat.getProductName().contains(reqVO.getProductName().trim()))
+                    .collect(Collectors.toList());
+        }
+
+        // 分页处理
+        int startIndex = (reqVO.getPageNo() - 1) * reqVO.getPageSize();
+        int endIndex = Math.min(startIndex + reqVO.getPageSize(), stats.size());
+        
+        if (startIndex < stats.size()) {
+            return stats.subList(startIndex, endIndex);
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     /**
-     * 获取客户选项
+     * 获取产品选项
      */
-    private List<ErpReviewStatisticsRespVO.CustomerOption> getCustomerOptions(ErpReviewStatisticsReqVO reqVO) {
-        Set<String> customerNames = new HashSet<>();
+    private List<ErpReviewStatisticsRespVO.ProductOption> getProductOptions(ErpReviewStatisticsReqVO reqVO) {
+        Set<String> productNames = new HashSet<>();
 
+        // 获取团购复盘中的产品名称
         LambdaQueryWrapper<ErpGroupBuyingReviewDO> gbWrapper = new LambdaQueryWrapper<>();
         gbWrapper.between(ErpGroupBuyingReviewDO::getCreateTime, LocalDate.parse(reqVO.getBeginDate()).atStartOfDay(), LocalDate.parse(reqVO.getEndDate()).atTime(23, 59, 59));
         List<ErpGroupBuyingReviewDO> groupBuyingReviews = groupBuyingReviewMapper.selectList(gbWrapper);
-        groupBuyingReviews.stream()
-                .map(ErpGroupBuyingReviewDO::getCustomerId)
+        
+        Set<String> groupBuyingIds = groupBuyingReviews.stream()
+                .map(ErpGroupBuyingReviewDO::getGroupBuyingId)
                 .filter(Objects::nonNull)
-                .forEach(customerNames::add);
+                .collect(Collectors.toSet());
+        
+        if (!groupBuyingIds.isEmpty()) {
+            LambdaQueryWrapper<ErpGroupBuyingDO> gbProductWrapper = new LambdaQueryWrapper<>();
+            gbProductWrapper.in(ErpGroupBuyingDO::getNo, groupBuyingIds);
+            List<ErpGroupBuyingDO> groupBuyings = groupBuyingMapper.selectList(gbProductWrapper);
+            groupBuyings.stream()
+                    .map(ErpGroupBuyingDO::getProductName)
+                    .filter(Objects::nonNull)
+                    .forEach(productNames::add);
+        }
 
+        // 获取私播复盘中的产品名称
+        LambdaQueryWrapper<ErpPrivateBroadcastingReviewDO> pbWrapper = new LambdaQueryWrapper<>();
+        pbWrapper.between(ErpPrivateBroadcastingReviewDO::getCreateTime, LocalDate.parse(reqVO.getBeginDate()).atStartOfDay(), LocalDate.parse(reqVO.getEndDate()).atTime(23, 59, 59));
+        List<ErpPrivateBroadcastingReviewDO> privateBroadcastingReviews = privateBroadcastingReviewMapper.selectList(pbWrapper);
+        
+        Set<Long> privateBroadcastingIds = privateBroadcastingReviews.stream()
+                .map(ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        
+        if (!privateBroadcastingIds.isEmpty()) {
+            LambdaQueryWrapper<ErpPrivateBroadcastingDO> pbProductWrapper = new LambdaQueryWrapper<>();
+            pbProductWrapper.in(ErpPrivateBroadcastingDO::getId, privateBroadcastingIds);
+            List<ErpPrivateBroadcastingDO> privateBroadcastings = privateBroadcastingMapper.selectList(pbProductWrapper);
+            privateBroadcastings.stream()
+                    .map(ErpPrivateBroadcastingDO::getProductName)
+                    .filter(Objects::nonNull)
+                    .forEach(productNames::add);
+        }
+
+        // 获取直播复盘中的产品名称
         LambdaQueryWrapper<ErpLiveBroadcastingReviewDO> lbWrapper = new LambdaQueryWrapper<>();
         lbWrapper.between(ErpLiveBroadcastingReviewDO::getCreateTime, LocalDate.parse(reqVO.getBeginDate()).atStartOfDay(), LocalDate.parse(reqVO.getEndDate()).atTime(23, 59, 59));
         List<ErpLiveBroadcastingReviewDO> liveBroadcastingReviews = liveBroadcastingReviewMapper.selectList(lbWrapper);
-        liveBroadcastingReviews.stream()
-                .map(ErpLiveBroadcastingReviewDO::getCustomerName)
+        
+        Set<Long> liveBroadcastingIds = liveBroadcastingReviews.stream()
+                .map(ErpLiveBroadcastingReviewDO::getLiveBroadcastingId)
                 .filter(Objects::nonNull)
-                .forEach(customerNames::add);
+                .collect(Collectors.toSet());
+        
+        if (!liveBroadcastingIds.isEmpty()) {
+            LambdaQueryWrapper<ErpLiveBroadcastingDO> lbProductWrapper = new LambdaQueryWrapper<>();
+            lbProductWrapper.in(ErpLiveBroadcastingDO::getId, liveBroadcastingIds);
+            List<ErpLiveBroadcastingDO> liveBroadcastings = liveBroadcastingMapper.selectList(lbProductWrapper);
+            liveBroadcastings.stream()
+                    .map(ErpLiveBroadcastingDO::getProductName)
+                    .filter(Objects::nonNull)
+                    .forEach(productNames::add);
+        }
 
-        return customerNames.stream()
-                .map(customerName -> {
-                    ErpReviewStatisticsRespVO.CustomerOption option = new ErpReviewStatisticsRespVO.CustomerOption();
-                    option.setCustomerName(customerName);
+        return productNames.stream()
+                .map(productName -> {
+                    ErpReviewStatisticsRespVO.ProductOption option = new ErpReviewStatisticsRespVO.ProductOption();
+                    option.setProductName(productName);
+                    
+                    // 计算该产品的复盘数量
                     long groupBuyingCount = groupBuyingReviews.stream()
-                            .filter(review -> Objects.equals(review.getCustomerId(), customerName))
+                            .filter(review -> {
+                                ErpGroupBuyingDO groupBuying = groupBuyingMapper.selectOne(
+                                    new LambdaQueryWrapper<ErpGroupBuyingDO>()
+                                        .eq(ErpGroupBuyingDO::getNo, review.getGroupBuyingId())
+                                );
+                                return groupBuying != null && Objects.equals(groupBuying.getProductName(), productName);
+                            })
                             .count();
+                    
+                    long privateBroadcastingCount = privateBroadcastingReviews.stream()
+                            .filter(review -> {
+                                ErpPrivateBroadcastingDO privateBroadcasting = privateBroadcastingMapper.selectById(review.getPrivateBroadcastingId());
+                                return privateBroadcasting != null && Objects.equals(privateBroadcasting.getProductName(), productName);
+                            })
+                            .count();
+                    
                     long liveBroadcastingCount = liveBroadcastingReviews.stream()
-                            .filter(review -> Objects.equals(review.getCustomerName(), customerName))
+                            .filter(review -> {
+                                ErpLiveBroadcastingDO liveBroadcasting = liveBroadcastingMapper.selectById(review.getLiveBroadcastingId());
+                                return liveBroadcasting != null && Objects.equals(liveBroadcasting.getProductName(), productName);
+                            })
                             .count();
-                    option.setReviewCount((int) (groupBuyingCount + liveBroadcastingCount));
+                    
+                    option.setReviewCount((int) (groupBuyingCount + privateBroadcastingCount + liveBroadcastingCount));
                     return option;
                 })
                 .filter(option -> option.getReviewCount() > 0)
-                .sorted(Comparator.comparing(ErpReviewStatisticsRespVO.CustomerOption::getReviewCount).reversed())
+                .sorted(Comparator.comparing(ErpReviewStatisticsRespVO.ProductOption::getReviewCount).reversed())
                 .collect(Collectors.toList());
     }
 }

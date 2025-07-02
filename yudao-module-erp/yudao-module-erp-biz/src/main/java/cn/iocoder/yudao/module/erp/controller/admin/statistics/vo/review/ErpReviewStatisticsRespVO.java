@@ -19,8 +19,17 @@ public class ErpReviewStatisticsRespVO {
     @Schema(description = "直播复盘统计", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<LiveBroadcastingReviewStat> liveBroadcastingStats;
 
-    @Schema(description = "客户选项", requiredMode = Schema.RequiredMode.REQUIRED)
-    private List<CustomerOption> customerOptions;
+    @Schema(description = "产品选项", requiredMode = Schema.RequiredMode.REQUIRED)
+    private List<ProductOption> productOptions;
+
+    @Schema(description = "总条数", example = "100")
+    private Long total;
+
+    @Schema(description = "页码", example = "1")
+    private Integer pageNo;
+
+    @Schema(description = "每页条数", example = "10")
+    private Integer pageSize;
 
     @Schema(description = "管理后台 - 团购复盘统计")
     @Data
@@ -124,11 +133,11 @@ public class ErpReviewStatisticsRespVO {
         private LocalDate repeatGroupDate;
     }
 
-    @Schema(description = "管理后台 - 客户选项")
+    @Schema(description = "管理后台 - 产品选项")
     @Data
-    public static class CustomerOption {
-        @Schema(description = "客户名称", example = "张三")
-        private String customerName;
+    public static class ProductOption {
+        @Schema(description = "产品名称", example = "产品A")
+        private String productName;
 
         @Schema(description = "复盘数量", example = "25")
         private Integer reviewCount;

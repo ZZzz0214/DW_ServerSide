@@ -15,6 +15,12 @@ public class ErpReviewStatisticsReqVO {
     @Schema(description = "结束日期", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024-01-31")
     private String endDate;
 
-    @Schema(description = "客户名称", example = "张三")
-    private String customerName;
+    @Schema(description = "产品名称", example = "产品A")
+    private String productName;
+
+    @Schema(description = "页码", example = "1")
+    private Integer pageNo = 1;
+
+    @Schema(description = "每页条数", example = "10")
+    private Integer pageSize = 10;
 } 
