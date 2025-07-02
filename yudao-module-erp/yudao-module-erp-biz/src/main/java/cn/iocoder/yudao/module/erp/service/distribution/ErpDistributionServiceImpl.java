@@ -26,6 +26,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSales
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductItemES;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalePriceMapper;
@@ -444,57 +446,73 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 .setOtherFees(combined.getPurchaseOtherFees())
                 .setPurchaseAfterSalesTime(combined.getPurchaseAfterSalesTime());
 
-        // 3. 查询组品信息并设置到respVO
+        // 3. 🔥 实时获取组品信息并计算相关字段
         if (combined.getComboProductId() != null) {
-           // System.out.println("组品编号"+combined.getComboProductId());
+            // 3.1 从ES实时查询组品基本信息
             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
-           // System.out.println("搜索到数据"+comboProductOpt.isPresent());
-            if (comboProductOpt.isPresent()) {
-                ErpComboProductES comboProduct = comboProductOpt.get();
-                //System.out.println("组品信息"+comboProduct);
-                respVO.setShippingCode(comboProduct.getShippingCode());
-                respVO.setProductName(comboProduct.getName());
-                respVO.setPurchaser(comboProduct.getPurchaser());
-                respVO.setSupplier(comboProduct.getSupplier());
-                // 🔥 现在ES中的采购单价已经是实时计算的，可以直接使用
-                respVO.setPurchasePrice(comboProduct.getPurchasePrice());
-                respVO.setComboProductNo(comboProduct.getNo());
+            
+            try {
+                if (comboProductOpt.isPresent()) {
+                    ErpComboProductES comboProduct = comboProductOpt.get();
+                    
+                    // 设置基础信息
+                    respVO.setShippingCode(comboProduct.getShippingCode());
+                    respVO.setPurchaser(comboProduct.getPurchaser());
+                    respVO.setSupplier(comboProduct.getSupplier());
+                    respVO.setComboProductNo(comboProduct.getNo());
+                    
+                    // 🔥 实时计算产品名称、采购单价等字段
+                    String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
+                    BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
+                    
+                    // 如果实时计算失败，使用ES中的缓存数据
+                    respVO.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
+                    respVO.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice());
 
-                // 计算采购运费和总额
-                BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, respVO.getProductQuantity());
-                BigDecimal totalPurchaseAmount = comboProduct.getPurchasePrice()
-                        .multiply(new BigDecimal(respVO.getProductQuantity()))
-                        .add(shippingFee)
-                        .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                    // 计算采购运费和总额
+                    BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, respVO.getProductQuantity());
+                    BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice();
+                    BigDecimal totalPurchaseAmount = finalPurchasePrice
+                            .multiply(new BigDecimal(respVO.getProductQuantity()))
+                            .add(shippingFee)
+                            .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
 
-                respVO.setShippingFee(shippingFee);
-                respVO.setTotalPurchaseAmount(totalPurchaseAmount);
-//                System.out.println(respVO.getShippingFee());
-//                System.out.println(respVO.getTotalPurchaseAmount());
-//                System.out.println(combined.getCustomerName());
+                    respVO.setShippingFee(shippingFee);
+                    respVO.setTotalPurchaseAmount(totalPurchaseAmount);
 
-                // 4. 根据组品ID和客户名称获取销售价格
-                if (combined.getCustomerName() != null) {
-                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                            combined.getComboProductId(), combined.getCustomerName());
-                    if (salePriceOpt.isPresent()) {
-                        ErpSalePriceESDO salePrice = salePriceOpt.get();
-                        respVO.setSalePrice(salePrice.getDistributionPrice());
+                    // 4. 根据组品ID和客户名称获取销售价格
+                    if (combined.getCustomerName() != null) {
+                        Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                                combined.getComboProductId(), combined.getCustomerName());
+                        if (salePriceOpt.isPresent()) {
+                            ErpSalePriceESDO salePrice = salePriceOpt.get();
+                            respVO.setSalePrice(salePrice.getDistributionPrice());
 
-                        // 计算销售运费和总额
-                        BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, respVO.getProductQuantity(), combined.getComboProductId());
-                        BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
-                                .multiply(new BigDecimal(respVO.getProductQuantity()))
-                                .add(saleShippingFee)
-                                .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-                        respVO.setSaleShippingFee(saleShippingFee);
-                        respVO.setTotalSaleAmount(totalSaleAmount);
+                            // 计算销售运费和总额
+                            BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, respVO.getProductQuantity(), combined.getComboProductId());
+                            BigDecimal totalSaleAmount = salePrice.getDistributionPrice()
+                                    .multiply(new BigDecimal(respVO.getProductQuantity()))
+                                    .add(saleShippingFee)
+                                    .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                            respVO.setSaleShippingFee(saleShippingFee);
+                            respVO.setTotalSaleAmount(totalSaleAmount);
+                        } else {
+                            BigDecimal saleShippingFee = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
+                            respVO.setTotalSaleAmount(saleShippingFee);
+                        }
                     }
-                    else {
-                        BigDecimal saleShippingFee = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
-                        respVO.setTotalSaleAmount(saleShippingFee);
-                    }
-
+                }
+            } catch (Exception e) {
+                System.err.println("实时获取组品信息失败，ID: " + combined.getComboProductId() + ", 错误: " + e.getMessage());
+                // 如果实时获取失败，使用ES中的缓存数据作为兜底
+                if (comboProductOpt.isPresent()) {
+                    ErpComboProductES comboProduct = comboProductOpt.get();
+                    respVO.setShippingCode(comboProduct.getShippingCode());
+                    respVO.setProductName(comboProduct.getName());
+                    respVO.setPurchaser(comboProduct.getPurchaser());
+                    respVO.setSupplier(comboProduct.getSupplier());
+                    respVO.setPurchasePrice(comboProduct.getPurchasePrice());
+                    respVO.setComboProductNo(comboProduct.getNo());
                 }
             }
         }
@@ -2537,5 +2555,137 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         }
 
         return respVO;
+    }
+
+    /**
+     * 🔥 实时计算产品名称 - 参考组品表的实时计算逻辑
+     * 根据组品ID查询关联的单品，实时组装产品名称
+     */
+    private String calculateRealTimeProductName(Long comboProductId) {
+        try {
+            // 从ES查询组品关联的单品项
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", comboProductId))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (itemHits.isEmpty()) {
+                return null;
+            }
+
+            // 提取单品ID列表
+            List<Long> productIds = itemHits.stream()
+                    .map(hit -> hit.getContent().getItemProductId())
+                    .collect(Collectors.toList());
+
+            // 从ES查询单品详细信息
+            NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                    productQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            Map<Long, ErpProductESDO> productMap = productHits.stream()
+                    .collect(Collectors.toMap(
+                            hit -> hit.getContent().getId(),
+                            SearchHit::getContent));
+
+            // 组装单品名称字符串 (单品A×数量+单品B×数量)
+            StringBuilder nameBuilder = new StringBuilder();
+            List<ErpComboProductItemES> items = itemHits.stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < items.size(); i++) {
+                if (i > 0) {
+                    nameBuilder.append("+");
+                }
+                ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
+                if (product != null) {
+                    nameBuilder.append(product.getName())
+                              .append("×")
+                              .append(items.get(i).getItemQuantity());
+                }
+            }
+
+            return nameBuilder.toString();
+        } catch (Exception e) {
+            System.err.println("实时计算产品名称失败，组品ID: " + comboProductId + ", 错误: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 🔥 实时计算采购单价 - 参考组品表的实时计算逻辑
+     * 根据组品ID查询关联的单品，实时计算采购总价
+     */
+    private BigDecimal calculateRealTimePurchasePrice(Long comboProductId) {
+        try {
+            // 从ES查询组品关联的单品项
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", comboProductId))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (itemHits.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            // 提取单品ID列表
+            List<Long> productIds = itemHits.stream()
+                    .map(hit -> hit.getContent().getItemProductId())
+                    .collect(Collectors.toList());
+
+            // 从ES查询单品详细信息
+            NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                    productQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            Map<Long, ErpProductESDO> productMap = productHits.stream()
+                    .collect(Collectors.toMap(
+                            hit -> hit.getContent().getId(),
+                            SearchHit::getContent));
+
+            // 计算采购总价
+            BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+            List<ErpComboProductItemES> items = itemHits.stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+
+            for (ErpComboProductItemES item : items) {
+                ErpProductESDO product = productMap.get(item.getItemProductId());
+                if (product != null && product.getPurchasePrice() != null) {
+                    BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
+                    totalPurchasePrice = totalPurchasePrice.add(product.getPurchasePrice().multiply(itemQuantity));
+                }
+            }
+
+            return totalPurchasePrice;
+        } catch (Exception e) {
+            System.err.println("实时计算采购单价失败，组品ID: " + comboProductId + ", 错误: " + e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
 }
