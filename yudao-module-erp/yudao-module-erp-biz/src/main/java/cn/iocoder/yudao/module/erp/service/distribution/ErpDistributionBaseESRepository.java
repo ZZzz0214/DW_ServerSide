@@ -4,6 +4,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBa
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -13,4 +14,6 @@ public interface ErpDistributionBaseESRepository extends ElasticsearchRepository
     List<ErpDistributionBaseESDO> findByNoIn(List<String> nos);
     // 根据编号查询
     ErpDistributionBaseESDO findByNo(String no);
+    // 根据创建时间范围查询
+    List<ErpDistributionBaseESDO> findByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 }

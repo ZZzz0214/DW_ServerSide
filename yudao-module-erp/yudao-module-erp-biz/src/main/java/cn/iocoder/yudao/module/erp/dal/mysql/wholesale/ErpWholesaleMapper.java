@@ -4,6 +4,7 @@ package cn.iocoder.yudao.module.erp.dal.mysql.wholesale;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesalePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo.ErpWholesaleRespVO;
@@ -16,6 +17,9 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleBaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesalePurchaseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleSaleDO;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper
 public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
@@ -139,4 +143,10 @@ public interface ErpWholesaleMapper extends BaseMapperX<ErpWholesaleBaseDO> {
     default ErpWholesaleBaseDO selectByNo(String no) {
         return selectOne(ErpWholesaleBaseDO::getNo, no);
     }
+
+    default List<ErpWholesaleBaseDO> selectListByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime) {
+        return selectList(new LambdaQueryWrapperX<ErpWholesaleBaseDO>()
+                .between(ErpWholesaleBaseDO::getCreateTime, startTime, endTime));
+    }
+
 }

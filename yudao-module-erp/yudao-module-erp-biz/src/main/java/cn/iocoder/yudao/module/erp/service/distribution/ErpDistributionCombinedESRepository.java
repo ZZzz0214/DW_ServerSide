@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCo
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,5 +40,13 @@ public interface ErpDistributionCombinedESRepository extends ElasticsearchReposi
      * @return 代发订单列表
      */
     List<ErpDistributionCombinedESDO> findAllByComboProductIdIn(List<Long> comboProductIds);
+
+    /**
+     * 根据创建时间范围查询
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 代发订单列表
+     */
+    List<ErpDistributionCombinedESDO> findByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 
 }

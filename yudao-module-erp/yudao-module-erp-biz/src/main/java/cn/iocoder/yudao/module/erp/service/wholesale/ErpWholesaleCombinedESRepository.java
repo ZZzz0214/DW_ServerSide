@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.wholesale.ErpWholesaleCombined
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -29,4 +30,12 @@ public interface ErpWholesaleCombinedESRepository extends ElasticsearchRepositor
      * @return 批发订单列表
      */
     List<ErpWholesaleCombinedESDO> findAllByComboProductIdIn(List<Long> comboProductIds);
+
+    /**
+     * 根据创建时间范围查询
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 批发订单列表
+     */
+    List<ErpWholesaleCombinedESDO> findByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 }

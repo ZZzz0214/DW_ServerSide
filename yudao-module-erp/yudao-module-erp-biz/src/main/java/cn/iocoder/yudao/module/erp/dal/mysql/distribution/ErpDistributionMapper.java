@@ -4,6 +4,7 @@ package cn.iocoder.yudao.module.erp.dal.mysql.distribution;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ErpDistributionRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
@@ -14,6 +15,9 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper
 public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO> {
@@ -151,6 +155,11 @@ public interface ErpDistributionMapper extends BaseMapperX<ErpDistributionBaseDO
         return update(updateObj, new LambdaUpdateWrapper<ErpDistributionBaseDO>()
                 .eq(ErpDistributionBaseDO::getId, id)
                 .eq(ErpDistributionBaseDO::getStatus, status));
+    }
+
+    default List<ErpDistributionBaseDO> selectListByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime) {
+        return selectList(new LambdaQueryWrapperX<ErpDistributionBaseDO>()
+                .between(ErpDistributionBaseDO::getCreateTime, startTime, endTime));
     }
 
 }
