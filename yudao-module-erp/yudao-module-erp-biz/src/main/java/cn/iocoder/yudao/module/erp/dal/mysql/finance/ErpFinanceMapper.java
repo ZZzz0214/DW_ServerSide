@@ -8,7 +8,10 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.ErpFinancePageReq
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.ErpFinanceRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -68,5 +71,36 @@ public interface ErpFinanceMapper extends BaseMapperX<ErpFinanceDO> {
 
     default ErpFinanceDO selectByNo(String no) {
         return selectOne(ErpFinanceDO::getNo, no);
+    }
+
+    /**
+     * 根据审核状态和时间范围统计数量
+     *
+     * @param auditStatus 审核状态（10：未审核，20：已审核）
+     * @param beginTime 开始时间
+     * @param endTime 结束时间
+     * @return 数量
+     */
+    default Long selectCountByAuditStatusAndTimeRange(Integer auditStatus, LocalDateTime beginTime, LocalDateTime endTime) {
+        return selectCount(new MPJLambdaWrapperX<ErpFinanceDO>()
+                .eq(ErpFinanceDO::getAuditStatus, auditStatus)
+                .between(ErpFinanceDO::getOrderDate, beginTime.toLocalDate(), endTime.toLocalDate()));
+    }
+
+    /**
+     * 根据审核状态、收入支出类型和时间范围统计金额
+     *
+     * @param auditStatus 审核状态（10：未审核，20：已审核）
+     * @param incomeExpense 收入支出类型（1：收入，2：支出）
+     * @param beginTime 开始时间
+     * @param endTime 结束时间
+     * @return 金额
+     */
+    default BigDecimal selectSumByAuditStatusAndIncomeExpenseAndTimeRange(Integer auditStatus, Integer incomeExpense, LocalDateTime beginTime, LocalDateTime endTime) {
+        return selectJoinOne(BigDecimal.class, new MPJLambdaWrapperX<ErpFinanceDO>()
+                .eq(ErpFinanceDO::getAuditStatus, auditStatus)
+                .eq(ErpFinanceDO::getIncomeExpense, incomeExpense)
+                .between(ErpFinanceDO::getOrderDate, beginTime.toLocalDate(), endTime.toLocalDate())
+                .selectSum(ErpFinanceDO::getAmount));
     }
 } 

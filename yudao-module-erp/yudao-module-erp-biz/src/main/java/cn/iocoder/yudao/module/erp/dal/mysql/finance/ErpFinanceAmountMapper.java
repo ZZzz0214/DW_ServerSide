@@ -9,6 +9,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.ErpFinanceAmountR
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAmountDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -126,5 +128,48 @@ public interface ErpFinanceAmountMapper extends BaseMapperX<ErpFinanceAmountDO> 
 
     default List<ErpFinanceAmountDO> selectListByCreator(String creator) {
         return selectList(ErpFinanceAmountDO::getCreator, creator);
+    }
+
+    /**
+     * 根据审核状态和时间范围统计数量
+     *
+     * @param auditStatus 审核状态（10：未审核，20：已审核）
+     * @param beginTime 开始时间
+     * @param endTime 结束时间
+     * @return 数量
+     */
+    default Long selectCountByAuditStatusAndTimeRange(Integer auditStatus, LocalDateTime beginTime, LocalDateTime endTime) {
+        return selectCount(new MPJLambdaWrapperX<ErpFinanceAmountDO>()
+                .eq(ErpFinanceAmountDO::getAuditStatus, auditStatus)
+                .between(ErpFinanceAmountDO::getOrderDate, beginTime.toLocalDate(), endTime.toLocalDate()));
+    }
+
+    /**
+     * 根据渠道类型和时间范围统计数量
+     *
+     * @param channelType 渠道类型（微信、支付宝、银行卡）
+     * @param beginTime 开始时间
+     * @param endTime 结束时间
+     * @return 数量
+     */
+    default Long selectCountByChannelTypeAndTimeRange(String channelType, LocalDateTime beginTime, LocalDateTime endTime) {
+        return selectCount(new MPJLambdaWrapperX<ErpFinanceAmountDO>()
+                .eq(ErpFinanceAmountDO::getChannelType, channelType)
+                .between(ErpFinanceAmountDO::getOrderDate, beginTime.toLocalDate(), endTime.toLocalDate()));
+    }
+
+    /**
+     * 根据渠道类型和时间范围统计金额
+     *
+     * @param channelType 渠道类型（微信、支付宝、银行卡）
+     * @param beginTime 开始时间
+     * @param endTime 结束时间
+     * @return 金额
+     */
+    default BigDecimal selectSumByChannelTypeAndTimeRange(String channelType, LocalDateTime beginTime, LocalDateTime endTime) {
+        return selectJoinOne(BigDecimal.class, new MPJLambdaWrapperX<ErpFinanceAmountDO>()
+                .eq(ErpFinanceAmountDO::getChannelType, channelType)
+                .between(ErpFinanceAmountDO::getOrderDate, beginTime.toLocalDate(), endTime.toLocalDate())
+                .selectSum(ErpFinanceAmountDO::getAmount));
     }
 } 
