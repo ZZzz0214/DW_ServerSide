@@ -63,6 +63,10 @@ public class ErpDistributionCombinedDO extends BaseDO {
     private LocalDateTime saleApprovalTime;
     private LocalDateTime saleUnapproveTime;
 
+    // 审核总额字段
+    private BigDecimal purchaseAuditTotalAmount;
+    private BigDecimal saleAuditTotalAmount;
+
     // 租户字段
     private Long tenantId;
 

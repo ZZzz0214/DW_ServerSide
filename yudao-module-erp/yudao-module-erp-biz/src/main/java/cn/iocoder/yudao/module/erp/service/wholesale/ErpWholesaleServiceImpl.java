@@ -951,7 +951,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees) {
+    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees, BigDecimal purchaseAuditTotalAmount) {
         // 1. 校验存在 - 使用合并表查询
         Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
         if (!combinedOpt.isPresent()) {
@@ -968,7 +968,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
                 .setId(id)
                 .setPurchaseAuditStatus(purchaseAuditStatus)
-                .setPurchaseOtherFees(otherFees);
+                .setPurchaseOtherFees(otherFees)
+                .setPurchaseAuditTotalAmount(purchaseAuditTotalAmount);
 
         // 根据审核状态设置相应时间
         if (purchaseAuditStatus == 20) { // 审核通过
@@ -1025,7 +1026,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
+    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees, BigDecimal saleAuditTotalAmount) {
         // 1. 校验存在 - 使用合并表查询
         Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
         if (!combinedOpt.isPresent()) {
@@ -1042,7 +1043,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
                 .setId(id)
                 .setSaleAuditStatus(saleAuditStatus)
-                .setSaleOtherFees(otherFees);
+                .setSaleOtherFees(otherFees)
+                .setSaleAuditTotalAmount(saleAuditTotalAmount);
 
         // 根据审核状态设置相应时间
         if (saleAuditStatus == 20) { // 审核通过

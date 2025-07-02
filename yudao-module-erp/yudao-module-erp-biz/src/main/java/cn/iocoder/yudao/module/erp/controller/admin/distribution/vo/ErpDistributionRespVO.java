@@ -177,4 +177,8 @@ public class ErpDistributionRespVO {
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
     @ExcelProperty("订单状态")
     private Integer status;
+
+
+    private BigDecimal purchaseAuditTotalAmount;
+    private BigDecimal saleAuditTotalAmount;
 }

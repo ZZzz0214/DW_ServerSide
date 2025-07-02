@@ -333,7 +333,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 2. 更新数据库记录 - 将ES数据转换为DO，然后有选择性地更新
         ErpDistributionCombinedDO updateDO = convertESToCombinedDO(combined);
-        
+
         // 有选择性地更新字段，只更新前端传入的有值字段
         if (updateReqVO.getOrderNumber() != null) {
             updateDO.setOrderNumber(updateReqVO.getOrderNumber());
@@ -399,7 +399,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             updateDO.setSaleOtherFees(updateReqVO.getSaleOtherFees());
         }
         distributionCombinedMapper.updateById(updateDO);
-        
+
         // 3. 更新ES记录 - 直接使用更新后的DO转换为ES
         ErpDistributionCombinedESDO combinedESDO = convertCombinedToES(updateDO);
         // 保留原有的创建者和创建时间
@@ -486,7 +486,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                                 .multiply(new BigDecimal(respVO.getProductQuantity()))
                                 .add(saleShippingFee)
                                 .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-
+                        System.out.println("服务层销售总额："+totalSaleAmount);
                         respVO.setSaleShippingFee(saleShippingFee);
                         respVO.setTotalSaleAmount(totalSaleAmount);
                     }
@@ -1297,7 +1297,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees) {
+    public void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees, BigDecimal purchaseAuditTotalAmount) {
         // 1. 校验存在 - 使用合并表ES查询
         Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
         if (!combinedOpt.isPresent()) {
@@ -1313,7 +1313,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 3. 更新合并表审核状态
         combined.setPurchaseAuditStatus(purchaseAuditStatus)
-                .setPurchaseOtherFees(otherFees);
+                .setPurchaseOtherFees(otherFees)
+                .setPurchaseAuditTotalAmount(purchaseAuditTotalAmount);
 
         // 设置时间
         if (purchaseAuditStatus == 20) {
@@ -1375,7 +1376,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees) {
+    public void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees, BigDecimal saleAuditTotalAmount) {
         // 1. 校验存在 - 使用合并表ES查询
         Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
         if (!combinedOpt.isPresent()) {
@@ -1391,7 +1392,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         // 3. 更新合并表审核状态
         combined.setSaleAuditStatus(saleAuditStatus)
-                .setSaleOtherFees(otherFees);
+                .setSaleOtherFees(otherFees)
+                .setSaleAuditTotalAmount(saleAuditTotalAmount);
 
         // 设置时间
         if (saleAuditStatus == 20) {

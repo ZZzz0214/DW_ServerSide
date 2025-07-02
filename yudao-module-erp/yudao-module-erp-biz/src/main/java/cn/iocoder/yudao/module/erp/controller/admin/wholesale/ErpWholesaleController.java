@@ -664,8 +664,13 @@ public class ErpWholesaleController {
     @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
     public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
                                                            @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
-                                                           @RequestParam("otherFees") BigDecimal otherFees) {
-        wholesaleService.updatePurchaseAuditStatus(id, purchaseAuditStatus, otherFees);
+                                                           @RequestParam("otherFees") BigDecimal otherFees,
+                                                           @RequestParam(value = "purchaseAuditTotalAmount", required = false) BigDecimal purchaseAuditTotalAmount) {
+        System.out.println("更改的订单id为 " + id);
+        System.out.println("更改的采购审核状态为 " + purchaseAuditStatus);
+        System.out.println("其他费用为 " + otherFees);
+        System.out.println("批发采购审核总额为 " + purchaseAuditTotalAmount);
+        wholesaleService.updatePurchaseAuditStatus(id, purchaseAuditStatus, otherFees, purchaseAuditTotalAmount);
         return success(true);
     }
 
@@ -684,8 +689,13 @@ public class ErpWholesaleController {
     @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
     public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
                                                       @RequestParam("saleAuditStatus") Integer saleAuditStatus,
-                                                      @RequestParam("otherFees") BigDecimal otherFees) {
-        wholesaleService.updateSaleAuditStatus(id, saleAuditStatus, otherFees);
+                                                      @RequestParam("otherFees") BigDecimal otherFees,
+                                                      @RequestParam(value = "saleAuditTotalAmount", required = false) BigDecimal saleAuditTotalAmount) {
+        System.out.println("更改的订单id为 " + id);
+        System.out.println("更改的销售审核状态为 " + saleAuditStatus);
+        System.out.println("其他费用为 " + otherFees);
+        System.out.println("批发销售审核总额为 " + saleAuditTotalAmount);
+        wholesaleService.updateSaleAuditStatus(id, saleAuditStatus, otherFees, saleAuditTotalAmount);
         return success(true);
     }
 

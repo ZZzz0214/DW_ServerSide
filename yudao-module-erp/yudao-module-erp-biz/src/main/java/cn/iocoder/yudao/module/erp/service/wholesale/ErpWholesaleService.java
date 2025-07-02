@@ -55,8 +55,9 @@ public interface ErpWholesaleService {
      * @param id 编号
      * @param purchaseAuditStatus 采购审核状态
      * @param otherFees 其他费用
+     * @param purchaseAuditTotalAmount 批发采购审核总额
      */
-    void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees);
+    void updatePurchaseAuditStatus(Long id, Integer purchaseAuditStatus, BigDecimal otherFees, BigDecimal purchaseAuditTotalAmount);
 
     /**
      * 批量更新采购审核状态
@@ -72,8 +73,9 @@ public interface ErpWholesaleService {
      * @param id 编号
      * @param saleAuditStatus 销售审核状态
      * @param otherFees 其他费用
+     * @param saleAuditTotalAmount 批发销售审核总额
      */
-    void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees);
+    void updateSaleAuditStatus(Long id, Integer saleAuditStatus, BigDecimal otherFees, BigDecimal saleAuditTotalAmount);
 
     /**
      * 批量更新销售审核状态

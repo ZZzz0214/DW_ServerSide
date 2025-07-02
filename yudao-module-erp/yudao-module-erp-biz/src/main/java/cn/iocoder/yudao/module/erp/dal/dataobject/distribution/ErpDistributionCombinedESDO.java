@@ -199,6 +199,13 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "sale_unapprove_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime saleUnapproveTime;
 
+    // 审核总额字段
+    @Field(name = "purchase_audit_total_amount", type = FieldType.Double)
+    private BigDecimal purchaseAuditTotalAmount;
+
+    @Field(name = "sale_audit_total_amount", type = FieldType.Double)
+    private BigDecimal saleAuditTotalAmount;
+
     @Field(name = "create_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createTime;
 

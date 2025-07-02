@@ -126,6 +126,9 @@ public class ErpDistributionPurchaseAuditVO {
     @Schema(description = "采购审批时间", example = "2023-01-01 12:00:00")
     private LocalDateTime purchaseApprovalTime;
 
+    @Schema(description = "代发采购审核总额", example = "10000.00")
+    private BigDecimal purchaseAuditTotalAmount;
+
     @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
     private String creator;
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

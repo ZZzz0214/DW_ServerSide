@@ -168,4 +168,8 @@ public class ErpWholesaleRespVO {
 
     @Schema(description = "订单号", example = "ORD202403250001")
     private String orderNumber;
+
+
+    private BigDecimal purchaseAuditTotalAmount;
+    private BigDecimal saleAuditTotalAmount;
 }

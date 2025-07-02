@@ -390,6 +390,7 @@ public class ErpDistributionController {
 
         // 2. 转换为VO对象
         ErpDistributionSaleAuditVO respVO = BeanUtils.toBean(distribution, ErpDistributionSaleAuditVO.class);
+        System.out.println("销售总额："+respVO.getTotalSaleAmount());
 
         return success(respVO);
     }
@@ -435,11 +436,13 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status')")
     public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
                                                       @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
-                                                      @RequestParam("otherFees") BigDecimal otherFees) {
+                                                      @RequestParam("otherFees") BigDecimal otherFees,
+                                                      @RequestParam(value = "purchaseAuditTotalAmount", required = false) BigDecimal purchaseAuditTotalAmount) {
         System.out.println("更改的订单id为 " + id);
         System.out.println("更改的采购审核状态为 " + purchaseAuditStatus);
         System.out.println("其他费用为 " + otherFees);
-        distributionService.updatePurchaseAuditStatus(id, purchaseAuditStatus, otherFees);
+        System.out.println("代发采购审核总额为 " + purchaseAuditTotalAmount);
+        distributionService.updatePurchaseAuditStatus(id, purchaseAuditStatus, otherFees, purchaseAuditTotalAmount);
         return success(true);
     }
 
@@ -457,11 +460,13 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status')")
     public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
                                                     @RequestParam("saleAuditStatus") Integer saleAuditStatus,
-                                                    @RequestParam("otherFees") BigDecimal otherFees) {
+                                                    @RequestParam("otherFees") BigDecimal otherFees,
+                                                    @RequestParam(value = "saleAuditTotalAmount", required = false) BigDecimal saleAuditTotalAmount) {
         System.out.println("更改的订单id为 " + id);
         System.out.println("更改的销售审核状态为 " + saleAuditStatus);
         System.out.println("其他费用为 " + otherFees);
-        distributionService.updateSaleAuditStatus(id, saleAuditStatus, otherFees);
+        System.out.println("代发销售审核总额为 " + saleAuditTotalAmount);
+        distributionService.updateSaleAuditStatus(id, saleAuditStatus, otherFees, saleAuditTotalAmount);
         return success(true);
     }
 

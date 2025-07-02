@@ -119,4 +119,10 @@ public class ErpDistributionSaleAuditVO {
 
     @Schema(description = "销售反审批时间", example = "2023-01-01 12:00:00")
     private LocalDateTime saleUnapproveTime;
+
+    @Schema(description = "代发销售审核总额", example = "12000.00")
+    private BigDecimal saleAuditTotalAmount;
+
+
+
 }
