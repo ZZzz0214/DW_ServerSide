@@ -276,6 +276,7 @@ public class ErpWholesaleController {
         BigDecimal totalOtherFees = BigDecimal.ZERO;
         BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
         BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
 
         for (ErpWholesalePurchaseAuditVO vo : list) {
             if (vo.getPurchasePrice() != null) {
@@ -296,6 +297,10 @@ public class ErpWholesaleController {
             if (vo.getPurchaseAfterSalesAmount() != null) {
                 totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
             }
+
+            if (vo.getPurchaseAuditTotalAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
+            }
         }
 
         // 创建返回结果
@@ -307,6 +312,7 @@ public class ErpWholesaleController {
         result.setTotalOtherFees(totalOtherFees);
         result.setTotalPurchaseAmount(totalPurchaseAmount);
         result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
 
         return success(result);
     }
@@ -390,6 +396,7 @@ public class ErpWholesaleController {
         BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
         BigDecimal totalSaleAmount = BigDecimal.ZERO;
         BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
 
         for (ErpWholesaleSaleAuditVO vo : list) {
             if (vo.getSalePrice() != null) {
@@ -410,6 +417,9 @@ public class ErpWholesaleController {
             if (vo.getSaleAfterSalesAmount() != null) {
                 totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
             }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
         }
 
         // 创建返回结果
@@ -421,6 +431,7 @@ public class ErpWholesaleController {
         result.setTotalSaleOtherFees(totalSaleOtherFees);
         result.setTotalSaleAmount(totalSaleAmount);
         result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
 
         return success(result);
     }

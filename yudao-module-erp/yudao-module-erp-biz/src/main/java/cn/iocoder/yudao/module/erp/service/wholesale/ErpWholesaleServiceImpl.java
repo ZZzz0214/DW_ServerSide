@@ -24,6 +24,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpSalePri
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.saleprice.ErpWholesaleMissingPriceVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductItemES;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceESDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalePriceDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
@@ -289,7 +291,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         // 2. 更新数据库记录 - 将ES数据转换为DO，然后有选择性地更新
         ErpWholesaleCombinedDO updateDO = BeanUtils.toBean(combined, ErpWholesaleCombinedDO.class);
-        
+
         // 有选择性地更新字段，只更新前端传入的有值字段
         if (updateReqVO.getLogisticsNumber() != null) {
             updateDO.setLogisticsNumber(updateReqVO.getLogisticsNumber());
@@ -356,7 +358,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         }
 
         wholesaleCombinedMapper.updateById(updateDO);
-        
+
         // 3. 更新ES记录 - 直接使用更新后的DO转换为ES
         ErpWholesaleCombinedESDO combinedESDO = convertCombinedToES(updateDO);
         // 保留原有的创建者和创建时间
@@ -399,40 +401,92 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .setLogisticsFee(combined.getPurchaseLogisticsFee())
                 .setOtherFees(combined.getPurchaseOtherFees());
 
-        // 3. 查询组品信息并设置到respVO
+        // 3. 🔥 实时获取组品信息并计算相关字段
         if (combined.getComboProductId() != null) {
-            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
-            if (comboProductOpt.isPresent()) {
-                ErpComboProductES comboProduct = comboProductOpt.get();
-                respVO.setShippingCode(comboProduct.getShippingCode())
-                      .setProductName(comboProduct.getName())
-                      .setPurchaser(comboProduct.getPurchaser())
-                      .setSupplier(comboProduct.getSupplier())
-                      .setPurchasePrice(comboProduct.getWholesalePrice())  // 采购价使用组品的批发价
-                      .setComboProductNo(comboProduct.getNo());
-                // 查询销售价格
-                Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                        combined.getComboProductId(),
-                        combined.getCustomerName());
-                if (salePriceOpt.isPresent()) {
-                    respVO.setSalePrice(salePriceOpt.get().getWholesalePrice());
-                }
-                       // 计算采购总额
-        BigDecimal totalPurchaseAmount = comboProduct.getPurchasePrice()
-                .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
-                .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
-                .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
-                .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
-        respVO.setTotalPurchaseAmount(totalPurchaseAmount);
+            try {
+                // 3.1 从ES实时查询组品基本信息
+                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
+                if (comboProductOpt.isPresent()) {
+                    ErpComboProductES comboProduct = comboProductOpt.get();
 
-        // 计算销售总额
-        BigDecimal salePrice = respVO.getSalePrice() != null ? respVO.getSalePrice() : BigDecimal.ZERO;
-        BigDecimal totalSaleAmount = salePrice
-                .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
-                .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
-                .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
-                .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-        respVO.setTotalSaleAmount(totalSaleAmount);
+                    // 设置基础信息
+                    respVO.setShippingCode(comboProduct.getShippingCode());
+                    respVO.setPurchaser(comboProduct.getPurchaser());
+                    respVO.setSupplier(comboProduct.getSupplier());
+                    respVO.setComboProductNo(comboProduct.getNo());
+
+                    // 🔥 实时计算产品名称、采购单价等字段
+                    String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
+                    BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
+
+                    // 如果实时计算失败，使用ES中的缓存数据
+                    respVO.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
+                    respVO.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getWholesalePrice());
+
+                    // 查询销售价格
+                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                            combined.getComboProductId(),
+                            combined.getCustomerName());
+                    if (salePriceOpt.isPresent()) {
+                        respVO.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                    }
+
+                    // 计算采购总额 - 使用实时计算的采购单价
+                    BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getWholesalePrice();
+                    BigDecimal totalPurchaseAmount = finalPurchasePrice
+                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                            .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
+                            .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
+                            .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                    respVO.setTotalPurchaseAmount(totalPurchaseAmount);
+
+                    // 计算销售总额
+                    BigDecimal salePrice = respVO.getSalePrice() != null ? respVO.getSalePrice() : BigDecimal.ZERO;
+                    BigDecimal totalSaleAmount = salePrice
+                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                            .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                            .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                            .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                    respVO.setTotalSaleAmount(totalSaleAmount);
+                }
+            } catch (Exception e) {
+                System.err.println("实时获取组品信息失败，回退到缓存数据: " + e.getMessage());
+                // 回退到原有的缓存数据逻辑
+                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
+                if (comboProductOpt.isPresent()) {
+                    ErpComboProductES comboProduct = comboProductOpt.get();
+                    respVO.setShippingCode(comboProduct.getShippingCode())
+                          .setProductName(comboProduct.getName())
+                          .setPurchaser(comboProduct.getPurchaser())
+                          .setSupplier(comboProduct.getSupplier())
+                          .setPurchasePrice(comboProduct.getWholesalePrice())
+                          .setComboProductNo(comboProduct.getNo());
+
+                    // 查询销售价格
+                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                            combined.getComboProductId(),
+                            combined.getCustomerName());
+                    if (salePriceOpt.isPresent()) {
+                        respVO.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                    }
+
+                    // 计算采购总额
+                    BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
+                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                            .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
+                            .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
+                            .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                    respVO.setTotalPurchaseAmount(totalPurchaseAmount);
+
+                    // 计算销售总额
+                    BigDecimal salePrice = respVO.getSalePrice() != null ? respVO.getSalePrice() : BigDecimal.ZERO;
+                    BigDecimal totalSaleAmount = salePrice
+                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                            .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                            .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                            .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                    respVO.setTotalSaleAmount(totalSaleAmount);
+                }
             }
         }
 
@@ -751,42 +805,92 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                                 .setLogisticsFee(combined.getPurchaseLogisticsFee())
                                 .setOtherFees(combined.getPurchaseOtherFees());
 
-                        // 查询组品信息并设置到respVO
+                        // 🔥 实时获取组品信息并计算相关字段
                         if (combined.getComboProductId() != null) {
-                            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
-                            if (comboProductOpt.isPresent()) {
-                                ErpComboProductES comboProduct = comboProductOpt.get();
-                                vo.setShippingCode(comboProduct.getShippingCode())
-                                  .setProductName(comboProduct.getName())
-                                  .setPurchaser(comboProduct.getPurchaser())
-                                  .setSupplier(comboProduct.getSupplier())
-                                  .setPurchasePrice(comboProduct.getWholesalePrice())
-                                  .setComboProductNo(comboProduct.getNo());
+                            try {
+                                // 从ES实时查询组品基本信息
+                                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
+                                if (comboProductOpt.isPresent()) {
+                                    ErpComboProductES comboProduct = comboProductOpt.get();
 
-                                // 查询销售价格
-                                Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                                        combined.getComboProductId(),
-                                        combined.getCustomerName());
-                                if (salePriceOpt.isPresent()) {
-                                    vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                                    // 设置基础信息
+                                    vo.setShippingCode(comboProduct.getShippingCode());
+                                    vo.setPurchaser(comboProduct.getPurchaser());
+                                    vo.setSupplier(comboProduct.getSupplier());
+                                    vo.setComboProductNo(comboProduct.getNo());
+
+                                    // 🔥 实时计算产品名称、采购单价等字段
+                                    String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
+                                    BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
+
+                                    // 如果实时计算失败，使用ES中的缓存数据
+                                    vo.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
+                                    vo.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getWholesalePrice());
+
+                                    // 查询销售价格
+                                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                                            combined.getComboProductId(),
+                                            combined.getCustomerName());
+                                    if (salePriceOpt.isPresent()) {
+                                        vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                                    }
+
+                                    // 计算采购总额 - 使用实时计算的采购单价
+                                    BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getWholesalePrice();
+                                    BigDecimal totalPurchaseAmount = finalPurchasePrice
+                                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                            .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
+                                            .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
+                                            .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                                    vo.setTotalPurchaseAmount(totalPurchaseAmount);
+
+                                    // 计算销售总额
+                                    BigDecimal salePrice = vo.getSalePrice() != null ? vo.getSalePrice() : BigDecimal.ZERO;
+                                    BigDecimal totalSaleAmount = salePrice
+                                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                            .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                            .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                            .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                    vo.setTotalSaleAmount(totalSaleAmount);
                                 }
+                            } catch (Exception e) {
+                                System.err.println("实时获取组品信息失败，回退到缓存数据: " + e.getMessage());
+                                // 回退到原有的缓存数据逻辑
+                                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
+                                if (comboProductOpt.isPresent()) {
+                                    ErpComboProductES comboProduct = comboProductOpt.get();
+                                    vo.setShippingCode(comboProduct.getShippingCode())
+                                      .setProductName(comboProduct.getName())
+                                      .setPurchaser(comboProduct.getPurchaser())
+                                      .setSupplier(comboProduct.getSupplier())
+                                      .setPurchasePrice(comboProduct.getWholesalePrice())
+                                      .setComboProductNo(comboProduct.getNo());
 
-                                // 计算采购总额
-                                BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
-                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
-                                        .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
-                                        .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
-                                        .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
-                                vo.setTotalPurchaseAmount(totalPurchaseAmount);
+                                    // 查询销售价格
+                                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                                            combined.getComboProductId(),
+                                            combined.getCustomerName());
+                                    if (salePriceOpt.isPresent()) {
+                                        vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                                    }
 
-                                // 计算销售总额
-                                BigDecimal salePrice = vo.getSalePrice() != null ? vo.getSalePrice() : BigDecimal.ZERO;
-                                BigDecimal totalSaleAmount = salePrice
-                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
-                                        .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
-                                        .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
-                                        .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-                                vo.setTotalSaleAmount(totalSaleAmount);
+                                    // 计算采购总额
+                                    BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
+                                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                            .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
+                                            .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
+                                            .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                                    vo.setTotalPurchaseAmount(totalPurchaseAmount);
+
+                                    // 计算销售总额
+                                    BigDecimal salePrice = vo.getSalePrice() != null ? vo.getSalePrice() : BigDecimal.ZERO;
+                                    BigDecimal totalSaleAmount = salePrice
+                                            .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                            .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                            .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                            .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                    vo.setTotalSaleAmount(totalSaleAmount);
+                                }
                             }
                         }
                         return vo;
@@ -844,42 +948,92 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     ErpWholesaleRespVO vo = BeanUtils.toBean(combined, ErpWholesaleRespVO.class)
                             .setOtherFees(combined.getPurchaseOtherFees());
 
-                    // 查询组品信息并设置到respVO
+                    // 🔥 实时获取组品信息并计算相关字段
                     if (combined.getComboProductId() != null) {
-                        Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
-                        if (comboProductOpt.isPresent()) {
-                            ErpComboProductES comboProduct = comboProductOpt.get();
-                            vo.setShippingCode(comboProduct.getShippingCode())
-                              .setProductName(comboProduct.getName())
-                              .setPurchaser(comboProduct.getPurchaser())
-                              .setSupplier(comboProduct.getSupplier())
-                              .setPurchasePrice(comboProduct.getWholesalePrice())
-                              .setComboProductNo(comboProduct.getNo());
+                        try {
+                            // 从ES实时查询组品基本信息
+                            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
+                            if (comboProductOpt.isPresent()) {
+                                ErpComboProductES comboProduct = comboProductOpt.get();
 
-                            // 查询销售价格
-                            Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                                    combined.getComboProductId(),
-                                    combined.getCustomerName());
-                            if (salePriceOpt.isPresent()) {
-                                vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                                // 设置基础信息
+                                vo.setShippingCode(comboProduct.getShippingCode());
+                                vo.setPurchaser(comboProduct.getPurchaser());
+                                vo.setSupplier(comboProduct.getSupplier());
+                                vo.setComboProductNo(comboProduct.getNo());
+
+                                // 🔥 实时计算产品名称、采购单价等字段
+                                String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
+                                BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
+
+                                // 如果实时计算失败，使用ES中的缓存数据
+                                vo.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
+                                vo.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getWholesalePrice());
+
+                                // 查询销售价格
+                                Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                                        combined.getComboProductId(),
+                                        combined.getCustomerName());
+                                if (salePriceOpt.isPresent()) {
+                                    vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                                }
+
+                                // 计算采购总额 - 使用实时计算的采购单价
+                                BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getWholesalePrice();
+                                BigDecimal totalPurchaseAmount = finalPurchasePrice
+                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                        .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
+                                        .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
+                                        .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                                vo.setTotalPurchaseAmount(totalPurchaseAmount);
+
+                                // 计算销售总额
+                                BigDecimal salePrice = vo.getSalePrice() != null ? vo.getSalePrice() : BigDecimal.ZERO;
+                                BigDecimal totalSaleAmount = salePrice
+                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                        .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                        .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                        .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                vo.setTotalSaleAmount(totalSaleAmount);
                             }
+                        } catch (Exception e) {
+                            System.err.println("实时获取组品信息失败，回退到缓存数据: " + e.getMessage());
+                            // 回退到原有的缓存数据逻辑
+                            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
+                            if (comboProductOpt.isPresent()) {
+                                ErpComboProductES comboProduct = comboProductOpt.get();
+                                vo.setShippingCode(comboProduct.getShippingCode())
+                                  .setProductName(comboProduct.getName())
+                                  .setPurchaser(comboProduct.getPurchaser())
+                                  .setSupplier(comboProduct.getSupplier())
+                                  .setPurchasePrice(comboProduct.getWholesalePrice())
+                                  .setComboProductNo(comboProduct.getNo());
 
-                            // 计算采购总额
-                            BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
-                                    .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
-                                    .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
-                                    .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
-                                    .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
-                            vo.setTotalPurchaseAmount(totalPurchaseAmount);
+                                // 查询销售价格
+                                Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                                        combined.getComboProductId(),
+                                        combined.getCustomerName());
+                                if (salePriceOpt.isPresent()) {
+                                    vo.setSalePrice(salePriceOpt.get().getWholesalePrice());
+                                }
 
-                            // 计算销售总额
-                            BigDecimal salePrice = vo.getSalePrice() != null ? vo.getSalePrice() : BigDecimal.ZERO;
-                            BigDecimal totalSaleAmount = salePrice
-                                    .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
-                                    .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
-                                    .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
-                                    .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-                            vo.setTotalSaleAmount(totalSaleAmount);
+                                // 计算采购总额
+                                BigDecimal totalPurchaseAmount = comboProduct.getWholesalePrice()
+                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                        .add(combined.getPurchaseTruckFee() != null ? combined.getPurchaseTruckFee() : BigDecimal.ZERO)
+                                        .add(combined.getPurchaseLogisticsFee() != null ? combined.getPurchaseLogisticsFee() : BigDecimal.ZERO)
+                                        .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
+                                vo.setTotalPurchaseAmount(totalPurchaseAmount);
+
+                                // 计算销售总额
+                                BigDecimal salePrice = vo.getSalePrice() != null ? vo.getSalePrice() : BigDecimal.ZERO;
+                                BigDecimal totalSaleAmount = salePrice
+                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                        .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                        .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                        .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                vo.setTotalSaleAmount(totalSaleAmount);
+                            }
                         }
                     }
                     return vo;
@@ -2335,6 +2489,138 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         } catch (Exception e) {
             System.err.println("从数据库查询批发缺失价格记录失败: " + e.getMessage());
             return new PageResult<>(Collections.emptyList(), 0L);
+        }
+    }
+
+    /**
+     * 🔥 实时计算产品名称 - 参考代发表的实时计算逻辑
+     * 根据组品ID查询关联的单品，实时组装产品名称
+     */
+    private String calculateRealTimeProductName(Long comboProductId) {
+        try {
+            // 从ES查询组品关联的单品项
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", comboProductId))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (itemHits.isEmpty()) {
+                return null;
+            }
+
+            // 提取单品ID列表
+            List<Long> productIds = itemHits.stream()
+                    .map(hit -> hit.getContent().getItemProductId())
+                    .collect(Collectors.toList());
+
+            // 从ES查询单品详细信息
+            NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                    productQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            Map<Long, ErpProductESDO> productMap = productHits.stream()
+                    .collect(Collectors.toMap(
+                            hit -> hit.getContent().getId(),
+                            SearchHit::getContent));
+
+            // 组装单品名称字符串 (单品A×数量+单品B×数量)
+            StringBuilder nameBuilder = new StringBuilder();
+            List<ErpComboProductItemES> items = itemHits.stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < items.size(); i++) {
+                if (i > 0) {
+                    nameBuilder.append("+");
+                }
+                ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
+                if (product != null) {
+                    nameBuilder.append(product.getName())
+                              .append("×")
+                              .append(items.get(i).getItemQuantity());
+                }
+            }
+
+            return nameBuilder.toString();
+        } catch (Exception e) {
+            System.err.println("实时计算产品名称失败，组品ID: " + comboProductId + ", 错误: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 🔥 实时计算采购单价 - 参考代发表的实时计算逻辑
+     * 根据组品ID查询关联的单品，实时计算采购总价
+     */
+    private BigDecimal calculateRealTimePurchasePrice(Long comboProductId) {
+        try {
+            // 从ES查询组品关联的单品项
+            NativeSearchQuery itemQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.termQuery("combo_product_id", comboProductId))
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpComboProductItemES> itemHits = elasticsearchRestTemplate.search(
+                    itemQuery,
+                    ErpComboProductItemES.class,
+                    IndexCoordinates.of("erp_combo_product_items"));
+
+            if (itemHits.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            // 提取单品ID列表
+            List<Long> productIds = itemHits.stream()
+                    .map(hit -> hit.getContent().getItemProductId())
+                    .collect(Collectors.toList());
+
+            // 从ES查询单品详细信息
+            NativeSearchQuery productQuery = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.idsQuery().addIds(productIds.stream().map(String::valueOf).toArray(String[]::new)))
+                    .withPageable(PageRequest.of(0, 1000))
+                    .build();
+
+            SearchHits<ErpProductESDO> productHits = elasticsearchRestTemplate.search(
+                    productQuery,
+                    ErpProductESDO.class,
+                    IndexCoordinates.of("erp_products"));
+
+            Map<Long, ErpProductESDO> productMap = productHits.stream()
+                    .collect(Collectors.toMap(
+                            hit -> hit.getContent().getId(),
+                            SearchHit::getContent));
+
+            // 计算采购总价
+            BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+            List<ErpComboProductItemES> items = itemHits.stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+
+            for (ErpComboProductItemES item : items) {
+                ErpProductESDO product = productMap.get(item.getItemProductId());
+                if (product != null && product.getWholesalePrice() != null) {
+                    BigDecimal itemQuantity = new BigDecimal(item.getItemQuantity());
+                    totalPurchasePrice = totalPurchasePrice.add(product.getWholesalePrice().multiply(itemQuantity));
+                }
+            }
+
+            return totalPurchasePrice;
+        } catch (Exception e) {
+            System.err.println("实时计算采购单价失败，组品ID: " + comboProductId + ", 错误: " + e.getMessage());
+            return BigDecimal.ZERO;
         }
     }
 }

@@ -942,21 +942,30 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setShippingFee(BigDecimal.ZERO);
                         vo.setSaleShippingFee(BigDecimal.ZERO);
 
-                        // 查询组品信息
+                        // 🔥 实时获取组品信息并计算相关字段
                         if (combined.getComboProductId() != null) {
                             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
                             if (comboProductOpt.isPresent()) {
                                 ErpComboProductES comboProduct = comboProductOpt.get();
-                                vo.setProductName(comboProduct.getName());
+                                
+                                // 设置基础信息
                                 vo.setShippingCode(comboProduct.getShippingCode());
                                 vo.setPurchaser(comboProduct.getPurchaser());
                                 vo.setSupplier(comboProduct.getSupplier());
-                                vo.setPurchasePrice(comboProduct.getPurchasePrice());
                                 vo.setComboProductNo(comboProduct.getNo());
+                                
+                                // 🔥 实时计算产品名称、采购单价等字段
+                                String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
+                                BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
+                                
+                                // 如果实时计算失败，使用ES中的缓存数据
+                                vo.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
+                                vo.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice());
 
                                 // 计算采购运费和总额
                                 BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, vo.getProductQuantity());
-                                BigDecimal totalPurchaseAmount = comboProduct.getPurchasePrice()
+                                BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice();
+                                BigDecimal totalPurchaseAmount = finalPurchasePrice
                                         .multiply(new BigDecimal(vo.getProductQuantity()))
                                         .add(shippingFee)
                                         .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);
@@ -1057,21 +1066,30 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     vo.setShippingFee(BigDecimal.ZERO);
                     vo.setSaleShippingFee(BigDecimal.ZERO);
 
-                    // 查询组品信息
+                    // 🔥 实时获取组品信息并计算相关字段
                     if (combined.getComboProductId() != null) {
                         Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
                         if (comboProductOpt.isPresent()) {
                             ErpComboProductES comboProduct = comboProductOpt.get();
-                            vo.setProductName(comboProduct.getName());
+                            
+                            // 设置基础信息
                             vo.setShippingCode(comboProduct.getShippingCode());
                             vo.setPurchaser(comboProduct.getPurchaser());
                             vo.setSupplier(comboProduct.getSupplier());
-                            vo.setPurchasePrice(comboProduct.getPurchasePrice());
                             vo.setComboProductNo(comboProduct.getNo());
+                            
+                            // 🔥 实时计算产品名称、采购单价等字段
+                            String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
+                            BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
+                            
+                            // 如果实时计算失败，使用ES中的缓存数据
+                            vo.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
+                            vo.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice());
 
                             // 计算采购运费和总额
                             BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, vo.getProductQuantity());
-                            BigDecimal totalPurchaseAmount = comboProduct.getPurchasePrice()
+                            BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice();
+                            BigDecimal totalPurchaseAmount = finalPurchasePrice
                                     .multiply(new BigDecimal(vo.getProductQuantity()))
                                     .add(shippingFee)
                                     .add(combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO);

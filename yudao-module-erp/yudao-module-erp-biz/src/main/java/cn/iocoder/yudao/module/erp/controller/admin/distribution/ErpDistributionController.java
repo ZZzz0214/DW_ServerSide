@@ -175,6 +175,7 @@ public class ErpDistributionController {
         BigDecimal totalOtherFees = BigDecimal.ZERO;
         BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
         BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
 
         for (ErpDistributionPurchaseAuditVO vo : list) {
             if (vo.getPurchasePrice() != null) {
@@ -192,6 +193,9 @@ public class ErpDistributionController {
             if (vo.getPurchaseAfterSalesAmount() != null) {
                 totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
             }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getTotalPurchaseAmount());
+            }
         }
 
         // 创建返回结果
@@ -202,6 +206,7 @@ public class ErpDistributionController {
         result.setTotalOtherFees(totalOtherFees);
         result.setTotalPurchaseAmount(totalPurchaseAmount);
         result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
 
         return success(result);
     }
@@ -220,13 +225,13 @@ public class ErpDistributionController {
             BeanUtils.copyProperties(item, vo);
             return vo;
         }).collect(Collectors.toList());
-
-        // 计算采购合计值
+        // 计算合计值
         BigDecimal totalPurchasePrice = BigDecimal.ZERO;
         BigDecimal totalShippingFee = BigDecimal.ZERO;
         BigDecimal totalOtherFees = BigDecimal.ZERO;
         BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
         BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
 
         for (ErpDistributionPurchaseAuditVO vo : list) {
             if (vo.getPurchasePrice() != null) {
@@ -244,6 +249,9 @@ public class ErpDistributionController {
             if (vo.getPurchaseAfterSalesAmount() != null) {
                 totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
             }
+            if (vo.getPurchaseAuditTotalAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
+            }
         }
 
         // 创建返回结果
@@ -254,6 +262,7 @@ public class ErpDistributionController {
         result.setTotalOtherFees(totalOtherFees);
         result.setTotalPurchaseAmount(totalPurchaseAmount);
         result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
 
         return success(result);
     }
@@ -328,6 +337,7 @@ public class ErpDistributionController {
         BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
         BigDecimal totalSaleAmount = BigDecimal.ZERO;
         BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
 
         for (ErpDistributionSaleAuditVO vo : list) {
             if (vo.getSalePrice() != null) {
@@ -345,6 +355,9 @@ public class ErpDistributionController {
             if (vo.getSaleAfterSalesAmount() != null) {
                 totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
             }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
         }
 
         // 创建返回结果
@@ -355,6 +368,7 @@ public class ErpDistributionController {
         result.setTotalSaleOtherFees(totalSaleOtherFees);
         result.setTotalSaleAmount(totalSaleAmount);
         result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
 
         return success(result);
     }
