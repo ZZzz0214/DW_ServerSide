@@ -30,7 +30,7 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .orderByDesc(ErpDropshipAssistDO::getId);
 
         // 联表查询组品信息 - 通过combo_product_id与组品表的no字段进行关联
-        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getNo, ErpDropshipAssistDO::getComboProductId);
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId);
 
         // 添加组品相关的查询条件 - 只有当查询条件不为空时才添加
         if (reqVO.getComboProductId() != null && !reqVO.getComboProductId().trim().isEmpty()) {
@@ -72,7 +72,7 @@ public interface ErpDropshipAssistMapper extends BaseMapperX<ErpDropshipAssistDO
                 .eq(ErpDropshipAssistDO::getId, id);
 
         // 联表查询组品信息 - 通过combo_product_id与组品表的no字段进行关联
-        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getNo, ErpDropshipAssistDO::getComboProductId);
+        query.leftJoin(ErpComboProductDO.class, ErpComboProductDO::getId, ErpDropshipAssistDO::getComboProductId);
 
         // 字段映射
         query.selectAs(ErpDropshipAssistDO::getId, ErpDropshipAssistRespVO::getId)
