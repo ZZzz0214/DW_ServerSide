@@ -31,4 +31,9 @@ public interface ErpSalePriceESRepository extends ElasticsearchRepository<ErpSal
      */
     //List<ErpSalePriceESDO> findByStatus(Integer status);
 
+    /**
+     * 批量查询销售价格 - 根据组品ID列表和客户名称列表
+     */
+    List<ErpSalePriceESDO> findByGroupProductIdInAndCustomerNameIn(List<Long> groupProductIds, List<String> customerNames);
+
 }
