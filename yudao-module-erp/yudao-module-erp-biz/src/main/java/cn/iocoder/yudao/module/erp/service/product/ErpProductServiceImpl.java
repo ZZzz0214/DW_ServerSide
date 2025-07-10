@@ -1308,8 +1308,8 @@ public class ErpProductServiceImpl implements ErpProductService {
                 ErpProductDO existProduct = existMap.get(importVO.getNo());
                 if (existProduct == null) {
                     // 创建产品
-                    //product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX)).setCreator(username).setCreateTime(now);
-                    product.setNo(importVO.getNo()).setCreator(username).setCreateTime(now);
+                    product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX)).setCreator(username).setCreateTime(now);
+                    //product.setNo(importVO.getNo()).setCreator(username).setCreateTime(now);
                     createList.add(product);
                     respVO.getCreateNames().add(product.getName());
                 } else if (isUpdateSupport) {
