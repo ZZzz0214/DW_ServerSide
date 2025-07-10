@@ -239,7 +239,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
             }
 
             if (existingReview != null) {
-                throw exception(PRIVATE_BROADCASTING_REVIEW_PRIVATE_BROADCASTING_CUSTOMER_DUPLICATE);
+                throw exception(PRIVATE_BROADCASTING_REVIEW_PRIVATE_BROADCASTING_CUSTOMER_DUPLICATE_WITH_CREATOR, existingReview.getCreator());
             }
         }
     }
@@ -490,7 +490,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                             ErpPrivateBroadcastingReviewDO existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerId(
                                     privateBroadcastingId, customerId);
                             if (existingReview != null) {
-                                allErrors.put(errorKey, "私播货盘和客户名称组合已存在");
+                                allErrors.put(errorKey, "私播货盘和客户名称组合已存在，创建人：" + existingReview.getCreator());
                                 continue;
                             }
                         }
@@ -510,7 +510,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                             ErpPrivateBroadcastingReviewDO existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerIdExcludeId(
                                     privateBroadcastingId, customerId, existReview.getId());
                             if (existingReview != null) {
-                                allErrors.put(errorKey, "私播货盘和客户名称组合已存在");
+                                allErrors.put(errorKey, "私播货盘和客户名称组合已存在，创建人：" + existingReview.getCreator());
                                 continue;
                             }
                         }

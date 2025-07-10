@@ -157,10 +157,34 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
      * 根据团购货盘ID和客户ID查询记录，排除指定ID的记录（用于更新时的重复校验）
      */
     default ErpGroupBuyingReviewDO selectByGroupBuyingIdAndCustomerIdExcludeId(String groupBuyingId, String customerId, Long excludeId) {
-        return selectOne(new MPJLambdaWrapperX<ErpGroupBuyingReviewDO>()
-                .eq(ErpGroupBuyingReviewDO::getGroupBuyingId, groupBuyingId)
+//        return selectOne(new MPJLambdaWrapperX<ErpGroupBuyingReviewDO>()
+//                .eq(ErpGroupBuyingReviewDO::getGroupBuyingId, groupBuyingId)
+//                .eq(ErpGroupBuyingReviewDO::getCustomerId, customerId)
+//                .ne(ErpGroupBuyingReviewDO::getId, excludeId));
+        // 构建查询条件
+        MPJLambdaWrapperX<ErpGroupBuyingReviewDO> wrapper = new MPJLambdaWrapperX<>();
+        wrapper.eq(ErpGroupBuyingReviewDO::getGroupBuyingId, groupBuyingId)
                 .eq(ErpGroupBuyingReviewDO::getCustomerId, customerId)
-                .ne(ErpGroupBuyingReviewDO::getId, excludeId));
+                .ne(ErpGroupBuyingReviewDO::getId, excludeId);
+
+        // 打印查询参数
+        System.out.println("[DEBUG] 查询拼团评价 - 参数: 拼团ID=" + groupBuyingId +
+                ", 客户ID=" + customerId +
+                ", 排除ID=" + excludeId);
+
+        // 执行查询
+        ErpGroupBuyingReviewDO result = selectOne(wrapper);
+
+        // 打印查询结果
+        if (result == null) {
+            System.out.println("[INFO] 未找到匹配数据 - 参数: 拼团ID=" + groupBuyingId +
+                    ", 客户ID=" + customerId +
+                    ", 排除ID=" + excludeId);
+        } else {
+            System.out.println("[DEBUG] 找到数据 - ID=" + result.getId());
+        }
+
+        return result;
     }
 
     default List<ErpGroupBuyingReviewDO> selectListByGroupBuyingIdAndCustomerIdIn(Collection<String> groupBuyingIds, Collection<String> customerIds) {

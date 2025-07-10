@@ -179,13 +179,21 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
         if (groupBuyingReview != null && !groupBuyingReview.getId().equals(id)) {
             throw exception(GROUP_BUYING_REVIEW_NO_EXISTS);
         }
-
         // 2. 校验团购货盘编号和客户名称组合唯一
-        if (reqVO.getGroupBuyingId() != null && reqVO.getCustomerId() != null) {
-            ErpGroupBuyingReviewDO existingReview = groupBuyingReviewMapper.selectByGroupBuyingIdAndCustomerIdExcludeId(
-                    reqVO.getGroupBuyingId(), reqVO.getCustomerId(), id);
+        if (StrUtil.isNotBlank(reqVO.getGroupBuyingId()) && StrUtil.isNotBlank(reqVO.getCustomerId())) {
+            ErpGroupBuyingReviewDO existingReview;
+            if (id == null) {
+                // 新增时：使用不排除ID的方法
+                existingReview = groupBuyingReviewMapper.selectByGroupBuyingIdAndCustomerId(
+                        reqVO.getGroupBuyingId(), reqVO.getCustomerId());
+            } else {
+                // 编辑时：使用排除当前ID的方法
+                existingReview = groupBuyingReviewMapper.selectByGroupBuyingIdAndCustomerIdExcludeId(
+                        reqVO.getGroupBuyingId(), reqVO.getCustomerId(), id);
+            }
+            
             if (existingReview != null) {
-                throw exception(GROUP_BUYING_REVIEW_GROUP_BUYING_CUSTOMER_DUPLICATE);
+                throw exception(GROUP_BUYING_REVIEW_GROUP_BUYING_CUSTOMER_DUPLICATE_WITH_CREATOR, existingReview.getCreator());
             }
         }
     }
@@ -406,7 +414,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                         ErpGroupBuyingReviewDO existingReview = groupBuyingReviewMapper.selectByGroupBuyingIdAndCustomerId(
                                 importVO.getGroupBuyingId(), importVO.getCustomerName());
                         if (existingReview != null) {
-                            allErrors.put(errorKey, "团购货盘和客户名称组合已存在");
+                            allErrors.put(errorKey, "团购货盘和客户名称组合已存在，创建人：" + existingReview.getCreator());
                             continue;
                         }
                     }
@@ -426,7 +434,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                         ErpGroupBuyingReviewDO existingReview = groupBuyingReviewMapper.selectByGroupBuyingIdAndCustomerIdExcludeId(
                                 importVO.getGroupBuyingId(), importVO.getCustomerName(), existGroupBuyingReview.getId());
                         if (existingReview != null) {
-                            allErrors.put(errorKey, "团购货盘和客户名称组合已存在");
+                            allErrors.put(errorKey, "团购货盘和客户名称组合已存在，创建人：" + existingReview.getCreator());
                             continue;
                         }
                     }

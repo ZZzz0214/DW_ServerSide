@@ -185,7 +185,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
             ErpLiveBroadcastingReviewDO existReview = liveBroadcastingReviewMapper.selectByLiveBroadcastingIdAndCustomerName(
                     reqVO.getLiveBroadcastingId(), reqVO.getCustomerName(), id);
             if (existReview != null) {
-                throw exception(LIVE_BROADCASTING_REVIEW_LIVE_BROADCASTING_ID_CUSTOMER_NAME_EXISTS);
+                throw exception(LIVE_BROADCASTING_REVIEW_LIVE_BROADCASTING_ID_CUSTOMER_NAME_EXISTS_WITH_CREATOR, existReview.getCreator());
             }
         }
     }
@@ -362,7 +362,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                     ErpLiveBroadcastingReviewDO duplicateReview = liveBroadcastingReviewMapper.selectByLiveBroadcastingIdAndCustomerName(
                             liveBroadcastingId, importVO.getCustomerName(), excludeId);
                     if (duplicateReview != null) {
-                        allErrors.put(errorKey, "直播货盘编号和客户名称组合已存在: " + importVO.getLiveBroadcastingNo() + " + " + importVO.getCustomerName());
+                        allErrors.put(errorKey, "直播货盘编号和客户名称组合已存在，创建人：" + duplicateReview.getCreator());
                         continue;
                     }
                 }
