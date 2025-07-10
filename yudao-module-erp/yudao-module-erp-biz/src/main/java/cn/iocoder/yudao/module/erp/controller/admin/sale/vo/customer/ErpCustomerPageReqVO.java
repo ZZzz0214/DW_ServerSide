@@ -40,4 +40,8 @@ public class ErpCustomerPageReqVO extends PageParam {
     @Schema(description = "银行账号", example = "622908212277228617")
     private String bankAccount;
 
+    @Schema(description = "创建时间")
+    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
+    private LocalDateTime[] createTime;
+
 }

@@ -90,6 +90,14 @@ public interface ErpCustomerService {
     List<ErpCustomerSaveReqVO> searchCustomers(ErpCustomerPageReqVO searchReqVO);
 
     /**
+     * 分页搜索客户
+     *
+     * @param searchReqVO 搜索条件
+     * @return 客户分页
+     */
+    PageResult<ErpCustomerSaveReqVO> searchCustomersPage(ErpCustomerPageReqVO searchReqVO);
+
+    /**
      * 导入客户
      *
      * @param importCustomers 导入客户列表

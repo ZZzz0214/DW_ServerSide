@@ -28,6 +28,7 @@ public interface ErpCustomerMapper extends BaseMapperX<ErpCustomerDO> {
                 .likeIfPresent(ErpCustomerDO::getWechatAccount, reqVO.getWechatAccount())
                 .likeIfPresent(ErpCustomerDO::getAlipayAccount, reqVO.getAlipayAccount())
                 .likeIfPresent(ErpCustomerDO::getBankAccount, reqVO.getBankAccount())
+                .betweenIfPresent(ErpCustomerDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpCustomerDO::getId));
     }
 

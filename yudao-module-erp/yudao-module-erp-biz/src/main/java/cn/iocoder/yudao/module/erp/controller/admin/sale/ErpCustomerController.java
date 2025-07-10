@@ -141,4 +141,12 @@ public class ErpCustomerController {
         return success(customers);
     }
 
+    @GetMapping("/search-page")
+    @Operation(summary = "分页搜索客户")
+    @PreAuthorize("@ss.hasPermission('erp:customer:query')")
+    public CommonResult<PageResult<ErpCustomerSaveReqVO>> searchCustomersPage(@Valid ErpCustomerPageReqVO searchReqVO) {
+        PageResult<ErpCustomerSaveReqVO> pageResult = customerService.searchCustomersPage(searchReqVO);
+        return success(pageResult);
+    }
+
 }

@@ -37,7 +37,7 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
 
     @Resource
     private ErpCustomerMapper customerMapper;
-    
+
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -145,6 +145,16 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
     }
 
     @Override
+    public PageResult<ErpCustomerSaveReqVO> searchCustomersPage(ErpCustomerPageReqVO searchReqVO) {
+        // 使用客户Mapper中已有的selectPage方法进行分页查询
+        PageResult<ErpCustomerDO> pageResult = customerMapper.selectPage(searchReqVO);
+        
+        // 转换为VO并返回
+        List<ErpCustomerSaveReqVO> voList = BeanUtils.toBean(pageResult.getList(), ErpCustomerSaveReqVO.class);
+        return new PageResult<>(voList, pageResult.getTotal());
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public ErpCustomerImportRespVO importCustomers(List<ErpCustomerImportExcelVO> importCustomers) {
         if (CollUtil.isEmpty(importCustomers)) {
@@ -171,7 +181,7 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
 
             // 用于跟踪Excel内部重复的客户名称
             Set<String> processedNames = new HashSet<>();
-            
+
             // 批量转换数据
             for (int i = 0; i < importCustomers.size(); i++) {
                 ErpCustomerImportExcelVO importCustomer = importCustomers.get(i);
@@ -180,7 +190,7 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
                     if (StrUtil.isBlank(importCustomer.getName())) {
                         throw exception(CUSTOMER_IMPORT_NAME_EMPTY, i + 1);
                     }
-                    
+
                     // 检查Excel内部客户名称重复
                     if (processedNames.contains(importCustomer.getName())) {
                         throw exception(CUSTOMER_IMPORT_NAME_DUPLICATE, i + 1, importCustomer.getName());
