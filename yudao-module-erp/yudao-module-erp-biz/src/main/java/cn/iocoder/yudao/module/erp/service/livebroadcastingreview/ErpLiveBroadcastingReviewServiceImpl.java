@@ -38,7 +38,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
 
     @Resource
     private ErpLiveBroadcastingReviewMapper liveBroadcastingReviewMapper;
-    
+
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -105,17 +105,17 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        
+
         // 使用Mapper方法获取完整信息，但需要过滤权限
         List<ErpLiveBroadcastingReviewRespVO> list = liveBroadcastingReviewMapper.selectListByIds(ids);
-        
+
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
         }
-        
+
         return list;
     }
 
@@ -131,7 +131,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
     public ErpLiveBroadcastingReviewDO getLiveBroadcastingReview(Long id, String currentUsername) {
         ErpLiveBroadcastingReviewDO liveBroadcastingReview = liveBroadcastingReviewMapper.selectById(id);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (liveBroadcastingReview != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(liveBroadcastingReview.getCreator(), currentUsername)) {
+        if (liveBroadcastingReview != null && !"admin".equals(currentUsername) &&!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) &&  !ObjectUtil.equal(liveBroadcastingReview.getCreator(), currentUsername)) {
             return null; // 不是当前用户的数据且不是admin，返回null
         }
         return liveBroadcastingReview;
@@ -144,7 +144,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
             throw exception(LIVE_BROADCASTING_REVIEW_NOT_EXISTS);
         }
         // admin用户可以操作全部数据，其他用户只能操作自己的数据
-        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(liveBroadcastingReview.getCreator(), currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername) && !ObjectUtil.equal(liveBroadcastingReview.getCreator(), currentUsername)) {
             throw exception(LIVE_BROADCASTING_REVIEW_NOT_EXISTS); // 不是当前用户的数据且不是admin
         }
         return liveBroadcastingReview;
@@ -179,7 +179,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
         if (liveBroadcastingReview != null && !liveBroadcastingReview.getId().equals(id)) {
             throw exception(LIVE_BROADCASTING_REVIEW_NO_EXISTS);
         }
-        
+
         // 2. 校验直播货盘编号和客户名称组合唯一性
         if (reqVO.getLiveBroadcastingId() != null && StrUtil.isNotBlank(reqVO.getCustomerName())) {
             ErpLiveBroadcastingReviewDO existReview = liveBroadcastingReviewMapper.selectByLiveBroadcastingIdAndCustomerName(
@@ -358,7 +358,7 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                 if (liveBroadcastingId != null && StrUtil.isNotBlank(importVO.getCustomerName())) {
                     ErpLiveBroadcastingReviewDO existReview = existMap.get(importVO.getNo());
                     Long excludeId = existReview != null ? existReview.getId() : null;
-                    
+
                     ErpLiveBroadcastingReviewDO duplicateReview = liveBroadcastingReviewMapper.selectByLiveBroadcastingIdAndCustomerName(
                             liveBroadcastingId, importVO.getCustomerName(), excludeId);
                     if (duplicateReview != null) {

@@ -28,12 +28,12 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getLiveStartDate, reqVO.getLiveStartDate())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime());
-        
+
         // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             query.eq(ErpLiveBroadcastingReviewDO::getCreator, currentUsername);
         }
-        
+
         query.orderByDesc(ErpLiveBroadcastingReviewDO::getId)
                 // 直播复盘表字段映射
                 .selectAs(ErpLiveBroadcastingReviewDO::getId, ErpLiveBroadcastingReviewRespVO::getId)
@@ -56,7 +56,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
 
         // 联表查询直播货盘信息
         query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId);
-        
+
         // 添加联表查询条件（需要在leftJoin之后单独处理）
         if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
             query.like(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName());
@@ -70,7 +70,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
         if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
             query.like(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName());
         }
-        
+
         query.selectAs(ErpLiveBroadcastingDO::getNo, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingNo)
                 .selectAs(ErpLiveBroadcastingDO::getBrandName, ErpLiveBroadcastingReviewRespVO::getBrandName)
                 .selectAs(ErpLiveBroadcastingDO::getProductName, ErpLiveBroadcastingReviewRespVO::getProductName)
@@ -85,7 +85,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
         if (reqVO.getCustomerName() != null && !reqVO.getCustomerName().isEmpty()) {
             query.like(ErpLiveBroadcastingReviewDO::getCustomerName, reqVO.getCustomerName());
         }
-        
+
         query.selectAs(ErpLiveBroadcastingReviewDO::getCustomerName, ErpLiveBroadcastingReviewRespVO::getCustomerName);
 
         return selectJoinPage(reqVO, ErpLiveBroadcastingReviewRespVO.class, query);

@@ -30,7 +30,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getCreateTime, reqVO.getCreateTime());
 
         // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             query.eq(ErpGroupBuyingReviewDO::getCreator, currentUsername);
         }
 

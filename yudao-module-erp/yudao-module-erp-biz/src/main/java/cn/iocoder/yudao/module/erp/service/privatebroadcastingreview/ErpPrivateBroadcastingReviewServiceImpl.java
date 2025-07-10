@@ -99,7 +99,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
     public ErpPrivateBroadcastingReviewDO getPrivateBroadcastingReview(Long id, String currentUsername) {
         ErpPrivateBroadcastingReviewDO privateBroadcastingReview = privateBroadcastingReviewMapper.selectById(id);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (privateBroadcastingReview != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(privateBroadcastingReview.getCreator(), currentUsername)) {
+        if (privateBroadcastingReview != null && !"admin".equals(currentUsername) && !"ahao".equals(currentUsername) && !"caiwu".equals(currentUsername) &&  !ObjectUtil.equal(privateBroadcastingReview.getCreator(), currentUsername)) {
             return null; // 不是当前用户的数据且不是admin，返回null
         }
         return privateBroadcastingReview;
@@ -152,7 +152,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
             throw exception(PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS);
         }
         // admin用户可以操作全部数据，其他用户只能操作自己的数据
-        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(privateBroadcastingReview.getCreator(), currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername) && !ObjectUtil.equal(privateBroadcastingReview.getCreator(), currentUsername)) {
             throw exception(PRIVATE_BROADCASTING_REVIEW_NOT_EXISTS); // 不是当前用户的数据且不是admin
         }
         return privateBroadcastingReview;
@@ -178,7 +178,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
         List<ErpPrivateBroadcastingReviewRespVO> list = privateBroadcastingReviewMapper.selectListByIds(ids);
 
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) && !"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
@@ -237,7 +237,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                 existingReview = privateBroadcastingReviewMapper.selectByPrivateBroadcastingIdAndCustomerId(
                         reqVO.getPrivateBroadcastingId(), reqVO.getCustomerId());
             }
-            
+
             if (existingReview != null) {
                 throw exception(PRIVATE_BROADCASTING_REVIEW_PRIVATE_BROADCASTING_CUSTOMER_DUPLICATE);
             }
@@ -501,7 +501,7 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                         allErrors.put(errorKey, "无权限更新该记录: " + importVO.getNo());
                         continue;
                     }
-                    
+
                     // 校验私播货盘表编号和客户名称组合唯一性（排除当前记录）
                     if (StrUtil.isNotBlank(importVO.getCustomerName()) && StrUtil.isNotBlank(importVO.getPrivateBroadcastingNo())) {
                         Long customerId = customerIdMap.get(importVO.getCustomerName());

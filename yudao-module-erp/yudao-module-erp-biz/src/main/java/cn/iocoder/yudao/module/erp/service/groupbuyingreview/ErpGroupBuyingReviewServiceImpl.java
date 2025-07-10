@@ -99,7 +99,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
     public ErpGroupBuyingReviewDO getGroupBuyingReview(Long id, String currentUsername) {
         ErpGroupBuyingReviewDO groupBuyingReview = groupBuyingReviewMapper.selectById(id);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (groupBuyingReview != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(groupBuyingReview.getCreator(), currentUsername)) {
+        if (groupBuyingReview != null && !"admin".equals(currentUsername) && !"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) &&  !ObjectUtil.equal(groupBuyingReview.getCreator(), currentUsername)) {
             return null; // 不是当前用户的数据且不是admin，返回null
         }
         return groupBuyingReview;
@@ -112,7 +112,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
             throw exception(GROUP_BUYING_REVIEW_NOT_EXISTS);
         }
         // admin用户可以操作全部数据，其他用户只能操作自己的数据
-        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(groupBuyingReview.getCreator(), currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername) && !ObjectUtil.equal(groupBuyingReview.getCreator(), currentUsername)) {
             throw exception(GROUP_BUYING_REVIEW_NOT_EXISTS); // 不是当前用户的数据且不是admin
         }
         return groupBuyingReview;
@@ -133,7 +133,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
         List<ErpGroupBuyingReviewRespVO> list = groupBuyingReviewMapper.selectListByIds(ids);
 
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
@@ -157,7 +157,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
         }
         List<ErpGroupBuyingReviewDO> list = groupBuyingReviewMapper.selectBatchIds(ids);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
@@ -243,10 +243,10 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
 
                 // 数据转换
                 ErpGroupBuyingReviewDO groupBuyingReview = BeanUtils.toBean(importVO, ErpGroupBuyingReviewDO.class);
-                
+
                 // 手动设置客户名称字段
                 groupBuyingReview.setCustomerId(importVO.getCustomerName());
-                
+
                 // 判断是新增还是更新
                 ErpGroupBuyingReviewDO existGroupBuyingReview = existMap.get(importVO.getNo());
                 if (existGroupBuyingReview == null) {
@@ -257,7 +257,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                 } else if (isUpdateSupport) {
                     // 更新 - 保留原有ID，只更新非空字段
                     groupBuyingReview.setId(existGroupBuyingReview.getId());
-                    
+
                     // 对于更新操作，只更新Excel中非空的字段，保持原有字段不变
                     // 如果Excel中字段为空，则保持数据库中的原有值
                     if (importVO.getSupplyGroupPrice() == null) {
@@ -281,7 +281,7 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                     if (importVO.getRepeatGroupSales() == null) {
                         groupBuyingReview.setRepeatGroupSales(existGroupBuyingReview.getRepeatGroupSales());
                     }
-                    
+
                     groupBuyingReviewMapper.updateById(groupBuyingReview);
                     respVO.getUpdateNames().add(groupBuyingReview.getNo());
                 }
