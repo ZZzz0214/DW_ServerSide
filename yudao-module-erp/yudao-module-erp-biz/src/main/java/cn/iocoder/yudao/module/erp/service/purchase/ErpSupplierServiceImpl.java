@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierImportRespVO;
@@ -115,7 +116,7 @@ public class ErpSupplierServiceImpl implements ErpSupplierService {
     }
 
     @Override
-    public PageResult<ErpSupplierDO> getSupplierPage(ErpSupplierPageReqVO pageReqVO) {
+    public PageResult<ErpSupplierRespVO> getSupplierPage(ErpSupplierPageReqVO pageReqVO) {
         return supplierMapper.selectPage(pageReqVO);
     }
 
@@ -124,7 +125,7 @@ public class ErpSupplierServiceImpl implements ErpSupplierService {
         return supplierMapper.selectList();
     }
     @Override
-    public List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
+    public List<ErpSupplierRespVO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
         return supplierMapper.searchSuppliers(searchReqVO);
     }
 

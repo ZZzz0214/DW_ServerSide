@@ -82,8 +82,8 @@ public class ErpSupplierController {
     @Operation(summary = "获得供应商分页")
     @PreAuthorize("@ss.hasPermission('erp:supplier:query')")
     public CommonResult<PageResult<ErpSupplierRespVO>> getSupplierPage(@Valid ErpSupplierPageReqVO pageReqVO) {
-        PageResult<ErpSupplierDO> pageResult = supplierService.getSupplierPage(pageReqVO);
-        return success(BeanUtils.toBean(pageResult, ErpSupplierRespVO.class));
+        PageResult<ErpSupplierRespVO> pageResult = supplierService.getSupplierPage(pageReqVO);
+        return success(pageResult);
     }
 
     @GetMapping("/simple-list")
@@ -100,7 +100,7 @@ public class ErpSupplierController {
     public void exportSupplierExcel(@Valid ErpSupplierPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-        List<ErpSupplierDO> list = supplierService.getSupplierPage(pageReqVO).getList();
+        List<ErpSupplierRespVO> list = supplierService.getSupplierPage(pageReqVO).getList();
         // 导出 Excel
         ExcelUtils.write(response, "供应商.xls", "数据", ErpSupplierRespVO.class,
                         BeanUtils.toBean(list, ErpSupplierRespVO.class));
@@ -109,10 +109,8 @@ public class ErpSupplierController {
     @Operation(summary = "搜索供应商")
     @PreAuthorize("@ss.hasPermission('erp:supplier:query')")
     public CommonResult<List<ErpSupplierRespVO>> searchSuppliers(@Valid ErpSupplierPageReqVO searchReqVO) {
-        System.out.println("调用了"+searchReqVO);
-        List<ErpSupplierDO> list = supplierService.searchSuppliers(searchReqVO);
-        System.out.println("返回的数据"+list);
-        return success(BeanUtils.toBean(list, ErpSupplierRespVO.class));
+        List<ErpSupplierRespVO> list = supplierService.searchSuppliers(searchReqVO);
+        return success(list);
     }
 
     @GetMapping("/get-import-template")

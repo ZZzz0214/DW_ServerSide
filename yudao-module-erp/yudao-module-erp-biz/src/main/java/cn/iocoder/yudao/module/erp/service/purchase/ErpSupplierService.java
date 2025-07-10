@@ -1,10 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.purchase;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierPageReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierSaveReqVO;
-import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierImportExcelVO;
-import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierImportRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 
 import javax.validation.Valid;
@@ -83,7 +80,7 @@ public interface ErpSupplierService {
      * @param pageReqVO 分页查询
      * @return 供应商分页
      */
-    PageResult<ErpSupplierDO> getSupplierPage(ErpSupplierPageReqVO pageReqVO);
+    PageResult<ErpSupplierRespVO> getSupplierPage(ErpSupplierPageReqVO pageReqVO);
 
     /**
      * 获得指定状态的供应商列表
@@ -99,7 +96,7 @@ public interface ErpSupplierService {
      * @param searchReqVO 搜索条件
      * @return 供应商列表
      */
-    List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO);
+    List<ErpSupplierRespVO> searchSuppliers(ErpSupplierPageReqVO searchReqVO);
 
     /**
      * 导入供应商

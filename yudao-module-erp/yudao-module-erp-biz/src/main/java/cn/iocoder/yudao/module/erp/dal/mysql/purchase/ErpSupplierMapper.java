@@ -2,8 +2,10 @@ package cn.iocoder.yudao.module.erp.dal.mysql.purchase;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -18,8 +20,8 @@ import java.util.List;
 @Mapper
 public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
 
-    default PageResult<ErpSupplierDO> selectPage(ErpSupplierPageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<ErpSupplierDO>()
+    default PageResult<ErpSupplierRespVO> selectPage(ErpSupplierPageReqVO reqVO) {
+        MPJLambdaWrapperX<ErpSupplierDO> query = new MPJLambdaWrapperX<ErpSupplierDO>()
                 .likeIfPresent(ErpSupplierDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpSupplierDO::getName, reqVO.getName())
                 .likeIfPresent(ErpSupplierDO::getReceiverName, reqVO.getReceiverName())
@@ -28,20 +30,33 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
                 .likeIfPresent(ErpSupplierDO::getWechatAccount, reqVO.getWechatAccount())
                 .likeIfPresent(ErpSupplierDO::getAlipayAccount, reqVO.getAlipayAccount())
                 .likeIfPresent(ErpSupplierDO::getBankAccount, reqVO.getBankAccount())
-                .orderByDesc(ErpSupplierDO::getId));
+                //.betweenIfPresent(ErpSupplierDO::getCreateTime, reqVO.getCreateTime())
+                .orderByDesc(ErpSupplierDO::getId)
+                .selectAs(ErpSupplierDO::getId, ErpSupplierRespVO::getId)
+                .selectAs(ErpSupplierDO::getNo, ErpSupplierRespVO::getNo)
+                .selectAs(ErpSupplierDO::getName, ErpSupplierRespVO::getName)
+                .selectAs(ErpSupplierDO::getReceiverName, ErpSupplierRespVO::getReceiverName)
+                .selectAs(ErpSupplierDO::getTelephone, ErpSupplierRespVO::getTelephone)
+                .selectAs(ErpSupplierDO::getAddress, ErpSupplierRespVO::getAddress)
+                .selectAs(ErpSupplierDO::getWechatAccount, ErpSupplierRespVO::getWechatAccount)
+                .selectAs(ErpSupplierDO::getAlipayAccount, ErpSupplierRespVO::getAlipayAccount)
+                .selectAs(ErpSupplierDO::getBankAccount, ErpSupplierRespVO::getBankAccount)
+                .selectAs(ErpSupplierDO::getRemark, ErpSupplierRespVO::getRemark)
+                .selectAs(ErpSupplierDO::getCreateTime, ErpSupplierRespVO::getCreateTime);
+        return selectJoinPage(reqVO, ErpSupplierRespVO.class, query);
     }
 
     default List<ErpSupplierDO> selectListByStatus(Integer status) {
         return selectList();
     }
-    
+
     default ErpSupplierDO selectByNo(String no) {
         return selectOne(new LambdaQueryWrapperX<ErpSupplierDO>()
                 .eq(ErpSupplierDO::getNo, no));
     }
 
-    default List<ErpSupplierDO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
-        return selectList(new LambdaQueryWrapperX<ErpSupplierDO>()
+    default List<ErpSupplierRespVO> searchSuppliers(ErpSupplierPageReqVO searchReqVO) {
+        MPJLambdaWrapperX<ErpSupplierDO> query = new MPJLambdaWrapperX<ErpSupplierDO>()
                 .likeIfPresent(ErpSupplierDO::getNo, searchReqVO.getNo())
                 .likeIfPresent(ErpSupplierDO::getName, searchReqVO.getName())
                 .likeIfPresent(ErpSupplierDO::getReceiverName, searchReqVO.getReceiverName())
@@ -50,7 +65,20 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
                 .likeIfPresent(ErpSupplierDO::getWechatAccount, searchReqVO.getWechatAccount())
                 .likeIfPresent(ErpSupplierDO::getAlipayAccount, searchReqVO.getAlipayAccount())
                 .likeIfPresent(ErpSupplierDO::getBankAccount, searchReqVO.getBankAccount())
-                .orderByDesc(ErpSupplierDO::getId));
+                //.betweenIfPresent(ErpSupplierDO::getCreateTime, searchReqVO.getCreateTime())
+                .orderByDesc(ErpSupplierDO::getId)
+                .selectAs(ErpSupplierDO::getId, ErpSupplierRespVO::getId)
+                .selectAs(ErpSupplierDO::getNo, ErpSupplierRespVO::getNo)
+                .selectAs(ErpSupplierDO::getName, ErpSupplierRespVO::getName)
+                .selectAs(ErpSupplierDO::getReceiverName, ErpSupplierRespVO::getReceiverName)
+                .selectAs(ErpSupplierDO::getTelephone, ErpSupplierRespVO::getTelephone)
+                .selectAs(ErpSupplierDO::getAddress, ErpSupplierRespVO::getAddress)
+                .selectAs(ErpSupplierDO::getWechatAccount, ErpSupplierRespVO::getWechatAccount)
+                .selectAs(ErpSupplierDO::getAlipayAccount, ErpSupplierRespVO::getAlipayAccount)
+                .selectAs(ErpSupplierDO::getBankAccount, ErpSupplierRespVO::getBankAccount)
+                .selectAs(ErpSupplierDO::getRemark, ErpSupplierRespVO::getRemark)
+                .selectAs(ErpSupplierDO::getCreateTime, ErpSupplierRespVO::getCreateTime);
+        return selectJoinList(ErpSupplierRespVO.class, query);
     }
 
     default ErpSupplierDO selectByName(String name) {

@@ -11,6 +11,7 @@ import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportExcelVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.ErpComboImport.ErpComboImportRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.*;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpComboProductItemMapper;
@@ -1893,11 +1894,10 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         Map<String, Boolean> supplierExistsMap = new HashMap<>();
         for (String supplierName : supplierNames) {
-            List<ErpSupplierDO> suppliers = supplierService.searchSuppliers(
+            List<ErpSupplierRespVO> suppliers = supplierService.searchSuppliers(
                     new ErpSupplierPageReqVO().setName(supplierName));
             supplierExistsMap.put(supplierName, CollUtil.isNotEmpty(suppliers));
         }
-
         // 用于跟踪Excel内部重复的名称
         Set<String> processedNames = new HashSet<>();
 

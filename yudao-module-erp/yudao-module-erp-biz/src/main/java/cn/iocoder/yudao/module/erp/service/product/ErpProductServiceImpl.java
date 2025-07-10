@@ -15,6 +15,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.*;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.supplier.ErpSupplierRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductESDO;
@@ -1388,7 +1389,7 @@ public class ErpProductServiceImpl implements ErpProductService {
 
         Map<String, Boolean> supplierExistsMap = new HashMap<>();
         for (String supplierName : supplierNames) {
-            List<ErpSupplierDO> suppliers = supplierService.searchSuppliers(
+            List<ErpSupplierRespVO> suppliers = supplierService.searchSuppliers(
                     new ErpSupplierPageReqVO().setName(supplierName));
             supplierExistsMap.put(supplierName, CollUtil.isNotEmpty(suppliers));
         }
