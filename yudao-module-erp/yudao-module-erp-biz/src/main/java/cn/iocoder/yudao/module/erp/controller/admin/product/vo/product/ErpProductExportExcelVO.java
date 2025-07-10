@@ -156,7 +156,7 @@ public class ErpProductExportExcelVO {
 
     @Schema(description = "箱规重量")
     @ExcelProperty("箱规重量")
-    private Double cartonWeight;
+    private String cartonWeight;
 
     @Schema(description = "发货地址")
     @ExcelProperty("发货地址")

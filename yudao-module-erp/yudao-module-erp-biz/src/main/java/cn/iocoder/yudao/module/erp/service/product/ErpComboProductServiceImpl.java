@@ -673,7 +673,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                             if (product == null) continue;
 
                         if (i > 0) {
-                            nameBuilder.append("+");
+                            nameBuilder.append("｜");
                             itemsStringBuilder.append(";");
                         }
                         nameBuilder.append(product.getName())
@@ -805,7 +805,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                             if (product == null) continue;
 
                         if (i > 0) {
-                            nameBuilder.append("+");
+                            nameBuilder.append("｜");
                             itemsStringBuilder.append(";");
                         }
                         nameBuilder.append(product.getName())
@@ -957,7 +957,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
             for (int i = 0; i < items.size(); i++) {
                 if (i > 0) {
-                    nameBuilder.append("+");
+                    nameBuilder.append("｜");
                 }
                 ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
                 if (product != null) {
@@ -1061,7 +1061,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         StringBuilder nameBuilder = new StringBuilder();
         for (int i = 0; i < products.size(); i++) {
             if (i > 0) {
-                nameBuilder.append("+");
+                nameBuilder.append("｜");
             }
             nameBuilder.append(products.get(i).getName())
                       .append("×")
@@ -1339,7 +1339,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     .collect(Collectors.toList());
 
             // 重新组合为标准格式
-            return String.join("+", sortedItems);
+            return String.join("｜", sortedItems);
         } catch (Exception e) {
             // 如果解析失败，返回原名称的标准化版本
             return comboName.trim().toLowerCase().replaceAll("\\s+", "");
@@ -1409,7 +1409,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 }
 
                 if (i > 0) {
-                    nameBuilder.append("+");
+                    nameBuilder.append("｜");
                 }
                 nameBuilder.append(product.getName())
                         .append("×")
@@ -1458,7 +1458,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             }
 
             if (i > 0) {
-                nameBuilder.append("+");
+                nameBuilder.append("｜");
             }
             nameBuilder.append(product.getName())
                     .append("×")
@@ -1644,7 +1644,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
      */
     private Map<String, Integer> extractNameMap(String name) {
         Map<String, Integer> nameMap = new HashMap<>();
-        String[] items = name.split("\\+");
+        String[] items = name.split("\\｜");
         for (String item : items) {
             String[] parts = item.split("×");
             if (parts.length != 2) {
@@ -2278,7 +2278,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
             // 构建名称字符串
             if (i > 0) {
-                nameBuilder.append("+");
+                nameBuilder.append("｜");
             }
             nameBuilder.append(product.getName())
                      .append("×")
@@ -2338,7 +2338,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             }
 
             if (i > 0) {
-                nameBuilder.append("+");
+                nameBuilder.append("｜");
             }
             nameBuilder.append(product.getName())
                     .append("×")
@@ -2421,7 +2421,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             }
 
             if (i > 0) {
-                nameBuilder.append("+");
+                nameBuilder.append("｜");
             }
             nameBuilder.append(product.getName())
                     .append("×")

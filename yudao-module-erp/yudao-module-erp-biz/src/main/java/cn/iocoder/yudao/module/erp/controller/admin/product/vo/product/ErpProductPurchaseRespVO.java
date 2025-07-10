@@ -179,8 +179,8 @@ public class ErpProductPurchaseRespVO {
     private String cartonLength;
 
     @Schema(description = "箱规重量")
-    @ExcelProperty(value = "箱规重量", converter = DoubleConvert.class)
-    private Double cartonWeight;
+    //@ExcelProperty(value = "箱规重量", converter = DoubleConvert.class)
+    private String cartonWeight;
 
     @Schema(description = "发货地址")
     @ExcelProperty("发货地址")
