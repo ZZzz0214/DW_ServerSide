@@ -1659,6 +1659,19 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             try {
                 // 6.1 基础数据校验
 
+                if (StrUtil.isBlank(importVO.getSalesperson())) {
+                    allErrors.put(errorKey, "销售人员不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getCustomerName())) {
+                    allErrors.put(errorKey, "客户名称不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getComboProductNo())) {
+                    allErrors.put(errorKey, "组品编号不能为空");
+                    continue;
+                }
+
                 // 6.2 校验组品编号是否存在
                 if (StrUtil.isNotBlank(importVO.getComboProductNo())) {
                     if (!comboProductIdMap.containsKey(importVO.getComboProductNo())) {
