@@ -121,14 +121,6 @@ public class ErpSupplierController {
         // 手动创建导出 demo
         List<ErpSupplierImportExcelVO> list = Arrays.asList(
             ErpSupplierImportExcelVO.builder()
-                .name("供应商A")
-                .receiverName("李四")
-                .telephone("13800138000")
-                .address("北京市朝阳区xxx街道xxx号")
-                .wechatAccount("wechat123")
-                .alipayAccount("alipay@example.com")
-                .bankAccount("622908212277228617")
-                .remark("重要供应商")
                 .build()
         );
         // 输出

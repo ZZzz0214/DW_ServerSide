@@ -1067,6 +1067,8 @@ public class ErpProductServiceImpl implements ErpProductService {
                     // 先进行基础转换
                     ErpProductRespVO vo = BeanUtils.toBean(esDO, ErpProductRespVO.class);
 
+
+
                     // 手动处理日期字段转换
                     if (StrUtil.isNotBlank(esDO.getProductionDate())) {
                         try {
@@ -1088,14 +1090,6 @@ public class ErpProductServiceImpl implements ErpProductService {
                         }
                     } else {
                         vo.setCreateTime(null);
-                    }
-
-                    // 确保关键字段不为空
-                    if (vo.getCategoryName() == null && vo.getCategoryId() != null) {
-                        vo.setCategoryName(getCategoryNameById(vo.getCategoryId()));
-                    }
-                    if (vo.getUnitName() == null && vo.getUnitId() != null) {
-                        vo.setUnitName(getUnitNameById(vo.getUnitId()));
                     }
 
                     // 设置lastId用于下一页的search_after
@@ -1313,7 +1307,8 @@ public class ErpProductServiceImpl implements ErpProductService {
                 ErpProductDO existProduct = existMap.get(importVO.getNo());
                 if (existProduct == null) {
                     // 创建产品
-                    product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX)).setCreator(username).setCreateTime(now);
+                    //product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX)).setCreator(username).setCreateTime(now);
+                    product.setNo(importVO.getNo()).setCreator(username).setCreateTime(now);
                     createList.add(product);
                     respVO.getCreateNames().add(product.getName());
                 } else if (isUpdateSupport) {
@@ -1585,8 +1580,60 @@ public class ErpProductServiceImpl implements ErpProductService {
         try {
             ErpProductESDO es = new ErpProductESDO();
 
-            // 复制基础属性（排除日期字段）
-            BeanUtils.copyProperties(product, es, "productionDate", "createTime");
+            // 手动复制所有字段，避免类型转换问题
+            es.setId(product.getId());
+            es.setNo(product.getNo());
+            es.setName(product.getName());
+            es.setImage(product.getImage());
+            es.setProductShortName(product.getProductShortName());
+            es.setShippingCode(product.getShippingCode());
+            es.setUnitId(product.getUnitId());
+            es.setStandard(product.getStandard());
+            es.setWeight(product.getWeight());
+            es.setExpiryDay(product.getExpiryDay());
+            es.setBrand(product.getBrand());
+            es.setCategoryId(product.getCategoryId());
+            es.setStatus(product.getStatus());
+            es.setProductSellingPoints(product.getProductSellingPoints());
+            es.setBarCode(product.getBarCode());
+            es.setProductRecord(product.getProductRecord());
+            es.setExecutionCode(product.getExecutionCode());
+            es.setTrademarkCode(product.getTrademarkCode());
+            es.setTotalQuantity(product.getTotalQuantity());
+            es.setPackagingMaterialQuantity(product.getPackagingMaterialQuantity());
+            es.setOrderReplenishmentLeadTime(product.getOrderReplenishmentLeadTime());
+            es.setProductLength(product.getProductLength());
+            es.setProductCartonSpec(product.getProductCartonSpec());
+            es.setCartonLength(product.getCartonLength());
+            es.setShippingAddress(product.getShippingAddress());
+            es.setReturnAddress(product.getReturnAddress());
+            es.setLogisticsCompany(product.getLogisticsCompany());
+            es.setNonshippingArea(product.getNonshippingArea());
+            es.setAddonShippingArea(product.getAddonShippingArea());
+            es.setAfterSalesStandard(product.getAfterSalesStandard());
+            es.setAfterSalesScript(product.getAfterSalesScript());
+            es.setPublicDomainEventMinimumPrice(product.getPublicDomainEventMinimumPrice());
+            es.setLiveStreamingEventMinimunPrice(product.getLiveStreamingEventMinimunPrice());
+            es.setPinduoduoEventMinimumPrice(product.getPinduoduoEventMinimumPrice());
+            es.setAlibabaEventMinimunPrice(product.getAlibabaEventMinimunPrice());
+            es.setGroupBuyEventMinimunPrice(product.getGroupBuyEventMinimunPrice());
+            es.setPurchaser(product.getPurchaser());
+            es.setSupplier(product.getSupplier());
+            es.setPurchasePrice(product.getPurchasePrice());
+            es.setWholesalePrice(product.getWholesalePrice());
+            es.setRemark(product.getRemark());
+            es.setMinPurchasePrice(product.getMinPurchasePrice());
+            es.setMinWholesalePrice(product.getMinWholesalePrice());
+            es.setShippingFeeType(product.getShippingFeeType());
+            es.setFixedShippingFee(product.getFixedShippingFee());
+            es.setAdditionalItemQuantity(product.getAdditionalItemQuantity());
+            es.setAdditionalItemPrice(product.getAdditionalItemPrice());
+            es.setFirstWeight(product.getFirstWeight());
+            es.setFirstWeightPrice(product.getFirstWeightPrice());
+            es.setAdditionalWeight(product.getAdditionalWeight());
+            es.setAdditionalWeightPrice(product.getAdditionalWeightPrice());
+            es.setCreator(product.getCreator());
+            es.setCartonWeight(product.getCartonWeight());
 
             // 安全处理日期字段 - 转换为字符串
             if (product.getProductionDate() != null) {
@@ -1606,31 +1653,9 @@ public class ErpProductServiceImpl implements ErpProductService {
             es.setSupplierKeyword(product.getSupplier());
             es.setCreatorKeyword(product.getCreator());
 
-            // 设置分类名称（优化：减少数据库查询）
-            if (product.getCategoryId() != null) {
-                try {
-                    ErpProductCategoryDO category = productCategoryService.getProductCategory(product.getCategoryId());
-                    es.setCategoryName(category != null ? category.getName() : "");
-                } catch (Exception e) {
-                    // 静默处理，不影响整体同步
-                    es.setCategoryName("");
-                }
-            } else {
-                es.setCategoryName("");
-            }
-
-            // 设置单位名称（优化：减少数据库查询）
-            if (product.getUnitId() != null) {
-                try {
-                    ErpProductUnitDO unit = productUnitService.getProductUnit(product.getUnitId());
-                    es.setUnitName(unit != null ? unit.getName() : "");
-                } catch (Exception e) {
-                    // 静默处理，不影响整体同步
-                    es.setUnitName("");
-                }
-            } else {
-                es.setUnitName("");
-            }
+            // 根据用户要求，简化分类名称和单位名称的设置，直接设置为空字符串
+            es.setCategoryName("");
+            es.setUnitName("");
 
             return es;
 
@@ -1654,8 +1679,60 @@ public class ErpProductServiceImpl implements ErpProductService {
         try {
             ErpProductESDO es = new ErpProductESDO();
 
-            // 复制基础属性（排除日期字段）
-            BeanUtils.copyProperties(product, es, "productionDate", "createTime");
+            // 手动复制所有字段，避免类型转换问题
+            es.setId(product.getId());
+            es.setNo(product.getNo());
+            es.setName(product.getName());
+            es.setImage(product.getImage());
+            es.setProductShortName(product.getProductShortName());
+            es.setShippingCode(product.getShippingCode());
+            es.setUnitId(product.getUnitId());
+            es.setStandard(product.getStandard());
+            es.setWeight(product.getWeight());
+            es.setExpiryDay(product.getExpiryDay());
+            es.setBrand(product.getBrand());
+            es.setCategoryId(product.getCategoryId());
+            es.setStatus(product.getStatus());
+            es.setProductSellingPoints(product.getProductSellingPoints());
+            es.setBarCode(product.getBarCode());
+            es.setProductRecord(product.getProductRecord());
+            es.setExecutionCode(product.getExecutionCode());
+            es.setTrademarkCode(product.getTrademarkCode());
+            es.setTotalQuantity(product.getTotalQuantity());
+            es.setPackagingMaterialQuantity(product.getPackagingMaterialQuantity());
+            es.setOrderReplenishmentLeadTime(product.getOrderReplenishmentLeadTime());
+            es.setProductLength(product.getProductLength());
+            es.setProductCartonSpec(product.getProductCartonSpec());
+            es.setCartonLength(product.getCartonLength());
+            es.setShippingAddress(product.getShippingAddress());
+            es.setReturnAddress(product.getReturnAddress());
+            es.setLogisticsCompany(product.getLogisticsCompany());
+            es.setNonshippingArea(product.getNonshippingArea());
+            es.setAddonShippingArea(product.getAddonShippingArea());
+            es.setAfterSalesStandard(product.getAfterSalesStandard());
+            es.setAfterSalesScript(product.getAfterSalesScript());
+            es.setPublicDomainEventMinimumPrice(product.getPublicDomainEventMinimumPrice());
+            es.setLiveStreamingEventMinimunPrice(product.getLiveStreamingEventMinimunPrice());
+            es.setPinduoduoEventMinimumPrice(product.getPinduoduoEventMinimumPrice());
+            es.setAlibabaEventMinimunPrice(product.getAlibabaEventMinimunPrice());
+            es.setGroupBuyEventMinimunPrice(product.getGroupBuyEventMinimunPrice());
+            es.setPurchaser(product.getPurchaser());
+            es.setSupplier(product.getSupplier());
+            es.setPurchasePrice(product.getPurchasePrice());
+            es.setWholesalePrice(product.getWholesalePrice());
+            es.setRemark(product.getRemark());
+            es.setMinPurchasePrice(product.getMinPurchasePrice());
+            es.setMinWholesalePrice(product.getMinWholesalePrice());
+            es.setShippingFeeType(product.getShippingFeeType());
+            es.setFixedShippingFee(product.getFixedShippingFee());
+            es.setAdditionalItemQuantity(product.getAdditionalItemQuantity());
+            es.setAdditionalItemPrice(product.getAdditionalItemPrice());
+            es.setFirstWeight(product.getFirstWeight());
+            es.setFirstWeightPrice(product.getFirstWeightPrice());
+            es.setAdditionalWeight(product.getAdditionalWeight());
+            es.setAdditionalWeightPrice(product.getAdditionalWeightPrice());
+            es.setCreator(product.getCreator());
+            es.setCartonWeight(product.getCartonWeight());
 
             // 安全处理日期字段 - 转换为字符串
             if (product.getProductionDate() != null) {
@@ -1675,19 +1752,9 @@ public class ErpProductServiceImpl implements ErpProductService {
             es.setSupplierKeyword(product.getSupplier());
             es.setCreatorKeyword(product.getCreator());
 
-            // 设置分类名称（使用缓存）
-            if (product.getCategoryId() != null) {
-                es.setCategoryName(categoryNameMap.getOrDefault(product.getCategoryId(), ""));
-            } else {
-                es.setCategoryName("");
-            }
-
-            // 设置单位名称（使用缓存）
-            if (product.getUnitId() != null) {
-                es.setUnitName(unitNameMap.getOrDefault(product.getUnitId(), ""));
-            } else {
-                es.setUnitName("");
-            }
+            // 根据用户要求，简化分类名称和单位名称的设置，直接设置为空字符串
+            es.setCategoryName("");
+            es.setUnitName("");
 
             return es;
 

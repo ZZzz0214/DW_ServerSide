@@ -90,17 +90,6 @@ public class ErpProductController {
     @Operation(summary = "获得产品分页")
     @PreAuthorize("@ss.hasPermission('erp:product:query')")
     public CommonResult<PageResult<ErpProductRespVO>> getProductPage(@Valid ErpProductPageReqVO pageReqVO) {
-        System.out.println("产品分页查询参数: " + pageReqVO);
-        System.out.println("查询条件详情: 产品名称=" + pageReqVO.getName() +
-                          ", 产品简称=" + pageReqVO.getProductShortName() +
-                          ", 发货编码=" + pageReqVO.getShippingCode() +
-                          ", 品牌=" + pageReqVO.getBrand() +
-                          ", 分类ID=" + pageReqVO.getCategoryId() +
-                          ", 状态=" + pageReqVO.getStatus() +
-                          ", 采购人员=" + pageReqVO.getPurchaser() +
-                          ", 供应商=" + pageReqVO.getSupplier() +
-                          ", 创建人员=" + pageReqVO.getCreator() +
-                          ", 关键词=" + pageReqVO.getKeyword());
         return success(productService.getProductVOPage(pageReqVO));
     }
 

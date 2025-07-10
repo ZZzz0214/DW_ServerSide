@@ -62,18 +62,18 @@ public class ErpProductRespVO {
     private Integer expiryDay;
 
     @Schema(description = "品牌名称")
-    @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
+    //@ExcelProperty(value = "品牌名称", converter = DictConvert.class)
+    //@DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brand;
 
     @Schema(description = "产品品类编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "11161")
-    @ExcelProperty(value = "产品品类", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
+    //@ExcelProperty(value = "产品品类", converter = DictConvert.class)
+    //@DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
     private Long categoryId;
 
     @Schema(description = "产品状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
-    @ExcelProperty(value = "产品状态", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_PRODUCT_STATUS)
+   // @ExcelProperty(value = "产品状态", converter = DictConvert.class)
+    //@DictFormat(DictTypeConstants.ERP_PRODUCT_STATUS)
     private Integer status;
 
     @Schema(description = "产品卖点")
