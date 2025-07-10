@@ -4,6 +4,7 @@ package cn.iocoder.yudao.module.erp.service.purchase;
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserSaveReqVO;
@@ -140,24 +141,28 @@ public class ErpPurchaserServiceImpl implements ErpPurchaserService {
 
     @Override
     public List<ErpPurchaserRespVO> searchPurchasers(ErpPurchaserPageReqVO searchReqVO) {
-        // 执行查询
-        LambdaQueryWrapper<ErpPurchaserDO> queryWrapper = new LambdaQueryWrapper<ErpPurchaserDO>()
-                .like(searchReqVO.getNo() != null, ErpPurchaserDO::getNo, searchReqVO.getNo())
-                .like(searchReqVO.getPurchaserName() != null, ErpPurchaserDO::getPurchaserName, searchReqVO.getPurchaserName())
-                .like(searchReqVO.getContactPhone() != null, ErpPurchaserDO::getContactPhone, searchReqVO.getContactPhone())
-                .like(searchReqVO.getAddress() != null, ErpPurchaserDO::getAddress, searchReqVO.getAddress());
-    
-        // 添加创建时间范围查询条件
-        if (searchReqVO.getCreateTime() != null && searchReqVO.getCreateTime().length == 2 
-                && searchReqVO.getCreateTime()[0] != null && searchReqVO.getCreateTime()[1] != null) {
-            queryWrapper.between(ErpPurchaserDO::getCreateTime,
-                    searchReqVO.getCreateTime()[0], searchReqVO.getCreateTime()[1]);
-        }
-    
-        List<ErpPurchaserDO> list = purchaserMapper.selectList(queryWrapper);
-    
-        // 转换为VO列表
-        return BeanUtils.toBean(list, ErpPurchaserRespVO.class);
+        // 使用MPJLambdaWrapperX进行查询
+        MPJLambdaWrapperX<ErpPurchaserDO> query = new MPJLambdaWrapperX<ErpPurchaserDO>()
+                .likeIfPresent(ErpPurchaserDO::getNo, searchReqVO.getNo())
+                .likeIfPresent(ErpPurchaserDO::getPurchaserName, searchReqVO.getPurchaserName())
+                .likeIfPresent(ErpPurchaserDO::getContactPhone, searchReqVO.getContactPhone())
+                .likeIfPresent(ErpPurchaserDO::getAddress, searchReqVO.getAddress())
+                .betweenIfPresent(ErpPurchaserDO::getCreateTime, searchReqVO.getCreateTime())
+                .orderByDesc(ErpPurchaserDO::getId)
+                .selectAs(ErpPurchaserDO::getId, ErpPurchaserRespVO::getId)
+                .selectAs(ErpPurchaserDO::getNo, ErpPurchaserRespVO::getNo)
+                .selectAs(ErpPurchaserDO::getPurchaserName, ErpPurchaserRespVO::getPurchaserName)
+                .selectAs(ErpPurchaserDO::getReceiverName, ErpPurchaserRespVO::getReceiverName)
+                .selectAs(ErpPurchaserDO::getContactPhone, ErpPurchaserRespVO::getContactPhone)
+                .selectAs(ErpPurchaserDO::getAddress, ErpPurchaserRespVO::getAddress)
+                .selectAs(ErpPurchaserDO::getWechatAccount, ErpPurchaserRespVO::getWechatAccount)
+                .selectAs(ErpPurchaserDO::getAlipayAccount, ErpPurchaserRespVO::getAlipayAccount)
+                .selectAs(ErpPurchaserDO::getBankAccount, ErpPurchaserRespVO::getBankAccount)
+                .selectAs(ErpPurchaserDO::getRemark, ErpPurchaserRespVO::getRemark)
+                .selectAs(ErpPurchaserDO::getCreateTime, ErpPurchaserRespVO::getCreateTime);
+        
+        // 直接查询并返回VO列表
+        return purchaserMapper.selectJoinList(ErpPurchaserRespVO.class, query);
     }
 
     /**
