@@ -1820,11 +1820,17 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         try {
             System.out.println("=== 获取统一缺失价格记录 ===");
 
-            // 获取代发缺失价格记录
-            PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(pageReqVO);
+            // 获取代发缺失价格记录 - 获取所有数据，不分页
+            ErpSalePricePageReqVO allDataReqVO = new ErpSalePricePageReqVO();
+            allDataReqVO.setGroupProductId(pageReqVO.getGroupProductId());
+            allDataReqVO.setCustomerName(pageReqVO.getCustomerName());
+            allDataReqVO.setPageNo(1);
+            allDataReqVO.setPageSize(10000); // 设置一个很大的值，获取所有数据
+            
+            PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(allDataReqVO);
 
-            // 获取批发缺失价格记录
-            PageResult<ErpWholesaleMissingPriceVO> wholesaleResult = wholesaleService.getWholesaleMissingPrices(pageReqVO);
+            // 获取批发缺失价格记录 - 获取所有数据，不分页
+            PageResult<ErpWholesaleMissingPriceVO> wholesaleResult = wholesaleService.getWholesaleMissingPrices(allDataReqVO);
 
             // 合并数据，按组品ID+客户名称分组
             Map<String, ErpCombinedMissingPriceVO> combinedMap = new HashMap<>();
@@ -1898,14 +1904,22 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             // 转换为列表并分页
             List<ErpCombinedMissingPriceVO> resultList = new ArrayList<>(combinedMap.values());
 
-            // 简单分页处理
-            int start = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
-            int end = Math.min(start + pageReqVO.getPageSize(), resultList.size());
+            // 正确处理分页参数
+            int pageNo = pageReqVO.getPageNo() != null ? pageReqVO.getPageNo() : 1;
+            int pageSize = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
+            
+            // 确保页码和页大小有效
+            if (pageNo < 1) pageNo = 1;
+            if (pageSize < 1) pageSize = 10;
+            
+            // 计算分页范围
+            int start = (pageNo - 1) * pageSize;
+            int end = Math.min(start + pageSize, resultList.size());
 
             List<ErpCombinedMissingPriceVO> pageList = start < resultList.size() ?
                 resultList.subList(start, end) : Collections.emptyList();
 
-            System.out.println("统一缺失价格记录数量: " + resultList.size());
+            System.out.println("统一缺失价格记录数量: " + resultList.size() + ", 当前页: " + pageNo + ", 页大小: " + pageSize + ", 返回数量: " + pageList.size());
             return new PageResult<>(pageList, (long) resultList.size());
 
         } catch (Exception e) {
