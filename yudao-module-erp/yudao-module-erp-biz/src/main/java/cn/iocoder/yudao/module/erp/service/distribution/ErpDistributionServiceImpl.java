@@ -450,21 +450,21 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (combined.getComboProductId() != null) {
             // 3.1 从ES实时查询组品基本信息
             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
-            
+
             try {
                 if (comboProductOpt.isPresent()) {
                     ErpComboProductES comboProduct = comboProductOpt.get();
-                    
+
                     // 设置基础信息
                     respVO.setShippingCode(comboProduct.getShippingCode());
                     respVO.setPurchaser(comboProduct.getPurchaser());
                     respVO.setSupplier(comboProduct.getSupplier());
                     respVO.setComboProductNo(comboProduct.getNo());
-                    
+
                     // 🔥 实时计算产品名称、采购单价等字段
                     String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
                     BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
-                    
+
                     // 如果实时计算失败，使用ES中的缓存数据
                     respVO.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
                     respVO.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice());
@@ -947,17 +947,17 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
                             if (comboProductOpt.isPresent()) {
                                 ErpComboProductES comboProduct = comboProductOpt.get();
-                                
+
                                 // 设置基础信息
                                 vo.setShippingCode(comboProduct.getShippingCode());
                                 vo.setPurchaser(comboProduct.getPurchaser());
                                 vo.setSupplier(comboProduct.getSupplier());
                                 vo.setComboProductNo(comboProduct.getNo());
-                                
+
                                 // 🔥 实时计算产品名称、采购单价等字段
                                 String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
                                 BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
-                                
+
                                 // 如果实时计算失败，使用ES中的缓存数据
                                 vo.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
                                 vo.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice());
@@ -1071,17 +1071,17 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(combined.getComboProductId());
                         if (comboProductOpt.isPresent()) {
                             ErpComboProductES comboProduct = comboProductOpt.get();
-                            
+
                             // 设置基础信息
                             vo.setShippingCode(comboProduct.getShippingCode());
                             vo.setPurchaser(comboProduct.getPurchaser());
                             vo.setSupplier(comboProduct.getSupplier());
                             vo.setComboProductNo(comboProduct.getNo());
-                            
+
                             // 🔥 实时计算产品名称、采购单价等字段
                             String realTimeProductName = calculateRealTimeProductName(combined.getComboProductId());
                             BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(combined.getComboProductId());
-                            
+
                             // 如果实时计算失败，使用ES中的缓存数据
                             vo.setProductName(realTimeProductName != null ? realTimeProductName : comboProduct.getName());
                             vo.setPurchasePrice(realTimePurchasePrice != null ? realTimePurchasePrice : comboProduct.getPurchasePrice());
@@ -1856,6 +1856,14 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                 if (StrUtil.isBlank(importVO.getComboProductNo())) {
                     allErrors.put(errorKey, "组品编号不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getSalesperson())) {
+                    allErrors.put(errorKey, "销售人员不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(importVO.getCustomerName())) {
+                    allErrors.put(errorKey, "客户名称不能为空");
                     continue;
                 }
 

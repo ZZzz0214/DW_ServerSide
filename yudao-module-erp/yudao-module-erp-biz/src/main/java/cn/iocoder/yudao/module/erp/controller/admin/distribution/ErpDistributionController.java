@@ -132,15 +132,15 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
     public CommonResult<PageResult<ErpDistributionRespVO>> getDistributionPage(@Valid ErpDistributionPageReqVO pageReqVO) {
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-        pageResult.getList().forEach(item -> {
-            System.out.println(String.format("订单ID: %s, 组品编号: %s, 采购运费: %s, 销售总额: %s, 售后状况: %s, 售后时间: %s",
-                    item.getId(),
-                    item.getComboProductNo(),
-                    item.getShippingFee(),
-                    item.getTotalSaleAmount(),
-                    item.getAfterSalesStatus(),
-                    item.getAfterSalesTime()));
-        });
+//        pageResult.getList().forEach(item -> {
+//            System.out.println(String.format("订单ID: %s, 组品编号: %s, 采购运费: %s, 销售总额: %s, 售后状况: %s, 售后时间: %s",
+//                    item.getId(),
+//                    item.getComboProductNo(),
+//                    item.getShippingFee(),
+//                    item.getTotalSaleAmount(),
+//                    item.getAfterSalesStatus(),
+//                    item.getAfterSalesTime()));
+//        });
         return success(pageResult);
     }
 

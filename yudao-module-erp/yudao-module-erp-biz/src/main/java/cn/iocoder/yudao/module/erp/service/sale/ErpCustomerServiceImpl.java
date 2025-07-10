@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.transaction.annotation.Transactional;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -131,24 +132,28 @@ public class ErpCustomerServiceImpl implements ErpCustomerService {
 
     @Override
     public List<ErpCustomerSaveReqVO> searchCustomers(ErpCustomerPageReqVO searchReqVO) {
-        List<ErpCustomerDO> customerDOList = customerMapper.selectList(new LambdaQueryWrapper<ErpCustomerDO>()
-                .like(StrUtil.isNotBlank(searchReqVO.getNo()), ErpCustomerDO::getNo, searchReqVO.getNo())
-                .like(StrUtil.isNotBlank(searchReqVO.getName()), ErpCustomerDO::getName, searchReqVO.getName())
-                .like(StrUtil.isNotBlank(searchReqVO.getReceiverName()), ErpCustomerDO::getReceiverName, searchReqVO.getReceiverName())
-                .like(StrUtil.isNotBlank(searchReqVO.getTelephone()), ErpCustomerDO::getTelephone, searchReqVO.getTelephone())
-                .like(StrUtil.isNotBlank(searchReqVO.getAddress()), ErpCustomerDO::getAddress, searchReqVO.getAddress())
-                .like(StrUtil.isNotBlank(searchReqVO.getWechatAccount()), ErpCustomerDO::getWechatAccount, searchReqVO.getWechatAccount())
-                .like(StrUtil.isNotBlank(searchReqVO.getAlipayAccount()), ErpCustomerDO::getAlipayAccount, searchReqVO.getAlipayAccount())
-                .like(StrUtil.isNotBlank(searchReqVO.getBankAccount()), ErpCustomerDO::getBankAccount, searchReqVO.getBankAccount()));
-
-        return BeanUtils.toBean(customerDOList, ErpCustomerSaveReqVO.class);
+        return customerMapper.selectPage(searchReqVO, new LambdaQueryWrapperX<ErpCustomerDO>()
+                .likeIfPresent(ErpCustomerDO::getNo, searchReqVO.getNo())
+                .eq(ErpCustomerDO::getName, searchReqVO.getName())
+                .likeIfPresent(ErpCustomerDO::getReceiverName, searchReqVO.getReceiverName())
+                .likeIfPresent(ErpCustomerDO::getTelephone, searchReqVO.getTelephone())
+                .likeIfPresent(ErpCustomerDO::getAddress, searchReqVO.getAddress())
+                .likeIfPresent(ErpCustomerDO::getWechatAccount, searchReqVO.getWechatAccount())
+                .likeIfPresent(ErpCustomerDO::getAlipayAccount, searchReqVO.getAlipayAccount())
+                .likeIfPresent(ErpCustomerDO::getBankAccount, searchReqVO.getBankAccount())
+                .betweenIfPresent(ErpCustomerDO::getCreateTime, searchReqVO.getCreateTime())
+                .orderByDesc(ErpCustomerDO::getId))
+                .getList()
+                .stream()
+                .map(customer -> BeanUtils.toBean(customer, ErpCustomerSaveReqVO.class))
+                .collect(Collectors.toList());
     }
 
     @Override
     public PageResult<ErpCustomerSaveReqVO> searchCustomersPage(ErpCustomerPageReqVO searchReqVO) {
         // 使用客户Mapper中已有的selectPage方法进行分页查询
         PageResult<ErpCustomerDO> pageResult = customerMapper.selectPage(searchReqVO);
-        
+
         // 转换为VO并返回
         List<ErpCustomerSaveReqVO> voList = BeanUtils.toBean(pageResult.getList(), ErpCustomerSaveReqVO.class);
         return new PageResult<>(voList, pageResult.getTotal());

@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSales
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalespersonDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSalespersonMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -20,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
@@ -112,21 +114,15 @@ public class ErpSalespersonServiceImpl implements ErpSalespersonService {
 
     @Override
     public List<ErpSalespersonRespVO> searchSalespersons(ErpSalespersonPageReqVO searchReqVO) {
-        // 执行查询
-        LambdaQueryWrapper<ErpSalespersonDO> queryWrapper = new LambdaQueryWrapper<ErpSalespersonDO>()
-                .like(searchReqVO.getSalespersonName() != null, ErpSalespersonDO::getSalespersonName, searchReqVO.getSalespersonName())
-                .like(searchReqVO.getContactPhone() != null, ErpSalespersonDO::getContactPhone, searchReqVO.getContactPhone());
-    // 添加创建时间范围查询条件
-    if (searchReqVO.getCreateTime() != null && searchReqVO.getCreateTime().length == 2 
-            && searchReqVO.getCreateTime()[0] != null && searchReqVO.getCreateTime()[1] != null) {
-        queryWrapper.between(ErpSalespersonDO::getCreateTime,
-                searchReqVO.getCreateTime()[0], searchReqVO.getCreateTime()[1]);
-    }
-
-        List<ErpSalespersonDO> list = salespersonMapper.selectList(queryWrapper);
-    
-        // 转换为VO列表
-        return BeanUtils.toBean(list, ErpSalespersonRespVO.class);
+        return salespersonMapper.selectPage(searchReqVO, new LambdaQueryWrapperX<ErpSalespersonDO>()
+                .eqIfPresent(ErpSalespersonDO::getSalespersonName, searchReqVO.getSalespersonName())
+                .likeIfPresent(ErpSalespersonDO::getContactPhone, searchReqVO.getContactPhone())
+                .betweenIfPresent(ErpSalespersonDO::getCreateTime, searchReqVO.getCreateTime())
+                .orderByDesc(ErpSalespersonDO::getId))
+                .getList()
+                .stream()
+                .map(salesperson -> BeanUtils.toBean(salesperson, ErpSalespersonRespVO.class))
+                .collect(Collectors.toList());
     }
 
     private void validateSalespersonExists(Long id) {
