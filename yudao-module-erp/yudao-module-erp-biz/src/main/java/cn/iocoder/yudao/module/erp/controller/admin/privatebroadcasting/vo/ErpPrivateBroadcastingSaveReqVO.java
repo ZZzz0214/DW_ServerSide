@@ -40,7 +40,6 @@ public class ErpPrivateBroadcastingSaveReqVO {
     private String shelfLife;
 
     @Schema(description = "产品库存", example = "100")
-    @NotNull(message = "产品库存不能为空")
     private Integer productStock;
 
     @Schema(description = "直播价格", example = "80.00")

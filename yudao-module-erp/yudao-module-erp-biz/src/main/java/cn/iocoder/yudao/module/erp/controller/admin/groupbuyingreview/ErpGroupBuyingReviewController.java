@@ -158,11 +158,11 @@ public class ErpGroupBuyingReviewController {
     @Operation(summary = "获得导入团购复盘模板")
     public void importTemplate(HttpServletResponse response) throws IOException {
         // 手动创建导入模板 demo
-        List<ErpGroupBuyingReviewImportExcelVO> list = Arrays.asList(
-                ErpGroupBuyingReviewImportExcelVO.builder()
+        List<ErpGroupBuyingReviewExportVO> list = Arrays.asList(
+                ErpGroupBuyingReviewExportVO.builder()
                         .build()
         );
         // 输出
-        ExcelUtils.write(response, "团购复盘导入模板.xls", "团购复盘列表", ErpGroupBuyingReviewImportExcelVO.class, list);
+        ExcelUtils.write(response, "团购复盘导入模板.xls", "团购复盘列表", ErpGroupBuyingReviewExportVO.class, list);
     }
 }

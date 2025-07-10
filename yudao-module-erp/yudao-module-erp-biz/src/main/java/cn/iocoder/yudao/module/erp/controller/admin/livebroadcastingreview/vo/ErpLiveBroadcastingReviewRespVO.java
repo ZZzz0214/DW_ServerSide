@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo;
 
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -57,11 +58,13 @@ public class ErpLiveBroadcastingReviewRespVO {
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
-    private LocalDateTime sampleSendDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate sampleSendDate;
 
     @Schema(description = "开播日期", example = "2023-01-05")
     @ExcelProperty("开播日期")
-    private LocalDateTime liveStartDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate liveStartDate;
 
     @Schema(description = "开播销量", example = "100")
     @ExcelProperty("开播销量")
@@ -69,7 +72,8 @@ public class ErpLiveBroadcastingReviewRespVO {
 
     @Schema(description = "复播日期", example = "2023-01-10")
     @ExcelProperty("复播日期")
-    private LocalDateTime repeatLiveDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate repeatLiveDate;
 
     @Schema(description = "复播销量", example = "50")
     @ExcelProperty("复播销量")

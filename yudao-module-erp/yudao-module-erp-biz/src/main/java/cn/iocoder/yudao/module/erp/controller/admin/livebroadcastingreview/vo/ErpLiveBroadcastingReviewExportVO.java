@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 直播复盘导出 VO")
@@ -80,11 +81,11 @@ public class ErpLiveBroadcastingReviewExportVO {
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
-    private LocalDateTime sampleSendDate;
+    private LocalDate sampleSendDate;
 
     @Schema(description = "开播日期", example = "2023-01-05")
     @ExcelProperty("开播日期")
-    private LocalDateTime liveStartDate;
+    private LocalDate liveStartDate;
 
     @Schema(description = "开播销量", example = "100")
     @ExcelProperty("开播销量")
@@ -92,7 +93,7 @@ public class ErpLiveBroadcastingReviewExportVO {
 
     @Schema(description = "复播日期", example = "2023-01-10")
     @ExcelProperty("复播日期")
-    private LocalDateTime repeatLiveDate;
+    private LocalDate repeatLiveDate;
 
     @Schema(description = "复播销量", example = "50")
     @ExcelProperty("复播销量")

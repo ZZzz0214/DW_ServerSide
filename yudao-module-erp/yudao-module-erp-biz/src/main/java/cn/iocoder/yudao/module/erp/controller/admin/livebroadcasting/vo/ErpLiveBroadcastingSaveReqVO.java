@@ -36,14 +36,12 @@ public class ErpLiveBroadcastingSaveReqVO {
     private String productSku;
 
     @Schema(description = "市场价格", example = "100.00")
-    @NotNull(message = "市场价格不能为空")
     private BigDecimal marketPrice;
 
     @Schema(description = "保质日期", example = "2023-12-31")
     private LocalDateTime shelfLife;
 
     @Schema(description = "产品库存", example = "100")
-    @NotNull(message = "产品库存不能为空")
     private Integer productStock;
 
     @Schema(description = "核心卖点", example = "天然无添加")

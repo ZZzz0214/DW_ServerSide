@@ -42,16 +42,16 @@ public class ErpLiveBroadcastingReviewSaveReqVO {
     private BigDecimal rebateCommission;
 
     @Schema(description = "寄样日期", example = "2023-01-01")
-    private LocalDateTime sampleSendDate;
+    private LocalDate sampleSendDate;
 
     @Schema(description = "开播日期", example = "2023-01-05")
-    private LocalDateTime liveStartDate;
+    private LocalDate liveStartDate;
 
     @Schema(description = "开播销量", example = "100")
     private Integer liveSales;
 
     @Schema(description = "复播日期", example = "2023-01-10")
-    private LocalDateTime repeatLiveDate;
+    private LocalDate repeatLiveDate;
 
     @Schema(description = "复播销量", example = "50")
     private Integer repeatLiveSales;
