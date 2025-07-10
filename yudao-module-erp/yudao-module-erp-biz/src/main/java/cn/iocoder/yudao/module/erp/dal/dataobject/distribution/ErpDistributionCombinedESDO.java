@@ -18,56 +18,29 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "no", type = FieldType.Keyword)
     private String no;
 
-    @Field(name = "no_keyword", type = FieldType.Keyword)
-    private String noKeyword;
-
-    @Field(name = "order_number", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "order_number", type = FieldType.Keyword)
     private String orderNumber;
 
-    @Field(name = "order_number_keyword", type = FieldType.Keyword)
-    private String orderNumberKeyword;
-
-    @Field(name = "logistics_company", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "logistics_company", type = FieldType.Keyword)
     private String logisticsCompany;
 
-    @Field(name = "logistics_company_keyword", type = FieldType.Keyword)
-    private String logisticsCompanyKeyword;
-
-    @Field(name = "tracking_number", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "tracking_number", type = FieldType.Keyword)
     private String trackingNumber;
 
-    @Field(name = "tracking_number_keyword", type = FieldType.Keyword)
-    private String trackingNumberKeyword;
-
-    @Field(name = "receiver_name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "receiver_name", type = FieldType.Keyword)
     private String receiverName;
 
-    @Field(name = "receiver_name_keyword", type = FieldType.Keyword)
-    private String receiverNameKeyword;
-
-    @Field(name = "receiver_phone", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "receiver_phone", type = FieldType.Keyword)
     private String receiverPhone;
 
-    @Field(name = "receiver_phone_keyword", type = FieldType.Keyword)
-    private String receiverPhoneKeyword;
-
-    @Field(name = "receiver_address", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "receiver_address", type = FieldType.Keyword)
     private String receiverAddress;
 
-    @Field(name = "receiver_address_keyword", type = FieldType.Keyword)
-    private String receiverAddressKeyword;
-
-    @Field(name = "original_product_name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "original_product_name", type = FieldType.Keyword)
     private String originalProductName;
 
-    @Field(name = "original_product_keyword", type = FieldType.Keyword)
-    private String originalProductKeyword;
-
-    @Field(name = "original_standard", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "original_standard", type = FieldType.Keyword)
     private String originalStandard;
-
-    @Field(name = "original_standard_keyword", type = FieldType.Keyword)
-    private String originalStandardKeyword;
 
     @Field(name = "original_quantity", type = FieldType.Integer)
     private Integer originalQuantity;
@@ -78,55 +51,34 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "combo_product_id", type = FieldType.Long)
     private Long comboProductId;
 
-    // 组品编号
+    // 组品编号（从组品表获取）
     @Field(name = "combo_product_no", type = FieldType.Keyword)
     private String comboProductNo;
 
-    @Field(name = "combo_product_no_keyword", type = FieldType.Keyword)
-    private String comboProductNoKeyword;
-
-    // 发货编码
-    @Field(name = "shipping_code", type = FieldType.Text, analyzer = "ik_max_word")
+    // 发货编码（从组品表获取）
+    @Field(name = "shipping_code", type = FieldType.Keyword)
     private String shippingCode;
 
-    @Field(name = "shipping_code_keyword", type = FieldType.Keyword)
-    private String shippingCodeKeyword;
-
-    // 产品名称
-    @Field(name = "product_name", type = FieldType.Text, analyzer = "ik_max_word")
+    // 产品名称（从组品表获取）
+    @Field(name = "product_name", type = FieldType.Keyword)
     private String productName;
 
-    @Field(name = "product_name_keyword", type = FieldType.Keyword)
-    private String productNameKeyword;
-
-    @Field(name = "product_specification", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "product_specification", type = FieldType.Keyword)
     private String productSpecification;
 
-    @Field(name = "product_specification_keyword", type = FieldType.Keyword)
-    private String productSpecificationKeyword;
-
-    // 采购人员
-    @Field(name = "purchaser", type = FieldType.Text, analyzer = "ik_max_word")
+    // 采购人员（从组品表获取）
+    @Field(name = "purchaser", type = FieldType.Keyword)
     private String purchaser;
 
-    @Field(name = "purchaser_keyword", type = FieldType.Keyword)
-    private String purchaserKeyword;
-
-    // 供应商名称
-    @Field(name = "supplier", type = FieldType.Text, analyzer = "ik_max_word")
+    // 供应商名称（从组品表获取）
+    @Field(name = "supplier", type = FieldType.Keyword)
     private String supplier;
-
-    @Field(name = "supplier_keyword", type = FieldType.Keyword)
-    private String supplierKeyword;
 
     @Field(name = "product_quantity", type = FieldType.Integer)
     private Integer productQuantity;
 
-    @Field(name = "after_sales_status", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "after_sales_status", type = FieldType.Keyword)
     private String afterSalesStatus;
-
-    @Field(name = "after_sales_status_keyword", type = FieldType.Keyword)
-    private String afterSalesStatusKeyword;
 
     @Field(name = "after_sales_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime afterSalesTime;
@@ -157,17 +109,11 @@ public class ErpDistributionCombinedESDO {
     private LocalDateTime purchaseUnapproveTime;
 
     // 销售相关字段
-    @Field(name = "salesperson", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "salesperson", type = FieldType.Keyword)
     private String salesperson;
 
-    @Field(name = "salesperson_keyword", type = FieldType.Keyword)
-    private String salespersonKeyword;
-
-    @Field(name = "customer_name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "customer_name", type = FieldType.Keyword)
     private String customerName;
-
-    @Field(name = "customer_name_keyword", type = FieldType.Keyword)
-    private String customerNameKeyword;
 
     @Field(name = "sale_other_fees", type = FieldType.Double)
     private BigDecimal saleOtherFees;
@@ -175,11 +121,8 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "sale_remark", type = FieldType.Text, analyzer = "ik_max_word")
     private String saleRemark;
 
-    @Field(name = "transfer_person", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "transfer_person", type = FieldType.Keyword)
     private String transferPerson;
-
-    @Field(name = "transfer_person_keyword", type = FieldType.Keyword)
-    private String transferPersonKeyword;
 
     @Field(name = "sale_after_sales_status", type = FieldType.Integer)
     private Integer saleAfterSalesStatus;
@@ -212,17 +155,11 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "update_time", type = FieldType.Date, format = {}, pattern = "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updateTime;
 
-    @Field(name = "creator", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "creator", type = FieldType.Keyword)
     private String creator;
 
-    @Field(name = "creator_keyword", type = FieldType.Keyword)
-    private String creatorKeyword;
-
-    @Field(name = "updater", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "updater", type = FieldType.Keyword)
     private String updater;
-
-    @Field(name = "updater_keyword", type = FieldType.Keyword)
-    private String updaterKeyword;
 
     @Field(name = "tenant_id", type = FieldType.Long)
     private Long tenantId;
