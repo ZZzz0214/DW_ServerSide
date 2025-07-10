@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo;
 
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -67,11 +68,13 @@ public class ErpGroupBuyingReviewRespVO {
 
     @Schema(description = "寄样日期", example = "2023-01-01")
     @ExcelProperty("寄样日期")
-    private LocalDateTime sampleSendDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate sampleSendDate;
 
     @Schema(description = "开团日期", example = "2023-01-10")
     @ExcelProperty("开团日期")
-    private LocalDateTime groupStartDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate groupStartDate;
 
     @Schema(description = "开团销量", example = "100")
     @ExcelProperty("开团销量")
@@ -79,7 +82,8 @@ public class ErpGroupBuyingReviewRespVO {
 
     @Schema(description = "复团日期", example = "2023-02-01")
     @ExcelProperty("复团日期")
-    private LocalDateTime repeatGroupDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate repeatGroupDate;
 
     @Schema(description = "复团销量", example = "50")
     @ExcelProperty("复团销量")
