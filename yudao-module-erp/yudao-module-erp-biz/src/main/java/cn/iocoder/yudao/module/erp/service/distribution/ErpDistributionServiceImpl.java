@@ -449,13 +449,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                     // 计算采购运费和总额
                     BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, respVO.getProductQuantity());
-                    BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : 
+                    BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice :
                         (comboProduct.getPurchasePrice() != null ? comboProduct.getPurchasePrice() : BigDecimal.ZERO);
-                    
+
                     // 确保所有计算参数都不为null
                     Integer productQuantity = respVO.getProductQuantity() != null ? respVO.getProductQuantity() : 0;
                     BigDecimal otherFees = combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO;
-                    
+
                     BigDecimal totalPurchaseAmount = finalPurchasePrice
                             .multiply(new BigDecimal(productQuantity))
                             .add(shippingFee)
@@ -474,12 +474,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                             // 计算销售运费和总额
                             BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, respVO.getProductQuantity(), combined.getComboProductId());
-                            
+
                             // 确保所有计算参数都不为null
                             Integer saleProductQuantity = respVO.getProductQuantity() != null ? respVO.getProductQuantity() : 0;
                             BigDecimal distributionPrice = salePrice.getDistributionPrice();
                             BigDecimal saleOtherFees = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
-                            
+
                             BigDecimal totalSaleAmount = distributionPrice
                                     .multiply(new BigDecimal(saleProductQuantity))
                                     .add(saleShippingFee)
@@ -518,26 +518,26 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         BigDecimal shippingFee = BigDecimal.ZERO;
         Integer shippingFeeType = comboProduct.getShippingFeeType();
-        
+
         if (shippingFeeType == null) {
             return BigDecimal.ZERO;
         }
 
         switch (shippingFeeType) {
             case 0: // 固定运费
-                shippingFee = comboProduct.getFixedShippingFee() != null ? 
+                shippingFee = comboProduct.getFixedShippingFee() != null ?
                     comboProduct.getFixedShippingFee() : BigDecimal.ZERO;
                 break;
             case 1: // 按件计费
-                if (comboProduct.getAdditionalItemQuantity() != null && comboProduct.getAdditionalItemQuantity() > 0 
+                if (comboProduct.getAdditionalItemQuantity() != null && comboProduct.getAdditionalItemQuantity() > 0
                     && comboProduct.getAdditionalItemPrice() != null) {
                     int additionalUnits = (int) Math.ceil((double) quantity / comboProduct.getAdditionalItemQuantity());
                     shippingFee = comboProduct.getAdditionalItemPrice().multiply(new BigDecimal(additionalUnits));
                 }
                 break;
             case 2: // 按重量计费
-                if (comboProduct.getWeight() != null && comboProduct.getFirstWeight() != null 
-                    && comboProduct.getFirstWeightPrice() != null && comboProduct.getAdditionalWeight() != null 
+                if (comboProduct.getWeight() != null && comboProduct.getFirstWeight() != null
+                    && comboProduct.getFirstWeightPrice() != null && comboProduct.getAdditionalWeight() != null
                     && comboProduct.getAdditionalWeightPrice() != null) {
                     BigDecimal totalWeight = comboProduct.getWeight().multiply(new BigDecimal(quantity));
                     if (totalWeight.compareTo(comboProduct.getFirstWeight()) <= 0) {
@@ -555,7 +555,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 shippingFee = BigDecimal.ZERO;
                 break;
         }
-        
+
         return shippingFee.setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -567,25 +567,25 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         BigDecimal shippingFee = BigDecimal.ZERO;
         Integer shippingFeeType = salePrice.getShippingFeeType();
-        
+
         if (shippingFeeType == null) {
             return BigDecimal.ZERO;
         }
 
         switch (shippingFeeType) {
             case 0: // 固定运费
-                shippingFee = salePrice.getFixedShippingFee() != null ? 
+                shippingFee = salePrice.getFixedShippingFee() != null ?
                     salePrice.getFixedShippingFee() : BigDecimal.ZERO;
                 break;
             case 1: // 按件计费
-                if (salePrice.getAdditionalItemQuantity() != null && salePrice.getAdditionalItemQuantity() > 0 
+                if (salePrice.getAdditionalItemQuantity() != null && salePrice.getAdditionalItemQuantity() > 0
                     && salePrice.getAdditionalItemPrice() != null) {
                     int additionalUnits = (int) Math.ceil((double) quantity / salePrice.getAdditionalItemQuantity());
                     shippingFee = salePrice.getAdditionalItemPrice().multiply(new BigDecimal(additionalUnits));
                 }
                 break;
             case 2: // 按重计费
-                if (salePrice.getFirstWeight() != null && salePrice.getFirstWeightPrice() != null 
+                if (salePrice.getFirstWeight() != null && salePrice.getFirstWeightPrice() != null
                     && salePrice.getAdditionalWeight() != null && salePrice.getAdditionalWeightPrice() != null) {
                     Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboProductId);
                     if (comboProductOpt.isPresent()) {
@@ -611,7 +611,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 shippingFee = BigDecimal.ZERO;
                 break;
         }
-        
+
         return shippingFee.setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -891,7 +891,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 try {
                     List<ErpSalePriceESDO> salePrices = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
                             new ArrayList<>(saleComboProductIds), new ArrayList<>(customerNames));
-                    salePrices.forEach(price -> 
+                    salePrices.forEach(price ->
                         salePriceMap.put(price.getGroupProductId() + "_" + price.getCustomerName(), price));
                 } catch (Exception e) {
                     System.err.println("批量查询销售价格失败，将逐条查询: " + e.getMessage());
@@ -901,13 +901,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 5.3 批量计算实时数据（可选优化：如果实时计算耗时较长，可以考虑异步处理）
             Map<Long, String> realTimeProductNameMap = new HashMap<>();
             Map<Long, BigDecimal> realTimePurchasePriceMap = new HashMap<>();
-            
+
             // 批量计算产品名称和采购价格
             for (Long comboProductId : comboProductIds) {
                 try {
                     String realTimeProductName = calculateRealTimeProductName(comboProductId);
                     BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(comboProductId);
-                    
+
                     if (realTimeProductName != null) {
                         realTimeProductNameMap.put(comboProductId, realTimeProductName);
                     }
@@ -1012,7 +1012,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     /**
      * 批量优化的VO转换方法 - 解决N+1查询问题
-     * 
+     *
      * @param combinedList ES查询结果列表
      * @param totalHits 总记录数
      * @return 分页结果
@@ -1050,7 +1050,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             try {
                 List<ErpSalePriceESDO> salePrices = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
                         new ArrayList<>(saleComboProductIds), new ArrayList<>(customerNames));
-                salePrices.forEach(price -> 
+                salePrices.forEach(price ->
                     salePriceMap.put(price.getGroupProductId() + "_" + price.getCustomerName(), price));
             } catch (Exception e) {
                 System.err.println("批量查询销售价格失败: " + e.getMessage());
@@ -1060,12 +1060,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 3. 批量计算实时数据
         Map<Long, String> realTimeProductNameMap = new HashMap<>();
         Map<Long, BigDecimal> realTimePurchasePriceMap = new HashMap<>();
-        
+
         for (Long comboProductId : comboProductIds) {
             try {
                 String realTimeProductName = calculateRealTimeProductName(comboProductId);
                 BigDecimal realTimePurchasePrice = calculateRealTimePurchasePrice(comboProductId);
-                
+
                 if (realTimeProductName != null) {
                     realTimeProductNameMap.put(comboProductId, realTimeProductName);
                 }
@@ -1112,13 +1112,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                             // 计算采购运费和总额
                             BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, vo.getProductQuantity());
-                            BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice : 
+                            BigDecimal finalPurchasePrice = realTimePurchasePrice != null ? realTimePurchasePrice :
                                 (comboProduct.getPurchasePrice() != null ? comboProduct.getPurchasePrice() : BigDecimal.ZERO);
-                            
+
                             // 确保所有计算参数都不为null
                             Integer productQuantity = vo.getProductQuantity() != null ? vo.getProductQuantity() : 0;
                             BigDecimal otherFees = combined.getPurchaseOtherFees() != null ? combined.getPurchaseOtherFees() : BigDecimal.ZERO;
-                            
+
                             BigDecimal totalPurchaseAmount = finalPurchasePrice
                                     .multiply(new BigDecimal(productQuantity))
                                     .add(shippingFee)
@@ -1133,12 +1133,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                                 if (salePrice != null && salePrice.getDistributionPrice() != null) {
                                     BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, vo.getProductQuantity(), combined.getComboProductId());
-                                    
+
                                     // 确保所有计算参数都不为null
                                     Integer saleProductQuantity = vo.getProductQuantity() != null ? vo.getProductQuantity() : 0;
                                     BigDecimal distributionPrice = salePrice.getDistributionPrice();
                                     BigDecimal saleOtherFees = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
-                                    
+
                                     BigDecimal totalSaleAmount = distributionPrice
                                             .multiply(new BigDecimal(saleProductQuantity))
                                             .add(saleShippingFee)
@@ -1155,12 +1155,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                                             ErpSalePriceESDO fallbackSalePrice = salePriceOpt.get();
                                             if (fallbackSalePrice.getDistributionPrice() != null) {
                                                 BigDecimal saleShippingFee = calculateSaleShippingFee(fallbackSalePrice, vo.getProductQuantity(), combined.getComboProductId());
-                                                
+
                                                 // 确保所有计算参数都不为null
                                                 Integer fallbackProductQuantity = vo.getProductQuantity() != null ? vo.getProductQuantity() : 0;
                                                 BigDecimal distributionPrice = fallbackSalePrice.getDistributionPrice();
                                                 BigDecimal saleOtherFees = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
-                                                
+
                                                 BigDecimal totalSaleAmount = distributionPrice
                                                         .multiply(new BigDecimal(fallbackProductQuantity))
                                                         .add(saleShippingFee)
@@ -1240,7 +1240,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         BigDecimal otherFees = purchase.getOtherFees() != null ? purchase.getOtherFees() : BigDecimal.ZERO;
         BigDecimal purchasePrice = comboProduct.getPurchasePrice() != null ? comboProduct.getPurchasePrice() : BigDecimal.ZERO;
         Integer productQuantity = vo.getProductQuantity() != null ? vo.getProductQuantity() : 0;
-        
+
         // 🔥 现在ES中的采购单价已经是实时计算的，可以直接使用
         BigDecimal totalPurchaseAmount = purchasePrice
                 .multiply(new BigDecimal(productQuantity))
@@ -1264,7 +1264,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
         if (salePriceOpt.isPresent()) {
             ErpSalePriceESDO salePrice = salePriceOpt.get();
-            
+
             // 确保销售价格不为null
             if (salePrice.getDistributionPrice() == null) {
                 System.out.println("销售价格记录存在但价格为null");
@@ -1276,7 +1276,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
             // 计算销售运费
             BigDecimal saleShippingFee = calculateSaleShippingFee(salePrice, vo.getProductQuantity(), purchase.getComboProductId());
-            
+
             // 确保所有计算参数都不为null
             Integer saleProductQuantity = vo.getProductQuantity() != null ? vo.getProductQuantity() : 0;
 
@@ -1745,7 +1745,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         combined.setComboProductId(comboProductId);
                         combined.setNo(noRedisDAO.generate(ErpNoRedisDAO.DISTRIBUTION_NO_PREFIX));
                         createList.add(combined);
-                        esCreateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedESDO.class).setCreator(username).setCreateTime(now));
+
+                        // 🔥 使用统一的转换方法，确保ES对象包含完整的组品信息（包括comboProductNo）
+                        ErpDistributionCombinedESDO combinedESDO = convertCombinedToES(combined);
+                        combinedESDO.setCreator(username).setCreateTime(now);
+                        esCreateList.add(combinedESDO);
                         respVO.getCreateNames().add(combined.getNo());
                     } else if (isUpdateSupport) {
                         // 更新逻辑 - 保留原有数据，只更新导入的字段
@@ -2743,7 +2747,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
             for (int i = 0; i < items.size(); i++) {
                 if (i > 0) {
-                    nameBuilder.append("+");
+                    nameBuilder.append("｜");
                 }
                 ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
                 if (product != null) {

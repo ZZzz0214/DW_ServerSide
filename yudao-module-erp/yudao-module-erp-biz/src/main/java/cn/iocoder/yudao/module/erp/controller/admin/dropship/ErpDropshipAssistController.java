@@ -49,14 +49,14 @@ public class ErpDropshipAssistController {
 
     @PostMapping("/create")
     @Operation(summary = "创建代发辅助")
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:create')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:create')")
     public CommonResult<Long> createDropshipAssist(@Valid @RequestBody ErpDropshipAssistSaveReqVO createReqVO) {
         return success(dropshipAssistService.createDropshipAssist(createReqVO));
     }
 
     @PutMapping("/update")
     @Operation(summary = "更新代发辅助")
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:update')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:update')")
     public CommonResult<Boolean> updateDropshipAssist(@Valid @RequestBody ErpDropshipAssistSaveReqVO updateReqVO) {
         dropshipAssistService.updateDropshipAssist(updateReqVO);
         return success(true);
@@ -65,7 +65,7 @@ public class ErpDropshipAssistController {
     @DeleteMapping("/delete")
     @Operation(summary = "删除代发辅助")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:delete')")
     public CommonResult<Boolean> deleteDropshipAssist(@RequestParam("ids") List<Long> ids) {
         dropshipAssistService.deleteDropshipAssist(ids);
         return success(true);
@@ -74,7 +74,7 @@ public class ErpDropshipAssistController {
     @GetMapping("/get")
     @Operation(summary = "获得代发辅助")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:query')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:query')")
     public CommonResult<ErpDropshipAssistRespVO> getDropshipAssist(@RequestParam("id") Long id) {
         // 使用新的详情查询方法，自动包含组品信息
         ErpDropshipAssistRespVO respVO = dropshipAssistService.getDropshipAssistDetail(id);
@@ -83,7 +83,7 @@ public class ErpDropshipAssistController {
 
     @GetMapping("/page")
     @Operation(summary = "获得代发辅助分页")
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:query')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:query')")
     public CommonResult<PageResult<ErpDropshipAssistRespVO>> getDropshipAssistPage(@Valid ErpDropshipAssistPageReqVO pageReqVO) {
         PageResult<ErpDropshipAssistRespVO> pageResult = dropshipAssistService.getDropshipAssistVOPage(pageReqVO);
         System.out.println("查看代发"+pageResult.getList());
@@ -93,7 +93,7 @@ public class ErpDropshipAssistController {
     @GetMapping("/list-by-ids")
     @Operation(summary = "根据ID列表获得代发辅助列表")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:query')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:query')")
     public CommonResult<List<ErpDropshipAssistRespVO>> getDropshipAssistListByIds(@RequestParam("ids") List<Long> ids) {
         List<ErpDropshipAssistRespVO> list = dropshipAssistService.getDropshipAssistVOList(ids);
         return success(list);
@@ -101,7 +101,7 @@ public class ErpDropshipAssistController {
 
     @GetMapping("/export-excel")
     @Operation(summary = "导出代发辅助 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:export')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportDropshipAssistExcel(@Valid ErpDropshipAssistPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
@@ -120,7 +120,7 @@ public class ErpDropshipAssistController {
         @Parameter(name = "file", description = "Excel 文件", required = true),
         @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
     })
-    @PreAuthorize("@ss.hasPermission('erp:dropship-assist:import')")
+    @PreAuthorize("@ss.hasPermission('erp:dropship:import')")
     @ApiAccessLog(operateType = IMPORT)
     public CommonResult<ErpDropshipAssistImportRespVO> importExcel(
             @RequestParam("file") MultipartFile file,

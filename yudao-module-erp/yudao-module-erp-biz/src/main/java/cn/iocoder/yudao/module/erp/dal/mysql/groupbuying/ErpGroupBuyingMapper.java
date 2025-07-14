@@ -19,7 +19,7 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
         MPJLambdaWrapperX<ErpGroupBuyingDO> query = new MPJLambdaWrapperX<ErpGroupBuyingDO>()
                 .likeIfPresent(ErpGroupBuyingDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName())
-                .likeIfPresent(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName())
+                .eqIfPresent(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName())
                 .likeIfPresent(ErpGroupBuyingDO::getProductSpec, reqVO.getProductSpec())
                 .betweenIfPresent(ErpGroupBuyingDO::getShelfLife, reqVO.getShelfLife())
                 .likeIfPresent(ErpGroupBuyingDO::getSupplyGroupPrice, reqVO.getSupplyGroupPrice())
