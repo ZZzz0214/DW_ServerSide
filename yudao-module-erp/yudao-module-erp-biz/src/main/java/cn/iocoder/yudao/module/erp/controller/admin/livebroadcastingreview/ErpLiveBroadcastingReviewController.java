@@ -50,7 +50,7 @@ public class ErpLiveBroadcastingReviewController {
 
     @PostMapping("/create")
     @Operation(summary = "创建直播复盘")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:create')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:create')")
     public CommonResult<Long> createLiveBroadcastingReview(@Valid @RequestBody ErpLiveBroadcastingReviewSaveReqVO createReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -59,7 +59,7 @@ public class ErpLiveBroadcastingReviewController {
 
     @PutMapping("/update")
     @Operation(summary = "更新直播复盘")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:update')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:update')")
     public CommonResult<Boolean> updateLiveBroadcastingReview(@Valid @RequestBody ErpLiveBroadcastingReviewSaveReqVO updateReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -70,7 +70,7 @@ public class ErpLiveBroadcastingReviewController {
     @DeleteMapping("/delete")
     @Operation(summary = "删除直播复盘")
     @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:delete')")
     public CommonResult<Boolean> deleteLiveBroadcastingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -81,7 +81,7 @@ public class ErpLiveBroadcastingReviewController {
     @DeleteMapping("/batch-delete")
     @Operation(summary = "批量删除直播复盘")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:delete')")
     public CommonResult<Boolean> deleteLiveBroadcastingReviews(@RequestParam("ids") List<Long> ids) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -92,7 +92,7 @@ public class ErpLiveBroadcastingReviewController {
     @GetMapping("/get")
     @Operation(summary = "获得直播复盘")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:query')")
     public CommonResult<ErpLiveBroadcastingReviewRespVO> getLiveBroadcastingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -105,7 +105,7 @@ public class ErpLiveBroadcastingReviewController {
 
     @GetMapping("/page")
     @Operation(summary = "获得直播复盘分页")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:query')")
     public CommonResult<PageResult<ErpLiveBroadcastingReviewRespVO>> getLiveBroadcastingReviewPage(@Valid ErpLiveBroadcastingReviewPageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -116,7 +116,7 @@ public class ErpLiveBroadcastingReviewController {
     @GetMapping("/list-by-ids")
     @Operation(summary = "获得直播复盘列表")
     @Parameter(name = "ids", description = "编号列表", required = true, example = "1024,2048")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:query')")
     public CommonResult<List<ErpLiveBroadcastingReviewRespVO>> getLiveBroadcastingReviewListByIds(@RequestParam("ids") List<Long> ids) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -126,7 +126,7 @@ public class ErpLiveBroadcastingReviewController {
 
     @GetMapping("/export-excel")
     @Operation(summary = "导出直播复盘 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:export')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportLiveBroadcastingReviewExcel(@Valid ErpLiveBroadcastingReviewPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
@@ -145,7 +145,7 @@ public class ErpLiveBroadcastingReviewController {
             @Parameter(name = "file", description = "Excel 文件", required = true),
             @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
     })
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:import')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:import')")
     public CommonResult<ErpLiveBroadcastingReviewImportRespVO> importLiveBroadcastingReviewExcel(@RequestParam("file") MultipartFile file,
                                                                                                  @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
@@ -172,7 +172,7 @@ public class ErpLiveBroadcastingReviewController {
     @GetMapping("/copy")
     @Operation(summary = "复制直播复盘")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcastingreview:query')")
     public CommonResult<ErpLiveBroadcastingReviewRespVO> copyLiveBroadcastingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);

@@ -47,7 +47,7 @@ public class ErpGroupBuyingReviewController {
 
     @PostMapping("/create")
     @Operation(summary = "创建团购复盘")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:create')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:create')")
     public CommonResult<Long> createGroupBuyingReview(@Valid @RequestBody ErpGroupBuyingReviewSaveReqVO createReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -56,7 +56,7 @@ public class ErpGroupBuyingReviewController {
 
     @PutMapping("/update")
     @Operation(summary = "更新团购复盘")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:update')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:update')")
     public CommonResult<Boolean> updateGroupBuyingReview(@Valid @RequestBody ErpGroupBuyingReviewSaveReqVO updateReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -67,7 +67,7 @@ public class ErpGroupBuyingReviewController {
     @DeleteMapping("/delete")
     @Operation(summary = "删除团购复盘")
     @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:delete')")
     public CommonResult<Boolean> deleteGroupBuyingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -78,7 +78,7 @@ public class ErpGroupBuyingReviewController {
     @DeleteMapping("/batch-delete")
     @Operation(summary = "批量删除团购复盘")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:delete')")
     public CommonResult<Boolean> deleteGroupBuyingReviews(@RequestParam("ids") List<Long> ids) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -89,7 +89,7 @@ public class ErpGroupBuyingReviewController {
     @GetMapping("/get")
     @Operation(summary = "获得团购复盘")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:query')")
     public CommonResult<ErpGroupBuyingReviewRespVO> getGroupBuyingReview(@RequestParam("id") Long id) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -102,7 +102,7 @@ public class ErpGroupBuyingReviewController {
 
     @GetMapping("/page")
     @Operation(summary = "获得团购复盘分页")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:query')")
     public CommonResult<PageResult<ErpGroupBuyingReviewRespVO>> getGroupBuyingReviewPage(@Valid ErpGroupBuyingReviewPageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -113,7 +113,7 @@ public class ErpGroupBuyingReviewController {
     @GetMapping("/list-by-ids")
     @Operation(summary = "根据ID列表获得团购复盘列表")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:query')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:query')")
     public CommonResult<List<ErpGroupBuyingReviewRespVO>> getGroupBuyingReviewListByIds(@RequestParam("ids") List<Long> ids) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -123,7 +123,7 @@ public class ErpGroupBuyingReviewController {
 
     @GetMapping("/export-excel")
     @Operation(summary = "导出团购复盘 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:export')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportGroupBuyingReviewExcel(@Valid ErpGroupBuyingReviewPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
@@ -142,7 +142,7 @@ public class ErpGroupBuyingReviewController {
             @Parameter(name = "file", description = "Excel 文件", required = true),
             @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
     })
-    @PreAuthorize("@ss.hasPermission('erp:group-buying-review:import')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuyingreview:import')")
     @ApiAccessLog(operateType = IMPORT)
     public CommonResult<ErpGroupBuyingReviewImportRespVO> importGroupBuyingReviewExcel(@RequestParam("file") MultipartFile file,
                                                                                        @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {

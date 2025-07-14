@@ -42,7 +42,7 @@ public class ErpLiveBroadcastingController {
 
     @PostMapping("/create")
     @Operation(summary = "创建直播货盘")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:create')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:create')")
     public CommonResult<Long> createLiveBroadcasting(@Valid @RequestBody ErpLiveBroadcastingSaveReqVO createReqVO) {
         System.out.println("创建直播复盘的"+createReqVO);
         return success(liveBroadcastingService.createLiveBroadcasting(createReqVO));
@@ -50,7 +50,7 @@ public class ErpLiveBroadcastingController {
 
     @PutMapping("/update")
     @Operation(summary = "更新直播货盘")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:update')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:update')")
     public CommonResult<Boolean> updateLiveBroadcasting(@Valid @RequestBody ErpLiveBroadcastingSaveReqVO updateReqVO) {
         liveBroadcastingService.updateLiveBroadcasting(updateReqVO);
         return success(true);
@@ -59,7 +59,7 @@ public class ErpLiveBroadcastingController {
     @DeleteMapping("/delete")
     @Operation(summary = "删除直播货盘")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:delete')")
     public CommonResult<Boolean> deleteLiveBroadcasting(@RequestParam("ids") List<Long> ids) {
         liveBroadcastingService.deleteLiveBroadcasting(ids);
         return success(true);
@@ -68,14 +68,14 @@ public class ErpLiveBroadcastingController {
     @GetMapping("/get")
     @Operation(summary = "获得直播货盘")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:query')")
     public CommonResult<ErpLiveBroadcastingRespVO> getLiveBroadcasting(@RequestParam("id") Long id) {
         return success(liveBroadcastingService.getLiveBroadcastingVOList(Collections.singleton(id)).get(0));
     }
 
     @GetMapping("/page")
     @Operation(summary = "获得直播货盘分页")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:query')")
     public CommonResult<PageResult<ErpLiveBroadcastingRespVO>> getLiveBroadcastingPage(@Valid ErpLiveBroadcastingPageReqVO pageReqVO) {
         PageResult<ErpLiveBroadcastingRespVO> pageResult = liveBroadcastingService.getLiveBroadcastingVOPage(pageReqVO);
         return success(pageResult);
@@ -84,7 +84,7 @@ public class ErpLiveBroadcastingController {
     @GetMapping("/list-by-ids")
     @Operation(summary = "根据ID列表获得直播货盘列表")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:query')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:query')")
     public CommonResult<List<ErpLiveBroadcastingRespVO>> getLiveBroadcastingListByIds(@RequestParam("ids") List<Long> ids) {
         List<ErpLiveBroadcastingRespVO> list = liveBroadcastingService.getLiveBroadcastingVOList(ids);
         return success(list);
@@ -92,7 +92,7 @@ public class ErpLiveBroadcastingController {
 
     @GetMapping("/export-excel")
     @Operation(summary = "导出直播货盘 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:export')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportLiveBroadcastingExcel(@Valid ErpLiveBroadcastingPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
@@ -112,7 +112,7 @@ public class ErpLiveBroadcastingController {
         @Parameter(name = "file", description = "Excel 文件", required = true),
         @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
     })
-    @PreAuthorize("@ss.hasPermission('erp:live-broadcasting:import')")
+    @PreAuthorize("@ss.hasPermission('erp:livebroadcasting:import')")
     @ApiAccessLog(operateType = IMPORT)
     public CommonResult<ErpLiveBroadcastingImportRespVO> importExcel(
             @RequestParam("file") MultipartFile file,

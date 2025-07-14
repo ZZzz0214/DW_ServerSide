@@ -129,7 +129,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
     public ErpFinanceDO getFinance(Long id, String currentUsername) {
         ErpFinanceDO finance = financeMapper.selectById(id);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (finance != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(finance.getCreator(), currentUsername)) {
+        if (finance != null && !"admin".equals(currentUsername) && !"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !ObjectUtil.equal(finance.getCreator(), currentUsername)) {
             return null; // 不是当前用户的数据且不是admin，返回null
         }
         return finance;
@@ -142,7 +142,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             throw exception(FINANCE_NOT_EXISTS);
         }
         // admin用户可以操作全部数据，其他用户只能操作自己的数据
-        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(finance.getCreator(), currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) &&!"admin".equals(currentUsername) && !ObjectUtil.equal(finance.getCreator(), currentUsername)) {
             throw exception(FINANCE_NOT_EXISTS); // 不是当前用户的数据且不是admin
         }
         return finance;
@@ -160,7 +160,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
         }
         List<ErpFinanceDO> list = financeMapper.selectBatchIds(ids);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) &&!"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
@@ -184,7 +184,7 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
         }
         List<ErpFinanceDO> list = financeMapper.selectBatchIds(ids);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);

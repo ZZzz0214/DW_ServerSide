@@ -50,14 +50,14 @@ public class ErpGroupBuyingController {
 
     @PostMapping("/create")
     @Operation(summary = "创建团购货盘")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:create')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:create')")
     public CommonResult<Long> createGroupBuying(@Valid @RequestBody ErpGroupBuyingSaveReqVO createReqVO) {
         return success(groupBuyingService.createGroupBuying(createReqVO));
     }
 
     @PutMapping("/update")
     @Operation(summary = "更新团购货盘")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:update')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:update')")
     public CommonResult<Boolean> updateGroupBuying(@Valid @RequestBody ErpGroupBuyingSaveReqVO updateReqVO) {
         groupBuyingService.updateGroupBuying(updateReqVO);
         return success(true);
@@ -66,7 +66,7 @@ public class ErpGroupBuyingController {
     @DeleteMapping("/delete")
     @Operation(summary = "删除团购货盘")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:delete')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:delete')")
     public CommonResult<Boolean> deleteGroupBuying(@RequestParam("ids") List<Long> ids) {
         groupBuyingService.deleteGroupBuying(ids);
         return success(true);
@@ -75,14 +75,14 @@ public class ErpGroupBuyingController {
     @GetMapping("/get")
     @Operation(summary = "获得团购货盘")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:query')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:query')")
     public CommonResult<ErpGroupBuyingRespVO> getGroupBuying(@RequestParam("id") Long id) {
         return success(groupBuyingService.getGroupBuyingVOList(Collections.singleton(id)).get(0));
     }
 
     @GetMapping("/page")
     @Operation(summary = "获得团购货盘分页")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:query')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:query')")
     public CommonResult<PageResult<ErpGroupBuyingRespVO>> getGroupBuyingPage(@Valid ErpGroupBuyingPageReqVO pageReqVO) {
         PageResult<ErpGroupBuyingRespVO> pageResult = groupBuyingService.getGroupBuyingVOPage(pageReqVO);
         return success(pageResult);
@@ -91,7 +91,7 @@ public class ErpGroupBuyingController {
     @GetMapping("/list-by-ids")
     @Operation(summary = "根据ID列表获得团购货盘列表")
     @Parameter(name = "ids", description = "编号列表", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:query')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:query')")
     public CommonResult<List<ErpGroupBuyingRespVO>> getGroupBuyingListByIds(@RequestParam("ids") List<Long> ids) {
         List<ErpGroupBuyingRespVO> list = groupBuyingService.getGroupBuyingVOList(ids);
         return success(list);
@@ -99,7 +99,7 @@ public class ErpGroupBuyingController {
 
     @GetMapping("/export-excel")
     @Operation(summary = "导出团购货盘 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:export')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportGroupBuyingExcel(@Valid ErpGroupBuyingPageReqVO pageReqVO,
               HttpServletResponse response) throws IOException {
@@ -118,7 +118,7 @@ public class ErpGroupBuyingController {
         @Parameter(name = "file", description = "Excel 文件", required = true),
         @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
     })
-    @PreAuthorize("@ss.hasPermission('erp:group-buying:import')")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:import')")
     @ApiAccessLog(operateType = IMPORT)
     public CommonResult<ErpGroupBuyingImportRespVO> importExcel(
             @RequestParam("file") MultipartFile file,

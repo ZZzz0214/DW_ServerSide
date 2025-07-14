@@ -36,7 +36,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
 
     @Resource
     private ErpNoRedisDAO noRedisDAO;
-    
+
     @Resource
     private cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceMapper financeMapper;
 
@@ -66,18 +66,18 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
     public void updateFinanceAmount(ErpFinanceAmountSaveReqVO updateReqVO, String currentUsername) {
         // 1.1 校验存在
         ErpFinanceAmountDO oldFinanceAmount = validateFinanceAmount(updateReqVO.getId(), currentUsername);
-        
+
         // 1.2 校验审核状态，已审核的记录不能修改
         if (oldFinanceAmount.getAuditStatus() != null && oldFinanceAmount.getAuditStatus() == 20) {
             throw exception(FINANCE_AMOUNT_AUDIT_STATUS_NOT_ALLOW_UPDATE);
         }
-        
+
         // 1.3 校验数据
         validateFinanceAmountForCreateOrUpdate(updateReqVO.getId(), updateReqVO, currentUsername);
 
         // 2. 重新计算余额（如果金额、操作类型或渠道类型发生变化）
         ErpFinanceAmountDO updateObj = BeanUtils.toBean(updateReqVO, ErpFinanceAmountDO.class);
-        
+
         boolean needRecalculateBalance = false;
         // 检查是否需要重新计算余额
         if (!Objects.equals(oldFinanceAmount.getAmount(), updateReqVO.getAmount()) ||
@@ -85,12 +85,12 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             !Objects.equals(oldFinanceAmount.getChannelType(), updateReqVO.getChannelType())) {
             needRecalculateBalance = true;
         }
-        
+
         if (needRecalculateBalance) {
             // 重新计算操作前余额和操作后余额
             BigDecimal beforeBalance = calculateBeforeBalanceForUpdate(updateReqVO.getId(), updateReqVO.getChannelType(), currentUsername);
             BigDecimal afterBalance;
-            
+
             if (updateReqVO.getOperationType() == 1) { // 充值
                 afterBalance = beforeBalance.add(updateReqVO.getAmount());
             } else { // 消费
@@ -100,7 +100,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                     throw exception(FINANCE_AMOUNT_BALANCE_INSUFFICIENT);
                 }
             }
-            
+
             updateObj.setBeforeBalance(beforeBalance);
             updateObj.setAfterBalance(afterBalance);
         }
@@ -131,7 +131,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
     public ErpFinanceAmountDO getFinanceAmount(Long id, String currentUsername) {
         ErpFinanceAmountDO financeAmount = financeAmountMapper.selectById(id);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (financeAmount != null && !"admin".equals(currentUsername) && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
+        if (financeAmount != null && !"admin".equals(currentUsername) && !"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
             return null; // 不是当前用户的数据且不是admin，返回null
         }
         return financeAmount;
@@ -144,7 +144,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             throw exception(FINANCE_AMOUNT_NOT_EXISTS);
         }
         // admin用户可以操作全部数据，其他用户只能操作自己的数据
-        if (!"admin".equals(currentUsername) && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername) && !ObjectUtil.equal(financeAmount.getCreator(), currentUsername)) {
             throw exception(FINANCE_AMOUNT_NOT_EXISTS); // 不是当前用户的数据且不是admin
         }
         return financeAmount;
@@ -162,7 +162,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         }
         List<ErpFinanceAmountDO> list = financeAmountMapper.selectBatchIds(ids);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
@@ -177,7 +177,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         }
         List<ErpFinanceAmountDO> list = financeAmountMapper.selectBatchIds(ids);
         // admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             list = list.stream()
                     .filter(item -> ObjectUtil.equal(item.getCreator(), currentUsername))
                     .collect(ArrayList::new, (l, item) -> l.add(item), ArrayList::addAll);
@@ -214,7 +214,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .afterBalance(BigDecimal.ZERO)
                 .remark("系统初始化记录")
                 .build();
-        
+
         financeAmountMapper.insert(financeAmount);
         return financeAmount;
     }
@@ -230,17 +230,17 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
     //     if (list.size() <= 1) {
     //         return; // 没有重复记录
     //     }
-    //     
+    //
     //     // 按ID降序排序，保留最新的记录
     //     list.sort((a, b) -> Long.compare(b.getId(), a.getId()));
     //     ErpFinanceAmountDO latestRecord = list.get(0);
-    //     
+    //
     //     // 删除其他重复记录
     //     List<Long> idsToDelete = list.stream()
     //             .skip(1) // 跳过第一条（最新的）
     //             .map(ErpFinanceAmountDO::getId)
     //             .collect(ArrayList::new, (l, id) -> l.add(id), ArrayList::addAll);
-    //     
+    //
     //     if (!idsToDelete.isEmpty()) {
     //         financeAmountMapper.deleteBatchIds(idsToDelete);
     //     }
@@ -273,12 +273,12 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         BigDecimal wechatBalance = getChannelBalance(creator, "微信");
         BigDecimal alipayBalance = getChannelBalance(creator, "支付宝");
         BigDecimal bankCardBalance = getChannelBalance(creator, "银行卡");
-        
+
         // 计算各渠道累计充值
         BigDecimal wechatRecharge = getTotalRechargeByChannel(creator, "微信");
         BigDecimal alipayRecharge = getTotalRechargeByChannel(creator, "支付宝");
         BigDecimal bankCardRecharge = getTotalRechargeByChannel(creator, "银行卡");
-        
+
         // 构建响应对象
         ErpFinanceAmountRespVO summary = new ErpFinanceAmountRespVO();
         summary.setWechatBalance(wechatBalance);
@@ -287,7 +287,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         summary.setWechatRecharge(wechatRecharge);
         summary.setAlipayRecharge(alipayRecharge);
         summary.setBankCardRecharge(bankCardRecharge);
-        
+
         return summary;
     }
 
@@ -300,21 +300,21 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .eq(ErpFinanceAmountDO::getChannelType, channelType)
                 .orderByDesc(ErpFinanceAmountDO::getCreateTime)
         );
-        
+
         BigDecimal amountBalance = BigDecimal.ZERO;
         if (!CollUtil.isEmpty(amountRecords)) {
             ErpFinanceAmountDO latestRecord = amountRecords.get(0);
             amountBalance = latestRecord.getAfterBalance() != null ? latestRecord.getAfterBalance() : BigDecimal.ZERO;
         }
-        
+
         // 2. 获取财务表的收支影响
         BigDecimal financeBalance = getFinanceTableBalance(creator, channelType);
-        
+
         // 3. 返回综合余额
         BigDecimal totalBalance = amountBalance.add(financeBalance);
         return totalBalance;
     }
-    
+
     /**
      * 计算财务表对指定渠道余额的影响
      */
@@ -325,11 +325,11 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .eq(cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO::getCreator, creator)
                 .eq(cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO::getAccount, channelType)
         );
-        
+
         if (CollUtil.isEmpty(financeRecords)) {
             return BigDecimal.ZERO;
         }
-        
+
         // 计算收支影响：收入为正，支出为负
         BigDecimal totalBalance = BigDecimal.ZERO;
         for (cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO record : financeRecords) {
@@ -343,7 +343,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 }
             }
         }
-        
+
         return totalBalance;
     }
 
@@ -382,7 +382,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
     private Long createFinanceRecordWithImages(String creator, String channelType, BigDecimal amount, Integer operationType, String carouselImages, String remark, String orderDate) {
         // 获取当前余额（包含财务表和财务金额表的综合余额）
         BigDecimal currentBalance = getCurrentBalanceForNewRecord(creator, channelType);
-        
+
         // 计算操作后余额
         BigDecimal afterBalance;
         if (operationType == 1) { // 充值
@@ -394,10 +394,10 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 throw exception(FINANCE_AMOUNT_BALANCE_INSUFFICIENT);
             }
         }
-        
+
         // 生成编号
         String no = noRedisDAO.generate(ErpNoRedisDAO.FINANCE_AMOUNT_NO_PREFIX);
-        
+
         // 创建记录
         ErpFinanceAmountDO record = ErpFinanceAmountDO.builder()
                 .no(no)
@@ -411,11 +411,11 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .orderDate(orderDate != null ? LocalDate.parse(orderDate) : LocalDate.now())
                 .auditStatus(10) // 默认待审核
                 .build();
-        
+
         financeAmountMapper.insert(record);
         return record.getId();
     }
-    
+
     /**
      * 获取创建新记录时的当前余额（简化版）
      */
@@ -428,12 +428,12 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .eq(ErpFinanceAmountDO::getChannelType, channelType)
                 .orderByDesc(ErpFinanceAmountDO::getCreateTime)
         );
-        
+
         if (!CollUtil.isEmpty(amountRecords)) {
             ErpFinanceAmountDO latestRecord = amountRecords.get(0);
             return latestRecord.getAfterBalance() != null ? latestRecord.getAfterBalance() : BigDecimal.ZERO;
         }
-        
+
         return BigDecimal.ZERO;
     }
 
@@ -450,13 +450,13 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .ne(ErpFinanceAmountDO::getId, currentRecordId)
                 .orderByDesc(ErpFinanceAmountDO::getCreateTime)
         );
-        
+
         if (!CollUtil.isEmpty(amountRecords)) {
             // 获取最新的一条记录的操作后余额作为当前记录的操作前余额
             ErpFinanceAmountDO latestRecord = amountRecords.get(0);
             return latestRecord.getAfterBalance() != null ? latestRecord.getAfterBalance() : BigDecimal.ZERO;
         }
-        
+
         // 如果没有其他记录，则操作前余额为0
         return BigDecimal.ZERO;
     }
@@ -471,12 +471,12 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
                 .eq(ErpFinanceAmountDO::getChannelType, channelType)
                 .eq(ErpFinanceAmountDO::getOperationType, 1) // 只统计充值记录
         );
-        
+
         BigDecimal totalRecharge = records.stream()
                 .map(ErpFinanceAmountDO::getAmount)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         return totalRecharge;
     }
 
@@ -494,7 +494,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         if (CollUtil.isEmpty(auditReqVO.getIds())) {
             return;
         }
-        
+
         // 1. 校验记录存在且属于当前用户
         List<ErpFinanceAmountDO> financeAmounts = new ArrayList<>();
         for (Long id : auditReqVO.getIds()) {
@@ -505,7 +505,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             }
             financeAmounts.add(financeAmount);
         }
-        
+
         // 2. 批量更新审核状态
         for (ErpFinanceAmountDO financeAmount : financeAmounts) {
             financeAmount.setAuditStatus(auditReqVO.getAuditStatus());
@@ -522,7 +522,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
         if (CollUtil.isEmpty(ids)) {
             return;
         }
-        
+
         // 1. 校验记录存在且属于当前用户
         List<ErpFinanceAmountDO> financeAmounts = new ArrayList<>();
         for (Long id : ids) {
@@ -533,7 +533,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             }
             financeAmounts.add(financeAmount);
         }
-        
+
         // 2. 批量更新审核状态为待审核
         for (ErpFinanceAmountDO financeAmount : financeAmounts) {
             financeAmount.setAuditStatus(10);
@@ -573,7 +573,7 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
 
             // 用于跟踪Excel内部重复的编号
             Set<String> processedNos = new HashSet<>();
-            
+
             // 批量转换数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpFinanceAmountImportExcelVO importVO = importList.get(i);
@@ -626,4 +626,4 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
 
         return respVO;
     }
-} 
+}

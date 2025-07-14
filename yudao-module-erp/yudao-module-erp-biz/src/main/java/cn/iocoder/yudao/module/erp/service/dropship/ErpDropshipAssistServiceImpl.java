@@ -382,11 +382,12 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
 
                 try {
                     // 将组品业务编号转换为组品ID
-                    String comboProductId = importVO.getComboProductId();
-                    if (StrUtil.isNotBlank(comboProductId)) {
-                        Long comboProductIdLong = comboProductIdMap.get(comboProductId);
+                    String comboProductNo = importVO.getComboProductId();
+                    Long comboProductIdLong = null;
+                    if (StrUtil.isNotBlank(comboProductNo)) {
+                        comboProductIdLong = comboProductIdMap.get(comboProductNo);
                         if (comboProductIdLong == null) {
-                            throw exception(DROPSHIP_ASSIST_IMPORT_COMBO_PRODUCT_NOT_EXISTS, i + 1, comboProductId);
+                            throw exception(DROPSHIP_ASSIST_IMPORT_COMBO_PRODUCT_NOT_EXISTS, i + 1, comboProductNo);
                         }
                     }
 
@@ -395,7 +396,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                     if (existDropshipAssist == null) {
                        // 创建 - 自动生成新的no编号
                        ErpDropshipAssistDO dropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-                       dropshipAssist.setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX))
+                       dropshipAssist.setComboProductId(comboProductIdLong != null ? comboProductIdLong.toString() : null).setNo(noRedisDAO.generate(ErpNoRedisDAO.DROPSHIP_ASSIST_NO_PREFIX))
                                .setCreator(username)
                                .setCreateTime(now);
 
@@ -404,7 +405,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                     } else if (isUpdateSupport) {
                         // 更新
                         ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-                        updateDropshipAssist.setId(existDropshipAssist.getId())
+                        updateDropshipAssist.setId(existDropshipAssist.getId()).setComboProductId(comboProductIdLong != null ? comboProductIdLong.toString() : null)
                                 .setCreator(username)
                                 .setCreateTime(now);
 
@@ -604,6 +605,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
     /**
      * 将导入VO转换为DO
      * 特别注意处理字段类型转换
+     * 注意：此方法仅用于校验，不处理组品ID转换（组品ID转换在importDropshipAssistList方法中处理）
      */
     private ErpDropshipAssistDO convertImportVOToDO(ErpDropshipAssistImportExcelVO importVO) {
         if (importVO == null) {
@@ -625,7 +627,7 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
         dropshipAssist.setOriginalQuantity(importVO.getOriginalQuantity());
         dropshipAssist.setProductQuantity(importVO.getProductQuantity());
 
-        // 组品ID保持为String类型，不需要转换
+        // 注意：组品ID转换在importDropshipAssistList方法中处理，这里保持原样用于校验
 
         // 添加转换后的调试信息
         System.out.println("=== 转换后调试信息 ===");

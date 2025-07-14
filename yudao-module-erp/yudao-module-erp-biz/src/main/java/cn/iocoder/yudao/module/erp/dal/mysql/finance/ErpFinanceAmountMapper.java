@@ -29,17 +29,17 @@ public interface ErpFinanceAmountMapper extends BaseMapperX<ErpFinanceAmountDO> 
                 .likeIfPresent(ErpFinanceAmountDO::getAuditor, reqVO.getAuditor())
                 .betweenIfPresent(ErpFinanceAmountDO::getCreateTime, reqVO.getCreateTime())
                 .betweenIfPresent(ErpFinanceAmountDO::getAuditTime, reqVO.getAuditTime());
-        
+
         // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
-        if (!"admin".equals(currentUsername)) {
+        if (!"ahao".equals(currentUsername) &&!"caiwu".equals(currentUsername) && !"admin".equals(currentUsername)) {
             query.eq(ErpFinanceAmountDO::getCreator, currentUsername);
         }
-        
+
         // 处理旧查询逻辑转换为新的业务逻辑
         // 当有具体渠道充值查询条件时，使用OR条件组合
         boolean hasRechargeQuery = reqVO.getWechatRecharge() != null || reqVO.getAlipayRecharge() != null || reqVO.getBankCardRecharge() != null;
         boolean hasBalanceQuery = reqVO.getWechatBalance() != null || reqVO.getAlipayBalance() != null || reqVO.getBankCardBalance() != null;
-        
+
         if (hasRechargeQuery || hasBalanceQuery) {
             query.and(wrapper -> {
                 // 充值金额查询
@@ -73,7 +73,7 @@ public interface ErpFinanceAmountMapper extends BaseMapperX<ErpFinanceAmountDO> 
                 }
             });
         }
-        
+
         query.orderByDesc(ErpFinanceAmountDO::getId)
                 // 字段映射
                 .selectAs(ErpFinanceAmountDO::getId, ErpFinanceAmountRespVO::getId)
@@ -172,4 +172,4 @@ public interface ErpFinanceAmountMapper extends BaseMapperX<ErpFinanceAmountDO> 
                 .between(ErpFinanceAmountDO::getOrderDate, beginTime.toLocalDate(), endTime.toLocalDate())
                 .selectSum(ErpFinanceAmountDO::getAmount));
     }
-} 
+}
