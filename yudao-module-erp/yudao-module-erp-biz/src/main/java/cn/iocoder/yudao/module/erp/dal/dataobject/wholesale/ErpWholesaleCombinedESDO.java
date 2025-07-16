@@ -61,12 +61,7 @@ public class ErpWholesaleCombinedESDO {
     @Field(name = "remark", type = FieldType.Text, analyzer = "ik_max_word")
     private String remark;
 
-    // 采购信息字段
-    @Field(name = "purchaser", type = FieldType.Keyword)
-    private String purchaser;
-
-    @Field(name = "supplier", type = FieldType.Keyword)
-    private String supplier;
+    // 采购信息字段 - 移除采购人员和供应商，从组品表实时获取
 
     @Field(name = "purchase_truck_fee", type = FieldType.Double)
     private BigDecimal purchaseTruckFee;

@@ -593,15 +593,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 boolQuery.must(createSimplifiedKeywordMatchQuery("after_sales_status", pageReqVO.getAfterSalesStatus().trim()));
             }
 
-            // 采购人员搜索
-            if (StrUtil.isNotBlank(pageReqVO.getPurchaser())) {
-                boolQuery.must(createSimplifiedKeywordMatchQuery("purchaser", pageReqVO.getPurchaser().trim()));
-            }
-
-            // 供应商名搜索
-            if (StrUtil.isNotBlank(pageReqVO.getSupplier())) {
-                boolQuery.must(createSimplifiedKeywordMatchQuery("supplier", pageReqVO.getSupplier().trim()));
-            }
+            // 🔥 修复：采购人员和供应商搜索已移到组品相关字段处理中，这里删除重复的搜索逻辑
+            // 采购人员和供应商搜索 - 已移到组品相关字段处理中
 
             // 销售人员搜索
             if (StrUtil.isNotBlank(pageReqVO.getSalesperson())) {
