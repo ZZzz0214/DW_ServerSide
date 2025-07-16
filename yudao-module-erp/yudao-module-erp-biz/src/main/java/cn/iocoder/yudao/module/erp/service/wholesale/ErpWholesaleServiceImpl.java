@@ -2556,7 +2556,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
             for (int i = 0; i < items.size(); i++) {
                 if (i > 0) {
-                    nameBuilder.append("+");
+                    nameBuilder.append("｜");
                 }
                 ErpProductESDO product = productMap.get(items.get(i).getItemProductId());
                 if (product != null) {
