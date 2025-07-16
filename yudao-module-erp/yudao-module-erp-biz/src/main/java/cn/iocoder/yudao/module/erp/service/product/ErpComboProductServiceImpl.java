@@ -353,250 +353,46 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
             // 添加查询条件
             if (StringUtils.isNotBlank(pageReqVO.getKeyword())) {
-                // 全文搜索（优先级最高）
-                BoolQueryBuilder keywordQuery = QueryBuilders.boolQuery();
+                // 统一关键字搜索，针对name、no、shippingCode、purchaser、supplier、shortName
                 String keyword = pageReqVO.getKeyword().trim();
-
-                // 1. 精确词匹配（完全匹配优先）
-                keywordQuery.should(QueryBuilders.termQuery("name_keyword", keyword).boost(1000000.0f));
-
-                // 2. 前缀匹配
-                keywordQuery.should(QueryBuilders.prefixQuery("name_keyword", keyword).boost(100000.0f));
-
-                // 3. 第三优先级：通配符包含匹配（支持中间字符搜索，关键修复）
-                keywordQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + keyword + "*").boost(50000.0f));
-
-                // 4. 第四优先级：对于多字搜索，添加子字符串通配符匹配（支持"色口红"匹配"变色口红"）
-                if (keyword.length() >= 2) {
-                    // 添加从第二个字符开始的子字符串匹配，如"色口红"可以匹配"变色口红"
-                    for (int i = 1; i < keyword.length(); i++) {
-                        String substring = keyword.substring(i);
-                        if (substring.length() >= 2) { // 至少2个字符才有意义
-                            keywordQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + substring + "*").boost(3000.0f));
-                        }
-                    }
-                }
-
-                // 注意：移除产品名称的分词匹配，因为产品名称不需要分词处理
-
-                // 5. 其他字段精确匹配
-                keywordQuery.should(QueryBuilders.matchPhraseQuery("short_name", keyword).boost(5.0f));
-                keywordQuery.should(QueryBuilders.matchPhraseQuery("no", keyword).boost(4.0f));
-                keywordQuery.should(QueryBuilders.matchPhraseQuery("shipping_code", keyword).boost(4.0f));
-                keywordQuery.should(QueryBuilders.matchPhraseQuery("purchaser", keyword).boost(3.0f));
-                keywordQuery.should(QueryBuilders.matchPhraseQuery("supplier", keyword).boost(3.0f));
-                keywordQuery.should(QueryBuilders.matchPhraseQuery("creator", keyword).boost(2.5f));
-
-                // 6. 其他字段智能分词匹配
-                keywordQuery.should(createIntelligentMatchQuery("short_name", keyword, 2.0f, 1.8f, 1.5f));
-                keywordQuery.should(createIntelligentMatchQuery("remark", keyword, 1.0f, 0.8f, 0.5f));
+                BoolQueryBuilder keywordQuery = QueryBuilders.boolQuery();
+                keywordQuery.should(createSimplifiedKeywordMatchQuery("name", keyword));
+                keywordQuery.should(createSimplifiedKeywordMatchQuery("no", keyword));
+                keywordQuery.should(createSimplifiedKeywordMatchQuery("shipping_code", keyword));
+                keywordQuery.should(createSimplifiedKeywordMatchQuery("purchaser", keyword));
+                keywordQuery.should(createSimplifiedKeywordMatchQuery("supplier", keyword));
+                keywordQuery.should(createSimplifiedKeywordMatchQuery("short_name", keyword));
                 keywordQuery.minimumShouldMatch(1);
-
                 queryBuilder.withQuery(keywordQuery);
             } else {
-                // 分字段查询
                 BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-
-                // 组品编码查询 - 保持现有的简化搜索策略不变
                 if (StringUtils.isNotBlank(pageReqVO.getNo())) {
-                    BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
-                    String no = pageReqVO.getNo().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-
-                    // 🔥 简化的编号匹配策略：只保留核心匹配逻辑
-                    // 由于no字段现在是keyword类型，不会分词，可以大幅简化匹配策略
-
-                    // 第一优先级：完全精确匹配（最高权重）
-                    multiMatchQuery.should(QueryBuilders.termQuery("no_keyword", no).boost(1000000.0f));
-
-                    // 第二优先级：前缀匹配（支持"CPXX2025"匹配"CPXX2025..."）
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("no_keyword", no).boost(100000.0f));
-
-                    // 第三优先级：包含匹配（支持任意位置的模糊匹配）
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("no_keyword", "*" + no + "*").boost(50000.0f));
-
-                    // 注意：移除复杂的智能子字符串匹配，因为keyword字段已经足够支持模糊匹配
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    noQuery.must(multiMatchQuery);
-                    boolQuery.must(noQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("no", pageReqVO.getNo().trim()));
                 }
-
-                // 产品名称查询 - 不进行分词，只支持精确查询和组合模糊查询
                 if (StringUtils.isNotBlank(pageReqVO.getName())) {
-                    BoolQueryBuilder nameQuery = QueryBuilders.boolQuery();
-                    String name = pageReqVO.getName().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-
-                    // 🔥 产品名称不进行分词，只支持精确查询和组合模糊查询
-                    // 第一优先级：完全精确匹配（最高权重）
-                    multiMatchQuery.should(QueryBuilders.termQuery("name_keyword", name).boost(1000000.0f));
-
-                    // 第二优先级：前缀匹配
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("name_keyword", name).boost(100000.0f));
-
-                    // 第三优先级：通配符包含匹配（支持中间字符搜索）
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(50000.0f));
-
-                    // 注意：移除所有分词匹配，因为产品名称不需要分词处理
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    nameQuery.must(multiMatchQuery);
-                    boolQuery.must(nameQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("name", pageReqVO.getName().trim()));
                 }
-
-                // 产品简称查询 - 参考产品表的搜索策略
                 if (StringUtils.isNotBlank(pageReqVO.getShortName())) {
-                    BoolQueryBuilder shortNameQuery = QueryBuilders.boolQuery();
-                    String shortName = pageReqVO.getShortName().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    multiMatchQuery.should(QueryBuilders.termQuery("short_name_keyword", shortName).boost(1000000.0f));
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("short_name_keyword", shortName).boost(100000.0f));
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("short_name_keyword", "*" + shortName + "*").boost(10000.0f));
-
-                    // 智能分词匹配
-                    if (shortName.length() == 1) {
-                        // 单字搜索，使用分词匹配，权重适中
-                        multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.OR).boost(800.0f));
-                    } else if (shortName.length() == 2) {
-                        // 双字搜索，使用AND匹配避免误匹配
-                        multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.AND).boost(600.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("short_name", shortName).boost(1200.0f));
-                    } else {
-                        // 多字搜索，使用严格匹配
-                        multiMatchQuery.should(QueryBuilders.matchQuery("short_name", shortName).operator(Operator.AND).boost(500.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("short_name", shortName).boost(1000.0f));
-                    }
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    shortNameQuery.must(multiMatchQuery);
-                    boolQuery.must(shortNameQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("short_name", pageReqVO.getShortName().trim()));
                 }
-
-                // 发货编码查询 - 参考组品编号的简化搜索策略（数字型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getShippingCode())) {
-                    BoolQueryBuilder codeQuery = QueryBuilders.boolQuery();
-                    String code = pageReqVO.getShippingCode().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-
-                    // 🔥 参考组品编号的简化搜索策略
-                    // 第一优先级：完全精确匹配（最高权重）
-                    multiMatchQuery.should(QueryBuilders.termQuery("shipping_code_keyword", code).boost(1000000.0f));
-
-                    // 第二优先级：前缀匹配
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("shipping_code_keyword", code).boost(100000.0f));
-
-                    // 第三优先级：包含匹配（支持任意位置的模糊匹配）
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("shipping_code_keyword", "*" + code + "*").boost(50000.0f));
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    codeQuery.must(multiMatchQuery);
-                    boolQuery.must(codeQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("shipping_code", pageReqVO.getShippingCode().trim()));
                 }
-
-                // 采购人员查询 - 参考产品表的搜索策略（文本型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getPurchaser())) {
-                    BoolQueryBuilder purchaserQuery = QueryBuilders.boolQuery();
-                    String purchaser = pageReqVO.getPurchaser().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    multiMatchQuery.should(QueryBuilders.termQuery("purchaser_keyword", purchaser).boost(1000000.0f));
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("purchaser_keyword", purchaser).boost(100000.0f));
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + purchaser + "*").boost(10000.0f));
-
-                    // 智能分词匹配
-                    if (purchaser.length() == 1) {
-                        // 单字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.OR).boost(800.0f));
-                    } else if (purchaser.length() == 2) {
-                        // 双字搜索，使用AND匹配避免误匹配
-                        multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.AND).boost(600.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("purchaser", purchaser).boost(1200.0f));
-                    } else {
-                        // 多字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("purchaser", purchaser).operator(Operator.AND).boost(500.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("purchaser", purchaser).boost(1000.0f));
-                    }
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    purchaserQuery.must(multiMatchQuery);
-                    boolQuery.must(purchaserQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("purchaser", pageReqVO.getPurchaser().trim()));
                 }
-
-                // 供应商名查询 - 参考产品表的搜索策略（文本型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getSupplier())) {
-                    BoolQueryBuilder supplierQuery = QueryBuilders.boolQuery();
-                    String supplier = pageReqVO.getSupplier().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    multiMatchQuery.should(QueryBuilders.termQuery("supplier_keyword", supplier).boost(1000000.0f));
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("supplier_keyword", supplier).boost(100000.0f));
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("supplier_keyword", "*" + supplier + "*").boost(10000.0f));
-
-                    // 智能分词匹配
-                    if (supplier.length() == 1) {
-                        // 单字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.OR).boost(800.0f));
-                    } else if (supplier.length() == 2) {
-                        // 双字搜索，使用AND匹配避免误匹配
-                        multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.AND).boost(600.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("supplier", supplier).boost(1200.0f));
-                    } else {
-                        // 多字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("supplier", supplier).operator(Operator.AND).boost(500.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("supplier", supplier).boost(1000.0f));
-                    }
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    supplierQuery.must(multiMatchQuery);
-                    boolQuery.must(supplierQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("supplier", pageReqVO.getSupplier().trim()));
                 }
-
-                // 创建人员查询 - 参考产品表的搜索策略（文本型字段）
                 if (StringUtils.isNotBlank(pageReqVO.getCreator())) {
-                    BoolQueryBuilder creatorQuery = QueryBuilders.boolQuery();
-                    String creator = pageReqVO.getCreator().trim();
-
-                    BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
-                    multiMatchQuery.should(QueryBuilders.termQuery("creator_keyword", creator).boost(1000000.0f));
-                    multiMatchQuery.should(QueryBuilders.prefixQuery("creator_keyword", creator).boost(100000.0f));
-                    multiMatchQuery.should(QueryBuilders.wildcardQuery("creator_keyword", "*" + creator + "*").boost(10000.0f));
-
-                    // 智能分词匹配
-                    if (creator.length() == 1) {
-                        // 单字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.OR).boost(800.0f));
-                    } else if (creator.length() == 2) {
-                        // 双字搜索，使用AND匹配避免误匹配
-                        multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.AND).boost(600.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("creator", creator).boost(1200.0f));
-                    } else {
-                        // 多字搜索
-                        multiMatchQuery.should(QueryBuilders.matchQuery("creator", creator).operator(Operator.AND).boost(500.0f));
-                        multiMatchQuery.should(QueryBuilders.matchPhraseQuery("creator", creator).boost(1000.0f));
-                    }
-
-                    multiMatchQuery.minimumShouldMatch(1);
-                    creatorQuery.must(multiMatchQuery);
-                    boolQuery.must(creatorQuery);
+                    boolQuery.must(createSimplifiedKeywordMatchQuery("creator", pageReqVO.getCreator().trim()));
                 }
-
-                // 创建时间范围查询
+                // 时间范围
                 if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
                     boolQuery.must(QueryBuilders.rangeQuery("create_time")
                             .gte(pageReqVO.getCreateTime()[0].toString())
                             .lte(pageReqVO.getCreateTime()[1].toString()));
                 }
-
-                // 如果没有任何查询条件，使用match_all
-                if (!boolQuery.hasClauses()) {
-                    boolQuery.must(QueryBuilders.matchAllQuery());
-                }
-
                 queryBuilder.withQuery(boolQuery);
             }
 
@@ -1188,12 +984,11 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         BeanUtils.copyProperties(combo, es);
 
         // 设置keyword字段（用于精确匹配和通配符查询）- 与产品表保持完全一致
-        es.setNoKeyword(combo.getNo());
-        es.setShortNameKeyword(combo.getShortName());
-        es.setShippingCodeKeyword(combo.getShippingCode());
-        es.setPurchaserKeyword(combo.getPurchaser());
-        es.setSupplierKeyword(combo.getSupplier());
-        es.setCreatorKeyword(combo.getCreator());
+        es.setNo(combo.getNo());
+        es.setShippingCode(combo.getShippingCode());
+        es.setPurchaser(combo.getPurchaser());
+        es.setSupplier(combo.getSupplier());
+        es.setCreator(combo.getCreator());
 
         // 🔥 关键修复：实时计算采购单价、批发单价、重量等
         try {
@@ -1288,31 +1083,20 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
             // 使用构建的完整组合名称作为name和name_keyword
             if (StrUtil.isNotBlank(fullComboName)) {
-                // 🔥 修复：同时设置构建名称和原始名称
-                // name字段：优先使用构建的完整名称，如果构建失败则使用原始名称
+                // 🔥 修复：只设置主字段
                 es.setName(fullComboName);
-                // name_keyword字段：使用构建的完整名称（用于精确匹配）
-                es.setNameKeyword(fullComboName);
-                // 设置normalizedName用于唯一性校验（标准化处理）
                 es.setNormalizedName(normalizeComboName(fullComboName));
-
-                // 🔥 新增：如果原始名称与构建名称不同，添加原始名称到name字段的搜索支持
                 if (StrUtil.isNotBlank(originalName) && !originalName.equals(fullComboName)) {
                     // 可以通过多值字段或者额外的搜索逻辑来处理
-                    // 这里我们通过搜索策略来处理，在name字段中同时支持两种名称
                 }
             } else {
-                // 如果构建失败，使用数据库中的name
                 es.setName(originalName);
-                es.setNameKeyword(originalName);
                 es.setNormalizedName(normalizeComboName(originalName));
             }
         } catch (Exception e) {
             System.err.println("构建组合产品名称失败，ID: " + combo.getId() + ", 错误: " + e.getMessage());
-            // 如果构建失败，使用原有的name字段
             String fallbackName = combo.getName() != null ? combo.getName() : "";
             es.setName(fallbackName);
-            es.setNameKeyword(fallbackName);
             es.setNormalizedName(normalizeComboName(fallbackName));
         }
 
@@ -2494,6 +2278,23 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             System.err.println("数据库计算组品价格和重量也失败，ID: " + comboId + ", 错误: " + e.getMessage());
             // 如果数据库计算也失败，保留ES中的原值
         }
+    }
+
+    /**
+     * 参考批发表/代发表的三层搜索策略
+     */
+    private BoolQueryBuilder createSimplifiedKeywordMatchQuery(String keywordFieldName, String keyword) {
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+        // 第一优先级：完全精确匹配
+        multiMatchQuery.should(QueryBuilders.termQuery(keywordFieldName, keyword).boost(1000000.0f));
+        // 第二优先级：前缀匹配
+        multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(100000.0f));
+        // 第三优先级：通配符包含匹配
+        multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + keyword + "*").boost(10000.0f));
+        multiMatchQuery.minimumShouldMatch(1);
+        query.must(multiMatchQuery);
+        return query;
     }
 }
 
