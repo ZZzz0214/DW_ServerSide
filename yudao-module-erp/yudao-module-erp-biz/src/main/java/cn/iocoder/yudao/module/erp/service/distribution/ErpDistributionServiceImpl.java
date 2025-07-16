@@ -52,10 +52,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.IndexOperations;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.*;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
@@ -216,7 +213,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         ErpDistributionCombinedESDO esDO = new ErpDistributionCombinedESDO();
         // 只复制基础字段，不再填充从组品表获取的字段
         BeanUtils.copyProperties(combinedDO, esDO);
-        
+
         // 显式设置售后状态字段，确保这些重要字段能正确同步到ES
         esDO.setPurchaseAfterSalesStatus(combinedDO.getPurchaseAfterSalesStatus());
         esDO.setPurchaseAfterSalesAmount(combinedDO.getPurchaseAfterSalesAmount());
@@ -701,12 +698,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             }
 
             // 组品相关搜索条件需要先查询组品表
-            if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) || 
-                StrUtil.isNotBlank(pageReqVO.getShippingCode()) || 
+            if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) ||
+                StrUtil.isNotBlank(pageReqVO.getShippingCode()) ||
                 StrUtil.isNotBlank(pageReqVO.getProductName()) ||
                 StrUtil.isNotBlank(pageReqVO.getPurchaser()) ||
                 StrUtil.isNotBlank(pageReqVO.getSupplier())) {
-                
+
                 // 先查询符合条件的组品ID
                 BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
                 if (StrUtil.isNotBlank(pageReqVO.getComboProductNo())) {
@@ -724,17 +721,17 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 if (StrUtil.isNotBlank(pageReqVO.getSupplier())) {
                     comboQuery.must(QueryBuilders.wildcardQuery("supplier", "*" + pageReqVO.getSupplier().trim() + "*"));
                 }
-                
+
                 NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
                         .withQuery(comboQuery)
                         .withPageable(PageRequest.of(0, 10000))
                         .withSourceFilter(new FetchSourceFilter(new String[]{"id"}, null))
                         .build();
-                
+
                 SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
                         comboSearchQuery,
                         ErpComboProductES.class);
-                
+
                 if (!comboHits.isEmpty()) {
                     List<Long> comboProductIds = comboHits.stream()
                             .map(hit -> hit.getContent().getId())
@@ -958,41 +955,41 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                                                                    NativeSearchQueryBuilder queryBuilder) {
         // 使用search_after优化深度分页
         int fromIndex = (pageReqVO.getPageNo() - 1) * pageReqVO.getPageSize();
-        
+
         // 获取前一页最后一条记录的排序值
         NativeSearchQuery prevQuery = queryBuilder.build();
         prevQuery.setPageable(PageRequest.of(0, fromIndex + 1));
-        
+
         SearchHits<ErpDistributionCombinedESDO> prevHits = elasticsearchRestTemplate.search(
                 prevQuery,
                 ErpDistributionCombinedESDO.class);
-        
+
         if (prevHits.getTotalHits() <= fromIndex) {
             return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
         }
-        
+
         // 获取最后一条记录的排序值
         List<ErpDistributionCombinedESDO> allHits = prevHits.stream()
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
-        
+
         if (allHits.size() > fromIndex) {
             // 使用search_after从指定位置开始查询
             NativeSearchQuery searchAfterQuery = queryBuilder.build();
             searchAfterQuery.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
             searchAfterQuery.setSearchAfter(Arrays.asList(allHits.get(fromIndex).getId()));
-            
+
             SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
                     searchAfterQuery,
                     ErpDistributionCombinedESDO.class);
-            
+
             List<ErpDistributionCombinedESDO> combinedList = searchHits.stream()
                     .map(SearchHit::getContent)
                     .collect(Collectors.toList());
-            
+
             return convertToBatchOptimizedVOList(combinedList, prevHits.getTotalHits());
         }
-        
+
         return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
     }
 
@@ -1490,6 +1487,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 5. 批量转换数据
             for (int i = 0; i < importList.size(); i++) {
                 ErpDistributionImportExcelVO importVO = importList.get(i);
+                Long userId = SecurityFrameworkUtils.getLoginUserId();
+                String username = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
+                LocalDateTime now = LocalDateTime.now();
                 try {
                     Long comboProductId = null;
                     if (StrUtil.isNotBlank(importVO.getComboProductNo())) {
@@ -1514,7 +1514,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         createList.add(combined);
 
                         ErpDistributionCombinedESDO combinedESDO = convertCombinedToES(combined);
-                        esCreateList.add(combinedESDO);
+                        esCreateList.add(combinedESDO.setCreator(username).setCreateTime(now));
                         respVO.getCreateNames().add(combined.getNo());
                     } else if (isUpdateSupport) {
                         // 更新逻辑 - 只更新导入的字段
@@ -2152,7 +2152,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     .map(ErpDistributionCombinedESDO::getComboProductId)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
-            
+
             Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
             if (!comboProductIds.isEmpty()) {
                 Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
@@ -2168,7 +2168,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     ErpDistributionMissingPriceVO vo = new ErpDistributionMissingPriceVO();
                     vo.setComboProductId(firstOrder.getComboProductId());
                     vo.setCustomerName(firstOrder.getCustomerName());
-                    
+
                     // 从组品表获取组品编号和产品名称
                     ErpComboProductES comboProduct = comboProductMap.get(firstOrder.getComboProductId());
                     if (comboProduct != null) {
@@ -2594,5 +2594,149 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             System.err.println("实时计算采购单价失败，组品ID: " + comboProductId + ", 错误: " + e.getMessage());
             return BigDecimal.ZERO;
         }
+    }
+
+    /**
+     * 构建与分页查询一致的ES查询条件（不带分页）
+     */
+    public NativeSearchQuery buildESQuery(ErpDistributionPageReqVO pageReqVO) {
+        NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
+                .withSort(Sort.by(Sort.Direction.DESC, "id"));
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        // 代发表自身字段搜索
+        if (StrUtil.isNotBlank(pageReqVO.getNo())) {
+            boolQuery.must(QueryBuilders.termQuery("no", pageReqVO.getNo().trim()));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("order_number", "*" + pageReqVO.getOrderNumber().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("logistics_company", "*" + pageReqVO.getLogisticsCompany().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("tracking_number", "*" + pageReqVO.getTrackingNumber().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("receiver_name", "*" + pageReqVO.getReceiverName().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getReceiverPhone())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("receiver_phone", "*" + pageReqVO.getReceiverPhone().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getReceiverAddress())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("receiver_address", "*" + pageReqVO.getReceiverAddress().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getOriginalProduct())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("original_product_name", "*" + pageReqVO.getOriginalProduct().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getOriginalSpecification())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("original_standard", "*" + pageReqVO.getOriginalSpecification().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getProductSpecification())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("product_specification", "*" + pageReqVO.getProductSpecification().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getAfterSalesStatus())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("after_sales_status", "*" + pageReqVO.getAfterSalesStatus().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getSalesperson())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("salesperson", "*" + pageReqVO.getSalesperson().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + pageReqVO.getCustomerName().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getTransferPerson())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("transfer_person", "*" + pageReqVO.getTransferPerson().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("creator", "*" + pageReqVO.getCreator().trim() + "*"));
+        }
+        // 组品相关搜索条件需要先查询组品表
+        if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) ||
+            StrUtil.isNotBlank(pageReqVO.getShippingCode()) ||
+            StrUtil.isNotBlank(pageReqVO.getProductName()) ||
+            StrUtil.isNotBlank(pageReqVO.getPurchaser()) ||
+            StrUtil.isNotBlank(pageReqVO.getSupplier())) {
+            BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
+            if (StrUtil.isNotBlank(pageReqVO.getComboProductNo())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("no", "*" + pageReqVO.getComboProductNo().trim() + "*"));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getShippingCode())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("shipping_code", "*" + pageReqVO.getShippingCode().trim() + "*"));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("name", "*" + pageReqVO.getProductName().trim() + "*"));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getPurchaser())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("purchaser", "*" + pageReqVO.getPurchaser().trim() + "*"));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getSupplier())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("supplier", "*" + pageReqVO.getSupplier().trim() + "*"));
+            }
+            NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(comboQuery)
+                    .withPageable(PageRequest.of(0, 10000))
+                    .withSourceFilter(new FetchSourceFilter(new String[]{"id"}, null))
+                    .build();
+            SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
+                    comboSearchQuery,
+                    ErpComboProductES.class);
+            if (!comboHits.isEmpty()) {
+                List<Long> comboProductIds = comboHits.stream()
+                        .map(hit -> hit.getContent().getId())
+                        .collect(Collectors.toList());
+                boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
+            } else {
+                // 没有符合条件的组品，返回空查询
+                boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+            }
+        }
+        // 精确匹配字段
+        if (pageReqVO.getStatus() != null) {
+            boolQuery.must(QueryBuilders.termQuery("status", pageReqVO.getStatus()));
+        }
+        if (pageReqVO.getPurchaseAuditStatus() != null) {
+            boolQuery.must(QueryBuilders.termQuery("purchase_audit_status", pageReqVO.getPurchaseAuditStatus()));
+        }
+        if (pageReqVO.getSaleAuditStatus() != null) {
+            boolQuery.must(QueryBuilders.termQuery("sale_audit_status", pageReqVO.getSaleAuditStatus()));
+        }
+        // 时间范围
+        if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
+            boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                    .gte(pageReqVO.getCreateTime()[0])
+                    .lte(pageReqVO.getCreateTime()[1]));
+        }
+        if (pageReqVO.getAfterSalesTime() != null && pageReqVO.getAfterSalesTime().length == 2) {
+            boolQuery.must(QueryBuilders.rangeQuery("after_sales_time")
+                    .gte(pageReqVO.getAfterSalesTime()[0])
+                    .lte(pageReqVO.getAfterSalesTime()[1]));
+        }
+        queryBuilder.withQuery(boolQuery);
+        return queryBuilder.build();
+    }
+
+    /**
+     * Scroll API全量查，返回VO列表
+     */
+    public List<ErpDistributionRespVO> exportAllDistributions(ErpDistributionPageReqVO pageReqVO) {
+        NativeSearchQuery query = buildESQuery(pageReqVO);
+        List<ErpDistributionCombinedESDO> allESList = new ArrayList<>();
+        String scrollId = null;
+        IndexCoordinates index = IndexCoordinates.of("erp_distribution_combined");
+        try {
+            SearchScrollHits<ErpDistributionCombinedESDO> scrollHits = elasticsearchRestTemplate.searchScrollStart(60000, query, ErpDistributionCombinedESDO.class, index);
+            scrollId = scrollHits.getScrollId();
+            while (scrollHits.hasSearchHits()) {
+                for (SearchHit<ErpDistributionCombinedESDO> hit : scrollHits.getSearchHits()) {
+                    allESList.add(hit.getContent());
+                }
+                scrollHits = elasticsearchRestTemplate.searchScrollContinue(scrollId, 60000, ErpDistributionCombinedESDO.class, index);
+            }
+        } finally {
+            if (scrollId != null) {
+                elasticsearchRestTemplate.searchScrollClear(Collections.singletonList(scrollId));
+            }
+        }
+        // 批量VO转换，保证和分页一致
+        return convertToBatchOptimizedVOList(allESList, (long) allESList.size()).getList();
     }
 }

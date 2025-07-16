@@ -46,6 +46,15 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ArrayList;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.SearchScrollHits;
+import org.springframework.data.elasticsearch.core.SearchScrollHits;
 
 @Tag(name = "管理后台 - ERP 代发")
 @RestController
@@ -537,14 +546,10 @@ public class ErpDistributionController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportPurchaseExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                    HttpServletResponse response) throws IOException {
-        // 设置分页大小
-        pageReqVO.setPageSize(10000);
-        // 获取分页数据
-        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
         // 转换为采购导出VO
-        List<ErpDistributionPurchaseExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseExportExcelVO.class);
-
+        List<ErpDistributionPurchaseExportExcelVO> exportList = BeanUtils.toBean(allList, ErpDistributionPurchaseExportExcelVO.class);
         // 导出Excel
         ExcelUtils.write(response, "代发采购信息.xlsx", "数据", ErpDistributionPurchaseExportExcelVO.class, exportList);
     }
@@ -555,14 +560,10 @@ public class ErpDistributionController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportSaleExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                HttpServletResponse response) throws IOException {
-        // 设置分页大小
-        pageReqVO.setPageSize(10000);
-        // 获取分页数据
-        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
-
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
         // 转换为出货导出VO
-        List<ErpDistributionSaleExportExcelVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleExportExcelVO.class);
-
+        List<ErpDistributionSaleExportExcelVO> exportList = BeanUtils.toBean(allList, ErpDistributionSaleExportExcelVO.class);
         // 导出Excel
         ExcelUtils.write(response, "代发出货信息.xlsx", "数据", ErpDistributionSaleExportExcelVO.class, exportList);
     }

@@ -172,4 +172,9 @@ public interface ErpDistributionService {
      * @return 代发缺失价格记录分页
      */
     PageResult<ErpDistributionMissingPriceVO> getDistributionMissingPrices(ErpSalePricePageReqVO pageReqVO);
+
+    /**
+     * Scroll API全量查，返回VO列表（用于采购导出和出货导出）
+     */
+    List<ErpDistributionRespVO> exportAllDistributions(ErpDistributionPageReqVO pageReqVO);
 }
