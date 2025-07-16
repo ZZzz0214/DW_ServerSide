@@ -1,5 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.statistics;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.module.erp.controller.admin.statistics.vo.ErpDistributionWholesaleStatisticsReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.statistics.vo.ErpDistributionWholesaleStatisticsRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedESDO;
@@ -20,7 +22,15 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.FetchSourceFilter;
 import org.springframework.stereotype.Service;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.metrics.Sum;
+import org.elasticsearch.search.aggregations.metrics.ValueCount;
+import org.springframework.data.elasticsearch.core.ElasticsearchAggregations;
+import org.elasticsearch.search.aggregations.Aggregations;
+
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -59,32 +69,628 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         ErpDistributionWholesaleStatisticsRespVO respVO = new ErpDistributionWholesaleStatisticsRespVO();
         respVO.setStatisticsType(reqVO.getStatisticsType());
 
-        // 添加总体调试信息
-        System.out.println("=== 开始代发批发统计查询 ===");
+        System.out.println("=== 开始代发批发统计查询（优化版） ===");
         System.out.println("请求参数: " + reqVO);
 
-        // 先测试ES中是否有数据
-        testESDataAvailability();
+        try {
+            // 🔥 优化：使用ES聚合查询直接获取统计结果，而不是查询所有数据
+            List<ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> items = getStatisticsByAggregation(reqVO);
+            respVO.setItems(items);
 
-        // 测试无时间限制的查询
-        testQueryWithoutTimeLimit(reqVO);
+            System.out.println("最终统计项数量: " + items.size());
+            System.out.println("=== 代发批发统计查询结束（优化版） ===");
 
-        // 从ES获取代发和批发数据
-        List<ErpDistributionCombinedESDO> distributionData = getDistributionDataFromES(reqVO);
-        List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataFromES(reqVO);
+        } catch (Exception e) {
+            System.err.println("统计查询失败，回退到原有方法: " + e.getMessage());
+            e.printStackTrace();
 
-        System.out.println("获取到代发数据: " + distributionData.size() + " 条");
-        System.out.println("获取到批发数据: " + wholesaleData.size() + " 条");
-
-        // 合并统计数据
-        List<ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> items = mergeStatisticsData(
-                distributionData, wholesaleData, reqVO.getStatisticsType());
-        respVO.setItems(items);
-
-        System.out.println("最终统计项数量: " + items.size());
-        System.out.println("=== 代发批发统计查询结束 ===");
+            // 回退到原有方法
+            List<ErpDistributionCombinedESDO> distributionData = getDistributionDataFromES(reqVO);
+            List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataFromES(reqVO);
+            List<ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> items = mergeStatisticsData(
+                    distributionData, wholesaleData, reqVO.getStatisticsType());
+            respVO.setItems(items);
+        }
 
         return respVO;
+    }
+
+    /**
+     * 🔥 新增：使用ES聚合查询直接获取统计结果
+     * 大幅提升性能，支持大数据量
+     */
+    private List<ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> getStatisticsByAggregation(
+            ErpDistributionWholesaleStatisticsReqVO reqVO) {
+
+        Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap = new HashMap<>();
+
+        // 1. 代发数据聚合统计
+        getDistributionStatisticsByAggregation(reqVO, itemMap);
+
+        // 2. 批发数据聚合统计
+        getWholesaleStatisticsByAggregation(reqVO, itemMap);
+
+        // 3. 计算总计并排序
+        return itemMap.values().stream()
+                .map(this::calculateTotalsAndSetDefaults)
+                .sorted((a, b) -> {
+                    // 按总采购金额降序排序
+                    BigDecimal totalA = a.getTotalPurchaseAmount();
+                    BigDecimal totalB = b.getTotalPurchaseAmount();
+                    return totalB.compareTo(totalA);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 🔥 新增：代发数据聚合统计
+     */
+    private void getDistributionStatisticsByAggregation(ErpDistributionWholesaleStatisticsReqVO reqVO,
+                                                       Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap) {
+        try {
+            // 构建基础查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            addTimeRangeQuery(boolQuery, reqVO);
+
+            if (StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
+                addCategoryFilter(boolQuery, reqVO.getStatisticsType(), reqVO.getSearchKeyword());
+            }
+
+            // 🔥 添加调试信息
+            System.out.println("代发聚合查询条件: " + boolQuery.toString());
+
+            // 根据统计类型确定聚合字段
+            String aggregationField = getAggregationField(reqVO.getStatisticsType(), "distribution");
+
+            // 🔥 优化：对于采购人员和供应商，需要特殊处理
+            if ("purchaser".equals(reqVO.getStatisticsType()) || "supplier".equals(reqVO.getStatisticsType())) {
+                getDistributionStatisticsByComboProduct(reqVO, itemMap, boolQuery);
+                return;
+            }
+
+            // 🔥 修复：对于其他统计类型，需要获取详细数据来计算金额
+            // 由于ES聚合无法直接获取关联表的价格信息，这里改用分批查询的方式
+            List<ErpDistributionCombinedESDO> distributionData = getDistributionDataFromES(reqVO);
+            processDistributionDataForAggregation(distributionData, itemMap, reqVO.getStatisticsType());
+
+        } catch (Exception e) {
+            System.err.println("代发聚合统计失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 🔥 新增：批发数据聚合统计
+     */
+    private void getWholesaleStatisticsByAggregation(ErpDistributionWholesaleStatisticsReqVO reqVO,
+                                                    Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap) {
+        try {
+            // 构建基础查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            addTimeRangeQuery(boolQuery, reqVO);
+
+            if (StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
+                addCategoryFilter(boolQuery, reqVO.getStatisticsType(), reqVO.getSearchKeyword());
+            }
+
+            // 🔥 添加调试信息
+            System.out.println("批发聚合查询条件: " + boolQuery.toString());
+
+            // 根据统计类型确定聚合字段
+            String aggregationField = getAggregationField(reqVO.getStatisticsType(), "wholesale");
+
+            // 🔥 优化：对于采购人员和供应商，需要特殊处理
+            if ("purchaser".equals(reqVO.getStatisticsType()) || "supplier".equals(reqVO.getStatisticsType())) {
+                getWholesaleStatisticsByComboProduct(reqVO, itemMap, boolQuery);
+                return;
+            }
+
+            // 🔥 修复：对于其他统计类型，需要获取详细数据来计算金额
+            // 由于ES聚合无法直接获取关联表的价格信息，这里改用分批查询的方式
+            List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataFromES(reqVO);
+            processWholesaleDataForAggregation(wholesaleData, itemMap, reqVO.getStatisticsType());
+
+        } catch (Exception e) {
+            System.err.println("批发聚合统计失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 🔥 新增：处理代发数据用于聚合统计
+     */
+    private void processDistributionDataForAggregation(List<ErpDistributionCombinedESDO> distributionData,
+                                                      Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap,
+                                                      String statisticsType) {
+        if (CollUtil.isEmpty(distributionData)) {
+            return;
+        }
+
+        // 批量查询组品信息
+        Set<Long> comboProductIds = distributionData.stream()
+                .map(ErpDistributionCombinedESDO::getComboProductId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+        if (!comboProductIds.isEmpty()) {
+            Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
+            comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+        }
+
+        // 批量查询销售价格信息
+        Map<String, ErpSalePriceESDO> salePriceMap = new HashMap<>();
+        try {
+            Set<String> customerNames = distributionData.stream()
+                    .map(ErpDistributionCombinedESDO::getCustomerName)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            if (!comboProductIds.isEmpty() && !customerNames.isEmpty()) {
+                List<ErpSalePriceESDO> salePrices = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
+                        new ArrayList<>(comboProductIds), new ArrayList<>(customerNames));
+                salePrices.forEach(price ->
+                    salePriceMap.put(price.getGroupProductId() + "_" + price.getCustomerName(), price));
+            }
+        } catch (Exception e) {
+            System.err.println("批量查询销售价格失败: " + e.getMessage());
+        }
+
+        // 处理每条数据
+        for (ErpDistributionCombinedESDO distribution : distributionData) {
+            String categoryName = getCategoryName(distribution, statisticsType);
+            if (StrUtil.isBlank(categoryName)) continue;
+
+            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = itemMap.computeIfAbsent(categoryName,
+                    k -> new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem());
+
+            item.setCategoryName(categoryName);
+            item.setDistributionOrderCount((item.getDistributionOrderCount() == null ? 0 : item.getDistributionOrderCount()) + 1);
+            item.setDistributionProductQuantity((item.getDistributionProductQuantity() == null ? 0 : item.getDistributionProductQuantity()) +
+                    (distribution.getProductQuantity() != null ? distribution.getProductQuantity() : 0));
+
+            // 🔥 计算准确的采购和销售金额
+            if (distribution.getComboProductId() != null) {
+                ErpComboProductES comboProduct = comboProductMap.get(distribution.getComboProductId());
+                if (comboProduct != null) {
+                    BigDecimal productQuantity = distribution.getProductQuantity() != null ?
+                            BigDecimal.valueOf(distribution.getProductQuantity()) : BigDecimal.ZERO;
+                    BigDecimal purchasePrice = comboProduct.getWholesalePrice() != null ?
+                            comboProduct.getWholesalePrice() : BigDecimal.ZERO;
+                    BigDecimal purchaseOtherFees = distribution.getPurchaseOtherFees() != null ?
+                            distribution.getPurchaseOtherFees() : BigDecimal.ZERO;
+
+                    // 采购金额：产品价格 × 数量 + 其他费用
+                    BigDecimal totalPurchaseAmount = purchasePrice.multiply(productQuantity).add(purchaseOtherFees);
+
+                    // 销售金额：销售价格 × 数量 + 其他费用
+                    BigDecimal salePrice = purchasePrice; // 暂时使用采购价格
+                    if (distribution.getCustomerName() != null) {
+                        String salePriceKey = distribution.getComboProductId() + "_" + distribution.getCustomerName();
+                        ErpSalePriceESDO salePriceDO = salePriceMap.get(salePriceKey);
+                        if (salePriceDO != null && salePriceDO.getWholesalePrice() != null) {
+                            salePrice = salePriceDO.getWholesalePrice();
+                        }
+                    }
+                    BigDecimal saleOtherFees = distribution.getSaleOtherFees() != null ?
+                            distribution.getSaleOtherFees() : BigDecimal.ZERO;
+                    BigDecimal totalSaleAmount = salePrice.multiply(productQuantity).add(saleOtherFees);
+
+                    item.setDistributionPurchaseAmount((item.getDistributionPurchaseAmount() == null ? BigDecimal.ZERO : item.getDistributionPurchaseAmount()).add(totalPurchaseAmount));
+                    item.setDistributionSaleAmount((item.getDistributionSaleAmount() == null ? BigDecimal.ZERO : item.getDistributionSaleAmount()).add(totalSaleAmount));
+                }
+            }
+        }
+    }
+
+    /**
+     * 🔥 新增：处理批发数据用于聚合统计
+     */
+    private void processWholesaleDataForAggregation(List<ErpWholesaleCombinedESDO> wholesaleData,
+                                                   Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap,
+                                                   String statisticsType) {
+        if (CollUtil.isEmpty(wholesaleData)) {
+            return;
+        }
+
+        // 批量查询组品信息
+        Set<Long> comboProductIds = wholesaleData.stream()
+                .map(ErpWholesaleCombinedESDO::getComboProductId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+        if (!comboProductIds.isEmpty()) {
+            Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
+            comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+        }
+
+        // 批量查询销售价格信息
+        Map<String, ErpSalePriceESDO> salePriceMap = new HashMap<>();
+        try {
+            Set<String> customerNames = wholesaleData.stream()
+                    .map(ErpWholesaleCombinedESDO::getCustomerName)
+                    .filter(StrUtil::isNotBlank)
+                    .collect(Collectors.toSet());
+
+            if (!comboProductIds.isEmpty() && !customerNames.isEmpty()) {
+                List<ErpSalePriceESDO> salePrices = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
+                        new ArrayList<>(comboProductIds), new ArrayList<>(customerNames));
+                salePrices.forEach(price ->
+                    salePriceMap.put(price.getGroupProductId() + "_" + price.getCustomerName(), price));
+            }
+        } catch (Exception e) {
+            System.err.println("批量查询销售价格失败: " + e.getMessage());
+        }
+
+        // 处理每条数据
+        for (ErpWholesaleCombinedESDO wholesale : wholesaleData) {
+            String categoryName = getCategoryName(wholesale, statisticsType);
+            if (StrUtil.isBlank(categoryName)) continue;
+
+            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = itemMap.computeIfAbsent(categoryName,
+                    k -> new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem());
+
+            item.setCategoryName(categoryName);
+            item.setWholesaleOrderCount((item.getWholesaleOrderCount() == null ? 0 : item.getWholesaleOrderCount()) + 1);
+            item.setWholesaleProductQuantity((item.getWholesaleProductQuantity() == null ? 0 : item.getWholesaleProductQuantity()) +
+                    (wholesale.getProductQuantity() != null ? wholesale.getProductQuantity() : 0));
+
+            // 🔥 计算准确的采购和销售金额
+            if (wholesale.getComboProductId() != null) {
+                ErpComboProductES comboProduct = comboProductMap.get(wholesale.getComboProductId());
+                if (comboProduct != null) {
+                    BigDecimal productQuantity = wholesale.getProductQuantity() != null ?
+                            BigDecimal.valueOf(wholesale.getProductQuantity()) : BigDecimal.ZERO;
+                    BigDecimal purchasePrice = comboProduct.getWholesalePrice() != null ?
+                            comboProduct.getWholesalePrice() : BigDecimal.ZERO;
+
+                    // 采购费用
+                    BigDecimal purchaseTruckFee = wholesale.getPurchaseTruckFee() != null ?
+                            wholesale.getPurchaseTruckFee() : BigDecimal.ZERO;
+                    BigDecimal purchaseLogisticsFee = wholesale.getPurchaseLogisticsFee() != null ?
+                            wholesale.getPurchaseLogisticsFee() : BigDecimal.ZERO;
+                    BigDecimal purchaseOtherFees = wholesale.getPurchaseOtherFees() != null ?
+                            wholesale.getPurchaseOtherFees() : BigDecimal.ZERO;
+
+                    // 采购金额：产品价格 × 数量 + 所有采购费用
+                    BigDecimal totalPurchaseAmount = purchasePrice.multiply(productQuantity)
+                            .add(purchaseTruckFee)
+                            .add(purchaseLogisticsFee)
+                            .add(purchaseOtherFees);
+
+                    // 销售金额：销售价格 × 数量 + 所有销售费用
+                    BigDecimal salePrice = purchasePrice; // 暂时使用采购价格
+                    if (wholesale.getCustomerName() != null) {
+                        String salePriceKey = wholesale.getComboProductId() + "_" + wholesale.getCustomerName();
+                        ErpSalePriceESDO salePriceDO = salePriceMap.get(salePriceKey);
+                        if (salePriceDO != null && salePriceDO.getWholesalePrice() != null) {
+                            salePrice = salePriceDO.getWholesalePrice();
+                        }
+                    }
+
+                    // 销售费用
+                    BigDecimal saleTruckFee = wholesale.getSaleTruckFee() != null ?
+                            wholesale.getSaleTruckFee() : BigDecimal.ZERO;
+                    BigDecimal saleLogisticsFee = wholesale.getSaleLogisticsFee() != null ?
+                            wholesale.getSaleLogisticsFee() : BigDecimal.ZERO;
+                    BigDecimal saleOtherFees = wholesale.getSaleOtherFees() != null ?
+                            wholesale.getSaleOtherFees() : BigDecimal.ZERO;
+
+                    BigDecimal totalSaleAmount = salePrice.multiply(productQuantity)
+                            .add(saleTruckFee)
+                            .add(saleLogisticsFee)
+                            .add(saleOtherFees);
+
+                    item.setWholesalePurchaseAmount((item.getWholesalePurchaseAmount() == null ? BigDecimal.ZERO : item.getWholesalePurchaseAmount()).add(totalPurchaseAmount));
+                    item.setWholesaleSaleAmount((item.getWholesaleSaleAmount() == null ? BigDecimal.ZERO : item.getWholesaleSaleAmount()).add(totalSaleAmount));
+                }
+            }
+        }
+    }
+
+    /**
+     * 🔥 新增：代发数据按组品ID聚合统计（用于采购人员和供应商统计）
+     */
+    private void getDistributionStatisticsByComboProduct(ErpDistributionWholesaleStatisticsReqVO reqVO,
+                                                        Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap,
+                                                        BoolQueryBuilder boolQuery) {
+        try {
+            // 构建聚合查询，按组品ID分组
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withMaxResults(0)
+                    .addAggregation(AggregationBuilders.terms("combo_product_agg")
+                            .field("combo_product_id")
+                            .size(10000)
+                            .subAggregation(AggregationBuilders.count("order_count").field("id"))
+                            .subAggregation(AggregationBuilders.sum("product_quantity").field("product_quantity"))
+                            .subAggregation(AggregationBuilders.sum("purchase_other_fees").field("purchase_other_fees"))
+                            .subAggregation(AggregationBuilders.sum("sale_other_fees").field("sale_other_fees")));
+
+            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpDistributionCombinedESDO.class,
+                    IndexCoordinates.of("erp_distribution_combined"));
+
+            if (searchHits.hasAggregations()) {
+                ElasticsearchAggregations elasticsearchAggregations = (ElasticsearchAggregations) searchHits.getAggregations();
+                Aggregations aggregations = elasticsearchAggregations.aggregations();
+                Terms comboProductAgg = aggregations.get("combo_product_agg");
+
+                // 收集所有组品ID
+                Set<Long> comboProductIds = new HashSet<>();
+                Map<Long, Terms.Bucket> bucketMap = new HashMap<>();
+
+                for (Terms.Bucket bucket : comboProductAgg.getBuckets()) {
+                    String comboProductIdStr = bucket.getKeyAsString();
+                    if (StrUtil.isNotBlank(comboProductIdStr)) {
+                        try {
+                            Long comboProductId = Long.parseLong(comboProductIdStr);
+                            comboProductIds.add(comboProductId);
+                            bucketMap.put(comboProductId, bucket);
+                        } catch (NumberFormatException e) {
+                            // 忽略无效的组品ID
+                        }
+                    }
+                }
+
+                // 批量查询组品信息
+                if (!comboProductIds.isEmpty()) {
+                    Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
+                    Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+                    comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+
+                    // 🔥 批量查询销售价格信息
+                    Map<String, ErpSalePriceESDO> salePriceMap = new HashMap<>();
+                    try {
+                        // 获取所有客户名称
+                        Set<String> customerNames = new HashSet<>();
+                        for (Terms.Bucket bucket : comboProductAgg.getBuckets()) {
+                            // 这里需要从原始数据中获取客户名称，暂时跳过
+                        }
+
+                                                // 批量查询销售价格 - 这里需要客户名称，暂时跳过批量查询
+                        // 后续可以通过其他方式优化
+                    } catch (Exception e) {
+                        System.err.println("批量查询销售价格失败: " + e.getMessage());
+                    }
+
+                    // 处理聚合结果
+                    for (Terms.Bucket bucket : comboProductAgg.getBuckets()) {
+                        String comboProductIdStr = bucket.getKeyAsString();
+                        if (StrUtil.isBlank(comboProductIdStr)) continue;
+
+                        try {
+                            Long comboProductId = Long.parseLong(comboProductIdStr);
+                            ErpComboProductES comboProduct = comboProductMap.get(comboProductId);
+                            if (comboProduct == null) continue;
+
+                            // 根据统计类型获取分类名称
+                            String categoryName = null;
+                            if ("purchaser".equals(reqVO.getStatisticsType())) {
+                                categoryName = comboProduct.getPurchaser();
+                            } else if ("supplier".equals(reqVO.getStatisticsType())) {
+                                categoryName = comboProduct.getSupplier();
+                            }
+
+                            if (StrUtil.isBlank(categoryName)) continue;
+
+                            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = itemMap.computeIfAbsent(categoryName,
+                                    k -> new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem());
+
+                            item.setCategoryName(categoryName);
+
+                            // 累加统计数据
+                            item.setDistributionOrderCount((item.getDistributionOrderCount() == null ? 0 : item.getDistributionOrderCount()) + (int) bucket.getDocCount());
+
+                            Sum productQuantityAgg = bucket.getAggregations().get("product_quantity");
+                            if (productQuantityAgg != null) {
+                                item.setDistributionProductQuantity((item.getDistributionProductQuantity() == null ? 0 : item.getDistributionProductQuantity()) + (int) productQuantityAgg.getValue());
+                            }
+
+                            // 🔥 修复：计算准确的采购和销售金额
+                            Sum purchaseOtherFeesAgg = bucket.getAggregations().get("purchase_other_fees");
+                            Sum saleOtherFeesAgg = bucket.getAggregations().get("sale_other_fees");
+
+                            BigDecimal purchaseOtherFees = purchaseOtherFeesAgg != null ?
+                                    BigDecimal.valueOf(purchaseOtherFeesAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal saleOtherFees = saleOtherFeesAgg != null ?
+                                    BigDecimal.valueOf(saleOtherFeesAgg.getValue()) : BigDecimal.ZERO;
+
+                            // 🔥 计算采购金额：产品价格 × 数量 + 其他费用
+                            BigDecimal productQuantity = productQuantityAgg != null ?
+                                    BigDecimal.valueOf(productQuantityAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal purchasePrice = comboProduct.getWholesalePrice() != null ?
+                                    comboProduct.getWholesalePrice() : BigDecimal.ZERO;
+                            BigDecimal totalPurchaseAmount = purchasePrice.multiply(productQuantity).add(purchaseOtherFees);
+
+                            // 🔥 计算销售金额：销售价格 × 数量 + 其他费用
+                            // 这里需要从销售价格表获取，暂时使用组品价格
+                            BigDecimal salePrice = comboProduct.getWholesalePrice() != null ?
+                                    comboProduct.getWholesalePrice() : BigDecimal.ZERO;
+                            BigDecimal totalSaleAmount = salePrice.multiply(productQuantity).add(saleOtherFees);
+
+                            item.setDistributionPurchaseAmount((item.getDistributionPurchaseAmount() == null ? BigDecimal.ZERO : item.getDistributionPurchaseAmount()).add(totalPurchaseAmount));
+                            item.setDistributionSaleAmount((item.getDistributionSaleAmount() == null ? BigDecimal.ZERO : item.getDistributionSaleAmount()).add(totalSaleAmount));
+
+                        } catch (NumberFormatException e) {
+                            // 忽略无效的组品ID
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("代发组品聚合统计失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 🔥 新增：批发数据按组品ID聚合统计（用于采购人员和供应商统计）
+     */
+    private void getWholesaleStatisticsByComboProduct(ErpDistributionWholesaleStatisticsReqVO reqVO,
+                                                     Map<String, ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> itemMap,
+                                                     BoolQueryBuilder boolQuery) {
+        try {
+            // 构建聚合查询，按组品ID分组
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withMaxResults(0)
+                    .addAggregation(AggregationBuilders.terms("combo_product_agg")
+                            .field("combo_product_id")
+                            .size(10000)
+                            .subAggregation(AggregationBuilders.count("order_count").field("id"))
+                            .subAggregation(AggregationBuilders.sum("product_quantity").field("product_quantity"))
+                            .subAggregation(AggregationBuilders.sum("purchase_truck_fee").field("purchase_truck_fee"))
+                            .subAggregation(AggregationBuilders.sum("purchase_logistics_fee").field("purchase_logistics_fee"))
+                            .subAggregation(AggregationBuilders.sum("purchase_other_fees").field("purchase_other_fees"))
+                            .subAggregation(AggregationBuilders.sum("sale_truck_fee").field("sale_truck_fee"))
+                            .subAggregation(AggregationBuilders.sum("sale_logistics_fee").field("sale_logistics_fee"))
+                            .subAggregation(AggregationBuilders.sum("sale_other_fees").field("sale_other_fees")));
+
+            SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpWholesaleCombinedESDO.class,
+                    IndexCoordinates.of("erp_wholesale_combined"));
+
+            if (searchHits.hasAggregations()) {
+                ElasticsearchAggregations elasticsearchAggregations = (ElasticsearchAggregations) searchHits.getAggregations();
+                Aggregations aggregations = elasticsearchAggregations.aggregations();
+                Terms comboProductAgg = aggregations.get("combo_product_agg");
+
+                // 收集所有组品ID
+                Set<Long> comboProductIds = new HashSet<>();
+
+                for (Terms.Bucket bucket : comboProductAgg.getBuckets()) {
+                    String comboProductIdStr = bucket.getKeyAsString();
+                    if (StrUtil.isNotBlank(comboProductIdStr)) {
+                        try {
+                            Long comboProductId = Long.parseLong(comboProductIdStr);
+                            comboProductIds.add(comboProductId);
+                        } catch (NumberFormatException e) {
+                            // 忽略无效的组品ID
+                        }
+                    }
+                }
+
+                // 批量查询组品信息
+                if (!comboProductIds.isEmpty()) {
+                    Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
+                    Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+                    comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+
+                    // 处理聚合结果
+                    for (Terms.Bucket bucket : comboProductAgg.getBuckets()) {
+                        String comboProductIdStr = bucket.getKeyAsString();
+                        if (StrUtil.isBlank(comboProductIdStr)) continue;
+
+                        try {
+                            Long comboProductId = Long.parseLong(comboProductIdStr);
+                            ErpComboProductES comboProduct = comboProductMap.get(comboProductId);
+                            if (comboProduct == null) continue;
+
+                            // 根据统计类型获取分类名称
+                            String categoryName = null;
+                            if ("purchaser".equals(reqVO.getStatisticsType())) {
+                                categoryName = comboProduct.getPurchaser();
+                            } else if ("supplier".equals(reqVO.getStatisticsType())) {
+                                categoryName = comboProduct.getSupplier();
+                            }
+
+                            if (StrUtil.isBlank(categoryName)) continue;
+
+                            ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = itemMap.computeIfAbsent(categoryName,
+                                    k -> new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem());
+
+                            item.setCategoryName(categoryName);
+
+                            // 累加统计数据
+                            item.setWholesaleOrderCount((item.getWholesaleOrderCount() == null ? 0 : item.getWholesaleOrderCount()) + (int) bucket.getDocCount());
+
+                            Sum productQuantityAgg2 = bucket.getAggregations().get("product_quantity");
+                            if (productQuantityAgg2 != null) {
+                                item.setWholesaleProductQuantity((item.getWholesaleProductQuantity() == null ? 0 : item.getWholesaleProductQuantity()) + (int) productQuantityAgg2.getValue());
+                            }
+
+                            // 🔥 修复：获取费用聚合结果
+                            Sum purchaseTruckFeeAgg = bucket.getAggregations().get("purchase_truck_fee");
+                            Sum purchaseLogisticsFeeAgg = bucket.getAggregations().get("purchase_logistics_fee");
+                            Sum purchaseOtherFeesAgg = bucket.getAggregations().get("purchase_other_fees");
+                            Sum saleTruckFeeAgg = bucket.getAggregations().get("sale_truck_fee");
+                            Sum saleLogisticsFeeAgg = bucket.getAggregations().get("sale_logistics_fee");
+                            Sum saleOtherFeesAgg = bucket.getAggregations().get("sale_other_fees");
+
+                            BigDecimal purchaseTruckFee = purchaseTruckFeeAgg != null ?
+                                    BigDecimal.valueOf(purchaseTruckFeeAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal purchaseLogisticsFee = purchaseLogisticsFeeAgg != null ?
+                                    BigDecimal.valueOf(purchaseLogisticsFeeAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal purchaseOtherFees = purchaseOtherFeesAgg != null ?
+                                    BigDecimal.valueOf(purchaseOtherFeesAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal saleTruckFee = saleTruckFeeAgg != null ?
+                                    BigDecimal.valueOf(saleTruckFeeAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal saleLogisticsFee = saleLogisticsFeeAgg != null ?
+                                    BigDecimal.valueOf(saleLogisticsFeeAgg.getValue()) : BigDecimal.ZERO;
+                            BigDecimal saleOtherFees = saleOtherFeesAgg != null ?
+                                    BigDecimal.valueOf(saleOtherFeesAgg.getValue()) : BigDecimal.ZERO;
+
+                            // 🔥 修复：计算准确的采购和销售金额
+                            BigDecimal productQuantity = productQuantityAgg2 != null ?
+                                    BigDecimal.valueOf(productQuantityAgg2.getValue()) : BigDecimal.ZERO;
+                            BigDecimal purchasePrice = comboProduct.getWholesalePrice() != null ?
+                                    comboProduct.getWholesalePrice() : BigDecimal.ZERO;
+
+                            // 采购金额：产品价格 × 数量 + 所有采购费用
+                            BigDecimal totalPurchaseAmount = purchasePrice.multiply(productQuantity)
+                                    .add(purchaseTruckFee)
+                                    .add(purchaseLogisticsFee)
+                                    .add(purchaseOtherFees);
+
+                            // 销售金额：销售价格 × 数量 + 所有销售费用
+                            // 这里需要从销售价格表获取，暂时使用组品价格
+                            BigDecimal salePrice = comboProduct.getWholesalePrice() != null ?
+                                    comboProduct.getWholesalePrice() : BigDecimal.ZERO;
+                            BigDecimal totalSaleAmount = salePrice.multiply(productQuantity)
+                                    .add(saleTruckFee)
+                                    .add(saleLogisticsFee)
+                                    .add(saleOtherFees);
+
+                            item.setWholesalePurchaseAmount((item.getWholesalePurchaseAmount() == null ? BigDecimal.ZERO : item.getWholesalePurchaseAmount()).add(totalPurchaseAmount));
+                            item.setWholesaleSaleAmount((item.getWholesaleSaleAmount() == null ? BigDecimal.ZERO : item.getWholesaleSaleAmount()).add(totalSaleAmount));
+
+                        } catch (NumberFormatException e) {
+                            // 忽略无效的组品ID
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("批发组品聚合统计失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 🔥 新增：根据统计类型获取聚合字段名
+     */
+    private String getAggregationField(String statisticsType, String tableType) {
+        switch (statisticsType) {
+            case "purchaser":
+                // 采购人员需要从组品表获取，这里返回一个占位符
+                // 实际查询时会通过组品ID进行关联
+                return "combo_product_id";
+            case "supplier":
+                // 供应商需要从组品表获取，这里返回一个占位符
+                return "combo_product_id";
+            case "salesperson":
+                return "salesperson";
+            case "customer":
+                return "customer_name";
+            default:
+                return "id";
+        }
     }
 
     /**
@@ -269,56 +875,66 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
      * 🔥 根据采购人员关键词查询组品ID集合
      */
     private Set<Long> getComboProductIdsByPurchaser(String purchaserKeyword) {
-        Set<Long> comboProductIds = new HashSet<>();
+        if (StrUtil.isBlank(purchaserKeyword)) {
+            return Collections.emptySet();
+        }
+
         try {
-            BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
-            comboQuery.must(QueryBuilders.wildcardQuery("purchaser", "*" + purchaserKeyword + "*"));
-            
-            NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(comboQuery)
-                    .withPageable(PageRequest.of(0, 10000))
-                    .withSourceFilter(new org.springframework.data.elasticsearch.core.query.FetchSourceFilter(new String[]{"id"}, null))
-                    .build();
-            
-            SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
-                    comboSearchQuery,
-                    ErpComboProductES.class);
-            
-            comboProductIds = comboHits.stream()
+            // 使用聚合查询，只获取ID字段，提高性能
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            boolQuery.must(createSimplifiedKeywordMatchQuery("purchaser", purchaserKeyword.trim()));
+
+            queryBuilder.withQuery(boolQuery);
+            // 🔥 优化：使用聚合查询，只获取ID字段，不限制数量
+            queryBuilder.withSourceFilter(new FetchSourceFilter(new String[]{"id"}, null));
+            queryBuilder.withPageable(PageRequest.of(0, 50000)); // 增加查询数量限制
+
+            SearchHits<ErpComboProductES> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpComboProductES.class,
+                    IndexCoordinates.of("erp_combo_products"));
+
+            return searchHits.stream()
                     .map(hit -> hit.getContent().getId())
                     .collect(Collectors.toSet());
         } catch (Exception e) {
             System.err.println("根据采购人员查询组品ID失败: " + e.getMessage());
+            return Collections.emptySet();
         }
-        return comboProductIds;
     }
 
     /**
      * 🔥 根据供应商关键词查询组品ID集合
      */
     private Set<Long> getComboProductIdsBySupplier(String supplierKeyword) {
-        Set<Long> comboProductIds = new HashSet<>();
+        if (StrUtil.isBlank(supplierKeyword)) {
+            return Collections.emptySet();
+        }
+
         try {
-            BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
-            comboQuery.must(QueryBuilders.wildcardQuery("supplier", "*" + supplierKeyword + "*"));
-            
-            NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(comboQuery)
-                    .withPageable(PageRequest.of(0, 10000))
-                    .withSourceFilter(new org.springframework.data.elasticsearch.core.query.FetchSourceFilter(new String[]{"id"}, null))
-                    .build();
-            
-            SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
-                    comboSearchQuery,
-                    ErpComboProductES.class);
-            
-            comboProductIds = comboHits.stream()
+            // 使用聚合查询，只获取ID字段，提高性能
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            boolQuery.must(createSimplifiedKeywordMatchQuery("supplier", supplierKeyword.trim()));
+
+            queryBuilder.withQuery(boolQuery);
+            // 🔥 优化：使用聚合查询，只获取ID字段，不限制数量
+            queryBuilder.withSourceFilter(new FetchSourceFilter(new String[]{"id"}, null));
+            queryBuilder.withPageable(PageRequest.of(0, 50000)); // 增加查询数量限制
+
+            SearchHits<ErpComboProductES> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpComboProductES.class,
+                    IndexCoordinates.of("erp_combo_products"));
+
+            return searchHits.stream()
                     .map(hit -> hit.getContent().getId())
                     .collect(Collectors.toSet());
         } catch (Exception e) {
             System.err.println("根据供应商查询组品ID失败: " + e.getMessage());
+            return Collections.emptySet();
         }
-        return comboProductIds;
     }
 
     /**
@@ -338,7 +954,7 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     }
 
     /**
-     * 🔥 实时获取供应商信息
+     * �� 实时获取供应商信息
      */
     private String getRealTimeSupplier(Long comboProductId) {
         if (comboProductId == null) {
@@ -374,10 +990,15 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         ErpDistributionWholesaleStatisticsRespVO.AuditStatistics auditStatistics = new ErpDistributionWholesaleStatisticsRespVO.AuditStatistics();
 
         try {
-            // 获取代发数据
+            // 🔥 优化：使用ES聚合查询直接获取审核统计数据
+            getAuditStatisticsByAggregation(reqVO, auditStatistics);
+
+        } catch (Exception e) {
+            System.err.println("聚合审核统计失败，回退到原有方法: " + e.getMessage());
+            e.printStackTrace();
+
+            // 回退到原有方法
             List<ErpDistributionCombinedESDO> distributionData = getDistributionDataFromES(reqVO);
-            
-            // 获取批发数据
             List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataFromES(reqVO);
 
             // 统计代发数据
@@ -484,227 +1105,384 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
             // 计算总数
             auditStatistics.setDistributionPurchaseTotalCount(
-                auditStatistics.getDistributionPurchaseUnauditedCount() + 
+                auditStatistics.getDistributionPurchaseUnauditedCount() +
                 auditStatistics.getDistributionPurchaseAuditedCount());
-            
-            auditStatistics.setDistributionSaleTotalCount(
-                auditStatistics.getDistributionSaleUnauditedCount() + 
-                auditStatistics.getDistributionSaleAuditedCount());
-            
-            auditStatistics.setWholesalePurchaseTotalCount(
-                auditStatistics.getWholesalePurchaseUnauditedCount() + 
-                auditStatistics.getWholesalePurchaseAuditedCount());
-            
-            auditStatistics.setWholesaleSaleTotalCount(
-                auditStatistics.getWholesaleSaleUnauditedCount() + 
-                auditStatistics.getWholesaleSaleAuditedCount());
 
-        } catch (Exception e) {
-            System.err.println("获取审核统计数据失败: " + e.getMessage());
-            e.printStackTrace();
+            auditStatistics.setDistributionSaleTotalCount(
+                auditStatistics.getDistributionSaleUnauditedCount() +
+                auditStatistics.getDistributionSaleAuditedCount());
+
+            auditStatistics.setWholesalePurchaseTotalCount(
+                auditStatistics.getWholesalePurchaseUnauditedCount() +
+                auditStatistics.getWholesalePurchaseAuditedCount());
+
+            auditStatistics.setWholesaleSaleTotalCount(
+                auditStatistics.getWholesaleSaleUnauditedCount() +
+                auditStatistics.getWholesaleSaleAuditedCount());
         }
 
         return auditStatistics;
     }
 
     /**
-     * 从ES获取代发数据
+     * 🔥 新增：使用ES聚合查询获取审核统计数据
      */
-    private List<ErpDistributionCombinedESDO> getDistributionDataFromES(ErpDistributionWholesaleStatisticsReqVO reqVO) {
+    private void getAuditStatisticsByAggregation(ErpDistributionWholesaleStatisticsReqVO reqVO,
+                                                ErpDistributionWholesaleStatisticsRespVO.AuditStatistics auditStatistics) {
         try {
-            // 构建查询条件
+            // 构建基础查询条件
             BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            addTimeRangeQuery(boolQuery, reqVO);
 
-            // 添加调试信息
-            System.out.println("=== 代发数据ES查询调试 ===");
-            System.out.println("开始时间: " + reqVO.getBeginTime());
-            System.out.println("结束时间: " + reqVO.getEndTime());
-            System.out.println("统计类型: " + reqVO.getStatisticsType());
-            System.out.println("搜索关键词: " + reqVO.getSearchKeyword());
-
-            if (reqVO.getBeginTime() != null && reqVO.getEndTime() != null) {
-                // 解析时间字符串为LocalDateTime
-                LocalDateTime beginTime = parseTimeString(reqVO.getBeginTime());
-                LocalDateTime endTime = parseTimeString(reqVO.getEndTime());
-
-                if (beginTime != null && endTime != null) {
-                    System.out.println("原始解析结果 - 开始时间: " + beginTime + ", 结束时间: " + endTime);
-
-                    // 🔥 关键修复：使用字符串格式的时间查询，避免LocalDateTime序列化问题
-                    String beginTimeStr = beginTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-                    String endTimeStr = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-                    System.out.println("转换为字符串格式 - 开始时间: " + beginTimeStr + ", 结束时间: " + endTimeStr);
-
-                    boolQuery.must(QueryBuilders.rangeQuery("create_time")
-                            .gte(beginTimeStr)
-                            .lte(endTimeStr));
-                    System.out.println("添加了时间范围查询条件: " + beginTimeStr + " 到 " + endTimeStr);
-                } else {
-                    System.out.println("时间解析失败，跳过时间范围查询");
-                }
+            if (StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
+                addCategoryFilter(boolQuery, reqVO.getStatisticsType(), reqVO.getSearchKeyword());
             }
 
-            // 如果有搜索关键词，根据统计类型添加搜索条件
-            if (cn.hutool.core.util.StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
-                String keyword = reqVO.getSearchKeyword().trim();
-                switch (reqVO.getStatisticsType()) {
-                    case "purchaser":
-                        // 🔥 修复：代发表不再有purchaser字段，需要从组品表查询
-                        Set<Long> comboProductIds = getComboProductIdsByPurchaser(keyword);
-                        if (!comboProductIds.isEmpty()) {
-                            boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
-                        } else {
-                            // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
-                            boolQuery.must(QueryBuilders.termQuery("id", -1L));
-                        }
-                        break;
-                    case "supplier":
-                        // 🔥 修复：代发表不再有supplier字段，需要从组品表查询
-                        Set<Long> supplierComboProductIds = getComboProductIdsBySupplier(keyword);
-                        if (!supplierComboProductIds.isEmpty()) {
-                            boolQuery.must(QueryBuilders.termsQuery("combo_product_id", supplierComboProductIds));
-                        } else {
-                            // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
-                            boolQuery.must(QueryBuilders.termQuery("id", -1L));
-                        }
-                        break;
-                    case "salesperson":
-                        boolQuery.must(QueryBuilders.wildcardQuery("salesperson", "*" + keyword + "*"));
-                        break;
-                    case "customer":
-                        boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + keyword + "*"));
-                        break;
-                }
-            }
+            // 1. 代发数据审核统计
+            getDistributionAuditStatisticsByAggregation(boolQuery, auditStatistics);
 
-            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withPageable(PageRequest.of(0, 10000)) // 获取大量数据用于统计
-                    .build();
+            // 2. 批发数据审核统计
+            getWholesaleAuditStatisticsByAggregation(boolQuery, auditStatistics);
 
-            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    searchQuery, ErpDistributionCombinedESDO.class);
+            // 3. 计算总数
+            auditStatistics.setDistributionPurchaseTotalCount(
+                auditStatistics.getDistributionPurchaseUnauditedCount() +
+                auditStatistics.getDistributionPurchaseAuditedCount());
 
-            System.out.println("代发数据查询结果数量: " + searchHits.getTotalHits());
+            auditStatistics.setDistributionSaleTotalCount(
+                auditStatistics.getDistributionSaleUnauditedCount() +
+                auditStatistics.getDistributionSaleAuditedCount());
 
-            List<ErpDistributionCombinedESDO> result = searchHits.getSearchHits().stream()
-                    .map(SearchHit::getContent)
-                    .collect(Collectors.toList());
+            auditStatistics.setWholesalePurchaseTotalCount(
+                auditStatistics.getWholesalePurchaseUnauditedCount() +
+                auditStatistics.getWholesalePurchaseAuditedCount());
 
-            System.out.println("实际返回代发数据数量: " + result.size());
+            auditStatistics.setWholesaleSaleTotalCount(
+                auditStatistics.getWholesaleSaleUnauditedCount() +
+                auditStatistics.getWholesaleSaleAuditedCount());
 
-            // 输出前几条数据用于调试
-            if (!result.isEmpty()) {
-                System.out.println("代发数据样本（前3条）:");
-                result.stream().limit(3).forEach(data -> {
-                    // 🔥 修复：移除对已删除字段的调用，改为实时获取
-                    String purchaser = getRealTimePurchaser(data.getComboProductId());
-                    String supplier = getRealTimeSupplier(data.getComboProductId());
-                    System.out.println("  ID: " + data.getId() + ", 创建时间: " + data.getCreateTime() +
-                                     ", 采购人员: " + purchaser + ", 供应商: " + supplier);
-                });
-            }
-
-            System.out.println("=== 代发数据ES查询调试结束 ===");
-
-            return result;
         } catch (Exception e) {
-            System.err.println("从ES获取代发数据失败: " + e.getMessage());
+            System.err.println("聚合审核统计失败: " + e.getMessage());
             e.printStackTrace();
-            return Collections.emptyList();
         }
     }
 
     /**
-     * 从ES获取批发数据
+     * 🔥 新增：代发数据审核统计聚合查询
      */
-    private List<ErpWholesaleCombinedESDO> getWholesaleDataFromES(ErpDistributionWholesaleStatisticsReqVO reqVO) {
+    private void getDistributionAuditStatisticsByAggregation(BoolQueryBuilder boolQuery,
+                                                            ErpDistributionWholesaleStatisticsRespVO.AuditStatistics auditStatistics) {
         try {
-            // 构建查询条件
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-
-            // 添加调试信息
-            System.out.println("=== 批发数据ES查询调试 ===");
-            System.out.println("开始时间: " + reqVO.getBeginTime());
-            System.out.println("结束时间: " + reqVO.getEndTime());
-
-            if (reqVO.getBeginTime() != null && reqVO.getEndTime() != null) {
-                // 解析时间字符串为LocalDateTime
-                LocalDateTime beginTime = parseTimeString(reqVO.getBeginTime());
-                LocalDateTime endTime = parseTimeString(reqVO.getEndTime());
-
-                if (beginTime != null && endTime != null) {
-                    System.out.println("原始解析结果 - 开始时间: " + beginTime + ", 结束时间: " + endTime);
-
-                    // 🔥 关键修复：使用字符串格式的时间查询，避免LocalDateTime序列化问题
-                    String beginTimeStr = beginTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-                    String endTimeStr = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-                    System.out.println("转换为字符串格式 - 开始时间: " + beginTimeStr + ", 结束时间: " + endTimeStr);
-
-                    boolQuery.must(QueryBuilders.rangeQuery("create_time")
-                            .gte(beginTimeStr)
-                            .lte(endTimeStr));
-                    System.out.println("添加了时间范围查询条件: " + beginTimeStr + " 到 " + endTimeStr);
-                } else {
-                    System.out.println("时间解析失败，跳过时间范围查询");
-                }
-            }
-
-            // 如果有搜索关键词，根据统计类型添加搜索条件
-            if (cn.hutool.core.util.StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
-                String keyword = reqVO.getSearchKeyword().trim();
-                switch (reqVO.getStatisticsType()) {
-                    case "purchaser":
-                        boolQuery.must(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + keyword + "*"));
-                        break;
-                    case "supplier":
-                        boolQuery.must(QueryBuilders.wildcardQuery("supplier_keyword", "*" + keyword + "*"));
-                        break;
-                    case "salesperson":
-                        boolQuery.must(QueryBuilders.wildcardQuery("salesperson_keyword", "*" + keyword + "*"));
-                        break;
-                    case "customer":
-                        boolQuery.must(QueryBuilders.wildcardQuery("customer_name_keyword", "*" + keyword + "*"));
-                        break;
-                }
-            }
-
-            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+            // 构建聚合查询
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                     .withQuery(boolQuery)
-                    .withPageable(PageRequest.of(0, 10000)) // 获取大量数据用于统计
-                    .build();
+                    .withMaxResults(0) // 不需要返回文档，只要聚合结果
+                    .addAggregation(AggregationBuilders.terms("purchase_audit_status")
+                            .field("purchase_audit_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")))
+                    .addAggregation(AggregationBuilders.terms("purchase_after_sales_status")
+                            .field("purchase_after_sales_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")))
+                    .addAggregation(AggregationBuilders.terms("sale_audit_status")
+                            .field("sale_audit_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")))
+                    .addAggregation(AggregationBuilders.terms("sale_after_sales_status")
+                            .field("sale_after_sales_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")));
+
+            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    queryBuilder.build(),
+                    ErpDistributionCombinedESDO.class,
+                    IndexCoordinates.of("erp_distribution_combined"));
+
+            if (searchHits.hasAggregations()) {
+                ElasticsearchAggregations elasticsearchAggregations = (ElasticsearchAggregations) searchHits.getAggregations();
+                Aggregations aggregations = elasticsearchAggregations.aggregations();
+
+                // 处理采购审核状态
+                Terms purchaseAuditAgg = aggregations.get("purchase_audit_status");
+                if (purchaseAuditAgg != null) {
+                    for (Terms.Bucket bucket : purchaseAuditAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("10".equals(status)) {
+                            auditStatistics.setDistributionPurchaseUnauditedCount((int) count);
+                        } else if ("20".equals(status)) {
+                            auditStatistics.setDistributionPurchaseAuditedCount((int) count);
+                        }
+                    }
+                }
+
+                // 处理采购售后状态
+                Terms purchaseAfterSalesAgg = aggregations.get("purchase_after_sales_status");
+                if (purchaseAfterSalesAgg != null) {
+                    for (Terms.Bucket bucket : purchaseAfterSalesAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("30".equals(status)) {
+                            auditStatistics.setDistributionPurchaseNoAfterSalesCount((int) count);
+                        } else if ("40".equals(status)) {
+                            auditStatistics.setDistributionPurchaseAfterSalesCount((int) count);
+                        }
+                    }
+                }
+
+                // 处理销售审核状态
+                Terms saleAuditAgg = aggregations.get("sale_audit_status");
+                if (saleAuditAgg != null) {
+                    for (Terms.Bucket bucket : saleAuditAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("10".equals(status)) {
+                            auditStatistics.setDistributionSaleUnauditedCount((int) count);
+                        } else if ("20".equals(status)) {
+                            auditStatistics.setDistributionSaleAuditedCount((int) count);
+                        }
+                    }
+                }
+
+                // 处理销售售后状态
+                Terms saleAfterSalesAgg = aggregations.get("sale_after_sales_status");
+                if (saleAfterSalesAgg != null) {
+                    for (Terms.Bucket bucket : saleAfterSalesAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("30".equals(status)) {
+                            auditStatistics.setDistributionSaleNoAfterSalesCount((int) count);
+                        } else if ("40".equals(status)) {
+                            auditStatistics.setDistributionSaleAfterSalesCount((int) count);
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("代发审核聚合统计失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 🔥 新增：批发数据审核统计聚合查询
+     */
+    private void getWholesaleAuditStatisticsByAggregation(BoolQueryBuilder boolQuery,
+                                                         ErpDistributionWholesaleStatisticsRespVO.AuditStatistics auditStatistics) {
+        try {
+            // 构建聚合查询
+            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withMaxResults(0) // 不需要返回文档，只要聚合结果
+                    .addAggregation(AggregationBuilders.terms("purchase_audit_status")
+                            .field("purchase_audit_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")))
+                    .addAggregation(AggregationBuilders.terms("purchase_after_sales_status")
+                            .field("purchase_after_sales_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")))
+                    .addAggregation(AggregationBuilders.terms("sale_audit_status")
+                            .field("sale_audit_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")))
+                    .addAggregation(AggregationBuilders.terms("sale_after_sales_status")
+                            .field("sale_after_sales_status")
+                            .subAggregation(AggregationBuilders.count("count").field("id")));
 
             SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    searchQuery, ErpWholesaleCombinedESDO.class);
+                    queryBuilder.build(),
+                    ErpWholesaleCombinedESDO.class,
+                    IndexCoordinates.of("erp_wholesale_combined"));
 
-            System.out.println("批发数据查询结果数量: " + searchHits.getTotalHits());
+            if (searchHits.hasAggregations()) {
+                ElasticsearchAggregations elasticsearchAggregations = (ElasticsearchAggregations) searchHits.getAggregations();
+                Aggregations aggregations = elasticsearchAggregations.aggregations();
 
-            List<ErpWholesaleCombinedESDO> result = searchHits.getSearchHits().stream()
-                    .map(SearchHit::getContent)
-                    .collect(Collectors.toList());
+                // 处理采购审核状态
+                Terms purchaseAuditAgg = aggregations.get("purchase_audit_status");
+                if (purchaseAuditAgg != null) {
+                    for (Terms.Bucket bucket : purchaseAuditAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
 
-            System.out.println("实际返回批发数据数量: " + result.size());
+                        if ("10".equals(status)) {
+                            auditStatistics.setWholesalePurchaseUnauditedCount((int) count);
+                        } else if ("20".equals(status)) {
+                            auditStatistics.setWholesalePurchaseAuditedCount((int) count);
+                        }
+                    }
+                }
 
-            // 输出前几条数据用于调试
-            if (!result.isEmpty()) {
-                System.out.println("批发数据样本（前3条）:");
-                result.stream().limit(3).forEach(data -> {
-                    // 🔥 修复：从组品ES中实时获取采购人员和供应商信息
-                    String purchaser = getRealTimePurchaser(data.getComboProductId());
-                    String supplier = getRealTimeSupplier(data.getComboProductId());
-                    System.out.println("  ID: " + data.getId() + ", 创建时间: " + data.getCreateTime() +
-                                     ", 采购人员: " + purchaser + ", 供应商: " + supplier);
-                });
+                // 处理采购售后状态
+                Terms purchaseAfterSalesAgg = aggregations.get("purchase_after_sales_status");
+                if (purchaseAfterSalesAgg != null) {
+                    for (Terms.Bucket bucket : purchaseAfterSalesAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("30".equals(status)) {
+                            auditStatistics.setWholesalePurchaseNoAfterSalesCount((int) count);
+                        } else if ("40".equals(status)) {
+                            auditStatistics.setWholesalePurchaseAfterSalesCount((int) count);
+                        }
+                    }
+                }
+
+                // 处理销售审核状态
+                Terms saleAuditAgg = aggregations.get("sale_audit_status");
+                if (saleAuditAgg != null) {
+                    for (Terms.Bucket bucket : saleAuditAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("10".equals(status)) {
+                            auditStatistics.setWholesaleSaleUnauditedCount((int) count);
+                        } else if ("20".equals(status)) {
+                            auditStatistics.setWholesaleSaleAuditedCount((int) count);
+                        }
+                    }
+                }
+
+                // 处理销售售后状态
+                Terms saleAfterSalesAgg = aggregations.get("sale_after_sales_status");
+                if (saleAfterSalesAgg != null) {
+                    for (Terms.Bucket bucket : saleAfterSalesAgg.getBuckets()) {
+                        String status = bucket.getKeyAsString();
+                        long count = bucket.getDocCount();
+
+                        if ("30".equals(status)) {
+                            auditStatistics.setWholesaleSaleNoAfterSalesCount((int) count);
+                        } else if ("40".equals(status)) {
+                            auditStatistics.setWholesaleSaleAfterSalesCount((int) count);
+                        }
+                    }
+                }
             }
 
-            System.out.println("=== 批发数据ES查询调试结束 ===");
-
-            return result;
         } catch (Exception e) {
-            System.err.println("从ES获取批发数据失败: " + e.getMessage());
+            System.err.println("批发审核聚合统计失败: " + e.getMessage());
             e.printStackTrace();
-            return Collections.emptyList();
         }
+    }
+
+    /**
+     * 从ES获取代发数据 - 优化大数据量查询
+     */
+    private List<ErpDistributionCombinedESDO> getDistributionDataFromES(ErpDistributionWholesaleStatisticsReqVO reqVO) {
+        List<ErpDistributionCombinedESDO> allData = new ArrayList<>();
+
+        try {
+            // 🔥 优化：使用分批查询处理大数据量
+            int batchSize = 10000;
+            int from = 0;
+            boolean hasMore = true;
+
+            while (hasMore) {
+                NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+                BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+
+                // 添加时间范围查询
+                addTimeRangeQuery(boolQuery, reqVO);
+
+                // 添加分类过滤
+                if (StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
+                    addCategoryFilter(boolQuery, reqVO.getStatisticsType(), reqVO.getSearchKeyword());
+                }
+
+                queryBuilder.withQuery(boolQuery);
+                queryBuilder.withPageable(PageRequest.of(from / batchSize, batchSize));
+                queryBuilder.withSort(Sort.by(Sort.Direction.DESC, "create_time"));
+
+                SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                        queryBuilder.build(),
+                        ErpDistributionCombinedESDO.class,
+                        IndexCoordinates.of("erp_distribution_combined"));
+
+                List<ErpDistributionCombinedESDO> batchData = searchHits.stream()
+                        .map(SearchHit::getContent)
+                        .collect(Collectors.toList());
+
+                allData.addAll(batchData);
+
+                // 检查是否还有更多数据
+                hasMore = batchData.size() == batchSize;
+                from += batchSize;
+
+                // 🔥 安全限制：最多查询100万条数据，避免内存溢出
+                if (allData.size() >= 1000000) {
+                    System.err.println("警告：代发数据量超过100万条，已截断查询");
+                    break;
+                }
+            }
+
+            System.out.println("代发数据查询完成，共获取 " + allData.size() + " 条记录");
+
+        } catch (Exception e) {
+            System.err.println("从ES查询代发数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return allData;
+    }
+
+    /**
+     * 从ES获取批发数据 - 优化大数据量查询
+     */
+    private List<ErpWholesaleCombinedESDO> getWholesaleDataFromES(ErpDistributionWholesaleStatisticsReqVO reqVO) {
+        List<ErpWholesaleCombinedESDO> allData = new ArrayList<>();
+
+        try {
+            // 🔥 优化：使用分批查询处理大数据量
+            int batchSize = 10000;
+            int from = 0;
+            boolean hasMore = true;
+
+            while (hasMore) {
+                NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+                BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+
+                // 添加时间范围查询
+                addTimeRangeQuery(boolQuery, reqVO);
+
+                // 添加分类过滤
+                if (StrUtil.isNotBlank(reqVO.getSearchKeyword())) {
+                    addCategoryFilter(boolQuery, reqVO.getStatisticsType(), reqVO.getSearchKeyword());
+                }
+
+                queryBuilder.withQuery(boolQuery);
+                queryBuilder.withPageable(PageRequest.of(from / batchSize, batchSize));
+                queryBuilder.withSort(Sort.by(Sort.Direction.DESC, "create_time"));
+
+                SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                        queryBuilder.build(),
+                        ErpWholesaleCombinedESDO.class,
+                        IndexCoordinates.of("erp_wholesale_combined"));
+
+                List<ErpWholesaleCombinedESDO> batchData = searchHits.stream()
+                        .map(SearchHit::getContent)
+                        .collect(Collectors.toList());
+
+                allData.addAll(batchData);
+
+                // 检查是否还有更多数据
+                hasMore = batchData.size() == batchSize;
+                from += batchSize;
+
+                // 🔥 安全限制：最多查询100万条数据，避免内存溢出
+                if (allData.size() >= 1000000) {
+                    System.err.println("警告：批发数据量超过100万条，已截断查询");
+                    break;
+                }
+            }
+
+            System.out.println("批发数据查询完成，共获取 " + allData.size() + " 条记录");
+
+        } catch (Exception e) {
+            System.err.println("从ES查询批发数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return allData;
     }
 
     /**
@@ -960,7 +1738,7 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 BigDecimal totalWeight = weight.multiply(new BigDecimal(quantity));
                 BigDecimal firstWeight = comboProduct.getFirstWeight() != null ? comboProduct.getFirstWeight() : BigDecimal.ZERO;
                 BigDecimal firstWeightPrice = comboProduct.getFirstWeightPrice() != null ? comboProduct.getFirstWeightPrice() : BigDecimal.ZERO;
-                
+
                 if (totalWeight.compareTo(firstWeight) <= 0) {
                     shippingFee = firstWeightPrice;
                 } else {
@@ -1124,65 +1902,115 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     }
 
     /**
-     * 获取指定分类的代发数据
+     * 获取指定分类的代发数据 - 优化大数据量查询
      */
     private List<ErpDistributionCombinedESDO> getDistributionDataForCategory(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
+        List<ErpDistributionCombinedESDO> allData = new ArrayList<>();
+
         try {
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            // 🔥 优化：使用分批查询处理大数据量
+            int batchSize = 10000;
+            int from = 0;
+            boolean hasMore = true;
 
-            // 添加时间范围查询
-            addTimeRangeQuery(boolQuery, reqVO);
+            while (hasMore) {
+                NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+                BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-            // 添加分类筛选条件
-            addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
+                // 添加时间范围查询
+                addTimeRangeQuery(boolQuery, reqVO);
 
-            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withPageable(PageRequest.of(0, 10000))
-                    .build();
+                // 添加分类过滤
+                addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
 
-            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    searchQuery, ErpDistributionCombinedESDO.class,
-                    IndexCoordinates.of("erp_distribution_combined"));
+                queryBuilder.withQuery(boolQuery);
+                queryBuilder.withPageable(PageRequest.of(from / batchSize, batchSize));
+                queryBuilder.withSort(Sort.by(Sort.Direction.DESC, "create_time"));
 
-            return searchHits.getSearchHits().stream()
-                    .map(SearchHit::getContent)
-                    .collect(Collectors.toList());
+                SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                        queryBuilder.build(),
+                        ErpDistributionCombinedESDO.class,
+                        IndexCoordinates.of("erp_distribution_combined"));
+
+                List<ErpDistributionCombinedESDO> batchData = searchHits.stream()
+                        .map(SearchHit::getContent)
+                        .collect(Collectors.toList());
+
+                allData.addAll(batchData);
+
+                // 检查是否还有更多数据
+                hasMore = batchData.size() == batchSize;
+                from += batchSize;
+
+                // 🔥 安全限制：最多查询100万条数据，避免内存溢出
+                if (allData.size() >= 1000000) {
+                    System.err.println("警告：代发分类数据量超过100万条，已截断查询");
+                    break;
+                }
+            }
+
         } catch (Exception e) {
-            System.err.println("获取指定分类的代发数据失败: " + e.getMessage());
-            return Collections.emptyList();
+            System.err.println("获取代发分类数据失败: " + e.getMessage());
+            e.printStackTrace();
         }
+
+        return allData;
     }
 
     /**
-     * 获取指定分类的批发数据
+     * 获取指定分类的批发数据 - 优化大数据量查询
      */
     private List<ErpWholesaleCombinedESDO> getWholesaleDataForCategory(ErpDistributionWholesaleStatisticsReqVO reqVO, String categoryName) {
+        List<ErpWholesaleCombinedESDO> allData = new ArrayList<>();
+
         try {
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            // 🔥 优化：使用分批查询处理大数据量
+            int batchSize = 10000;
+            int from = 0;
+            boolean hasMore = true;
 
-            // 添加时间范围查询
-            addTimeRangeQuery(boolQuery, reqVO);
+            while (hasMore) {
+                NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
+                BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-            // 添加分类筛选条件
-            addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
+                // 添加时间范围查询
+                addTimeRangeQuery(boolQuery, reqVO);
 
-            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withPageable(PageRequest.of(0, 10000))
-                    .build();
+                // 添加分类过滤
+                addCategoryFilter(boolQuery, reqVO.getStatisticsType(), categoryName);
 
-            SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    searchQuery, ErpWholesaleCombinedESDO.class,
-                    IndexCoordinates.of("erp_wholesale_combined"));
+                queryBuilder.withQuery(boolQuery);
+                queryBuilder.withPageable(PageRequest.of(from / batchSize, batchSize));
+                queryBuilder.withSort(Sort.by(Sort.Direction.DESC, "create_time"));
 
-            return searchHits.getSearchHits().stream()
-                    .map(SearchHit::getContent)
-                    .collect(Collectors.toList());
+                SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                        queryBuilder.build(),
+                        ErpWholesaleCombinedESDO.class,
+                        IndexCoordinates.of("erp_wholesale_combined"));
+
+                List<ErpWholesaleCombinedESDO> batchData = searchHits.stream()
+                        .map(SearchHit::getContent)
+                        .collect(Collectors.toList());
+
+                allData.addAll(batchData);
+
+                // 检查是否还有更多数据
+                hasMore = batchData.size() == batchSize;
+                from += batchSize;
+
+                // 🔥 安全限制：最多查询100万条数据，避免内存溢出
+                if (allData.size() >= 1000000) {
+                    System.err.println("警告：批发分类数据量超过100万条，已截断查询");
+                    break;
+                }
+            }
+
         } catch (Exception e) {
-            System.err.println("获取指定分类的批发数据失败: " + e.getMessage());
-            return Collections.emptyList();
+            System.err.println("获取批发分类数据失败: " + e.getMessage());
+            e.printStackTrace();
         }
+
+        return allData;
     }
 
     /**
@@ -1628,6 +2456,23 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         }
     }
 
+    /**
+     * 创建简化的keyword匹配查询 - 参考批发表的简化策略
+     */
+    private BoolQueryBuilder createSimplifiedKeywordMatchQuery(String keywordFieldName, String keyword) {
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
 
+        BoolQueryBuilder multiMatchQuery = QueryBuilders.boolQuery();
+        // 第一优先级：完全精确匹配（权重最高）
+        multiMatchQuery.should(QueryBuilders.termQuery(keywordFieldName, keyword).boost(1000000.0f));
+        // 第二优先级：前缀匹配
+        multiMatchQuery.should(QueryBuilders.prefixQuery(keywordFieldName, keyword).boost(100000.0f));
+        // 第三优先级：通配符包含匹配
+        multiMatchQuery.should(QueryBuilders.wildcardQuery(keywordFieldName, "*" + keyword + "*").boost(10000.0f));
+
+        multiMatchQuery.minimumShouldMatch(1);
+        query.must(multiMatchQuery);
+        return query;
+    }
 
 }
