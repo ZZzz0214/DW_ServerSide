@@ -51,28 +51,15 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "combo_product_id", type = FieldType.Long)
     private Long comboProductId;
 
-    // 组品编号（从组品表获取）
-    @Field(name = "combo_product_no", type = FieldType.Keyword)
-    private String comboProductNo;
-
-    // 发货编码（从组品表获取）
-    @Field(name = "shipping_code", type = FieldType.Keyword)
-    private String shippingCode;
-
-    // 产品名称（从组品表获取）
-    @Field(name = "product_name", type = FieldType.Keyword)
-    private String productName;
+    // 移除以下从组品表获取的字段，需要实时查询
+    // private String comboProductNo;
+    // private String shippingCode;
+    // private String productName;
+    // private String purchaser;
+    // private String supplier;
 
     @Field(name = "product_specification", type = FieldType.Keyword)
     private String productSpecification;
-
-    // 采购人员（从组品表获取）
-    @Field(name = "purchaser", type = FieldType.Keyword)
-    private String purchaser;
-
-    // 供应商名称（从组品表获取）
-    @Field(name = "supplier", type = FieldType.Keyword)
-    private String supplier;
 
     @Field(name = "product_quantity", type = FieldType.Integer)
     private Integer productQuantity;

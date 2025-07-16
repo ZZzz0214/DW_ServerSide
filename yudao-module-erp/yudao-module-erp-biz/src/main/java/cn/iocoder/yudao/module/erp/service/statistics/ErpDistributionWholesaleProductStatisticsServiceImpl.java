@@ -27,6 +27,8 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
+import cn.iocoder.yudao.module.erp.service.product.ErpComboProductESRepository;
 
 /**
  * ERP 代发批发产品组品统计 Service 实现类
@@ -57,6 +59,9 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
 
     @Resource
     private ErpWholesaleCombinedESRepository wholesaleCombinedESRepository;
+
+    @Resource
+    private ErpComboProductESRepository comboProductESRepository;
 
     @Override
     public ErpDistributionWholesaleProductStatisticsRespVO getDistributionWholesaleProductStatistics(ErpDistributionWholesaleProductStatisticsReqVO reqVO) {
@@ -101,6 +106,21 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
         // 1. 统计组品数据
         Map<Long, ComboProductData> comboProductDataMap = new HashMap<>();
 
+        // 🔥 批量查组品信息
+        Set<Long> allComboProductIds = distributionList.stream()
+            .map(ErpDistributionCombinedESDO::getComboProductId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        allComboProductIds.addAll(wholesaleList.stream()
+            .map(ErpWholesaleCombinedESDO::getComboProductId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet()));
+        Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+        if (!allComboProductIds.isEmpty()) {
+            Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(allComboProductIds);
+            comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+        }
+
         // 代发表组品统计
         for (ErpDistributionCombinedESDO distribution : distributionList) {
             if (distribution.getComboProductId() != null) {
@@ -108,7 +128,11 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
                     k -> new ComboProductData());
 
                 comboData.setComboProductId(distribution.getComboProductId());
-                comboData.setComboProductNo(distribution.getComboProductNo());
+                // 实时查组品编号
+                ErpComboProductES comboProduct = comboProductMap.get(distribution.getComboProductId());
+                if (comboProduct != null) {
+                    comboData.setComboProductNo(comboProduct.getNo());
+                }
                 comboData.setDistributionComboCount(comboData.getDistributionComboCount() + distribution.getProductQuantity());
             }
         }
@@ -120,7 +144,11 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
                     k -> new ComboProductData());
 
                 comboData.setComboProductId(wholesale.getComboProductId());
-                comboData.setComboProductNo(wholesale.getComboProductNo());
+                // 实时查组品编号
+                ErpComboProductES comboProduct = comboProductMap.get(wholesale.getComboProductId());
+                if (comboProduct != null) {
+                    comboData.setComboProductNo(comboProduct.getNo());
+                }
                 comboData.setWholesaleComboCount(comboData.getWholesaleComboCount() + wholesale.getProductQuantity());
             }
         }
@@ -213,15 +241,11 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             comboStat.setComboProductId(comboData.getComboProductId());
             comboStat.setComboProductNo(comboData.getComboProductNo());
 
-            // 获取组品名称
-            try {
-                ErpComboProductDO comboProduct = comboProductService.getCombo(comboData.getComboProductId());
-                if (comboProduct != null && comboProduct.getName() != null) {
-                    comboStat.setComboProductName(comboProduct.getName());
-                } else {
-                    comboStat.setComboProductName("未知组品");
-                }
-            } catch (Exception e) {
+            // 获取组品名称（实时查）
+            ErpComboProductES comboProduct = comboProductMap.get(comboData.getComboProductId());
+            if (comboProduct != null && comboProduct.getName() != null) {
+                comboStat.setComboProductName(comboProduct.getName());
+            } else {
                 comboStat.setComboProductName("未知组品");
             }
 
@@ -354,6 +378,21 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
         // 1. 统计组品数据
         Map<Long, ComboProductData> comboProductDataMap = new HashMap<>();
         
+        // 🔥 批量查组品信息
+        Set<Long> allComboProductIds = distributionList.stream()
+            .map(ErpDistributionCombinedESDO::getComboProductId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        allComboProductIds.addAll(wholesaleList.stream()
+            .map(ErpWholesaleCombinedESDO::getComboProductId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet()));
+        Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+        if (!allComboProductIds.isEmpty()) {
+            Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(allComboProductIds);
+            comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+        }
+
         // 代发表组品统计
         for (ErpDistributionCombinedESDO distribution : distributionList) {
             if (distribution.getComboProductId() != null) {
@@ -361,7 +400,11 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
                     k -> new ComboProductData());
                 
                 comboData.setComboProductId(distribution.getComboProductId());
-                comboData.setComboProductNo(distribution.getComboProductNo());
+                // 实时查组品编号
+                ErpComboProductES comboProduct = comboProductMap.get(distribution.getComboProductId());
+                if (comboProduct != null) {
+                    comboData.setComboProductNo(comboProduct.getNo());
+                }
                 comboData.setDistributionComboCount(comboData.getDistributionComboCount() + distribution.getProductQuantity());
             }
         }
@@ -373,7 +416,11 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
                     k -> new ComboProductData());
                 
                 comboData.setComboProductId(wholesale.getComboProductId());
-                comboData.setComboProductNo(wholesale.getComboProductNo());
+                // 实时查组品编号
+                ErpComboProductES comboProduct = comboProductMap.get(wholesale.getComboProductId());
+                if (comboProduct != null) {
+                    comboData.setComboProductNo(comboProduct.getNo());
+                }
                 comboData.setWholesaleComboCount(comboData.getWholesaleComboCount() + wholesale.getProductQuantity());
             }
         }

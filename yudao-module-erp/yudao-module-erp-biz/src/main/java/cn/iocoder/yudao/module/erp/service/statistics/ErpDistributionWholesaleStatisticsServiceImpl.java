@@ -151,8 +151,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 System.out.println("代发数据样本:");
                 distributionHits.getSearchHits().stream().limit(2).forEach(hit -> {
                     ErpDistributionCombinedESDO data = hit.getContent();
+                    // 🔥 修复：移除对已删除字段的调用，改为实时获取
+                    String purchaser = getRealTimePurchaser(data.getComboProductId());
+                    String supplier = getRealTimeSupplier(data.getComboProductId());
                     System.out.println("  ID: " + data.getId() + ", 创建时间: " + data.getCreateTime() +
-                                     ", 采购人员: " + data.getPurchaser() + ", 供应商: " + data.getSupplier() +
+                                     ", 采购人员: " + purchaser + ", 供应商: " + supplier +
                                      ", 销售人员: " + data.getSalesperson() + ", 客户: " + data.getCustomerName());
                 });
             }
@@ -188,16 +191,31 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 String searchKeyword = keyword.trim();
                 switch (statisticsType) {
                     case "purchaser":
-                        boolQuery.must(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + searchKeyword + "*"));
+                        // 🔥 修复：代发表不再有purchaser字段，需要从组品表查询
+                        // 先查询符合条件的组品ID，再查询代发表
+                        Set<Long> comboProductIds = getComboProductIdsByPurchaser(searchKeyword);
+                        if (!comboProductIds.isEmpty()) {
+                            boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
+                        } else {
+                            // 如果没有找到符合条件的组品，返回空结果
+                            return new ArrayList<>();
+                        }
                         break;
                     case "supplier":
-                        boolQuery.must(QueryBuilders.wildcardQuery("supplier_keyword", "*" + searchKeyword + "*"));
+                        // 🔥 修复：代发表不再有supplier字段，需要从组品表查询
+                        Set<Long> supplierComboProductIds = getComboProductIdsBySupplier(searchKeyword);
+                        if (!supplierComboProductIds.isEmpty()) {
+                            boolQuery.must(QueryBuilders.termsQuery("combo_product_id", supplierComboProductIds));
+                        } else {
+                            // 如果没有找到符合条件的组品，返回空结果
+                            return new ArrayList<>();
+                        }
                         break;
                     case "salesperson":
-                        boolQuery.must(QueryBuilders.wildcardQuery("salesperson_keyword", "*" + searchKeyword + "*"));
+                        boolQuery.must(QueryBuilders.wildcardQuery("salesperson", "*" + searchKeyword + "*"));
                         break;
                     case "customer":
-                        boolQuery.must(QueryBuilders.wildcardQuery("customer_name_keyword", "*" + searchKeyword + "*"));
+                        boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + searchKeyword + "*"));
                         break;
                 }
             }
@@ -242,6 +260,110 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 .filter(Objects::nonNull)
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 🔥 根据采购人员关键词查询组品ID集合
+     */
+    private Set<Long> getComboProductIdsByPurchaser(String purchaserKeyword) {
+        Set<Long> comboProductIds = new HashSet<>();
+        try {
+            BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
+            comboQuery.must(QueryBuilders.wildcardQuery("purchaser", "*" + purchaserKeyword + "*"));
+            
+            NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(comboQuery)
+                    .withPageable(PageRequest.of(0, 10000))
+                    .withSourceFilter(new org.springframework.data.elasticsearch.core.query.FetchSourceFilter(new String[]{"id"}, null))
+                    .build();
+            
+            SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
+                    comboSearchQuery,
+                    ErpComboProductES.class);
+            
+            comboProductIds = comboHits.stream()
+                    .map(hit -> hit.getContent().getId())
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            System.err.println("根据采购人员查询组品ID失败: " + e.getMessage());
+        }
+        return comboProductIds;
+    }
+
+    /**
+     * 🔥 根据供应商关键词查询组品ID集合
+     */
+    private Set<Long> getComboProductIdsBySupplier(String supplierKeyword) {
+        Set<Long> comboProductIds = new HashSet<>();
+        try {
+            BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
+            comboQuery.must(QueryBuilders.wildcardQuery("supplier", "*" + supplierKeyword + "*"));
+            
+            NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(comboQuery)
+                    .withPageable(PageRequest.of(0, 10000))
+                    .withSourceFilter(new org.springframework.data.elasticsearch.core.query.FetchSourceFilter(new String[]{"id"}, null))
+                    .build();
+            
+            SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
+                    comboSearchQuery,
+                    ErpComboProductES.class);
+            
+            comboProductIds = comboHits.stream()
+                    .map(hit -> hit.getContent().getId())
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            System.err.println("根据供应商查询组品ID失败: " + e.getMessage());
+        }
+        return comboProductIds;
+    }
+
+    /**
+     * 🔥 实时获取采购人员信息
+     */
+    private String getRealTimePurchaser(Long comboProductId) {
+        if (comboProductId == null) {
+            return null;
+        }
+        try {
+            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboProductId);
+            return comboProductOpt.map(ErpComboProductES::getPurchaser).orElse(null);
+        } catch (Exception e) {
+            System.err.println("实时获取采购人员信息失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 🔥 实时获取供应商信息
+     */
+    private String getRealTimeSupplier(Long comboProductId) {
+        if (comboProductId == null) {
+            return null;
+        }
+        try {
+            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboProductId);
+            return comboProductOpt.map(ErpComboProductES::getSupplier).orElse(null);
+        } catch (Exception e) {
+            System.err.println("实时获取供应商信息失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 🔥 实时获取产品名称信息
+     */
+    private String getRealTimeProductName(Long comboProductId) {
+        if (comboProductId == null) {
+            return null;
+        }
+        try {
+            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboProductId);
+            return comboProductOpt.map(ErpComboProductES::getName).orElse(null);
+        } catch (Exception e) {
+            System.err.println("实时获取产品名称信息失败: " + e.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -424,16 +546,30 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 String keyword = reqVO.getSearchKeyword().trim();
                 switch (reqVO.getStatisticsType()) {
                     case "purchaser":
-                        boolQuery.must(QueryBuilders.wildcardQuery("purchaser_keyword", "*" + keyword + "*"));
+                        // 🔥 修复：代发表不再有purchaser字段，需要从组品表查询
+                        Set<Long> comboProductIds = getComboProductIdsByPurchaser(keyword);
+                        if (!comboProductIds.isEmpty()) {
+                            boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
+                        } else {
+                            // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
+                            boolQuery.must(QueryBuilders.termQuery("id", -1L));
+                        }
                         break;
                     case "supplier":
-                        boolQuery.must(QueryBuilders.wildcardQuery("supplier_keyword", "*" + keyword + "*"));
+                        // 🔥 修复：代发表不再有supplier字段，需要从组品表查询
+                        Set<Long> supplierComboProductIds = getComboProductIdsBySupplier(keyword);
+                        if (!supplierComboProductIds.isEmpty()) {
+                            boolQuery.must(QueryBuilders.termsQuery("combo_product_id", supplierComboProductIds));
+                        } else {
+                            // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
+                            boolQuery.must(QueryBuilders.termQuery("id", -1L));
+                        }
                         break;
                     case "salesperson":
-                        boolQuery.must(QueryBuilders.wildcardQuery("salesperson_keyword", "*" + keyword + "*"));
+                        boolQuery.must(QueryBuilders.wildcardQuery("salesperson", "*" + keyword + "*"));
                         break;
                     case "customer":
-                        boolQuery.must(QueryBuilders.wildcardQuery("customer_name_keyword", "*" + keyword + "*"));
+                        boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + keyword + "*"));
                         break;
                 }
             }
@@ -458,8 +594,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             if (!result.isEmpty()) {
                 System.out.println("代发数据样本（前3条）:");
                 result.stream().limit(3).forEach(data -> {
+                    // 🔥 修复：移除对已删除字段的调用，改为实时获取
+                    String purchaser = getRealTimePurchaser(data.getComboProductId());
+                    String supplier = getRealTimeSupplier(data.getComboProductId());
                     System.out.println("  ID: " + data.getId() + ", 创建时间: " + data.getCreateTime() +
-                                     ", 采购人员: " + data.getPurchaser() + ", 供应商: " + data.getSupplier());
+                                     ", 采购人员: " + purchaser + ", 供应商: " + supplier);
                 });
             }
 
@@ -665,9 +804,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             ErpDistributionCombinedESDO distribution = (ErpDistributionCombinedESDO) data;
             switch (statisticsType) {
                 case "purchaser":
-                    return distribution.getPurchaser();
+                    // 🔥 修复：实时从组品表获取采购人员信息
+                    return getRealTimePurchaser(distribution.getComboProductId());
                 case "supplier":
-                    return distribution.getSupplier();
+                    // 🔥 修复：实时从组品表获取供应商信息
+                    return getRealTimeSupplier(distribution.getComboProductId());
                 case "salesperson":
                     return distribution.getSalesperson();
                 case "customer":
@@ -1223,7 +1364,8 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             // 处理代发数据
             for (SearchHit<ErpDistributionCombinedESDO> hit : distributionHits) {
                 ErpDistributionCombinedESDO distribution = hit.getContent();
-                String productName = distribution.getProductName();
+                // 🔥 修复：代发表不再有productName字段，需要实时从组品表获取
+                String productName = getRealTimeProductName(distribution.getComboProductId());
                 if (productName == null) productName = "未知产品";
 
                 ErpDistributionWholesaleStatisticsRespVO.ProductDistribution product = productMap.computeIfAbsent(productName,
@@ -1363,16 +1505,31 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     private void addCategoryFilter(BoolQueryBuilder boolQuery, String statisticsType, String categoryName) {
         switch (statisticsType) {
             case "purchaser":
-                boolQuery.must(QueryBuilders.termQuery("purchaser_keyword", categoryName));
+                // 🔥 修复：代发表不再有purchaser字段，需要从组品表查询
+                // 先查询符合条件的组品ID，再查询代发表
+                Set<Long> comboProductIds = getComboProductIdsByPurchaser(categoryName);
+                if (!comboProductIds.isEmpty()) {
+                    boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
+                } else {
+                    // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
+                    boolQuery.must(QueryBuilders.termQuery("id", -1L));
+                }
                 break;
             case "supplier":
-                boolQuery.must(QueryBuilders.termQuery("supplier_keyword", categoryName));
+                // 🔥 修复：代发表不再有supplier字段，需要从组品表查询
+                Set<Long> supplierComboProductIds = getComboProductIdsBySupplier(categoryName);
+                if (!supplierComboProductIds.isEmpty()) {
+                    boolQuery.must(QueryBuilders.termsQuery("combo_product_id", supplierComboProductIds));
+                } else {
+                    // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
+                    boolQuery.must(QueryBuilders.termQuery("id", -1L));
+                }
                 break;
             case "salesperson":
-                boolQuery.must(QueryBuilders.termQuery("salesperson_keyword", categoryName));
+                boolQuery.must(QueryBuilders.termQuery("salesperson", categoryName));
                 break;
             case "customer":
-                boolQuery.must(QueryBuilders.termQuery("customer_name_keyword", categoryName));
+                boolQuery.must(QueryBuilders.termQuery("customer_name", categoryName));
                 break;
         }
     }
