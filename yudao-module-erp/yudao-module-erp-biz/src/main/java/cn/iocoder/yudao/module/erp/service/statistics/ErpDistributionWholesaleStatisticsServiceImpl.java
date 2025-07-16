@@ -164,8 +164,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 System.out.println("批发数据样本:");
                 wholesaleHits.getSearchHits().stream().limit(2).forEach(hit -> {
                     ErpWholesaleCombinedESDO data = hit.getContent();
+                    // 🔥 修复：从组品ES中实时获取采购人员和供应商信息
+                    String purchaser = getRealTimePurchaser(data.getComboProductId());
+                    String supplier = getRealTimeSupplier(data.getComboProductId());
                     System.out.println("  ID: " + data.getId() + ", 创建时间: " + data.getCreateTime() +
-                                     ", 采购人员: " + data.getPurchaser() + ", 供应商: " + data.getSupplier() +
+                                     ", 采购人员: " + purchaser + ", 供应商: " + supplier +
                                      ", 销售人员: " + data.getSalesperson() + ", 客户: " + data.getCustomerName());
                 });
             }
@@ -686,8 +689,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             if (!result.isEmpty()) {
                 System.out.println("批发数据样本（前3条）:");
                 result.stream().limit(3).forEach(data -> {
+                    // 🔥 修复：从组品ES中实时获取采购人员和供应商信息
+                    String purchaser = getRealTimePurchaser(data.getComboProductId());
+                    String supplier = getRealTimeSupplier(data.getComboProductId());
                     System.out.println("  ID: " + data.getId() + ", 创建时间: " + data.getCreateTime() +
-                                     ", 采购人员: " + data.getPurchaser() + ", 供应商: " + data.getSupplier());
+                                     ", 采购人员: " + purchaser + ", 供应商: " + supplier);
                 });
             }
 
@@ -820,9 +826,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             ErpWholesaleCombinedESDO wholesale = (ErpWholesaleCombinedESDO) data;
             switch (statisticsType) {
                 case "purchaser":
-                    return wholesale.getPurchaser();
+                    // 🔥 修复：实时从组品表获取采购人员信息
+                    return getRealTimePurchaser(wholesale.getComboProductId());
                 case "supplier":
-                    return wholesale.getSupplier();
+                    // 🔥 修复：实时从组品表获取供应商信息
+                    return getRealTimeSupplier(wholesale.getComboProductId());
                 case "salesperson":
                     return wholesale.getSalesperson();
                 case "customer":
@@ -1396,8 +1404,14 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             if (wholesaleHits != null) {
                 for (SearchHit<ErpWholesaleCombinedESDO> hit : wholesaleHits) {
                     ErpWholesaleCombinedESDO wholesale = hit.getContent();
-                    String productName = wholesale.getProductName();
-                    if (productName == null) productName = "未知产品";
+                    // 🔥 修复：从组品ES中实时获取产品名称
+                    String productName = "未知产品";
+                    if (wholesale.getComboProductId() != null) {
+                        Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(wholesale.getComboProductId());
+                        if (comboProductOpt.isPresent()) {
+                            productName = comboProductOpt.get().getName();
+                        }
+                    }
 
                     ErpDistributionWholesaleStatisticsRespVO.ProductDistribution product = productMap.computeIfAbsent(productName,
                         k -> {
