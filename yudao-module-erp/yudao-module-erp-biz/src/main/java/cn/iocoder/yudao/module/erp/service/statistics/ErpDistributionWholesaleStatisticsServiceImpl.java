@@ -1055,18 +1055,36 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                                  ", 其他费用: " + otherFees +
                                  ", 总采购金额: " + purchaseAmount);
 
-                // 计算销售金额
-                if (distribution.getCustomerName() != null) {
-                    Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
-                            distribution.getComboProductId(), distribution.getCustomerName());
-                    if (salePriceOpt.isPresent()) {
-                        ErpSalePriceESDO salePrice = salePriceOpt.get();
-                        // 🔥 修复：添加空值检查
-                        BigDecimal distributionSalePrice = salePrice.getDistributionPrice() != null ? salePrice.getDistributionPrice() : BigDecimal.ZERO;
-                        BigDecimal saleProductAmount = distributionSalePrice.multiply(new BigDecimal(quantity));
-                        BigDecimal saleShippingFee = calculateDistributionSaleShippingFee(salePrice, quantity, comboProduct);
-                        BigDecimal saleOtherFees = distribution.getSaleOtherFees() != null ? distribution.getSaleOtherFees() : BigDecimal.ZERO;
-                        saleAmount = saleProductAmount.add(saleShippingFee).add(saleOtherFees);
+                                    // 计算销售金额
+                    if (distribution.getCustomerName() != null) {
+                        Optional<ErpSalePriceESDO> salePriceOpt = salePriceESRepository.findByGroupProductIdAndCustomerName(
+                                distribution.getComboProductId(), distribution.getCustomerName());
+                        if (salePriceOpt.isPresent()) {
+                            ErpSalePriceESDO salePrice = salePriceOpt.get();
+                            // 🔥 修复：添加空值检查
+                            BigDecimal distributionSalePrice = salePrice.getDistributionPrice() != null ? salePrice.getDistributionPrice() : BigDecimal.ZERO;
+                            BigDecimal saleProductAmount = distributionSalePrice.multiply(new BigDecimal(quantity));
+                            
+                            // 根据运费类型计算销售运费
+                            BigDecimal saleShippingFee;
+                            if (salePrice.getShippingFeeType() != null && salePrice.getShippingFeeType() == 0) {
+                                // 固定运费：直接使用固定运费
+                                BigDecimal fixedFee = salePrice.getFixedShippingFee() != null ? salePrice.getFixedShippingFee() : BigDecimal.ZERO;
+                                saleShippingFee = fixedFee;
+                                System.out.println("【销售固定运费】单个运费: " + fixedFee);
+                            } else {
+                                // 按件计费或按重量计费：考虑产品数量
+                                saleShippingFee = calculateDistributionSaleShippingFee(salePrice, quantity, comboProduct);
+                                System.out.println("【销售运费】数量: " + quantity + ", 计算的运费: " + saleShippingFee);
+                            }
+                            
+                            BigDecimal saleOtherFees = distribution.getSaleOtherFees() != null ? distribution.getSaleOtherFees() : BigDecimal.ZERO;
+                            saleAmount = saleProductAmount.add(saleShippingFee).add(saleOtherFees);
+                            
+                            System.out.println("【销售金额计算】产品金额: " + saleProductAmount + 
+                                             ", 运费: " + saleShippingFee + 
+                                             ", 其他费用: " + saleOtherFees + 
+                                             ", 总销售金额: " + saleAmount);
                     } else {
                         // 🔥 修复：销售价格表没有数据时，也能计算销售金额，销售价格字段设置为0
                         BigDecimal saleProductAmount = BigDecimal.ZERO; // 销售价格为0
@@ -1133,6 +1151,10 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
     /**
      * 计算代发采购运费
+     * 
+     * @param comboProduct 组品信息
+     * @param quantity 产品数量
+     * @return 运费金额
      */
     private BigDecimal calculateDistributionShippingFee(ErpComboProductES comboProduct, Integer quantity) {
         System.out.println("【运费计算函数】开始计算 - 组品ID: " + comboProduct.getId() 
@@ -1141,15 +1163,23 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                          + ", 运费类型: " + comboProduct.getShippingFeeType());
         
         BigDecimal shippingFee = BigDecimal.ZERO;
+        
+        // 如果运费类型为空，返回0
+        if (comboProduct.getShippingFeeType() == null) {
+            System.out.println("【运费计算函数】运费类型为空，返回0");
+            return shippingFee;
+        }
+        
         switch (comboProduct.getShippingFeeType()) {
             case 0: // 固定运费
-                // 🔥 修复：固定运费不乘以产品数量，每个订单收一次固定运费
+                // 固定运费不考虑产品数量，每个订单收一次固定运费
                 BigDecimal fixedFee = comboProduct.getFixedShippingFee() != null ? comboProduct.getFixedShippingFee() : BigDecimal.ZERO;
                 shippingFee = fixedFee;
                 System.out.println("【固定运费】固定运费: " + fixedFee + ", 最终运费: " + shippingFee);
                 break;
                 
             case 1: // 按件计费
+                // 按件计费需要考虑产品数量
                 if (comboProduct.getAdditionalItemQuantity() > 0) {
                     int additionalUnits = (int) Math.ceil((double) quantity / comboProduct.getAdditionalItemQuantity());
                     BigDecimal additionalItemPrice = comboProduct.getAdditionalItemPrice() != null ? comboProduct.getAdditionalItemPrice() : BigDecimal.ZERO;
@@ -1165,6 +1195,7 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 break;
                 
             case 2: // 按重量计费
+                // 按重量计费需要考虑产品数量
                 BigDecimal weight = comboProduct.getWeight() != null ? comboProduct.getWeight() : BigDecimal.ZERO;
                 BigDecimal totalWeight = weight.multiply(new BigDecimal(quantity));
                 BigDecimal firstWeight = comboProduct.getFirstWeight() != null ? comboProduct.getFirstWeight() : BigDecimal.ZERO;
@@ -1175,14 +1206,13 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                                  + ", 首重: " + firstWeight
                                  + ", 首重价格: " + firstWeightPrice);
                 
-                // 🔥 修复：不考虑产品数量，计算单个订单的运费
                 if (totalWeight.compareTo(firstWeight) <= 0) {
                     shippingFee = firstWeightPrice;
                     System.out.println("【按重量计费】总重量不超过首重，运费 = 首重价格: " + shippingFee);
                 } else {
                     BigDecimal additionalWeight = totalWeight.subtract(firstWeight);
                     BigDecimal additionalWeightUnit = comboProduct.getAdditionalWeight() != null ? comboProduct.getAdditionalWeight() : BigDecimal.ONE;
-                    BigDecimal additionalUnits = additionalWeight.divide(additionalWeightUnit, 0, RoundingMode.UP);
+                    BigDecimal additionalUnits = additionalWeight.divide(additionalWeightUnit, 4, RoundingMode.UP);
                     BigDecimal additionalWeightPrice = comboProduct.getAdditionalWeightPrice() != null ? comboProduct.getAdditionalWeightPrice() : BigDecimal.ZERO;
                     shippingFee = firstWeightPrice.add(additionalWeightPrice.multiply(additionalUnits));
                     
@@ -1193,6 +1223,10 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                                      + ", 最终运费: " + shippingFee);
                 }
                 break;
+            
+            default:
+                System.out.println("【运费计算函数】未知运费类型: " + comboProduct.getShippingFeeType() + "，返回0");
+                break;
         }
         
         System.out.println("【运费计算函数】计算完成 - 最终运费: " + shippingFee);
@@ -1201,41 +1235,82 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
     /**
      * 计算代发销售运费
+     * 
+     * @param salePrice 销售价格信息
+     * @param quantity 产品数量
+     * @param comboProduct 组品信息
+     * @return 销售运费金额
      */
     private BigDecimal calculateDistributionSaleShippingFee(ErpSalePriceESDO salePrice, Integer quantity, ErpComboProductES comboProduct) {
         BigDecimal shippingFee = BigDecimal.ZERO;
+        
+        // 如果运费类型为空，返回0
+        if (salePrice.getShippingFeeType() == null) {
+            System.out.println("【销售运费计算】运费类型为空，返回0");
+            return shippingFee;
+        }
+        
         switch (salePrice.getShippingFeeType()) {
             case 0: // 固定运费
-                // 🔥 修复：销售固定运费不乘以产品数量，每个订单收一次固定运费
+                // 固定运费不考虑产品数量，每个订单收一次固定运费
                 BigDecimal fixedFee = salePrice.getFixedShippingFee() != null ? salePrice.getFixedShippingFee() : BigDecimal.ZERO;
                 shippingFee = fixedFee;
+                System.out.println("【销售固定运费】固定运费: " + fixedFee);
                 break;
+                
             case 1: // 按件计费
+                // 按件计费需要考虑产品数量
                 if (salePrice.getAdditionalItemQuantity() > 0) {
                     int additionalUnits = (int) Math.ceil((double) quantity / salePrice.getAdditionalItemQuantity());
                     BigDecimal additionalItemPrice = salePrice.getAdditionalItemPrice() != null ? salePrice.getAdditionalItemPrice() : BigDecimal.ZERO;
                     shippingFee = additionalItemPrice.multiply(new BigDecimal(additionalUnits));
+                    System.out.println("【销售按件计费】数量: " + quantity 
+                                     + ", 每件数量: " + salePrice.getAdditionalItemQuantity()
+                                     + ", 计费单位数: " + additionalUnits
+                                     + ", 单位价格: " + additionalItemPrice
+                                     + ", 运费: " + shippingFee);
+                } else {
+                    System.out.println("【销售按件计费】每件数量为0，无法计算运费");
                 }
                 break;
-            case 2: // 按重计费
+                
+            case 2: // 按重量计费
+                // 按重量计费需要考虑产品数量
                 BigDecimal productWeight = comboProduct.getWeight() != null ? comboProduct.getWeight() : BigDecimal.ZERO;
                 BigDecimal totalWeight = productWeight.multiply(new BigDecimal(quantity));
 
                 BigDecimal firstWeight = salePrice.getFirstWeight() != null ? salePrice.getFirstWeight() : BigDecimal.ZERO;
                 BigDecimal firstWeightPrice = salePrice.getFirstWeightPrice() != null ? salePrice.getFirstWeightPrice() : BigDecimal.ZERO;
 
-                // 🔥 修复：不考虑产品数量，计算单个订单的运费
+                System.out.println("【销售按重量计费】单件重量: " + productWeight 
+                                 + ", 总重量: " + totalWeight
+                                 + ", 首重: " + firstWeight
+                                 + ", 首重价格: " + firstWeightPrice);
+
                 if (totalWeight.compareTo(firstWeight) <= 0) {
                     shippingFee = firstWeightPrice;
+                    System.out.println("【销售按重量计费】总重量不超过首重，运费 = 首重价格: " + shippingFee);
                 } else {
                     BigDecimal additionalWeight = totalWeight.subtract(firstWeight);
                     BigDecimal additionalWeightUnit = salePrice.getAdditionalWeight() != null ? salePrice.getAdditionalWeight() : BigDecimal.ONE;
-                    BigDecimal additionalUnits = additionalWeight.divide(additionalWeightUnit, 0, RoundingMode.UP);
+                    BigDecimal additionalUnits = additionalWeight.divide(additionalWeightUnit, 4, RoundingMode.UP);
                     BigDecimal additionalWeightPrice = salePrice.getAdditionalWeightPrice() != null ? salePrice.getAdditionalWeightPrice() : BigDecimal.ZERO;
                     shippingFee = firstWeightPrice.add(additionalWeightPrice.multiply(additionalUnits));
+                    
+                    System.out.println("【销售按重量计费】超出首重: " + additionalWeight 
+                                     + ", 续重单位: " + additionalWeightUnit
+                                     + ", 续重单位数: " + additionalUnits
+                                     + ", 续重单价: " + additionalWeightPrice
+                                     + ", 运费: " + shippingFee);
                 }
                 break;
+                
+            default:
+                System.out.println("【销售运费计算】未知运费类型: " + salePrice.getShippingFeeType() + "，返回0");
+                break;
         }
+        
+        System.out.println("【销售运费计算】完成 - 最终运费: " + shippingFee);
         return shippingFee;
     }
 
@@ -2332,7 +2407,7 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                         comboProduct.getPurchasePrice() : BigDecimal.ZERO;
                     BigDecimal productCost = purchasePrice.multiply(new BigDecimal(comboQuantity));
                     
-                    // 🔥 修复：计算该组品的采购运费 - 每订单运费乘以订单数量
+                    // 🔥 修复：根据运费类型采用不同的计算策略
                     // 注意：comboQuantitySum表示该组品的总数量，但我们需要知道有多少个订单
                     // 这里使用docCount获取订单数量，因为一个bucket就是一个订单组
                     long orderCount = comboBucket.getDocCount();
@@ -2340,7 +2415,6 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                     // 计算每单平均数量，用于运费计算
                     int quantityPerOrder = orderCount > 0 ? comboQuantity / (int)orderCount : comboQuantity;
                     
-                    // 详细日志：记录运费计算前的数据
                     System.out.println("【运费计算详情】组品ID: " + comboId 
                                      + ", 组品名称: " + comboProduct.getName()
                                      + ", 总数量: " + comboQuantity 
@@ -2348,12 +2422,23 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                                      + ", 每单数量: " + quantityPerOrder
                                      + ", 运费类型: " + comboProduct.getShippingFeeType());
                     
-                    BigDecimal shippingFee = calculateDistributionShippingFee(comboProduct, quantityPerOrder);
-                    BigDecimal totalShippingFee = shippingFee.multiply(new BigDecimal(orderCount));
+                    BigDecimal totalShippingFee;
+                    
+                    // 根据运费类型采用不同的计算策略
+                    if (comboProduct.getShippingFeeType() != null && comboProduct.getShippingFeeType() == 0) {
+                        // 固定运费：直接乘以订单数
+                        BigDecimal fixedFee = comboProduct.getFixedShippingFee() != null ? comboProduct.getFixedShippingFee() : BigDecimal.ZERO;
+                        totalShippingFee = fixedFee.multiply(new BigDecimal(orderCount));
+                        System.out.println("【固定运费】单个运费: " + fixedFee + ", 订单数: " + orderCount + ", 总运费: " + totalShippingFee);
+                    } else {
+                        // 按件计费或按重量计费：考虑产品数量
+                        BigDecimal shippingFee = calculateDistributionShippingFee(comboProduct, comboQuantity);
+                        totalShippingFee = shippingFee;
+                        System.out.println("【按件/重量计费】总数量: " + comboQuantity + ", 计算的总运费: " + totalShippingFee);
+                    }
                     
                     // 详细日志：记录运费计算结果
-                    System.out.println("【运费计算结果】单个订单运费: " + shippingFee 
-                                     + ", 总运费: " + totalShippingFee
+                    System.out.println("【采购运费计算结果】总运费: " + totalShippingFee
                                      + ", 产品成本: " + productCost
                                      + ", 采购单价: " + purchasePrice);
                     
@@ -2371,7 +2456,6 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                                      ", 采购单价: " + purchasePrice + 
                                      ", 数量: " + comboQuantity + 
                                      ", 订单数: " + orderCount +
-                                     ", 单个订单运费: " + shippingFee +
                                      ", 总运费: " + totalShippingFee +
                                      ", 产品成本: " + productCost);
                 }
