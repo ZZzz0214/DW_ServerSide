@@ -2339,6 +2339,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                                             .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
                                     vo.setSalePrice(salePriceValue);
                                     vo.setTotalSaleAmount(totalSaleAmount);
+                                } else if (salePrice != null) {
+                                    // 出货单价为空，但仍然需要计算其他费用
+                                    BigDecimal totalSaleAmount = BigDecimal.ZERO
+                                            .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                            .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                            .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                    vo.setSalePrice(null);
+                                    vo.setTotalSaleAmount(totalSaleAmount);
                                 } else {
                                     // 如果批量查询没找到，进行单个查询作为兜底（但数量应该很少）
                                     try {
@@ -2346,18 +2354,50 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                                                 combined.getComboProductId(), combined.getCustomerName());
                                         if (salePriceOpt.isPresent()) {
                                             ErpSalePriceESDO fallbackSalePrice = salePriceOpt.get();
-                                            BigDecimal totalSaleAmount = fallbackSalePrice.getWholesalePrice()
-                                                    .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                            if (fallbackSalePrice.getWholesalePrice() != null) {
+                                                BigDecimal totalSaleAmount = fallbackSalePrice.getWholesalePrice()
+                                                        .multiply(BigDecimal.valueOf(combined.getProductQuantity()))
+                                                        .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                                        .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                                        .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                                vo.setSalePrice(fallbackSalePrice.getWholesalePrice());
+                                                vo.setTotalSaleAmount(totalSaleAmount);
+                                            } else {
+                                                // 出货单价为空，但仍然需要计算其他费用
+                                                BigDecimal totalSaleAmount = BigDecimal.ZERO
+                                                        .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                                        .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                                        .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                                vo.setSalePrice(null);
+                                                vo.setTotalSaleAmount(totalSaleAmount);
+                                            }
+                                        } else {
+                                            // 没有找到销售价格，但仍然需要计算其他费用
+                                            BigDecimal totalSaleAmount = BigDecimal.ZERO
                                                     .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
                                                     .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
                                                     .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
-                                            vo.setSalePrice(fallbackSalePrice.getWholesalePrice());
+                                            vo.setSalePrice(null);
                                             vo.setTotalSaleAmount(totalSaleAmount);
                                         }
                                     } catch (Exception e) {
-                                        // 兜底销售价格查询失败
+                                        // 兜底销售价格查询失败，但仍然需要计算其他费用
+                                        BigDecimal totalSaleAmount = BigDecimal.ZERO
+                                                .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                                .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                                .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                        vo.setSalePrice(null);
+                                        vo.setTotalSaleAmount(totalSaleAmount);
                                     }
                                 }
+                            } else {
+                                // 没有客户名称，但仍然需要计算其他费用
+                                BigDecimal totalSaleAmount = BigDecimal.ZERO
+                                        .add(combined.getSaleTruckFee() != null ? combined.getSaleTruckFee() : BigDecimal.ZERO)
+                                        .add(combined.getSaleLogisticsFee() != null ? combined.getSaleLogisticsFee() : BigDecimal.ZERO)
+                                        .add(combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO);
+                                vo.setSalePrice(null);
+                                vo.setTotalSaleAmount(totalSaleAmount);
                             }
                         }
                     }
