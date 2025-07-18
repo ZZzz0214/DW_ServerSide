@@ -48,6 +48,14 @@ public interface ErpWholesaleService {
 
     // 获取 VO 分页
     PageResult<ErpWholesaleRespVO> getWholesaleVOPage(ErpWholesalePageReqVO pageReqVO);
+    
+    /**
+     * 导出所有符合条件的批发数据
+     * 
+     * @param pageReqVO 查询条件
+     * @return 批发数据VO列表
+     */
+    List<ErpWholesaleRespVO> exportAllWholesales(ErpWholesalePageReqVO pageReqVO);
 
     /**
      * 更新采购审核状态
