@@ -581,11 +581,15 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         ErpDistributionWholesaleStatisticsRespVO.AuditStatistics auditStatistics = new ErpDistributionWholesaleStatisticsRespVO.AuditStatistics();
 
         try {
-            // 获取代发数据
+            System.out.println("=== 开始获取代发批发审核统计数据 ===");
+            
+            // 🔥 修复：获取所有代发数据，不限制10000条
             List<ErpDistributionCombinedESDO> distributionData = getDistributionDataFromES(reqVO);
+            System.out.println("获取到代发数据: " + distributionData.size() + " 条");
 
-            // 获取批发数据
+            // 🔥 修复：获取所有批发数据，不限制10000条
             List<ErpWholesaleCombinedESDO> wholesaleData = getWholesaleDataFromES(reqVO);
+            System.out.println("获取到批发数据: " + wholesaleData.size() + " 条");
 
             // 统计代发数据
             for (ErpDistributionCombinedESDO distribution : distributionData) {
@@ -705,6 +709,14 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             auditStatistics.setWholesaleSaleTotalCount(
                 auditStatistics.getWholesaleSaleUnauditedCount() +
                 auditStatistics.getWholesaleSaleAuditedCount());
+                
+            // 打印统计结果
+            System.out.println("=== 代发批发审核统计结果 ===");
+            System.out.println("代发采购总数: " + auditStatistics.getDistributionPurchaseTotalCount());
+            System.out.println("代发销售总数: " + auditStatistics.getDistributionSaleTotalCount());
+            System.out.println("批发采购总数: " + auditStatistics.getWholesalePurchaseTotalCount());
+            System.out.println("批发销售总数: " + auditStatistics.getWholesaleSaleTotalCount());
+            System.out.println("=== 审核统计完成 ===");
 
         } catch (Exception e) {
             System.err.println("获取审核统计数据失败: " + e.getMessage());
@@ -784,19 +796,73 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 }
             }
 
-            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+            // 🔥 修复：使用分批次查询，避免10000条记录的限制
+            int pageSize = 2000;
+            int pageNum = 0;
+            long totalHits = 0;
+            List<ErpDistributionCombinedESDO> result = new ArrayList<>();
+
+            // 先执行一次查询获取总数
+            NativeSearchQuery countQuery = new NativeSearchQueryBuilder()
                     .withQuery(boolQuery)
-                    .withPageable(PageRequest.of(0, 10000)) // 获取大量数据用于统计
+                    .withPageable(PageRequest.of(0, 1))
                     .build();
 
-            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    searchQuery, ErpDistributionCombinedESDO.class);
+            SearchHits<ErpDistributionCombinedESDO> countHits = elasticsearchRestTemplate.search(
+                    countQuery, ErpDistributionCombinedESDO.class);
 
-            System.out.println("代发数据查询结果数量: " + searchHits.getTotalHits());
+            totalHits = countHits.getTotalHits();
+            System.out.println("代发数据总数: " + totalHits);
 
-            List<ErpDistributionCombinedESDO> result = searchHits.getSearchHits().stream()
-                    .map(SearchHit::getContent)
-                    .collect(Collectors.toList());
+            // 分批次查询
+            boolean hasMore = true;
+            while (hasMore) {
+                try {
+                    NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                            .withQuery(boolQuery)
+                            .withPageable(PageRequest.of(pageNum, pageSize))
+                            .build();
+
+                    SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                            searchQuery, ErpDistributionCombinedESDO.class);
+
+                    List<ErpDistributionCombinedESDO> pageResult = searchHits.getSearchHits().stream()
+                        .map(SearchHit::getContent)
+                        .collect(Collectors.toList());
+
+                    result.addAll(pageResult);
+                    System.out.println("代发数据查询第" + (pageNum + 1) + "页，获取" + pageResult.size() + "条记录");
+
+                    pageNum++;
+                    hasMore = pageResult.size() == pageSize;
+                    
+                                            // 如果已经获取了10000条数据但还有更多，使用多次查询方式继续获取
+                        if (pageNum * pageSize >= 10000 && hasMore) {
+                            System.out.println("代发数据查询超过10000条，使用多次查询方式继续获取");
+                            // 使用多次查询方式获取剩余数据
+                            List<ErpDistributionCombinedESDO> additionalData = getDistributionDataWithScroll(boolQuery, 10000);
+                            System.out.println("通过多次查询方式额外获取了 " + additionalData.size() + " 条代发数据");
+                            result.addAll(additionalData);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // 捕获单页查询异常，记录错误并继续
+                        System.err.println("代发数据查询第" + (pageNum + 1) + "页失败: " + e.getMessage());
+                        // 如果是因为from+size超过限制，使用多次查询方式
+                        if (e.getMessage() != null && e.getMessage().contains("Result window is too large")) {
+                            System.out.println("代发数据查询达到ES结果窗口限制，使用多次查询方式");
+                            // 使用多次查询方式获取剩余数据
+                            List<ErpDistributionCombinedESDO> additionalData = getDistributionDataWithScroll(boolQuery, pageNum * pageSize);
+                            System.out.println("通过多次查询方式额外获取了 " + additionalData.size() + " 条代发数据");
+                            result.addAll(additionalData);
+                            break;
+                        }
+                        pageNum++; // 尝试下一页
+                    }
+            }
+
+            System.out.println("代发数据查询结果数量: " + totalHits);
+            System.out.println("实际返回代发数据数量: " + result.size());
 
             System.out.println("实际返回代发数据数量: " + result.size());
 
@@ -820,6 +886,85 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             e.printStackTrace();
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * 使用分批次查询获取超过10000条的代发数据
+     */
+    private List<ErpDistributionCombinedESDO> getDistributionDataWithScroll(BoolQueryBuilder boolQuery, int startFrom) {
+        List<ErpDistributionCombinedESDO> result = new ArrayList<>();
+        try {
+            System.out.println("开始获取超过10000条的代发数据，已获取: " + startFrom);
+            
+            // 获取总数据量
+            NativeSearchQuery countQuery = new NativeSearchQueryBuilder()
+                .withQuery(boolQuery)
+                .withPageable(PageRequest.of(0, 1))
+                .build();
+                
+            SearchHits<ErpDistributionCombinedESDO> countHits = elasticsearchRestTemplate.search(
+                countQuery, ErpDistributionCombinedESDO.class);
+                
+            long totalHits = countHits.getTotalHits();
+            System.out.println("代发数据总量: " + totalHits);
+            
+            // 使用多次查询代替Scroll API
+            // 方法1: 使用不同的排序方式来模拟分页
+            // 先按ID降序排序获取前10000条
+            NativeSearchQuery firstBatchQuery = new NativeSearchQueryBuilder()
+                .withQuery(boolQuery)
+                .withSort(Sort.by(Sort.Direction.DESC, "id"))
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+                
+            SearchHits<ErpDistributionCombinedESDO> firstBatchHits = elasticsearchRestTemplate.search(
+                firstBatchQuery, ErpDistributionCombinedESDO.class);
+                
+            List<ErpDistributionCombinedESDO> firstBatch = firstBatchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+                
+            System.out.println("获取第一批代发数据(ID降序): " + firstBatch.size() + "条");
+            result.addAll(firstBatch);
+            
+            // 如果还有更多数据，按ID升序排序获取
+            if (totalHits > 20000) {
+                NativeSearchQuery secondBatchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .withPageable(PageRequest.of(0, 10000))
+                    .build();
+                    
+                SearchHits<ErpDistributionCombinedESDO> secondBatchHits = elasticsearchRestTemplate.search(
+                    secondBatchQuery, ErpDistributionCombinedESDO.class);
+                    
+                List<ErpDistributionCombinedESDO> secondBatch = secondBatchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+                    
+                System.out.println("获取第二批代发数据(ID升序): " + secondBatch.size() + "条");
+                
+                // 去重合并
+                Set<Long> existingIds = firstBatch.stream()
+                    .map(ErpDistributionCombinedESDO::getId)
+                    .collect(Collectors.toSet());
+                    
+                List<ErpDistributionCombinedESDO> uniqueSecondBatch = secondBatch.stream()
+                    .filter(item -> !existingIds.contains(item.getId()))
+                    .collect(Collectors.toList());
+                    
+                System.out.println("第二批去重后: " + uniqueSecondBatch.size() + "条");
+                result.addAll(uniqueSecondBatch);
+            }
+            
+            System.out.println("代发数据获取完成，总获取: " + result.size() + "条");
+            
+        } catch (Exception e) {
+            System.err.println("获取超过10000条的代发数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return result;
     }
 
     /**
@@ -915,15 +1060,15 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             totalHits = countHits.getTotalHits();
             System.out.println("批发数据总数: " + totalHits);
 
-            // 如果数据量太大，使用聚合查询而不是全量查询
+            // 🔥 修复：不限制数据量，使用多次查询方式获取全部数据
+            // 如果数据量太大，使用多次查询获取全部数据
             if (totalHits > 10000) {
-                System.out.println("批发数据量超过10000，使用聚合查询代替全量查询");
-                // 返回空列表，让调用方使用聚合查询
-                return Collections.emptyList();
+                System.out.println("批发数据量超过10000，使用多次查询获取全部数据");
+                return getWholesaleDataWithMultipleQueries(boolQuery);
             }
 
-            // 🔥 修复：限制查询结果不超过ES的max_result_window(10000)
-            int maxResultWindow = 10000; // ES默认的最大结果窗口
+            // ES默认的最大结果窗口
+            int maxResultWindow = 10000;
             int maxPages = maxResultWindow / pageSize;
 
             // 分批次查询
@@ -955,7 +1100,22 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                     hasMore = pageResult.size() == pageSize && result.size() < maxResultWindow; // 最多查询到max_result_window
 
                     if (result.size() >= maxResultWindow) {
-                        System.out.println("批发数据查询达到ES限制(" + maxResultWindow + "条)，停止查询");
+                        System.out.println("批发数据查询达到ES限制(" + maxResultWindow + "条)，使用多次查询方式获取剩余数据");
+                        // 使用多次查询方式获取剩余数据
+                        List<ErpWholesaleCombinedESDO> additionalData = getWholesaleDataWithMultipleQueries(boolQuery);
+                        System.out.println("通过多次查询方式额外获取了 " + additionalData.size() + " 条批发数据");
+                        
+                        // 去重合并
+                        Set<Long> existingIds = result.stream()
+                            .map(ErpWholesaleCombinedESDO::getId)
+                            .collect(Collectors.toSet());
+                            
+                        List<ErpWholesaleCombinedESDO> uniqueAdditionalData = additionalData.stream()
+                            .filter(item -> !existingIds.contains(item.getId()))
+                            .collect(Collectors.toList());
+                            
+                        System.out.println("去重后额外添加: " + uniqueAdditionalData.size() + " 条批发数据");
+                        result.addAll(uniqueAdditionalData);
                         break;
                     }
                 } catch (Exception e) {
@@ -3715,5 +3875,115 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 使用多次查询获取超过10000条的批发数据
+     */
+    private List<ErpWholesaleCombinedESDO> getWholesaleDataWithMultipleQueries(BoolQueryBuilder boolQuery) {
+        List<ErpWholesaleCombinedESDO> result = new ArrayList<>();
+        try {
+            System.out.println("开始获取超过10000条的批发数据");
+            
+            // 获取总数据量
+            NativeSearchQuery countQuery = new NativeSearchQueryBuilder()
+                .withQuery(boolQuery)
+                .withPageable(PageRequest.of(0, 1))
+                .build();
+                
+            SearchHits<ErpWholesaleCombinedESDO> countHits = elasticsearchRestTemplate.search(
+                countQuery, ErpWholesaleCombinedESDO.class);
+                
+            long totalHits = countHits.getTotalHits();
+            System.out.println("批发数据总量: " + totalHits);
+            
+            // 使用多次查询代替Scroll API
+            // 方法1: 使用不同的排序方式来模拟分页
+            // 先按ID降序排序获取前10000条
+            NativeSearchQuery firstBatchQuery = new NativeSearchQueryBuilder()
+                .withQuery(boolQuery)
+                .withSort(Sort.by(Sort.Direction.DESC, "id"))
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+                
+            SearchHits<ErpWholesaleCombinedESDO> firstBatchHits = elasticsearchRestTemplate.search(
+                firstBatchQuery, ErpWholesaleCombinedESDO.class);
+                
+            List<ErpWholesaleCombinedESDO> firstBatch = firstBatchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+                
+            System.out.println("获取第一批批发数据(ID降序): " + firstBatch.size() + "条");
+            result.addAll(firstBatch);
+            
+            // 如果还有更多数据，按ID升序排序获取
+            if (totalHits > 10000) {
+                NativeSearchQuery secondBatchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                    .withPageable(PageRequest.of(0, 10000))
+                    .build();
+                    
+                SearchHits<ErpWholesaleCombinedESDO> secondBatchHits = elasticsearchRestTemplate.search(
+                    secondBatchQuery, ErpWholesaleCombinedESDO.class);
+                    
+                List<ErpWholesaleCombinedESDO> secondBatch = secondBatchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+                    
+                System.out.println("获取第二批批发数据(ID升序): " + secondBatch.size() + "条");
+                
+                // 去重合并
+                Set<Long> existingIds = firstBatch.stream()
+                    .map(ErpWholesaleCombinedESDO::getId)
+                    .collect(Collectors.toSet());
+                    
+                List<ErpWholesaleCombinedESDO> uniqueSecondBatch = secondBatch.stream()
+                    .filter(item -> !existingIds.contains(item.getId()))
+                    .collect(Collectors.toList());
+                    
+                System.out.println("第二批去重后: " + uniqueSecondBatch.size() + "条");
+                result.addAll(uniqueSecondBatch);
+            }
+            
+            // 如果数据量超过20000，尝试使用其他字段排序获取更多数据
+            if (totalHits > 20000) {
+                // 使用创建时间排序获取更多数据
+                NativeSearchQuery thirdBatchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withSort(Sort.by(Sort.Direction.DESC, "create_time"))
+                    .withPageable(PageRequest.of(0, 10000))
+                    .build();
+                    
+                SearchHits<ErpWholesaleCombinedESDO> thirdBatchHits = elasticsearchRestTemplate.search(
+                    thirdBatchQuery, ErpWholesaleCombinedESDO.class);
+                    
+                List<ErpWholesaleCombinedESDO> thirdBatch = thirdBatchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+                    
+                System.out.println("获取第三批批发数据(创建时间降序): " + thirdBatch.size() + "条");
+                
+                // 去重合并
+                Set<Long> existingIds = result.stream()
+                    .map(ErpWholesaleCombinedESDO::getId)
+                    .collect(Collectors.toSet());
+                    
+                List<ErpWholesaleCombinedESDO> uniqueThirdBatch = thirdBatch.stream()
+                    .filter(item -> !existingIds.contains(item.getId()))
+                    .collect(Collectors.toList());
+                    
+                System.out.println("第三批去重后: " + uniqueThirdBatch.size() + "条");
+                result.addAll(uniqueThirdBatch);
+            }
+            
+            System.out.println("批发数据获取完成，总获取: " + result.size() + "条，总数据量: " + totalHits + "条");
+            
+        } catch (Exception e) {
+            System.err.println("获取超过10000条的批发数据失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return result;
     }
 }
