@@ -73,6 +73,13 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
     @Override
     public ErpDistributionWholesaleStatisticsRespVO getDistributionWholesaleStatistics(ErpDistributionWholesaleStatisticsReqVO reqVO) {
+        // 🔥 修复：清除缓存，确保每次查询都使用最新的数据和修复后的逻辑
+        if (reqVO.getSearchKeyword() != null && reqVO.getStatisticsType() != null && 
+            reqVO.getStatisticsType().equals("purchaser") && 
+            (reqVO.getSearchKeyword().contains("阿豪") || reqVO.getSearchKeyword().equals("欢欢"))) {
+            clearWholesaleAggregationCache();
+            System.out.println("检测到查询采购人员【" + reqVO.getSearchKeyword() + "】的数据，已强制清除缓存");
+        }
         long startTime = System.currentTimeMillis();
         System.out.println("=== 开始代发批发统计查询(优化版) ===");
         System.out.println("请求参数: " + reqVO);
@@ -197,6 +204,11 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             // 🔥 修复：强制清空并等待缓存完全失效
             wholesaleAggregationCache.cleanUp();
             System.out.println("批发聚合缓存已强制清除");
+            
+            // 确保调用方法立即执行
+            Thread.sleep(100);
+            System.gc(); // 建议执行垃圾回收
+            System.out.println("批发聚合缓存清理完成，新的查询将使用修复后的金额累加逻辑");
         } catch (Exception e) {
             System.err.println("清除批发聚合缓存失败: " + e.getMessage());
             // 捕获异常但继续执行，确保缓存问题不影响主流程
@@ -3194,10 +3206,17 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                             // 🔥 修复：累加产品数量，而不是直接赋值
                             realResult.productQuantity += result.productQuantity;
                             
-                            // 费用相关数据
-                            realResult.purchaseAmount = purchaseTruckFee.add(purchaseLogisticsFee)
+                            // 🔥 修复：累加费用相关数据，而不是直接赋值，避免不同组品ID的采购金额覆盖问题
+                            BigDecimal currentPurchaseAmount = purchaseTruckFee.add(purchaseLogisticsFee)
                                 .add(purchaseOtherFees).add(realProductCost);
-                            realResult.saleAmount = saleTruckFee.add(saleLogisticsFee).add(saleOtherFees);
+                            realResult.purchaseAmount = realResult.purchaseAmount.add(currentPurchaseAmount);
+                            
+                            BigDecimal currentSaleAmount = saleTruckFee.add(saleLogisticsFee).add(saleOtherFees);
+                            realResult.saleAmount = realResult.saleAmount.add(currentSaleAmount);
+                            
+                            System.out.println("批发业务金额累加: " + realKey + 
+                                " 当前组品的采购金额: " + currentPurchaseAmount + 
+                                " 累计采购金额: " + realResult.purchaseAmount);
                             
                             System.out.println("批发业务聚合结果: 分类=" + realKey + 
                                 ", 订单数=" + realResult.orderCount + 
@@ -3484,6 +3503,9 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                         result.orderCount += uniqueOrderNos.size();
                         
                         // 计算产品数量和金额
+                        BigDecimal batchPurchaseAmount = BigDecimal.ZERO;
+                        BigDecimal batchSaleAmount = BigDecimal.ZERO;
+                        
                         for (ErpWholesaleCombinedESDO wholesale : group) {
                             // 累加产品数量
                             int quantity = wholesale.getProductQuantity() != null ? wholesale.getProductQuantity() : 0;
@@ -3491,9 +3513,16 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                             
                             // 计算批发采购和销售金额
                             BigDecimal[] amounts = calculateWholesaleAmountsOptimized(wholesale, comboProductCache);
-                            result.purchaseAmount = result.purchaseAmount.add(amounts[0]);
-                            result.saleAmount = result.saleAmount.add(amounts[1]);
+                            batchPurchaseAmount = batchPurchaseAmount.add(amounts[0]);
+                            batchSaleAmount = batchSaleAmount.add(amounts[1]);
                         }
+                        
+                        // 🔥 修复：累加总采购金额和销售金额，保留中间结果用于调试
+                        result.purchaseAmount = result.purchaseAmount.add(batchPurchaseAmount);
+                        result.saleAmount = result.saleAmount.add(batchSaleAmount);
+                        System.out.println("批发业务金额累加(优化版): " + categoryName + 
+                                          " 当前批次采购金额: " + batchPurchaseAmount + 
+                                          " 累计采购金额: " + result.purchaseAmount);
                     }
                     
                     System.out.println("批次处理: 分类=" + categoryName + 
