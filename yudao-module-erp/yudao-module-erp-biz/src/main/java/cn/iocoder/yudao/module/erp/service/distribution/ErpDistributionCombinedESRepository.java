@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.service.distribution;
 
 
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionCombinedESDO;
+import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
@@ -48,5 +49,15 @@ public interface ErpDistributionCombinedESRepository extends ElasticsearchReposi
      * @return 代发订单列表
      */
     List<ErpDistributionCombinedESDO> findByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    
+    /**
+     * 根据创建时间范围查询（字符串格式）
+     * @param startTime 开始时间字符串
+     * @param endTime 结束时间字符串
+     * @return 代发订单列表
+     */
+    // 使用简单的between查询，避免复杂条件
+    @Query("{ \"range\": { \"create_time\": { \"gte\": \"?0\", \"lte\": \"?1\" }}}")
+    List<ErpDistributionCombinedESDO> findByCreateTimeStringBetween(String startTime, String endTime);
 
 }
