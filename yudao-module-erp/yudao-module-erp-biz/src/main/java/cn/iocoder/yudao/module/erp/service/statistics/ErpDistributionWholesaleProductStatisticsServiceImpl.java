@@ -18,6 +18,14 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionCombinedESRepository;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import cn.iocoder.yudao.module.erp.service.wholesale.ErpWholesaleCombinedESRepository;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -27,14 +35,12 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductESRepository;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Comparator;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import java.util.Objects;
 
 /**
@@ -69,6 +75,9 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
 
     @Resource
     private ErpComboProductESRepository comboProductESRepository;
+    
+    @Resource
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
     @Override
     public ErpDistributionWholesaleProductStatisticsRespVO getDistributionWholesaleProductStatistics(ErpDistributionWholesaleProductStatisticsReqVO reqVO) {
@@ -80,10 +89,29 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
         String endDateStr = reqVO.getEndDate() + " 23:59:59";
         System.out.println("查询时间范围: " + startDateStr + " 到 " + endDateStr);
 
-        // 查询代发表数据 - 只使用ES搜索提升效率
+        // 查询代发表数据 - 使用原生ES查询
         List<ErpDistributionCombinedESDO> distributionList;
         try {
-            distributionList = distributionCombinedESRepository.findByCreateTimeStringBetween(startDateStr, endDateStr);
+            // 构建原生查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            // 时间范围查询
+            boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                    .gte(startDateStr)
+                    .lte(endDateStr));
+
+            // 执行查询
+            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000)) // 最大返回10000条记录
+                    .build();
+
+            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    searchQuery,
+                    ErpDistributionCombinedESDO.class);
+
+            distributionList = searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
             System.out.println("ES查询代发表成功，数据量: " + distributionList.size());
         } catch (Exception e) {
             System.out.println("ES查询代发表失败: " + e.getMessage());
@@ -91,10 +119,29 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             distributionList = new ArrayList<>(); // 返回空列表而不是中断执行
         }
 
-        // 查询批发表数据 - 只使用ES搜索提升效率
+        // 查询批发表数据 - 使用原生ES查询
         List<ErpWholesaleCombinedESDO> wholesaleList;
         try {
-            wholesaleList = wholesaleCombinedESRepository.findByCreateTimeStringBetween(startDateStr, endDateStr);
+            // 构建原生查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            // 时间范围查询
+            boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                    .gte(startDateStr)
+                    .lte(endDateStr));
+
+            // 执行查询
+            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000)) // 最大返回10000条记录
+                    .build();
+
+            SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    searchQuery,
+                    ErpWholesaleCombinedESDO.class);
+
+            wholesaleList = searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
             System.out.println("ES查询批发表成功，数据量: " + wholesaleList.size());
         } catch (Exception e) {
             System.out.println("ES查询批发表失败: " + e.getMessage());
@@ -350,10 +397,30 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
         String endDateStr = reqVO.getEndDate() + " 23:59:59";
         System.out.println("查询时间范围: " + startDateStr + " 到 " + endDateStr);
 
-        // 查询代发表数据 - 只使用ES搜索提升效率
+        // 查询代发表数据 - 使用原生ES查询
         List<ErpDistributionCombinedESDO> distributionList;
         try {
-            distributionList = distributionCombinedESRepository.findByCreateTimeStringBetween(startDateStr, endDateStr);
+            // 构建原生查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            // 时间范围查询
+            boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                    .gte(startDateStr)
+                    .lte(endDateStr));
+
+            // 执行查询
+            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000)) // 最大返回10000条记录
+                    .build();
+
+            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    searchQuery,
+                    ErpDistributionCombinedESDO.class);
+
+            distributionList = searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
+            
             System.out.println("ES查询代发表成功，数据量: " + distributionList.size());
         } catch (Exception e) {
             System.out.println("ES查询代发表失败: " + e.getMessage());
@@ -361,11 +428,29 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             distributionList = new ArrayList<>(); // 返回空列表而不是中断执行
         }
         
-        // 查询批发表数据 - 只使用ES搜索提升效率
+        // 查询批发表数据 - 使用原生ES查询
         List<ErpWholesaleCombinedESDO> wholesaleList;
         try {
-            wholesaleList = wholesaleCombinedESRepository.findByCreateTimeStringBetween(startDateStr, endDateStr);
-            System.out.println("ES查询批发表成功，数据量: " + wholesaleList.size());
+            // 构建原生查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            // 时间范围查询
+            boolQuery.must(QueryBuilders.rangeQuery("create_time")
+                    .gte(startDateStr)
+                    .lte(endDateStr));
+
+            // 执行查询
+            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000)) // 最大返回10000条记录
+                    .build();
+
+            SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                    searchQuery,
+                    ErpWholesaleCombinedESDO.class);
+
+            wholesaleList = searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .collect(Collectors.toList());
             
             // 调试：输出批发表中组品ID信息
             Set<Long> wholesaleComboIds = wholesaleList.stream()
@@ -376,6 +461,8 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             if (!wholesaleComboIds.isEmpty()) {
                 System.out.println("批发表中的组品ID示例: " + wholesaleComboIds.iterator().next());
             }
+            
+            System.out.println("ES查询批发表成功，数据量: " + wholesaleList.size());
         } catch (Exception e) {
             System.out.println("ES查询批发表失败: " + e.getMessage());
             e.printStackTrace(); // 打印详细错误信息以便排查
