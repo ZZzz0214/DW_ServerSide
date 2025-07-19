@@ -76,6 +76,9 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         System.out.println("=== 开始代发批发统计查询(优化版) ===");
         System.out.println("请求参数: " + reqVO);
 
+        // 清除缓存，确保获取最新的数据
+        clearWholesaleAggregationCache();
+
         ErpDistributionWholesaleStatisticsRespVO respVO = new ErpDistributionWholesaleStatisticsRespVO();
         respVO.setStatisticsType(reqVO.getStatisticsType());
 
@@ -182,6 +185,18 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         }
 
         return respVO;
+    }
+
+    /**
+     * 清除批发聚合缓存
+     */
+    private void clearWholesaleAggregationCache() {
+        try {
+            wholesaleAggregationCache.invalidateAll();
+            System.out.println("批发聚合缓存已清除");
+        } catch (Exception e) {
+            System.err.println("清除批发聚合缓存失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -368,13 +383,61 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
     private Set<Long> getComboProductIdsByPurchaser(String purchaserKeyword) {
         Set<Long> comboProductIds = new HashSet<>();
         try {
+            // 验证关键词有效性
+            if (purchaserKeyword == null || purchaserKeyword.trim().isEmpty() || 
+                "null".equalsIgnoreCase(purchaserKeyword) || "undefined".equalsIgnoreCase(purchaserKeyword)) {
+                return comboProductIds;
+            }
+            
+            // 如果查询的是"阿豪"，需要查询所有可能的采购人员ID
+            if ("阿豪".equals(purchaserKeyword)) {
+                // 使用空查询，返回所有组品ID
+                NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
+                        .withQuery(QueryBuilders.matchAllQuery())
+                        .withPageable(PageRequest.of(0, 10000))
+                        .build();
+
+                SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
+                        comboSearchQuery,
+                        ErpComboProductES.class);
+
+                comboProductIds = comboHits.stream()
+                        .map(hit -> hit.getContent().getId())
+                        .collect(Collectors.toSet());
+                
+                System.out.println("查询采购人员'阿豪'的组品ID，找到 " + comboProductIds.size() + " 个");
+                return comboProductIds;
+            }
+            
+            // 检查是否搜索的是采购人员ID（处理形如"未知采购人员-123"的情况）
+            final String searchValue;
+            if (purchaserKeyword.startsWith("未知采购人员-")) {
+                searchValue = purchaserKeyword.substring("未知采购人员-".length());
+                System.out.println("提取采购人员ID: " + searchValue);
+            } else if (purchaserKeyword.startsWith("采购人员")) {
+                searchValue = purchaserKeyword.substring("采购人员".length());
+                System.out.println("提取采购人员ID: " + searchValue);
+            } else {
+                searchValue = purchaserKeyword;
+            }
+
             BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
-            comboQuery.must(QueryBuilders.wildcardQuery("purchaser", "*" + purchaserKeyword + "*"));
+            
+            // 改进查询逻辑：同时使用term和wildcard查询，增加匹配概率
+            comboQuery.should(QueryBuilders.termQuery("purchaser", searchValue));
+            comboQuery.should(QueryBuilders.wildcardQuery("purchaser", "*" + searchValue + "*"));
+            comboQuery.minimumShouldMatch(1); // 至少匹配一个should条件
+            
+            // 过滤掉purchaser为null或空的记录
+            comboQuery.mustNot(QueryBuilders.boolQuery()
+                    .should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("purchaser")))
+                    .should(QueryBuilders.termQuery("purchaser", ""))
+                    .should(QueryBuilders.termQuery("purchaser", "null"))
+                    .should(QueryBuilders.termQuery("purchaser", "undefined")));
 
             NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
                     .withQuery(comboQuery)
                     .withPageable(PageRequest.of(0, 10000))
-                    .withSourceFilter(new org.springframework.data.elasticsearch.core.query.FetchSourceFilter(new String[]{"id"}, null))
                     .build();
 
             SearchHits<ErpComboProductES> comboHits = elasticsearchRestTemplate.search(
@@ -384,6 +447,8 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             comboProductIds = comboHits.stream()
                     .map(hit -> hit.getContent().getId())
                     .collect(Collectors.toSet());
+            
+            System.out.println("查询采购人员'" + purchaserKeyword + "'的组品ID，找到 " + comboProductIds.size() + " 个");
         } catch (Exception e) {
             System.err.println("根据采购人员查询组品ID失败: " + e.getMessage());
         }
@@ -427,7 +492,23 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         }
         try {
             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboProductId);
-            return comboProductOpt.map(ErpComboProductES::getPurchaser).orElse(null);
+            if (!comboProductOpt.isPresent()) {
+                System.err.println("警告: 无法找到组品ID为 " + comboProductId + " 的组品信息");
+                return null;
+            }
+            
+            ErpComboProductES comboProduct = comboProductOpt.get();
+            String purchaser = comboProduct.getPurchaser();
+            
+            // 验证采购人员信息是否有效
+            if (purchaser == null || purchaser.trim().isEmpty() || "null".equalsIgnoreCase(purchaser) || "undefined".equalsIgnoreCase(purchaser)) {
+                // 记录日志，以便后续排查
+                System.err.println("警告: 组品ID " + comboProductId + " 的采购人员信息为空或无效: " + (purchaser == null ? "null" : purchaser));
+                return null;
+            }
+            
+            System.out.println("组品ID " + comboProductId + " 的采购人员: " + purchaser);
+            return purchaser;
         } catch (Exception e) {
             System.err.println("实时获取采购人员信息失败: " + e.getMessage());
             return null;
@@ -443,7 +524,20 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         }
         try {
             Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboProductId);
-            return comboProductOpt.map(ErpComboProductES::getSupplier).orElse(null);
+            String supplier = comboProductOpt.map(ErpComboProductES::getSupplier).orElse(null);
+            
+            // 验证供应商信息是否有效
+            if (supplier == null || supplier.trim().isEmpty() || "null".equalsIgnoreCase(supplier) || "undefined".equalsIgnoreCase(supplier)) {
+                return null;
+            }
+            
+            // 检查是否为纯数字ID（可能是供应商ID而非名称）
+            if (supplier.matches("^\\d+$")) {
+                System.out.println("供应商值为纯数字ID: " + supplier + "，将使用'未知供应商-'加ID的形式展示");
+                return "未知供应商-" + supplier;
+            }
+            
+            return supplier;
         } catch (Exception e) {
             System.err.println("实时获取供应商信息失败: " + e.getMessage());
             return null;
@@ -992,15 +1086,16 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             ErpDistributionCombinedESDO distribution = (ErpDistributionCombinedESDO) data;
             switch (statisticsType) {
                 case "purchaser":
-                    // 🔥 修复：实时从组品表获取采购人员信息
-                    return getRealTimePurchaser(distribution.getComboProductId());
+                    // 获取并验证采购人员，保留原始值用于数据聚合
+                    String purchaser = getRealTimePurchaser(distribution.getComboProductId());
+                    return purchaser != null ? purchaser : "未知采购人员";
                 case "supplier":
-                    // 🔥 修复：实时从组品表获取供应商信息
-                    return getRealTimeSupplier(distribution.getComboProductId());
+                    String supplier = getRealTimeSupplier(distribution.getComboProductId());
+                    return supplier != null ? supplier : "未知供应商";
                 case "salesperson":
-                    return distribution.getSalesperson();
+                    return cn.hutool.core.util.StrUtil.blankToDefault(distribution.getSalesperson(), "未知销售人员");
                 case "customer":
-                    return distribution.getCustomerName();
+                    return cn.hutool.core.util.StrUtil.blankToDefault(distribution.getCustomerName(), "未知客户");
                 default:
                     return null;
             }
@@ -1008,15 +1103,31 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             ErpWholesaleCombinedESDO wholesale = (ErpWholesaleCombinedESDO) data;
             switch (statisticsType) {
                 case "purchaser":
-                    // 🔥 修复：实时从组品表获取采购人员信息
-                    return getRealTimePurchaser(wholesale.getComboProductId());
+                    // 批发业务数据必须有采购人员信息，直接从组品表获取
+                    if (wholesale.getComboProductId() != null) {
+                        try {
+                            Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(wholesale.getComboProductId());
+                            if (comboProductOpt.isPresent()) {
+                                String purchaser = comboProductOpt.get().getPurchaser();
+                                if (purchaser != null && !purchaser.trim().isEmpty() && !"null".equalsIgnoreCase(purchaser) && !"undefined".equalsIgnoreCase(purchaser)) {
+                                    return purchaser;
+                                }
+                            }
+                            // 如果无法获取有效的采购人员，记录错误日志
+                            System.err.println("批发业务(ID:" + wholesale.getId() + ", 组品ID:" + wholesale.getComboProductId() + ")无法获取采购人员信息");
+                        } catch (Exception e) {
+                            System.err.println("获取批发业务采购人员信息失败: " + e.getMessage());
+                        }
+                    }
+                    // 只有在无法从组品表获取采购人员的极端情况下，才返回未知采购人员
+                    return "未知采购人员";
                 case "supplier":
-                    // 🔥 修复：实时从组品表获取供应商信息
-                    return getRealTimeSupplier(wholesale.getComboProductId());
+                    String supplier = getRealTimeSupplier(wholesale.getComboProductId());
+                    return supplier != null ? supplier : "未知供应商";
                 case "salesperson":
-                    return wholesale.getSalesperson();
+                    return cn.hutool.core.util.StrUtil.blankToDefault(wholesale.getSalesperson(), "未知销售人员");
                 case "customer":
-                    return wholesale.getCustomerName();
+                    return cn.hutool.core.util.StrUtil.blankToDefault(wholesale.getCustomerName(), "未知客户");
                 default:
                     return null;
             }
@@ -1370,41 +1481,120 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         System.out.println("统计类型: " + reqVO.getStatisticsType());
         System.out.println("分类名称: " + categoryName);
         System.out.println("时间范围: " + reqVO.getBeginTime() + " 到 " + reqVO.getEndTime());
+        
+        // 清除缓存，确保获取最新的数据
+        clearWholesaleAggregationCache();
 
         ErpDistributionWholesaleStatisticsRespVO.DetailStatistics detail = new ErpDistributionWholesaleStatisticsRespVO.DetailStatistics();
-        detail.setCategoryName(categoryName);
         detail.setStatisticsType(reqVO.getStatisticsType());
+
+        // 处理分类名称，保留原始查询值和显示值
+        String displayCategoryName; // 这是用于显示的格式化分类名称
+        String lookupCategoryName;  // 这是用于查询的原始分类名称
+        
+        // 处理空值或特殊值
+        if (categoryName == null || categoryName.trim().isEmpty() || 
+            "null".equalsIgnoreCase(categoryName) || "undefined".equalsIgnoreCase(categoryName)) {
+            
+            if ("purchaser".equals(reqVO.getStatisticsType())) {
+                displayCategoryName = "未知采购人员";
+            } else if ("supplier".equals(reqVO.getStatisticsType())) {
+                displayCategoryName = "未知供应商";
+            } else if ("salesperson".equals(reqVO.getStatisticsType())) {
+                displayCategoryName = "未知销售人员";
+            } else {
+                displayCategoryName = "未知分类";
+            }
+            lookupCategoryName = displayCategoryName;
+        }
+        // 处理采购人员数字ID格式
+        else if ("purchaser".equals(reqVO.getStatisticsType()) && categoryName.matches("^采购人员\\d+$")) {
+            // 如果是采购人员+数字的格式，我们需要尝试获取真实的采购人员名称
+            String comboIdStr = categoryName.substring(4); // 去掉"采购人员"前缀
+            try {
+                Long comboId = Long.parseLong(comboIdStr);
+                // 尝试从组品表获取真实采购人员名称
+                Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboId);
+                if (comboProductOpt.isPresent() && comboProductOpt.get().getPurchaser() != null && 
+                    !comboProductOpt.get().getPurchaser().trim().isEmpty() && 
+                    !"null".equalsIgnoreCase(comboProductOpt.get().getPurchaser()) && 
+                    !"undefined".equalsIgnoreCase(comboProductOpt.get().getPurchaser())) {
+                    // 使用真实的采购人员名称
+                    displayCategoryName = comboProductOpt.get().getPurchaser();
+                    lookupCategoryName = displayCategoryName; // 使用真实名称进行查询
+                    System.out.println("将采购人员ID " + comboIdStr + " 替换为真实采购人员: " + displayCategoryName);
+                } else {
+                    // 如果无法获取真实名称，保持原来的格式
+                    displayCategoryName = categoryName;
+                    lookupCategoryName = categoryName;
+                }
+            } catch (NumberFormatException e) {
+                // 如果解析失败，使用原始名称
+                displayCategoryName = categoryName;
+                lookupCategoryName = categoryName;
+            }
+        }
+        // 处理各种类型的分类名称
+        else {
+            // 默认使用原始名称
+            displayCategoryName = categoryName;
+            lookupCategoryName = categoryName;
+        }
+        
+        // 设置分类名称为格式化后的显示名称
+        detail.setCategoryName(displayCategoryName);
 
         // 1. 获取基础统计信息
         System.out.println("1. 获取基础统计信息...");
+        System.out.println("使用查询名称: " + lookupCategoryName + ", 显示名称: " + displayCategoryName);
+        
         // 修改为直接使用ES聚合查询获取
         ErpDistributionWholesaleStatisticsReqVO categoryReqVO = new ErpDistributionWholesaleStatisticsReqVO();
         categoryReqVO.setStatisticsType(reqVO.getStatisticsType());
         categoryReqVO.setBeginTime(reqVO.getBeginTime());
         categoryReqVO.setEndTime(reqVO.getEndTime());
-        categoryReqVO.setSearchKeyword(categoryName);
+        categoryReqVO.setSearchKeyword(lookupCategoryName);
 
         List<ErpDistributionWholesaleStatisticsRespVO.StatisticsItem> items = getAggregatedStatisticsData(categoryReqVO);
+        
+        // 使用最终变量来满足lambda表达式的要求
+        final String finalDisplayCategoryName = displayCategoryName;
+        final String finalLookupCategoryName = lookupCategoryName;
+        
+        // 使用分类名称查找对应的统计项
         ErpDistributionWholesaleStatisticsRespVO.StatisticsItem basicInfo =
-            items.stream().filter(i -> categoryName.equals(i.getCategoryName())).findFirst()
+            items.stream().filter(i -> {
+                // 优先精确匹配显示名称
+                if (finalDisplayCategoryName.equals(i.getCategoryName())) {
+                    return true;
+                }
+                // 如果没有精确匹配，尝试匹配原始查询名称
+                if (finalLookupCategoryName.equals(i.getCategoryName())) {
+                    return true;
+                }
+                return false;
+            }).findFirst()
                 .orElseGet(() -> {
                     // 如果没有数据，创建空统计项
                     ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem();
-                    item.setCategoryName(categoryName);
+                    item.setCategoryName(finalDisplayCategoryName);
                     item = calculateTotalsAndSetDefaults(item);
                     return item;
                 });
+                
+        // 确保使用正确的显示名称
+        basicInfo.setCategoryName(displayCategoryName);
         detail.setBasicInfo(basicInfo);
 
         // 2. 获取趋势数据
         System.out.println("2. 获取趋势数据...");
-        List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> monthlyTrends = getMonthlyTrends(reqVO, categoryName);
+        List<ErpDistributionWholesaleStatisticsRespVO.MonthlyTrend> monthlyTrends = getMonthlyTrends(reqVO, lookupCategoryName);
         detail.setMonthlyTrends(monthlyTrends);
         System.out.println("趋势数据获取完成，共 " + monthlyTrends.size() + " 个时间点");
 
         // 3. 获取产品分布数据
         System.out.println("3. 获取产品分布数据...");
-        List<ErpDistributionWholesaleStatisticsRespVO.ProductDistribution> productDistributions = getProductDistributions(reqVO, categoryName);
+        List<ErpDistributionWholesaleStatisticsRespVO.ProductDistribution> productDistributions = getProductDistributions(reqVO, lookupCategoryName);
         detail.setProductDistributions(productDistributions);
         System.out.println("产品分布数据获取完成，共 " + productDistributions.size() + " 个产品");
 
@@ -1979,25 +2169,54 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
      * 添加分类筛选条件
      */
     private void addCategoryFilter(BoolQueryBuilder boolQuery, String statisticsType, String categoryName) {
+        // 如果分类名称无效，直接返回空结果
+        if (categoryName == null || categoryName.trim().isEmpty() ||
+            "null".equalsIgnoreCase(categoryName) || "undefined".equalsIgnoreCase(categoryName) ||
+            categoryName.startsWith("未知")) {
+            boolQuery.must(QueryBuilders.termQuery("id", -1L)); // 添加一个不可能的条件来返回空结果
+            return;
+        }
+        
         switch (statisticsType) {
             case "purchaser":
-                // 🔥 修复：代发表不再有purchaser字段，需要从组品表查询
-                // 先查询符合条件的组品ID，再查询代发表
+                // 处理采购人员ID格式
+                if (categoryName.matches("^采购人员\\d+$")) {
+                    String comboIdStr = categoryName.substring(4); // 去掉"采购人员"前缀
+                    try {
+                        Long comboId = Long.parseLong(comboIdStr);
+                        // 尝试从组品表获取真实采购人员名称
+                        Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(comboId);
+                        if (comboProductOpt.isPresent() && comboProductOpt.get().getPurchaser() != null && 
+                            !comboProductOpt.get().getPurchaser().trim().isEmpty() && 
+                            !"null".equalsIgnoreCase(comboProductOpt.get().getPurchaser()) && 
+                            !"undefined".equalsIgnoreCase(comboProductOpt.get().getPurchaser())) {
+                            // 使用真实的采购人员名称
+                            categoryName = comboProductOpt.get().getPurchaser();
+                            System.out.println("将采购人员ID " + comboIdStr + " 替换为真实采购人员: " + categoryName);
+                        } else {
+                            // 如果无法获取真实名称，使用组品ID查询
+                            boolQuery.must(QueryBuilders.termQuery("combo_product_id", comboId));
+                            System.out.println("使用组品ID " + comboId + " 进行查询");
+                            return;
+                        }
+                    } catch (NumberFormatException e) {
+                        // 如果解析失败，继续使用原始名称
+                    }
+                }
+                
+                // 根据采购人员名称查询组品ID
                 Set<Long> comboProductIds = getComboProductIdsByPurchaser(categoryName);
                 if (!comboProductIds.isEmpty()) {
                     boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
                 } else {
-                    // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
-                    boolQuery.must(QueryBuilders.termQuery("id", -1L));
+                    boolQuery.must(QueryBuilders.termQuery("id", -1L)); // 添加一个不可能的条件来返回空结果
                 }
                 break;
             case "supplier":
-                // 🔥 修复：代发表不再有supplier字段，需要从组品表查询
                 Set<Long> supplierComboProductIds = getComboProductIdsBySupplier(categoryName);
                 if (!supplierComboProductIds.isEmpty()) {
                     boolQuery.must(QueryBuilders.termsQuery("combo_product_id", supplierComboProductIds));
                 } else {
-                    // 如果没有找到符合条件的组品，添加一个不可能的条件来返回空结果
                     boolQuery.must(QueryBuilders.termQuery("id", -1L));
                 }
                 break;
@@ -2154,18 +2373,57 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             if (allKeys.isEmpty()) {
                 allKeys.add(reqVO.getSearchKeyword() != null ? reqVO.getSearchKeyword() : "未知分类");
             }
-
+            
+            // 处理各种类型的分类名称
+            Map<String, String> displayNameMap = new HashMap<>();
+            for (String key : allKeys) {
+                String displayName = key;
+                
+                // 处理不同类型的分类名称
+                if ("purchaser".equals(reqVO.getStatisticsType())) {
+                    // 处理采购人员名称
+                    if (key == null || key.trim().isEmpty() || "null".equalsIgnoreCase(key) || "undefined".equalsIgnoreCase(key)) {
+                        displayName = "未知采购人员";
+                    } 
+                    // 采购人员不需要对数字ID进行格式化，因为批发业务数据已经转换为真实采购人员名称
+                } else if ("supplier".equals(reqVO.getStatisticsType())) {
+                    // 处理供应商名称
+                    if (key == null || key.trim().isEmpty() || "null".equalsIgnoreCase(key) || "undefined".equalsIgnoreCase(key)) {
+                        displayName = "未知供应商";
+                    } else if (key.matches("^\\d+$")) {
+                        // 如果是纯数字ID，格式化显示
+                        displayName = "供应商" + key;
+                    }
+                } else if ("salesperson".equals(reqVO.getStatisticsType())) {
+                    // 处理销售人员名称
+                    if (key == null || key.trim().isEmpty() || "null".equalsIgnoreCase(key) || "undefined".equalsIgnoreCase(key)) {
+                        displayName = "未知销售人员";
+                    }
+                } else if ("customer".equals(reqVO.getStatisticsType())) {
+                    // 处理客户名称
+                    if (key == null || key.trim().isEmpty() || "null".equalsIgnoreCase(key) || "undefined".equalsIgnoreCase(key)) {
+                        displayName = "未知客户";
+                    }
+                }
+                
+                displayNameMap.put(key, displayName);
+            }
+            
+            // 创建最终结果
             for (String key : allKeys) {
                 ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item = new ErpDistributionWholesaleStatisticsRespVO.StatisticsItem();
-                item.setCategoryName(key);
-
+                
+                // 设置显示名称
+                String displayName = displayNameMap.getOrDefault(key, key);
+                item.setCategoryName(displayName);
+                
                 // 设置代发数据
                 AggregationResult distributionResult = distributionResults.getOrDefault(key, new AggregationResult());
                 item.setDistributionOrderCount(distributionResult.orderCount);
                 item.setDistributionProductQuantity(distributionResult.productQuantity);
                 item.setDistributionPurchaseAmount(distributionResult.purchaseAmount);
                 item.setDistributionSaleAmount(distributionResult.saleAmount);
-
+                
                 // 设置批发数据
                 AggregationResult wholesaleResult = wholesaleResults.getOrDefault(key, new AggregationResult());
                 item.setWholesaleOrderCount(wholesaleResult.orderCount);
@@ -2184,7 +2442,15 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
 
             // 6. 按总采购金额排序
             result.sort((a, b) -> b.getTotalPurchaseAmount().compareTo(a.getTotalPurchaseAmount()));
-            System.out.println("统计数据排序完成");
+            System.out.println("统计数据排序完成，共有 " + result.size() + " 个分类项");
+            
+            // 7. 输出结果日志
+            for (ErpDistributionWholesaleStatisticsRespVO.StatisticsItem item : result) {
+                System.out.println("分类: " + item.getCategoryName() + 
+                                   ", 代发订单数: " + item.getDistributionOrderCount() + 
+                                   ", 批发订单数: " + item.getWholesaleOrderCount() + 
+                                   ", 总采购金额: " + item.getTotalPurchaseAmount());
+            }
 
         } catch (Exception e) {
             System.err.println("执行聚合查询失败: " + e.getMessage());
@@ -2200,6 +2466,59 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
         long totalEndTime = System.currentTimeMillis();
         System.out.println("聚合统计查询完成，总耗时: " + (totalEndTime - totalStartTime) + "ms，结果数: " + result.size());
         return result;
+    }
+    
+    /**
+     * 格式化采购人员键值，将纯数字ID转换为标准格式
+     */
+    private String formatPurchaserKey(String key) {
+        if (key == null) {
+            return "未知采购人员";
+        }
+        // 不再对纯数字ID添加前缀，因为批发业务数据已经转换为真实采购人员名称
+        // 已经是未知采购人员格式，保持原样
+        if (key.startsWith("未知采购人员")) {
+            return key;
+        }
+        return key;
+    }
+    
+    /**
+     * 格式化供应商键值，将纯数字ID转换为标准格式
+     */
+    private String formatSupplierKey(String key) {
+        if (key == null) {
+            return "未知供应商";
+        }
+        // 检查是否是纯数字
+        if (key.matches("^\\d+$")) {
+            return "供应商" + key;
+        }
+        // 已经是未知供应商-xxx格式或供应商xxx格式，保持原样
+        if (key.startsWith("未知供应商-") || key.startsWith("供应商")) {
+            return key;
+        }
+        return key;
+    }
+    
+    /**
+     * 从格式化的键值映射中获取原始键值
+     */
+    private String getOriginalKey(String formattedKey, Map<String, String> formattedKeyMap, Set<String> originalKeySet) {
+        // 如果原始键集合包含当前键，则直接返回
+        if (originalKeySet.contains(formattedKey)) {
+            return formattedKey;
+        }
+        
+        // 否则，从格式化映射中找到对应的原始键
+        for (Map.Entry<String, String> entry : formattedKeyMap.entrySet()) {
+            if (entry.getValue().equals(formattedKey)) {
+                return entry.getKey();
+            }
+        }
+        
+        // 如果找不到对应的原始键，返回格式化的键
+        return formattedKey;
     }
 
     /**
@@ -2596,11 +2915,13 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             }
 
             // 处理特殊情况：对于批发表，需要处理采购人员和供应商字段不在表中的情况
-            boolean needsPostProcessing = false;
+            final boolean needsPostProcessing;
             if ("purchaser".equals(reqVO.getStatisticsType()) || "supplier".equals(reqVO.getStatisticsType())) {
                 // 需要聚合combo_product_id，并在后处理中查询对应的采购人员或供应商
                 groupByField = "combo_product_id";
                 needsPostProcessing = true;
+            } else {
+                needsPostProcessing = false;
             }
 
             // 2. 优化点：使用批量查询代替单条查询
@@ -2609,9 +2930,35 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                 // 预先批量加载所有相关组品，避免后续多次单条查询
                 Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
                 for (ErpComboProductES comboProduct : comboProducts) {
-                    comboProductCache.put(comboProduct.getId(), comboProduct);
+                    // 只缓存包含有效采购人员或供应商信息的组品
+                    boolean isValid = true;
+                    if ("purchaser".equals(reqVO.getStatisticsType())) {
+                        String purchaser = comboProduct.getPurchaser();
+                        isValid = purchaser != null && !purchaser.trim().isEmpty() 
+                            && !"null".equalsIgnoreCase(purchaser) 
+                            && !"undefined".equalsIgnoreCase(purchaser);
+                        
+                        if (!isValid) {
+                            System.err.println("批发业务聚合处理：跳过无效的采购人员信息(组品ID: " + comboProduct.getId() + 
+                                ", 采购人员: " + (purchaser == null ? "null" : purchaser) + ")");
+                        }
+                    } else if ("supplier".equals(reqVO.getStatisticsType())) {
+                        String supplier = comboProduct.getSupplier();
+                        isValid = supplier != null && !supplier.trim().isEmpty() 
+                            && !"null".equalsIgnoreCase(supplier) 
+                            && !"undefined".equalsIgnoreCase(supplier);
+                        
+                        if (!isValid) {
+                            System.err.println("批发业务聚合处理：跳过无效的供应商信息(组品ID: " + comboProduct.getId() + 
+                                ", 供应商: " + (supplier == null ? "null" : supplier) + ")");
+                        }
+                    }
+                    
+                    if (isValid) {
+                        comboProductCache.put(comboProduct.getId(), comboProduct);
+                    }
                 }
-                System.out.println("预加载组品数据: " + comboProductCache.size() + " 条");
+                System.out.println("预加载有效组品数据: " + comboProductCache.size() + " 条");
             }
 
             // 创建聚合查询
@@ -2754,6 +3101,25 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
                                 comboProduct.getWholesalePrice() : BigDecimal.ZERO;
                             BigDecimal cost = wholesalePrice.multiply(new BigDecimal(quantity));
                             productCost = productCost.add(cost);
+
+                            // 如果是按采购人员统计，使用组品中的真实采购人员名称作为key，而不是组品ID
+                            if ("purchaser".equals(reqVO.getStatisticsType()) && needsPostProcessing && comboId.toString().equals(key)) {
+                                String realPurchaser = comboProduct.getPurchaser();
+                                if (realPurchaser != null && !realPurchaser.trim().isEmpty() && 
+                                    !"null".equalsIgnoreCase(realPurchaser) && !"undefined".equalsIgnoreCase(realPurchaser)) {
+                                    key = realPurchaser;
+                                    System.out.println("批发业务：将组品ID " + comboId + " 的采购人员替换为真实名称: " + realPurchaser);
+                                }
+                            }
+                            // 如果是按供应商统计，使用组品中的真实供应商名称作为key，而不是组品ID
+                            else if ("supplier".equals(reqVO.getStatisticsType()) && needsPostProcessing && comboId.toString().equals(key)) {
+                                String realSupplier = comboProduct.getSupplier();
+                                if (realSupplier != null && !realSupplier.trim().isEmpty() &&
+                                    !"null".equalsIgnoreCase(realSupplier) && !"undefined".equalsIgnoreCase(realSupplier)) {
+                                    key = realSupplier;
+                                    System.out.println("批发业务：将组品ID " + comboId + " 的供应商替换为真实名称: " + realSupplier);
+                                }
+                            }
                         }
                     }
                     
@@ -2962,8 +3328,28 @@ public class ErpDistributionWholesaleStatisticsServiceImpl implements ErpDistrib
             // 处理批次数据
             for (ErpWholesaleCombinedESDO wholesale : batchData) {
                 // 获取分类名
-                String categoryName = getCategoryName(wholesale, reqVO.getStatisticsType());
-                if (categoryName == null) continue;
+                String categoryName;
+                
+                // 批发业务数据处理 - 专门处理采购人员类型
+                if (reqVO.getStatisticsType().equals("purchaser") && wholesale.getComboProductId() != null) {
+                    ErpComboProductES comboProduct = comboProductCache.get(wholesale.getComboProductId());
+                    if (comboProduct != null && comboProduct.getPurchaser() != null && 
+                        !comboProduct.getPurchaser().trim().isEmpty() && 
+                        !"null".equalsIgnoreCase(comboProduct.getPurchaser()) && 
+                        !"undefined".equalsIgnoreCase(comboProduct.getPurchaser())) {
+                        categoryName = comboProduct.getPurchaser();
+                    } else {
+                        // 组品表没有有效的采购人员，记录异常，继续执行
+                        System.err.println("批发业务数据(ID:" + wholesale.getId() + 
+                            ", 组品ID:" + wholesale.getComboProductId() + 
+                            ")无有效采购人员信息, 组品信息:" + (comboProduct != null ? "非空" : "为空"));
+                        continue; // 跳过这条记录，不计入统计
+                    }
+                } else {
+                    // 其他统计类型仍然使用原有方法
+                    categoryName = getCategoryName(wholesale, reqVO.getStatisticsType());
+                    if (categoryName == null) continue;
+                }
 
                 // 获取或创建分组结果
                 AggregationResult result = results.computeIfAbsent(categoryName, k -> new AggregationResult());
