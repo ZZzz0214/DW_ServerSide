@@ -352,6 +352,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             }
 
             // 添加查询条件
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
             if (StringUtils.isNotBlank(pageReqVO.getKeyword())) {
                 // 统一关键字搜索，针对name、no、shippingCode、purchaser、supplier、shortName
                 String keyword = pageReqVO.getKeyword().trim();
@@ -363,9 +364,8 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 keywordQuery.should(createSimplifiedKeywordMatchQuery("supplier", keyword));
                 keywordQuery.should(createSimplifiedKeywordMatchQuery("short_name", keyword));
                 keywordQuery.minimumShouldMatch(1);
-                queryBuilder.withQuery(keywordQuery);
+                boolQuery.must(keywordQuery);
             } else {
-                BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
                 if (StringUtils.isNotBlank(pageReqVO.getNo())) {
                     boolQuery.must(createSimplifiedKeywordMatchQuery("no", pageReqVO.getNo().trim()));
                 }
@@ -393,7 +393,14 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                             .gte(pageReqVO.getCreateTime()[0].toString())
                             .lte(pageReqVO.getCreateTime()[1].toString()));
                 }
+            }
+            
+            // 如果有任何查询条件，添加到查询构建器
+            if (boolQuery.hasClauses()) {
                 queryBuilder.withQuery(boolQuery);
+            } else {
+                // 如果没有查询条件，使用matchAllQuery
+                queryBuilder.withQuery(QueryBuilders.matchAllQuery());
             }
 
             // 2. 如果是深度分页(超过10000条)，使用search_after
@@ -509,19 +516,23 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         // 2. 使用search_after直接获取目标页
         NativeSearchQuery query = queryBuilder.build();
         query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
-        query.addSort(Sort.by(Sort.Direction.ASC, "id")); // 保持一致的排序方式
+        // 保持与原始查询相同的排序方式: 先按create_time降序，再按id降序
+        query.addSort(Sort.by(Sort.Direction.DESC, "create_time"));
+        query.addSort(Sort.by(Sort.Direction.DESC, "id"));
 
         // 如果是深度分页，使用search_after
         if (skip > 0) {
             // 先获取前skip条记录
-            NativeSearchQuery prevQuery = new NativeSearchQueryBuilder()
+            NativeSearchQueryBuilder prevQueryBuilder = new NativeSearchQueryBuilder()
                     .withQuery(queryBuilder.build().getQuery())
                     .withPageable(PageRequest.of(0, skip))
-                    .withSort(Sort.by(Sort.Direction.ASC, "id"))
-                    .build();
+                    // 保持与原始查询相同的排序方式
+                    .withSort(Sort.by(Sort.Direction.DESC, "create_time"))
+                    .withSort(Sort.by(Sort.Direction.DESC, "id"))
+                    .withTrackTotalHits(true);
 
             SearchHits<ErpComboProductES> prevHits = elasticsearchRestTemplate.search(
-                    prevQuery,
+                    prevQueryBuilder.build(),
                     ErpComboProductES.class,
                     IndexCoordinates.of("erp_combo_products"));
 
@@ -631,41 +642,86 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
     // 添加数据库查询方法
     private PageResult<ErpComboRespVO> getComboVOPageFromDB(ErpComboPageReqVO pageReqVO) {
+        // 执行数据库分页查询，确保传递所有的搜索条件
         PageResult<ErpComboProductDO> pageResult = erpComboMapper.selectPage(pageReqVO);
         List<ErpComboRespVO> voList = new ArrayList<>();
 
+        // 如果没有数据，直接返回空列表
+        if (CollUtil.isEmpty(pageResult.getList())) {
+            return new PageResult<>(voList, pageResult.getTotal());
+        }
+
+        // 获取所有组合产品ID
+        List<Long> comboIds = pageResult.getList().stream()
+                .map(ErpComboProductDO::getId)
+                .collect(Collectors.toList());
+
+        // 批量查询组合产品项
+        List<ErpComboProductItemDO> allComboItems = erpComboProductItemMapper.selectByComboProductIds(comboIds);
+        
+        // 按组合产品ID分组
+        Map<Long, List<ErpComboProductItemDO>> itemsMap = allComboItems.stream()
+                .collect(Collectors.groupingBy(ErpComboProductItemDO::getComboProductId));
+
+        // 提取所有单品ID
+        Set<Long> productIds = allComboItems.stream()
+                .map(ErpComboProductItemDO::getItemProductId)
+                .collect(Collectors.toSet());
+
+        // 批量查询单品详细信息
+        List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
+        Map<Long, ErpProductDO> productMap = products.stream()
+                .collect(Collectors.toMap(ErpProductDO::getId, p -> p, (p1, p2) -> p1));
+
+        // 构建响应VO
         for (ErpComboProductDO combo : pageResult.getList()) {
             ErpComboRespVO vo = BeanUtils.toBean(combo, ErpComboRespVO.class);
+            
+            // 处理组合产品项
+            List<ErpComboProductItemDO> comboItems = itemsMap.getOrDefault(combo.getId(), Collections.emptyList());
+            
+            // 确保项目顺序一致
+            comboItems.sort(Comparator.comparing(ErpComboProductItemDO::getId));
 
-            // 查询组合产品项并设置itemsString
-            List<ErpComboProductItemDO> comboItems = erpComboProductItemMapper.selectByComboProductId(combo.getId());
-            if (CollUtil.isNotEmpty(comboItems)) {
-                // 提取单品ID列表
-                List<Long> productIds = comboItems.stream()
-                        .map(ErpComboProductItemDO::getItemProductId)
-                        .collect(Collectors.toList());
+            // 构建itemsString和计算总重量
+            StringBuilder itemsStringBuilder = new StringBuilder();
+            StringBuilder nameBuilder = new StringBuilder();
+            BigDecimal totalWeight = BigDecimal.ZERO;
+            
+            for (int i = 0; i < comboItems.size(); i++) {
+                ErpComboProductItemDO item = comboItems.get(i);
+                ErpProductDO product = productMap.get(item.getItemProductId());
+                if (product == null) continue;
 
-                // 查询单品详细信息
-                List<ErpProductDO> products = erpProductMapper.selectBatchIds(productIds);
-                Map<Long, ErpProductDO> productMap = products.stream()
-                        .collect(Collectors.toMap(ErpProductDO::getId, p -> p));
-
-                // 构建itemsString
-                StringBuilder itemsStringBuilder = new StringBuilder();
-                for (int i = 0; i < comboItems.size(); i++) {
-                    if (i > 0) {
-                        itemsStringBuilder.append(";");
-                    }
-                    ErpProductDO product = productMap.get(comboItems.get(i).getItemProductId());
-                    if (product != null) {
-                        itemsStringBuilder.append(product.getNo())
-                                .append(",")
-                                .append(comboItems.get(i).getItemQuantity());
-                    }
+                if (i > 0) {
+                    itemsStringBuilder.append(";");
+                    nameBuilder.append("｜");
                 }
-                vo.setItemsString(itemsStringBuilder.toString());
+                
+                // 添加到itemsString
+                itemsStringBuilder.append(product.getNo())
+                        .append(",")
+                        .append(item.getItemQuantity());
+                
+                // 构建名称
+                nameBuilder.append(product.getName())
+                        .append("×")
+                        .append(item.getItemQuantity());
+                
+                // 计算总重量
+                if (product.getWeight() != null) {
+                    BigDecimal quantity = new BigDecimal(item.getItemQuantity());
+                    totalWeight = totalWeight.add(product.getWeight().multiply(quantity));
+                }
             }
-
+            
+            // 设置组合产品名称、项目字符串和重量
+            if (StrUtil.isBlank(vo.getName())) {
+                vo.setName(nameBuilder.toString());
+            }
+            vo.setItemsString(itemsStringBuilder.toString());
+            vo.setWeight(totalWeight);
+            
             voList.add(vo);
         }
 

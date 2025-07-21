@@ -22,9 +22,13 @@ public interface ErpComboMapper extends BaseMapperX<ErpComboProductDO> {
 
     default PageResult<ErpComboProductDO> selectPage(ErpComboPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpComboProductDO>()
+                .likeIfPresent(ErpComboProductDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpComboProductDO::getName, reqVO.getName())
                 .likeIfPresent(ErpComboProductDO::getShortName, reqVO.getShortName())
-                .eqIfPresent(ErpComboProductDO::getShippingCode, reqVO.getShippingCode())
+                .likeIfPresent(ErpComboProductDO::getShippingCode, reqVO.getShippingCode())
+                .likeIfPresent(ErpComboProductDO::getPurchaser, reqVO.getPurchaser())
+                .likeIfPresent(ErpComboProductDO::getSupplier, reqVO.getSupplier())
+                .likeIfPresent(ErpComboProductDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpComboProductDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpComboProductDO::getCreateTime)
                 .orderByDesc(ErpComboProductDO::getId));
