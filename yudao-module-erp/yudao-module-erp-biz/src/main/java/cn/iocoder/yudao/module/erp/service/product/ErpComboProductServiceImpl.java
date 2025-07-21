@@ -394,7 +394,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                             .lte(pageReqVO.getCreateTime()[1].toString()));
                 }
             }
-            
+
             // 如果有任何查询条件，添加到查询构建器
             if (boolQuery.hasClauses()) {
                 queryBuilder.withQuery(boolQuery);
@@ -658,7 +658,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
 
         // 批量查询组合产品项
         List<ErpComboProductItemDO> allComboItems = erpComboProductItemMapper.selectByComboProductIds(comboIds);
-        
+
         // 按组合产品ID分组
         Map<Long, List<ErpComboProductItemDO>> itemsMap = allComboItems.stream()
                 .collect(Collectors.groupingBy(ErpComboProductItemDO::getComboProductId));
@@ -676,10 +676,10 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
         // 构建响应VO
         for (ErpComboProductDO combo : pageResult.getList()) {
             ErpComboRespVO vo = BeanUtils.toBean(combo, ErpComboRespVO.class);
-            
+
             // 处理组合产品项
             List<ErpComboProductItemDO> comboItems = itemsMap.getOrDefault(combo.getId(), Collections.emptyList());
-            
+
             // 确保项目顺序一致
             comboItems.sort(Comparator.comparing(ErpComboProductItemDO::getId));
 
@@ -687,7 +687,7 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
             StringBuilder itemsStringBuilder = new StringBuilder();
             StringBuilder nameBuilder = new StringBuilder();
             BigDecimal totalWeight = BigDecimal.ZERO;
-            
+
             for (int i = 0; i < comboItems.size(); i++) {
                 ErpComboProductItemDO item = comboItems.get(i);
                 ErpProductDO product = productMap.get(item.getItemProductId());
@@ -697,31 +697,31 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     itemsStringBuilder.append(";");
                     nameBuilder.append("｜");
                 }
-                
+
                 // 添加到itemsString
                 itemsStringBuilder.append(product.getNo())
                         .append(",")
                         .append(item.getItemQuantity());
-                
+
                 // 构建名称
                 nameBuilder.append(product.getName())
                         .append("×")
                         .append(item.getItemQuantity());
-                
+
                 // 计算总重量
                 if (product.getWeight() != null) {
                     BigDecimal quantity = new BigDecimal(item.getItemQuantity());
                     totalWeight = totalWeight.add(product.getWeight().multiply(quantity));
                 }
             }
-            
+
             // 设置组合产品名称、项目字符串和重量
             if (StrUtil.isBlank(vo.getName())) {
                 vo.setName(nameBuilder.toString());
             }
             vo.setItemsString(itemsStringBuilder.toString());
             vo.setWeight(totalWeight);
-            
+
             voList.add(vo);
         }
 
@@ -1524,7 +1524,6 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                 respVO.getFailureNames().putAll(allErrors);
                 return respVO;
             }
-
             Long userId = SecurityFrameworkUtils.getLoginUserId();
             String username = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
             LocalDateTime now = LocalDateTime.now();
