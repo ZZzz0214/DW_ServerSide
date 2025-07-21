@@ -22,29 +22,17 @@ public class ErpProductESDO {
     @Field(name = "no", type = FieldType.Keyword)
     private String no;
 
-    @Field(name = "no_keyword", type = FieldType.Keyword)
-    private String noKeyword;
-
-    @Field(name = "name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "name", type = FieldType.Keyword)
     private String name;
-
-    @Field(name = "name_keyword", type = FieldType.Keyword)
-    private String nameKeyword;
 
     @Field(name = "image", type = FieldType.Keyword)
     private String image;
 
-    @Field(name = "product_short_name", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "product_short_name", type = FieldType.Keyword)
     private String productShortName;
 
-    @Field(name = "product_short_name_keyword", type = FieldType.Keyword)
-    private String productShortNameKeyword;
-
-    @Field(name = "shipping_code", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "shipping_code", type = FieldType.Keyword)
     private String shippingCode;
-
-    @Field(name = "shipping_code_keyword", type = FieldType.Keyword)
-    private String shippingCodeKeyword;
 
     @Field(name = "unit_id", type = FieldType.Long)
     private Long unitId;
@@ -52,7 +40,7 @@ public class ErpProductESDO {
     @Field(name = "unit_name", type = FieldType.Keyword)
     private String unitName;
 
-    @Field(name = "standard", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "standard", type = FieldType.Keyword)
     private String standard;
 
     @Field(name = "weight", type = FieldType.Double)
@@ -64,11 +52,8 @@ public class ErpProductESDO {
     @Field(name = "expiry_day", type = FieldType.Integer)
     private Integer expiryDay;
 
-    @Field(name = "brand", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "brand", type = FieldType.Keyword)
     private String brand;
-
-    @Field(name = "brand_keyword", type = FieldType.Keyword)
-    private String brandKeyword;
 
     @Field(name = "category_id", type = FieldType.Long)
     private Long categoryId;
@@ -79,7 +64,7 @@ public class ErpProductESDO {
     @Field(name = "status", type = FieldType.Integer)
     private Integer status;
 
-    @Field(name = "product_selling_points", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "product_selling_points", type = FieldType.Keyword)
     private String productSellingPoints;
 
     @Field(name = "bar_code", type = FieldType.Keyword)
@@ -100,7 +85,7 @@ public class ErpProductESDO {
     @Field(name = "packaging_material_quantity", type = FieldType.Integer)
     private Integer packagingMaterialQuantity;
 
-    @Field(name = "order_replenishment_lead_time", type = FieldType.Text)
+    @Field(name = "order_replenishment_lead_time", type = FieldType.Keyword)
     private String orderReplenishmentLeadTime;
 
     @Field(name = "product_dimensions", type = FieldType.Keyword)
@@ -130,10 +115,10 @@ public class ErpProductESDO {
     @Field(name = "addon_shipping_area", type = FieldType.Keyword)
     private String addonShippingArea;
 
-    @Field(name = "after_sales_standard", type = FieldType.Text)
+    @Field(name = "after_sales_standard", type = FieldType.Keyword)
     private String afterSalesStandard;
 
-    @Field(name = "after_sales_script", type = FieldType.Text)
+    @Field(name = "after_sales_script", type = FieldType.Keyword)
     private String afterSalesScript;
 
     @Field(name = "order_replenishment_lead_time_unit", type = FieldType.Keyword)
@@ -193,17 +178,11 @@ public class ErpProductESDO {
     @Field(name = "weight_unit", type = FieldType.Keyword)
     private String weightUnit;
 
-    @Field(name = "purchaser", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "purchaser", type = FieldType.Keyword)
     private String purchaser;
 
-    @Field(name = "purchaser_keyword", type = FieldType.Keyword)
-    private String purchaserKeyword;
-
-    @Field(name = "supplier", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "supplier", type = FieldType.Keyword)
     private String supplier;
-
-    @Field(name = "supplier_keyword", type = FieldType.Keyword)
-    private String supplierKeyword;
 
     @Field(name = "purchase_price", type = FieldType.Double)
     private BigDecimal purchasePrice;
@@ -211,10 +190,10 @@ public class ErpProductESDO {
     @Field(name = "wholesale_price", type = FieldType.Double)
     private BigDecimal wholesalePrice;
 
-    @Field(name = "remark", type = FieldType.Text)
+    @Field(name = "remark", type = FieldType.Keyword)
     private String remark;
 
-    @Field(name = "min_purchase_price", type = FieldType.Text)
+    @Field(name = "min_purchase_price", type = FieldType.Keyword)
     private String minPurchasePrice;
 
     @Field(name = "min_wholesale_price", type = FieldType.Double)
@@ -244,12 +223,8 @@ public class ErpProductESDO {
     @Field(name = "additional_weight_price", type = FieldType.Double)
     private BigDecimal additionalWeightPrice;
 
-
-    @Field(name = "creator", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "creator", type = FieldType.Keyword)
     private String creator;
-
-    @Field(name = "creator_keyword", type = FieldType.Keyword)
-    private String creatorKeyword;
 
     @Field(name = "create_time", type = FieldType.Keyword)
     private String createTime;
