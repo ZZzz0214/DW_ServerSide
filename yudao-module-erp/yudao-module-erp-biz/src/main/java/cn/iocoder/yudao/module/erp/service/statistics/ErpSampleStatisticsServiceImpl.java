@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.service.statistics;
 
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.statistics.vo.sample.ErpSampleSummaryRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sample.ErpSampleDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sample.ErpSampleMapper;
@@ -34,7 +35,15 @@ public class ErpSampleStatisticsServiceImpl implements ErpSampleStatisticsServic
 
     @Override
     public ErpSampleSummaryRespVO getSampleSummary(LocalDateTime beginTime, LocalDateTime endTime, String customerName) {
-        log.info("开始获取样品统计，时间范围：{} 到 {}，客户名称：{}", beginTime, endTime, customerName);
+        // 调用带分页的方法，但不启用分页（传递null参数）
+        return getSampleSummary(beginTime, endTime, customerName, null, null);
+    }
+
+    @Override
+    public ErpSampleSummaryRespVO getSampleSummary(LocalDateTime beginTime, LocalDateTime endTime, String customerName, 
+                                                 Integer pageNo, Integer pageSize) {
+        log.info("开始获取样品统计，时间范围：{} 到 {}，客户名称：{}，分页参数：{}, {}", 
+                beginTime, endTime, customerName, pageNo, pageSize);
 
         // 1. 查询指定时间范围内的所有样品
         LambdaQueryWrapperX<ErpSampleDO> queryWrapper = new LambdaQueryWrapperX<ErpSampleDO>();
@@ -91,8 +100,24 @@ public class ErpSampleStatisticsServiceImpl implements ErpSampleStatisticsServic
 
         // 5. 按客户总数量排序
         customerStats.sort((a, b) -> Integer.compare(b.getTotalCount(), a.getTotalCount()));
+        
+        // 6. 分页处理客户统计列表
+        int total = customerStats.size();
+        List<ErpSampleSummaryRespVO.CustomerSampleStat> pagedCustomerStats;
+        
+        if (pageNo != null && pageSize != null && pageSize > 0) {
+            int fromIndex = (pageNo - 1) * pageSize;
+            if (fromIndex >= customerStats.size()) {
+                pagedCustomerStats = Collections.emptyList();
+            } else {
+                int toIndex = Math.min(fromIndex + pageSize, customerStats.size());
+                pagedCustomerStats = customerStats.subList(fromIndex, toIndex);
+            }
+        } else {
+            pagedCustomerStats = customerStats;
+        }
 
-        // 6. 构建客户选项列表
+        // 7. 构建客户选项列表
         List<ErpSampleSummaryRespVO.CustomerOption> customerOptions = new ArrayList<>();
         for (Map.Entry<String, Map<String, Integer>> entry : customerStatusCount.entrySet()) {
             String optionCustomerName = entry.getKey();
@@ -108,15 +133,21 @@ public class ErpSampleStatisticsServiceImpl implements ErpSampleStatisticsServic
         // 按样品数量排序
         customerOptions.sort((a, b) -> Integer.compare(b.getSampleCount(), a.getSampleCount()));
 
-        // 7. 构建返回结果
+        // 8. 构建返回结果
         ErpSampleSummaryRespVO result = new ErpSampleSummaryRespVO();
         result.setStatusCount(statusCount);
-        result.setCustomerStats(customerStats);
+        result.setCustomerStats(pagedCustomerStats); // 设置分页后的客户统计
         result.setTotalCount(samples.size());
         result.setCustomerOptions(customerOptions);
+        
+        // 9. 设置分页信息
+        result.setTotal(total); // 总客户数
+        result.setPageNo(pageNo != null ? pageNo : 1);
+        result.setPageSize(pageSize != null ? pageSize : total);
 
         // 添加调试信息
-        log.info("样品统计完成，总数量：{}，客户数量：{}", result.getTotalCount(), customerStats.size());
+        log.info("样品统计完成，总数量：{}，客户数量：{}，分页后客户数量：{}", 
+                result.getTotalCount(), total, pagedCustomerStats.size());
         log.info("状态统计详情：{}", statusCount);
         
         // 验证总数计算

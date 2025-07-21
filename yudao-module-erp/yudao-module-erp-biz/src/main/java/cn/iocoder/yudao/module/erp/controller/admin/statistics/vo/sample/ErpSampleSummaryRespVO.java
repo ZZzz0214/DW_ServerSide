@@ -21,6 +21,15 @@ public class ErpSampleSummaryRespVO {
 
     @Schema(description = "客户选项列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<CustomerOption> customerOptions;
+    
+    @Schema(description = "总客户数", requiredMode = Schema.RequiredMode.REQUIRED, example = "50")
+    private Integer total;
+
+    @Schema(description = "当前页码", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Integer pageNo;
+
+    @Schema(description = "每页条数", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
+    private Integer pageSize;
 
     @Schema(description = "样品状态统计详情", requiredMode = Schema.RequiredMode.REQUIRED)
     @Data

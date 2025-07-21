@@ -18,5 +18,18 @@ public interface ErpSampleStatisticsService {
      * @return 样品统计
      */
     ErpSampleSummaryRespVO getSampleSummary(LocalDateTime beginTime, LocalDateTime endTime, String customerName);
+    
+    /**
+     * 获得样品统计（带分页）
+     *
+     * @param beginTime    开始时间
+     * @param endTime      结束时间
+     * @param customerName 客户名称（可选）
+     * @param pageNo       当前页码
+     * @param pageSize     每页条数
+     * @return 样品统计
+     */
+    ErpSampleSummaryRespVO getSampleSummary(LocalDateTime beginTime, LocalDateTime endTime, String customerName,
+                                           Integer pageNo, Integer pageSize);
 
 } 
