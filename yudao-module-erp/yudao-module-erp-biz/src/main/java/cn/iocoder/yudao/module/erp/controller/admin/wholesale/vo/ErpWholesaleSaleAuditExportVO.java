@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo;
 
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -81,4 +82,27 @@ public class ErpWholesaleSaleAuditExportVO {
 
     @ExcelProperty("创建日期")
     private LocalDateTime createTime;
+
+
+    @ExcelProperty("出货审核状态")
+    private Integer saleAuditStatus;
+
+    @ExcelProperty("出货审核金额")
+    private BigDecimal saleAuditTotalAmount;
+
+    @ExcelProperty("出货审核时间")
+    private LocalDateTime saleApprovalTime;
+
+    @ExcelProperty("出货反审核时间")
+    private LocalDateTime saleUnapproveTime;
+
+    @ExcelProperty("出货售后金额")
+    private BigDecimal saleAfterSalesAmount;
+
+    @ExcelProperty("出货售后时间")
+    private String saleAfterSalesTime;
+
+
+
+
 }

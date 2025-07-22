@@ -91,6 +91,7 @@ public class ErpDistributionRespVO {
 
     @Schema(description = "采购售后金额", example = "100.00")
     private BigDecimal purchaseAfterSalesAmount;
+
     @Schema(description = "采购审核状态", example = "1")
     private Integer purchaseAuditStatus;
 

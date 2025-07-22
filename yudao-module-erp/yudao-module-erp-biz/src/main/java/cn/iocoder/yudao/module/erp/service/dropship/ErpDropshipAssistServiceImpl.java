@@ -405,9 +405,10 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                     } else if (isUpdateSupport) {
                         // 更新
                         ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-                        updateDropshipAssist.setId(existDropshipAssist.getId()).setComboProductId(comboProductIdLong != null ? comboProductIdLong.toString() : null)
-                                .setCreator(username)
-                                .setCreateTime(now);
+                        updateDropshipAssist.setId(existDropshipAssist.getId())
+                                .setComboProductId(comboProductIdLong != null ? comboProductIdLong.toString() : null)
+                                .setCreator(existDropshipAssist.getCreator())        // 保留原始创建人
+                                .setCreateTime(existDropshipAssist.getCreateTime());  // 保留原始创建时间
 
                         updateList.add(updateDropshipAssist);
                         respVO.getUpdateNames().add(updateDropshipAssist.getNo());
