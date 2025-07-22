@@ -42,6 +42,7 @@ public interface ErpSupplierMapper extends BaseMapperX<ErpSupplierDO> {
                 .selectAs(ErpSupplierDO::getAlipayAccount, ErpSupplierRespVO::getAlipayAccount)
                 .selectAs(ErpSupplierDO::getBankAccount, ErpSupplierRespVO::getBankAccount)
                 .selectAs(ErpSupplierDO::getRemark, ErpSupplierRespVO::getRemark)
+                .selectAs(ErpSupplierDO::getCreator, ErpSupplierRespVO::getCreator)
                 .selectAs(ErpSupplierDO::getCreateTime, ErpSupplierRespVO::getCreateTime);
         return selectJoinPage(reqVO, ErpSupplierRespVO.class, query);
     }

@@ -90,7 +90,7 @@ public class ErpNoRedisDAO {
 
     public static final String SALE_PRICE_NO_PREFIX = "XSJG";
 
-    public static final String INVENTORY_NO_PREFIX = "CKJL";
+    public static final String INVENTORY_NO_PREFIX = "DHKC";
 
     /**
      * 记事本编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.notebook.ErpNotebookDO}
@@ -125,7 +125,7 @@ public class ErpNoRedisDAO {
     /**
      * 私播复盘编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastingreview.ErpPrivateBroadcastingReviewDO}
      */
-    public static final String PRIVATE_BROADCASTING_REVIEW_NO_PREFIX = "SBFB";
+    public static final String PRIVATE_BROADCASTING_REVIEW_NO_PREFIX = "SBFP";
 
     /**
      * 私播信息编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.privatebroadcastinginfo.ErpPrivateBroadcastingInfoDO}
@@ -165,12 +165,12 @@ public class ErpNoRedisDAO {
      * 财务金额编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAmountDO}
      */
     public static final String FINANCE_AMOUNT_NO_PREFIX = "CWJE";
-    
+
     /**
      * 采购人员编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaserDO}
      */
     public static final String PURCHASER_NO_PREFIX = "CGRY";
-    
+
     /**
      * 供应商编号 {@link cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO}
      */

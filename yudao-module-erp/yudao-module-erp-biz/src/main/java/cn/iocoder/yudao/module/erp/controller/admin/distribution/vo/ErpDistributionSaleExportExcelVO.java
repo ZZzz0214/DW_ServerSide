@@ -53,6 +53,9 @@ public class ErpDistributionSaleExportExcelVO {
     @ExcelProperty("产品数量")
     private Integer productQuantity;
 
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @ExcelProperty("销售人员")
     private String salesperson;
 
@@ -82,4 +85,4 @@ public class ErpDistributionSaleExportExcelVO {
 
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}

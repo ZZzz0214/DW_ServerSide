@@ -58,7 +58,6 @@ public class ProductSaveReqVO {
     private String productSellingPoints;
 
     @Schema(description = "条形编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "X110")
-    @NotEmpty(message = "条形编号不能为空")
     private String barCode;
 
     @Schema(description = "备案编号")

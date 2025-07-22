@@ -43,6 +43,9 @@ public class ErpWholesalePurchaseExportExcelVO {
     @ExcelProperty("产品数量")
     private Integer productQuantity;
 
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @ExcelProperty("采购人员")
     private String purchaser;
 
@@ -72,4 +75,4 @@ public class ErpWholesalePurchaseExportExcelVO {
 
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}

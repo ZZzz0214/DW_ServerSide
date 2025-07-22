@@ -4,8 +4,10 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.purchaser.ErpPurchaserRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.salesperson.ErpSalespersonRespVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaserDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSalespersonDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -34,6 +36,7 @@ public interface ErpSalespersonMapper extends BaseMapperX<ErpSalespersonDO> {
                 .selectAs(ErpSalespersonDO::getAlipayAccount, ErpSalespersonRespVO::getAlipayAccount)
                 .selectAs(ErpSalespersonDO::getBankAccount, ErpSalespersonRespVO::getBankAccount)
                 .selectAs(ErpSalespersonDO::getRemark, ErpSalespersonRespVO::getRemark)
+                .selectAs(ErpPurchaserDO::getCreator, ErpPurchaserRespVO::getCreator)
                 .selectAs(ErpSalespersonDO::getCreateTime, ErpSalespersonRespVO::getCreateTime);
         return selectJoinPage(reqVO, ErpSalespersonRespVO.class, query);
     }

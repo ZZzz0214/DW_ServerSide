@@ -36,6 +36,7 @@ public interface ErpPurchaserMapper extends BaseMapperX<ErpPurchaserDO> {
                 .selectAs(ErpPurchaserDO::getAlipayAccount, ErpPurchaserRespVO::getAlipayAccount)
                 .selectAs(ErpPurchaserDO::getBankAccount, ErpPurchaserRespVO::getBankAccount)
                 .selectAs(ErpPurchaserDO::getRemark, ErpPurchaserRespVO::getRemark)
+                .selectAs(ErpPurchaserDO::getCreator, ErpPurchaserRespVO::getCreator)
                 .selectAs(ErpPurchaserDO::getCreateTime, ErpPurchaserRespVO::getCreateTime);
         return selectJoinPage(reqVO, ErpPurchaserRespVO.class, query);
     }

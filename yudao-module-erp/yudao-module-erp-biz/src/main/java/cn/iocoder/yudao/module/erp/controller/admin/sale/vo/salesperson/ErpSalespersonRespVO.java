@@ -48,6 +48,11 @@ public class ErpSalespersonRespVO {
     @ExcelProperty("备注信息")
     private String remark;
 
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    @ExcelProperty("创建人员")
+    private String creator;
+
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;

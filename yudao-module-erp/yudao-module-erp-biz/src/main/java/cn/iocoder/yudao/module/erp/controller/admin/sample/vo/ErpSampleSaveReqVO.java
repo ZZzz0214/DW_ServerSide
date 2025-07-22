@@ -41,7 +41,6 @@ public class ErpSampleSaveReqVO {
     private String comboProductId;
 
     @Schema(description = "产品规格", requiredMode = Schema.RequiredMode.REQUIRED, example = "标准规格")
-    @NotNull(message = "产品规格不能为空")
     private String productSpec;
 
     @Schema(description = "产品数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")

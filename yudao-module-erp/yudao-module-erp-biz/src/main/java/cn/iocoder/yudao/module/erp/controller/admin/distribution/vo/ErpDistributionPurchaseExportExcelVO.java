@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
@@ -53,6 +54,9 @@ public class ErpDistributionPurchaseExportExcelVO {
     @ExcelProperty("产品数量")
     private Integer productQuantity;
 
+    @ExcelProperty("备注信息")
+    private String remark;
+
     @ExcelProperty("采购人员")
     private String purchaser;
 
@@ -79,4 +83,4 @@ public class ErpDistributionPurchaseExportExcelVO {
 
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
-} 
+}
