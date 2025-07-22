@@ -1610,10 +1610,13 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     ErpComboProductDO updateCombo = BeanUtils.toBean(importVO, ErpComboProductDO.class);
                     updateCombo.setId(existCombo.getId());
                     updateCombo.setNo(existCombo.getNo()); // 保持原有编号
+                    // 保留原有的创建人和创建时间
+                    updateCombo.setCreator(existCombo.getCreator());
+                    updateCombo.setCreateTime(existCombo.getCreateTime());
 
                     // 计算价格和重量，并设置计算出的名称
                     calculateAndSetPricesAndWeight(importVO, updateCombo, productMap);
-                    updateCombo.setName(calculatedName).setCreator(username).setCreateTime(now);
+                    updateCombo.setName(calculatedName);
 
                     updateList.add(updateCombo);
                     respVO.getUpdateNames().add(updateCombo.getNo());
