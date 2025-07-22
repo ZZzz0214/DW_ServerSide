@@ -688,15 +688,23 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         // 设置分页参数
         query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
+        
+        // 确保查询包含排序条件
+        if (!query.getSort().isSorted()) {
+            query.addSort(Sort.by(Sort.Direction.DESC, "id"));
+        }
 
         // 如果是深度分页，使用search_after
         if (skip > 0) {
-            // 先获取前一页的最后一条记录
-            NativeSearchQuery prevQuery = queryBuilder.build();
-            prevQuery.setPageable(PageRequest.of(pageReqVO.getPageNo() - 2, 1));
+            // 修复：查询前skip条记录，而不仅是前一页的最后一条
+            NativeSearchQueryBuilder prevQueryBuilder = new NativeSearchQueryBuilder()
+                    .withQuery(queryBuilder.build().getQuery())
+                    .withPageable(PageRequest.of(0, skip))
+                    .withSort(Sort.by(Sort.Direction.DESC, "id")) // 确保排序方式与主查询一致
+                    .withTrackTotalHits(true);
 
             SearchHits<ErpWholesaleCombinedESDO> prevHits = elasticsearchRestTemplate.search(
-                    prevQuery,
+                    prevQueryBuilder.build(),
                     ErpWholesaleCombinedESDO.class,
                     IndexCoordinates.of("erp_wholesale_combined"));
 
@@ -704,8 +712,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 return new PageResult<>(Collections.emptyList(), prevHits.getTotalHits());
             }
 
-            // 设置search_after参数
-            SearchHit<ErpWholesaleCombinedESDO> lastHit = prevHits.getSearchHits().get(0);
+            // 设置search_after参数 - 使用查询结果中的最后一条记录
+            SearchHit<ErpWholesaleCombinedESDO> lastHit = prevHits.getSearchHits().get(prevHits.getSearchHits().size() - 1);
             query.setSearchAfter(lastHit.getSortValues());
         }
 
