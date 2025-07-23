@@ -296,6 +296,7 @@ public class ErpDistributionController {
         BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
         BigDecimal totalSaleAmount = BigDecimal.ZERO;
         BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
 
         for (ErpDistributionSaleAuditVO vo : list) {
             if (vo.getSalePrice() != null) {
@@ -313,6 +314,9 @@ public class ErpDistributionController {
             if (vo.getSaleAfterSalesAmount() != null) {
                 totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
             }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
         }
 
         // 创建返回结果
@@ -323,6 +327,7 @@ public class ErpDistributionController {
         result.setTotalSaleOtherFees(totalSaleOtherFees);
         result.setTotalSaleAmount(totalSaleAmount);
         result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
         return success(result);
     }
 

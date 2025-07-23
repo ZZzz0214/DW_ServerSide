@@ -24,6 +24,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getLiveCommission, reqVO.getLiveCommission())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getPublicCommission, reqVO.getPublicCommission())
+                .eqIfPresent(ErpLiveBroadcastingReviewDO::getLivePlatform, reqVO.getLivePlatform())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getLiveStartDate, reqVO.getLiveStartDate())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getCreator, reqVO.getCreator())

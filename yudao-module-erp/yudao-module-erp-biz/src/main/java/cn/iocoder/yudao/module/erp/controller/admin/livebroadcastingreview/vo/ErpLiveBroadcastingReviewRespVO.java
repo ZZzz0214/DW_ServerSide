@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.controller.admin.livebroadcastingreview.vo;
 
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -41,7 +43,8 @@ public class ErpLiveBroadcastingReviewRespVO {
     private Long customerId;
 
     @Schema(description = "直播平台", example = "抖音")
-    @ExcelProperty("直播平台")
+    @ExcelProperty(value = "直播平台", converter = DictConvert.class)
+    @DictFormat("erp_live_platform")
     private String livePlatform;
 
     @Schema(description = "直播佣金", example = "10.00")

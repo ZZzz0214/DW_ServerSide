@@ -129,21 +129,9 @@ public class ErpSampleController {
         // 手动创建导出 demo
         List<ErpSampleExportVO> list = Arrays.asList(
                 ErpSampleExportVO.builder()
-                        .no("示例编号1")
-                        .logisticsCompany("顺丰快递")
-                        .logisticsNo("SF123456789")
-                        .receiverName("张三")
-                        .contactPhone("13800138000")
-                        .address("北京市朝阳区XX街道XX号")
-                        .comboProductId("CP001")
-                        .productSpec("标准规格")
-                        .productQuantity(1)
-                        .customerName("示例客户")
-                        .sampleStatus(1)
-                        .remark("示例备注")
                         .build()
         );
         // 输出
-        ExcelUtils.write(response, "样品导入模板.xls", "样品列表", ErpSampleExportVO.class, list);
+        ExcelUtils.write(response, "样品表导入模板.xlsx", "样品列表", ErpSampleExportVO.class, list);
     }
 }
