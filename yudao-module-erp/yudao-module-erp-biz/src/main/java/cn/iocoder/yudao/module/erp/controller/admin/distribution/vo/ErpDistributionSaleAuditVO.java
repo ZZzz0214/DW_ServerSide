@@ -124,5 +124,8 @@ public class ErpDistributionSaleAuditVO {
     private BigDecimal saleAuditTotalAmount;
 
 
-
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String creator;
+    @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    private LocalDateTime createTime;
 }

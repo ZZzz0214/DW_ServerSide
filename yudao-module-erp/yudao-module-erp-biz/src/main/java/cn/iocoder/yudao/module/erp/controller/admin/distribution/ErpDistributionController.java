@@ -421,7 +421,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-purchase-after-sales")
     @Operation(summary = "更新采购售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update')")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-one')")
     public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
         System.out.println("售后信息"+reqVO);
         distributionService.updatePurchaseAfterSales(reqVO);
@@ -430,7 +430,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-sale-after-sales")
     @Operation(summary = "更新销售售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update')")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-one')")
     public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpDistributionSaleAfterSalesUpdateReqVO reqVO) {
         System.out.println("销售售后信息：" + reqVO);
         distributionService.updateSaleAfterSales(reqVO);
@@ -457,7 +457,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-purchase-audit-status")
     @Operation(summary = "更新采购审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status')")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status-one')")
     public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
                                                       @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
                                                       @RequestParam("otherFees") BigDecimal otherFees,
@@ -481,7 +481,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-sale-audit-status")
     @Operation(summary = "更新销售审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status')")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status-one')")
     public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
                                                     @RequestParam("saleAuditStatus") Integer saleAuditStatus,
                                                     @RequestParam("otherFees") BigDecimal otherFees,

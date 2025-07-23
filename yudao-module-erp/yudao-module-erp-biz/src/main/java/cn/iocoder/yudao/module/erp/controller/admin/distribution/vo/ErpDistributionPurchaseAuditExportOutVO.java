@@ -87,11 +87,17 @@ public class ErpDistributionPurchaseAuditExportOutVO {
     @ExcelProperty("创建人员")
     private String creator;
 
-    @ExcelProperty("创建时间")
-    private LocalDateTime createTime;
+    @ExcelProperty("采购审核状态")
+    private Integer purchaseAuditStatus;
+
+    @ExcelProperty("采购审核金额")
+    private BigDecimal purchaseAuditTotalAmount;
 
     @ExcelProperty("采购审核时间")
     private LocalDateTime purchaseApprovalTime;
+
+    @ExcelProperty("采购反审核时间")
+    private LocalDateTime purchaseUnapproveTime;
 
     @ExcelProperty("采购售后金额")
     private BigDecimal purchaseAfterSalesAmount;

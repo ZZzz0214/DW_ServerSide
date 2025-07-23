@@ -672,7 +672,7 @@ public class ErpWholesaleController {
     // 更新采购审核状态
     @PutMapping("/update-purchase-audit-status")
     @Operation(summary = "更新采购审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status-one')")
     public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
                                                            @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
                                                            @RequestParam("otherFees") BigDecimal otherFees,
@@ -697,7 +697,7 @@ public class ErpWholesaleController {
         // 更新销售审核状态
     @PutMapping("/update-sale-audit-status")
     @Operation(summary = "更新销售审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status-one')")
     public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
                                                       @RequestParam("saleAuditStatus") Integer saleAuditStatus,
                                                       @RequestParam("otherFees") BigDecimal otherFees,
@@ -729,7 +729,7 @@ public class ErpWholesaleController {
     }
     @PutMapping("/update-purchase-after-sales")
     @Operation(summary = "更新采购售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales-one')")
     public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpWholesalePurchaseAfterSalesUpdateReqVO reqVO) {
         wholesaleService.updatePurchaseAfterSales(reqVO);
         return success(true);
@@ -738,7 +738,7 @@ public class ErpWholesaleController {
     // 更新销售售后信息
     @PutMapping("/update-sale-after-sales")
     @Operation(summary = "更新销售售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales-one')")
     public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpWholesaleSaleAfterSalesUpdateReqVO reqVO) {
         System.out.println("销售售后前端传递的vo"+reqVO);
         wholesaleService.updateSaleAfterSales(reqVO);
@@ -771,18 +771,18 @@ public class ErpWholesaleController {
                                         HttpServletResponse response) throws IOException {
         System.out.println("开始导出批发基础订单数据...");
         long startTime = System.currentTimeMillis();
-        
+
         // 使用导出全部数据的方法，不使用分页
         List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
         System.out.println("获取批发基础订单数据完成，共 " + dataList.size() + " 条");
-        
+
         // 转换为导出VO
         List<ErpWholesaleBasicExportExcelVO> exportList = BeanUtils.toBean(dataList, ErpWholesaleBasicExportExcelVO.class);
         System.out.println("转换为基础导出VO完成");
-        
+
         // 导出Excel
         ExcelUtils.write(response, "批发基础订单信息.xlsx", "数据", ErpWholesaleBasicExportExcelVO.class, exportList);
-        
+
         long endTime = System.currentTimeMillis();
         System.out.println("批发基础订单导出完成，耗时：" + (endTime - startTime) + "ms");
     }
@@ -795,18 +795,18 @@ public class ErpWholesaleController {
                                            HttpServletResponse response) throws IOException {
         System.out.println("开始导出批发采购订单数据...");
         long startTime = System.currentTimeMillis();
-        
+
         // 使用导出全部数据的方法，不使用分页
         List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
         System.out.println("获取批发采购订单数据完成，共 " + dataList.size() + " 条");
-        
+
         // 转换为导出VO
         List<ErpWholesalePurchaseExportExcelVO> exportList = BeanUtils.toBean(dataList, ErpWholesalePurchaseExportExcelVO.class);
         System.out.println("转换为采购导出VO完成");
-        
+
         // 导出Excel
         ExcelUtils.write(response, "批发采购订单信息.xlsx", "数据", ErpWholesalePurchaseExportExcelVO.class, exportList);
-        
+
         long endTime = System.currentTimeMillis();
         System.out.println("批发采购订单导出完成，耗时：" + (endTime - startTime) + "ms");
     }
@@ -819,18 +819,18 @@ public class ErpWholesaleController {
                                        HttpServletResponse response) throws IOException {
         System.out.println("开始导出批发出货订单数据...");
         long startTime = System.currentTimeMillis();
-        
+
         // 使用导出全部数据的方法，不使用分页
         List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
         System.out.println("获取批发出货订单数据完成，共 " + dataList.size() + " 条");
-        
+
         // 转换为导出VO
         List<ErpWholesaleSaleExportExcelVO> exportList = BeanUtils.toBean(dataList, ErpWholesaleSaleExportExcelVO.class);
         System.out.println("转换为出货导出VO完成");
-        
+
         // 导出Excel
         ExcelUtils.write(response, "批发出货订单信息.xlsx", "数据", ErpWholesaleSaleExportExcelVO.class, exportList);
-        
+
         long endTime = System.currentTimeMillis();
         System.out.println("批发出货订单导出完成，耗时：" + (endTime - startTime) + "ms");
     }
@@ -843,18 +843,18 @@ public class ErpWholesaleController {
                                        HttpServletResponse response) throws IOException {
         System.out.println("开始导出批发发货订单数据...");
         long startTime = System.currentTimeMillis();
-        
+
         // 使用导出全部数据的方法，不使用分页
         List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
         System.out.println("获取批发发货订单数据完成，共 " + dataList.size() + " 条");
-        
+
         // 转换为导出VO
         List<ErpWholesaleShipExportExcelVO> exportList = BeanUtils.toBean(dataList, ErpWholesaleShipExportExcelVO.class);
         System.out.println("转换为发货导出VO完成");
-        
+
         // 导出Excel
         ExcelUtils.write(response, "批发发货订单信息.xlsx", "数据", ErpWholesaleShipExportExcelVO.class, exportList);
-        
+
         long endTime = System.currentTimeMillis();
         System.out.println("批发发货订单导出完成，耗时：" + (endTime - startTime) + "ms");
     }
@@ -869,18 +869,18 @@ public class ErpWholesaleController {
                                               HttpServletResponse response) throws IOException {
             System.out.println("开始导出批发采购订单数据...");
             long startTime = System.currentTimeMillis();
-            
+
             // 使用导出全部数据的方法，不使用分页
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取批发采购订单数据完成，共 " + dataList.size() + " 条");
-            
+
             // 转换为导出VO
             List<ErpWholesalePurchaseAuditExportVO> exportList = BeanUtils.toBean(dataList, ErpWholesalePurchaseAuditExportVO.class);
             System.out.println("转换为采购导出VO完成");
-            
+
             // 导出Excel
             ExcelUtils.write(response, "批发采购订单.xlsx", "数据", ErpWholesalePurchaseAuditExportVO.class, exportList);
-            
+
             long endTime = System.currentTimeMillis();
             System.out.println("批发采购订单导出完成，耗时：" + (endTime - startTime) + "ms");
         }
@@ -894,21 +894,21 @@ public class ErpWholesaleController {
                                                 HttpServletResponse response) throws IOException {
             System.out.println("开始导出已反审核批发采购订单数据...");
             long startTime = System.currentTimeMillis();
-            
+
             // 设置反审核状态过滤条件
             pageReqVO.setPurchaseAuditStatus(20); // 已反审核状态
-            
+
             // 使用导出全部数据的方法，不使用分页
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取已反审核批发采购订单数据完成，共 " + dataList.size() + " 条");
-            
+
             // 转换为导出VO
             List<ErpWholesalePurchaseAuditExportVO> exportList = BeanUtils.toBean(dataList, ErpWholesalePurchaseAuditExportVO.class);
             System.out.println("转换为采购导出VO完成");
-            
+
             // 导出Excel
             ExcelUtils.write(response, "已反审核批发采购订单.xlsx", "数据", ErpWholesalePurchaseAuditExportVO.class, exportList);
-            
+
             long endTime = System.currentTimeMillis();
             System.out.println("已反审核批发采购订单导出完成，耗时：" + (endTime - startTime) + "ms");
         }
@@ -922,18 +922,18 @@ public class ErpWholesaleController {
                                           HttpServletResponse response) throws IOException {
             System.out.println("开始导出批发销售订单数据...");
             long startTime = System.currentTimeMillis();
-            
+
             // 使用导出全部数据的方法，不使用分页
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取批发销售订单数据完成，共 " + dataList.size() + " 条");
-            
+
             // 转换为导出VO
             List<ErpWholesaleSaleAuditExportVO> exportList = BeanUtils.toBean(dataList, ErpWholesaleSaleAuditExportVO.class);
             System.out.println("转换为销售导出VO完成");
-            
+
             // 导出Excel
             ExcelUtils.write(response, "批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
-            
+
             long endTime = System.currentTimeMillis();
             System.out.println("批发销售订单导出完成，耗时：" + (endTime - startTime) + "ms");
         }
@@ -947,21 +947,21 @@ public class ErpWholesaleController {
                                             HttpServletResponse response) throws IOException {
             System.out.println("开始导出已反审核批发销售订单数据...");
             long startTime = System.currentTimeMillis();
-            
+
             // 设置反审核状态过滤条件
             pageReqVO.setSaleAuditStatus(20); // 已反审核状态
-            
+
             // 使用导出全部数据的方法，不使用分页
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取已反审核批发销售订单数据完成，共 " + dataList.size() + " 条");
-            
+
             // 转换为导出VO
             List<ErpWholesaleSaleAuditExportVO> exportList = BeanUtils.toBean(dataList, ErpWholesaleSaleAuditExportVO.class);
             System.out.println("转换为销售导出VO完成");
-            
+
             // 导出Excel
             ExcelUtils.write(response, "已反审核批发销售订单.xlsx", "数据", ErpWholesaleSaleAuditExportVO.class, exportList);
-            
+
             long endTime = System.currentTimeMillis();
             System.out.println("已反审核批发销售订单导出完成，耗时：" + (endTime - startTime) + "ms");
         }

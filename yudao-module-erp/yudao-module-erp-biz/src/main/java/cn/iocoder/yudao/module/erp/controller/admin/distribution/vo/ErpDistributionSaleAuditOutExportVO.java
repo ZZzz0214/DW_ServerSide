@@ -92,8 +92,17 @@ public class ErpDistributionSaleAuditOutExportVO {
     @ExcelProperty("创建日期")
     private LocalDateTime createTime;
 
+    @ExcelProperty("出货审核状态")
+    private Integer saleAuditStatus;
+
+    @ExcelProperty("出货审核金额")
+    private BigDecimal saleAuditTotalAmount;
+
     @ExcelProperty("出货审核时间")
     private LocalDateTime saleApprovalTime;
+
+    @ExcelProperty("出货反审核时间")
+    private LocalDateTime saleUnapproveTime;
 
     @ExcelProperty("出货售后金额")
     private BigDecimal saleAfterSalesAmount;

@@ -107,5 +107,8 @@ public class ErpWholesalePurchaseAuditVO {
     @Schema(description = "采购售后情况", example = "售后情况说明")
     private String afterSalesStatus;
 
-
+    @Schema(description = "创建人员", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String creator;
+    @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    private LocalDateTime createTime;
 }

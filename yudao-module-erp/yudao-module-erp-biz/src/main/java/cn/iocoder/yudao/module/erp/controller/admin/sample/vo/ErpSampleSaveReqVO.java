@@ -17,11 +17,9 @@ public class ErpSampleSaveReqVO {
     private String no;
 
     @Schema(description = "物流公司", requiredMode = Schema.RequiredMode.REQUIRED, example = "顺丰快递")
-    @NotNull(message = "物流公司不能为空")
     private String logisticsCompany;
 
     @Schema(description = "物流单号", requiredMode = Schema.RequiredMode.REQUIRED, example = "SF123456789")
-    @NotNull(message = "物流单号不能为空")
     private String logisticsNo;
 
     @Schema(description = "收件姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
