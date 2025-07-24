@@ -426,7 +426,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-purchase-after-sales")
     @Operation(summary = "更新采购售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-one')")
+    //@PreAuthorize("@ss.hasPermission('erp:distribution:update-one')")
     public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpDistributionPurchaseAfterSalesUpdateReqVO reqVO) {
         System.out.println("售后信息"+reqVO);
         distributionService.updatePurchaseAfterSales(reqVO);
@@ -435,7 +435,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-sale-after-sales")
     @Operation(summary = "更新销售售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-one')")
+    //@PreAuthorize("@ss.hasPermission('erp:distribution:update-one')")
     public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpDistributionSaleAfterSalesUpdateReqVO reqVO) {
         System.out.println("销售售后信息：" + reqVO);
         distributionService.updateSaleAfterSales(reqVO);
@@ -444,7 +444,7 @@ public class ErpDistributionController {
 
     @PutMapping("/batch-update-purchase-after-sales")
     @Operation(summary = "批量更新采购售后状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-after-sales')")
+    //@PreAuthorize("@ss.hasPermission('erp:distribution:update-after-sales')")
     public CommonResult<Boolean> batchUpdatePurchaseAfterSales(@RequestParam("ids") List<Long> ids,
                                                                @RequestParam("purchaseAfterSalesStatus") Integer purchaseAfterSalesStatus) {
         distributionService.batchUpdatePurchaseAfterSales(ids, purchaseAfterSalesStatus);
@@ -453,7 +453,7 @@ public class ErpDistributionController {
 
     @PutMapping("/batch-update-sale-after-sales")
     @Operation(summary = "批量更新销售售后状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-after-sales')")
+    //@PreAuthorize("@ss.hasPermission('erp:distribution:update-after-sales')")
     public CommonResult<Boolean> batchUpdateSaleAfterSales(@RequestParam("ids") List<Long> ids,
                                                            @RequestParam("saleAfterSalesStatus") Integer saleAfterSalesStatus) {
         distributionService.batchUpdateSaleAfterSales(ids, saleAfterSalesStatus);

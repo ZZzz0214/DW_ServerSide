@@ -738,7 +738,7 @@ public class ErpWholesaleController {
     }
     @PutMapping("/update-purchase-after-sales")
     @Operation(summary = "更新采购售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales-one')")
+   // @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales-one')")
     public CommonResult<Boolean> updatePurchaseAfterSales(@Valid @RequestBody ErpWholesalePurchaseAfterSalesUpdateReqVO reqVO) {
         wholesaleService.updatePurchaseAfterSales(reqVO);
         return success(true);
@@ -747,7 +747,7 @@ public class ErpWholesaleController {
     // 更新销售售后信息
     @PutMapping("/update-sale-after-sales")
     @Operation(summary = "更新销售售后信息")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales-one')")
+    //@PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales-one')")
     public CommonResult<Boolean> updateSaleAfterSales(@Valid @RequestBody ErpWholesaleSaleAfterSalesUpdateReqVO reqVO) {
         System.out.println("销售售后前端传递的vo"+reqVO);
         wholesaleService.updateSaleAfterSales(reqVO);
@@ -756,7 +756,7 @@ public class ErpWholesaleController {
 
     @PutMapping("/batch-update-purchase-after-sales")
     @Operation(summary = "批量更新采购售后状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
+   // @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
     public CommonResult<Boolean> batchUpdatePurchaseAfterSales(@RequestParam("ids") List<Long> ids,
                                                                @RequestParam("purchaseAfterSalesStatus") Integer purchaseAfterSalesStatus) {
         wholesaleService.batchUpdatePurchaseAfterSales(ids, purchaseAfterSalesStatus);
@@ -765,7 +765,7 @@ public class ErpWholesaleController {
 
     @PutMapping("/batch-update-sale-after-sales")
     @Operation(summary = "批量更新销售售后状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
+    //@PreAuthorize("@ss.hasPermission('erp:wholesale:update-after-sales')")
     public CommonResult<Boolean> batchUpdateSaleAfterSales(@RequestParam("ids") List<Long> ids,
                                                            @RequestParam("saleAfterSalesStatus") Integer saleAfterSalesStatus) {
         wholesaleService.batchUpdateSaleAfterSales(ids, saleAfterSalesStatus);
