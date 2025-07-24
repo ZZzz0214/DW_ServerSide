@@ -165,7 +165,7 @@ public class ErpDistributionController {
     // 未审核代发采购分页
     @GetMapping("/purchase/unreviewed-page")
     @Operation(summary = "获得未审核代发采购分页")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:query')")
     public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
         // 获取分页数据
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
@@ -279,7 +279,7 @@ public class ErpDistributionController {
     // 未审核代发销售分页
     @GetMapping("/sale/unreviewed-page")
     @Operation(summary = "获得未审核代发销售分页")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:query')")
     public CommonResult<SalesSummaryPageResult<ErpDistributionSaleAuditVO>> getUnreviewedSalePage(@Valid ErpDistributionPageReqVO pageReqVO) {
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
 
@@ -462,7 +462,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-purchase-audit-status")
     @Operation(summary = "更新采购审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status-one')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:update-purchase-audit-status-one')")
     public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
                                                       @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
                                                       @RequestParam("otherFees") BigDecimal otherFees,
@@ -477,7 +477,7 @@ public class ErpDistributionController {
 
     @PutMapping("/batch-update-purchase-audit-status")
     @Operation(summary = "批量更新采购审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-purchase-audit-status')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:update-purchase-audit-status')")
     public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestParam("ids") List<Long> ids,
                                                                 @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus) {
         distributionService.batchUpdatePurchaseAuditStatus(ids, purchaseAuditStatus);
@@ -486,7 +486,7 @@ public class ErpDistributionController {
 
     @PutMapping("/update-sale-audit-status")
     @Operation(summary = "更新销售审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status-one')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:update-sale-audit-status-one')")
     public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
                                                     @RequestParam("saleAuditStatus") Integer saleAuditStatus,
                                                     @RequestParam("otherFees") BigDecimal otherFees,
@@ -501,7 +501,7 @@ public class ErpDistributionController {
 
     @PutMapping("/batch-update-sale-audit-status")
     @Operation(summary = "批量更新销售审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:update-sale-audit-status')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:update-sale-audit-status')")
     public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestParam("ids") List<Long> ids,
                                                             @RequestParam("saleAuditStatus") Integer saleAuditStatus) {
         distributionService.batchUpdateSaleAuditStatus(ids, saleAuditStatus);
@@ -593,7 +593,7 @@ public class ErpDistributionController {
 
     @GetMapping("/export-purchase-audit-excel")
     @Operation(summary = "导出代发采购审核 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportPurchaseAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                       HttpServletResponse response) throws IOException {
@@ -609,7 +609,7 @@ public class ErpDistributionController {
 
     @GetMapping("/export-sale-audit-excel")
     @Operation(summary = "导出代发销售审核 Excel")
-    @PreAuthorize("@ss.hasPermission('erp:distribution:export')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportSaleAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                     HttpServletResponse response) throws IOException {
@@ -701,7 +701,7 @@ public class ErpDistributionController {
     @Parameters({
             @Parameter(name = "file", description = "Excel 文件", required = true)
     })
-    @PreAuthorize("@ss.hasPermission('erp:distribution:import')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:import')")
     public CommonResult<ErpDistributionImportRespVO> importPurchaseAuditExcel(
             @RequestParam("file") MultipartFile file) {
         try (InputStream inputStream = file.getInputStream()) {
@@ -729,7 +729,7 @@ public class ErpDistributionController {
     @Parameters({
             @Parameter(name = "file", description = "Excel 文件", required = true)
     })
-    @PreAuthorize("@ss.hasPermission('erp:distribution:import')")
+    @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:import')")
     public CommonResult<ErpDistributionImportRespVO> importSaleAuditExcel(
             @RequestParam("file") MultipartFile file) {
         try (InputStream inputStream = file.getInputStream()) {

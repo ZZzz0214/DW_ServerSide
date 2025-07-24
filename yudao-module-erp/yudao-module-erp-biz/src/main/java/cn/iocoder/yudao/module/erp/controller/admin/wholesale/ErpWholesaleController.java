@@ -200,7 +200,7 @@ public class ErpWholesaleController {
     // 未审核批发采购分页
     @GetMapping("/purchase/unreviewed-page")
     @Operation(summary = "获得未审核批发采购分页")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:query')")
     public CommonResult<WholesalePurchaseSummaryPageResult<ErpWholesalePurchaseAuditVO>> getUnreviewedPurchasePage(@Valid ErpWholesalePageReqVO pageReqVO) {
             // 获取分页数据
         PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
@@ -324,7 +324,7 @@ public class ErpWholesaleController {
     // 未审核批发销售分页
     @GetMapping("/sale/unreviewed-page")
     @Operation(summary = "获得未审核批发销售分页")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:query')")
     public CommonResult<WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO>> getUnreviewedSalePage(@Valid ErpWholesalePageReqVO pageReqVO) {
         // 获取分页数据
         PageResult<ErpWholesaleRespVO> pageResult = wholesaleService.getWholesaleVOPage(pageReqVO);
@@ -681,7 +681,7 @@ public class ErpWholesaleController {
     // 更新采购审核状态
     @PutMapping("/update-purchase-audit-status")
     @Operation(summary = "更新采购审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status-one')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:update-status-one')")
     public CommonResult<Boolean> updatePurchaseAuditStatus(@RequestParam("id") Long id,
                                                            @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus,
                                                            @RequestParam("otherFees") BigDecimal otherFees,
@@ -696,7 +696,7 @@ public class ErpWholesaleController {
 
     @PutMapping("/batch-update-purchase-audit-status")
     @Operation(summary = "批量更新采购审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:update-status')")
     public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestParam("ids") List<Long> ids,
                                                                 @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus) {
         wholesaleService.batchUpdatePurchaseAuditStatus(ids, purchaseAuditStatus);
@@ -706,7 +706,7 @@ public class ErpWholesaleController {
         // 更新销售审核状态
     @PutMapping("/update-sale-audit-status")
     @Operation(summary = "更新销售审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status-one')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:update-status-one')")
     public CommonResult<Boolean> updateSaleAuditStatus(@RequestParam("id") Long id,
                                                       @RequestParam("saleAuditStatus") Integer saleAuditStatus,
                                                       @RequestParam("otherFees") BigDecimal otherFees,
@@ -721,7 +721,7 @@ public class ErpWholesaleController {
 
     @PutMapping("/batch-update-sale-audit-status")
     @Operation(summary = "批量更新销售审核状态")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:update-status')")
+    @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:update-status')")
     public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestParam("ids") List<Long> ids,
                                                             @RequestParam("saleAuditStatus") Integer saleAuditStatus) {
         wholesaleService.batchUpdateSaleAuditStatus(ids, saleAuditStatus);
@@ -872,7 +872,7 @@ public class ErpWholesaleController {
         // 采购审批导出
         @GetMapping("/purchase/export-approved")
         @Operation(summary = "导出批发采购订单")
-        @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+        @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:export')")
         @ApiAccessLog(operateType = EXPORT)
         public void exportApprovedPurchaseExcel(@Valid ErpWholesalePageReqVO pageReqVO,
                                               HttpServletResponse response) throws IOException {
@@ -925,7 +925,7 @@ public class ErpWholesaleController {
         // 销售审批导出
         @GetMapping("/sale/export-approved")
         @Operation(summary = "导出批发销售订单")
-        @PreAuthorize("@ss.hasPermission('erp:wholesale:export')")
+        @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:export')")
         @ApiAccessLog(operateType = EXPORT)
         public void exportApprovedSaleExcel(@Valid ErpWholesalePageReqVO pageReqVO,
                                           HttpServletResponse response) throws IOException {
@@ -1024,7 +1024,7 @@ public class ErpWholesaleController {
                 @Parameter(name = "file", description = "Excel 文件", required = true),
                 @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
         })
-        @PreAuthorize("@ss.hasPermission('erp:wholesale:import-purchase-audit')")
+        @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:import-purchase-audit')")
         public CommonResult<ErpWholesaleImportRespVO> importPurchaseAuditExcel(
                 @RequestParam("file") MultipartFile file,
                 @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
@@ -1056,7 +1056,7 @@ public class ErpWholesaleController {
                 @Parameter(name = "file", description = "Excel 文件", required = true),
                 @Parameter(name = "updateSupport", description = "是否支持更新，默认为 false", example = "true")
         })
-        @PreAuthorize("@ss.hasPermission('erp:wholesale:import-sale-audit')")
+        @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:import-sale-audit')")
         public CommonResult<ErpWholesaleImportRespVO> importSaleAuditExcel(
                 @RequestParam("file") MultipartFile file,
                 @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) {
