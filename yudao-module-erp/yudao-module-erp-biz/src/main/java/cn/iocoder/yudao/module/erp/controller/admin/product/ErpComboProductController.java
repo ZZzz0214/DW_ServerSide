@@ -95,14 +95,9 @@ public class ErpComboProductController {
     @Operation(summary = "获得组合产品分页")
     @PreAuthorize("@ss.hasPermission('erp:combo-product:query')")
     public CommonResult<PageResult<ErpComboRespVO>> getComboProductPage(@Valid ErpComboPageReqVO pageReqVO) {
-        System.out.println("组品查询条件详情: 组品编码=" + pageReqVO.getNo() +
-                          ", 产品名称=" + pageReqVO.getName() +
-                          ", 产品简称=" + pageReqVO.getShortName() +
-                          ", 发货编码=" + pageReqVO.getShippingCode() +
-                          ", 采购人员=" + pageReqVO.getPurchaser() +
-                          ", 供应商=" + pageReqVO.getSupplier() +
-                          ", 创建人员=" + pageReqVO.getCreator() +
-                          ", 关键词=" + pageReqVO.getKeyword());
+        PageResult<ErpComboRespVO> a =comboProductService.getComboVOPage(pageReqVO);
+        System.out.println("查看组品分页信息"+a);
+
         return success(comboProductService.getComboVOPage(pageReqVO));
     }
 
