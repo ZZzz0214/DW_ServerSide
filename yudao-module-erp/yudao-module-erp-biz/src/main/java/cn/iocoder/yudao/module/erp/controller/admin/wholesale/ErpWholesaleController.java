@@ -79,7 +79,8 @@ public class ErpWholesaleController {
 
     @PostMapping("/create")
     @Operation(summary = "创建批发")
-    @PreAuthorize("@ss.hasPermission('erp:wholesale:create')")
+    //@PreAuthorize("@ss.hasPermission('erp:wholesale:create')")
+    @PreAuthorize("@ss.hasAnyPermissions('erp:wholesale:create','erp:wholesale:CopyCreate')")
     public CommonResult<Long> createWholesale(@Valid @RequestBody ErpWholesaleSaveReqVO createReqVO) {
         return success(wholesaleService.createWholesale(createReqVO));
     }
