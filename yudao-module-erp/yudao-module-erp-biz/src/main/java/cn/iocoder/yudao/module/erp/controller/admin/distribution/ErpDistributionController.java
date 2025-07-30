@@ -55,6 +55,7 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.data.elasticsearch.core.SearchScrollHits;
 import org.springframework.data.elasticsearch.core.SearchScrollHits;
+import java.util.Collections;
 
 @Tag(name = "管理后台 - ERP 代发")
 @RestController
@@ -571,6 +572,22 @@ public class ErpDistributionController {
         List<ErpDistributionSaleExportExcelVO> exportList = BeanUtils.toBean(allList, ErpDistributionSaleExportExcelVO.class);
         // 导出Excel
         ExcelUtils.write(response, "代发出货信息.xlsx", "数据", ErpDistributionSaleExportExcelVO.class, exportList);
+    }
+
+    @GetMapping("/export-sale-reverse-excel")
+    @Operation(summary = "导出代发出货信息（顺） Excel")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:importSale')")
+    @ApiAccessLog(operateType = EXPORT)
+    public void exportSaleReverseExcel(@Valid ErpDistributionPageReqVO pageReqVO,
+                               HttpServletResponse response) throws IOException {
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
+        // 转换为出货导出VO
+        List<ErpDistributionSaleExportExcelVO> exportList = BeanUtils.toBean(allList, ErpDistributionSaleExportExcelVO.class);
+        // 反转列表顺序
+        Collections.reverse(exportList);
+        // 导出Excel
+        ExcelUtils.write(response, "代发出货信息（顺）.xlsx", "数据", ErpDistributionSaleExportExcelVO.class, exportList);
     }
 
     @GetMapping("/export-ship-excel")
