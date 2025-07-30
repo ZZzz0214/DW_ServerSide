@@ -115,7 +115,7 @@ public class ErpWholesaleImportTemplateExcelVO {
     @ExcelProperty("创建人员")
     private String creator;
 
-    @ExcelProperty("创建日期")
+    @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
 }

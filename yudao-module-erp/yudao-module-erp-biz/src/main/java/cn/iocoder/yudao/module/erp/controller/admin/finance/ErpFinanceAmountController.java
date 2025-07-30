@@ -116,7 +116,7 @@ public class ErpFinanceAmountController {
 
     @PostMapping("/recharge")
     @Operation(summary = "充值操作")
-    @PreAuthorize("@ss.hasPermission('erp:finance-amount:recharge')")
+    @PreAuthorize("@ss.hasPermission('erp:finance-amount:create')")
     public CommonResult<Boolean> recharge(
             @RequestParam("channelType") String channelType,
             @RequestParam("amount") BigDecimal amount) {
@@ -128,7 +128,7 @@ public class ErpFinanceAmountController {
 
     @PostMapping("/recharge-with-images")
     @Operation(summary = "充值操作（带图片和备注）")
-    @PreAuthorize("@ss.hasPermission('erp:finance-amount:recharge')")
+    @PreAuthorize("@ss.hasPermission('erp:finance-amount:create')")
     public CommonResult<Boolean> rechargeWithImages(@Valid @RequestBody ErpFinanceAmountRechargeReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
@@ -188,10 +188,10 @@ public class ErpFinanceAmountController {
         String currentUsername = cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.getUsernameById(userId);
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         PageResult<ErpFinanceAmountRespVO> pageResult = financeAmountService.getFinanceAmountVOPage(pageReqVO, currentUsername);
-        
+
         // 转换为导出VO
         List<ErpFinanceAmountExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpFinanceAmountExportVO.class);
-        
+
         // 导出 Excel
         ExcelUtils.write(response, "财务金额.xlsx", "数据", ErpFinanceAmountExportVO.class, exportList);
     }

@@ -92,7 +92,7 @@ public class ErpDistributionSaleAuditExportVO {
     @ExcelProperty("创建人员")
     private String creator;
 
-    @ExcelProperty("创建日期")
+    @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 
     @ExcelProperty("出货审核状态")
@@ -106,6 +106,9 @@ public class ErpDistributionSaleAuditExportVO {
 
     @ExcelProperty("出货反审核时间")
     private LocalDateTime saleUnapproveTime;
+
+    @ExcelProperty("出货售后状态")
+    private Integer saleAfterSalesStatus;
 
     @ExcelProperty("出货售后金额")
     private BigDecimal saleAfterSalesAmount;

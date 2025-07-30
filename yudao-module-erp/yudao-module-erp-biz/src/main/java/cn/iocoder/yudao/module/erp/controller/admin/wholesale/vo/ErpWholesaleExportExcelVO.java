@@ -19,7 +19,7 @@ public class ErpWholesaleExportExcelVO {
     @ExcelProperty("订单编号")
     private String no;
 
-    @ExcelProperty("物流单号") 
+    @ExcelProperty("物流单号")
     private String logisticsNumber;
 
     @ExcelProperty("收件姓名")
@@ -67,6 +67,6 @@ public class ErpWholesaleExportExcelVO {
     @ExcelProperty("创建人员")
     private String creator;
 
-    @ExcelProperty("创建日期")
+    @ExcelProperty("创建时间")
     private LocalDateTime createTime;
 }
