@@ -163,16 +163,26 @@ public class ErpDistributionController {
         return success(list);
     }
 
+    @GetMapping("/list")
+    @Operation(summary = "获得代发全部数据列表")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    public CommonResult<List<ErpDistributionRespVO>> getDistributionList(@Valid ErpDistributionPageReqVO reqVO) {
+        List<ErpDistributionRespVO> list = distributionService.exportAllDistributions(reqVO);
+        return success(list);
+    }
+
     // 未审核代发采购分页
     @GetMapping("/purchase/unreviewed-page")
     @Operation(summary = "获得未审核代发采购分页")
     @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:query')")
     public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchasePage(@Valid ErpDistributionPageReqVO pageReqVO) {
         // 获取分页数据
+
         PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
         System.out.println("查看采购前面返回的数据"+pageResult);
 
         // 转换为ErpDistributionPurchaseAuditVO列表
+
         List<ErpDistributionPurchaseAuditVO> list = pageResult.getList().stream().map(item -> {
             ErpDistributionPurchaseAuditVO vo = new ErpDistributionPurchaseAuditVO();
             BeanUtils.copyProperties(item, vo);
