@@ -35,6 +35,12 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import java.net.URL;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.net.HttpURLConnection;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -143,5 +149,159 @@ public class ErpGroupBuyingController {
         );
         // 输出
         ExcelUtils.write(response, "团购货盘导入模板.xls", "团购货盘列表", ErpGroupBuyingExportVO.class, list);
+    }
+
+    @GetMapping("/download-images")
+    @Operation(summary = "批量下载团购货盘图片")
+    @Parameter(name = "ids", description = "编号列表", required = true)
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:query')")
+    public void downloadImages(@RequestParam("ids") List<Long> ids,
+                             HttpServletResponse response) throws IOException {
+        try {
+            // 获取团购货盘数据
+            List<ErpGroupBuyingRespVO> list = groupBuyingService.getGroupBuyingVOList(ids);
+            
+            // 设置响应头
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=\"groupbuying_images.zip\"");
+            
+            try (ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
+                for (ErpGroupBuyingRespVO item : list) {
+                    if (item.getProductImage() != null && !item.getProductImage().trim().isEmpty()) {
+                        String[] imageUrls = item.getProductImage().split(",");
+                        
+                        for (int i = 0; i < imageUrls.length; i++) {
+                            String imageUrl = imageUrls[i].trim();
+                            if (!imageUrl.isEmpty()) {
+                                try {
+                                    // 下载图片
+                                    byte[] imageData = downloadImageFromUrl(imageUrl);
+                                    if (imageData != null) {
+                                        // 生成文件名：编号_序号.扩展名
+                                        String fileName = generateImageFileName(item.getNo(), i, imageUrl);
+                                        
+                                        // 添加到ZIP文件
+                                        ZipEntry zipEntry = new ZipEntry(fileName);
+                                        zipOut.putNextEntry(zipEntry);
+                                        zipOut.write(imageData);
+                                        zipOut.closeEntry();
+                                    }
+                                } catch (Exception e) {
+                                    log.error("下载图片失败: {}", imageUrl, e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("批量下载图片失败", e);
+            throw new RuntimeException("批量下载图片失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/download-images-by-query")
+    @Operation(summary = "按查询条件下载团购货盘图片")
+    @PreAuthorize("@ss.hasPermission('erp:groupbuying:query')")
+    public void downloadImagesByQuery(@Valid ErpGroupBuyingPageReqVO pageReqVO,
+                                    HttpServletResponse response) throws IOException {
+        try {
+            // 设置页面大小为无限制，获取全部数据
+            pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+            PageResult<ErpGroupBuyingRespVO> pageResult = groupBuyingService.getGroupBuyingVOPage(pageReqVO);
+            
+            // 设置响应头
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=\"groupbuying_images.zip\"");
+            
+            try (ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
+                for (ErpGroupBuyingRespVO item : pageResult.getList()) {
+                    if (item.getProductImage() != null && !item.getProductImage().trim().isEmpty()) {
+                        String[] imageUrls = item.getProductImage().split(",");
+                        
+                        for (int i = 0; i < imageUrls.length; i++) {
+                            String imageUrl = imageUrls[i].trim();
+                            if (!imageUrl.isEmpty()) {
+                                try {
+                                    // 下载图片
+                                    byte[] imageData = downloadImageFromUrl(imageUrl);
+                                    if (imageData != null) {
+                                        // 生成文件名：编号_序号.扩展名
+                                        String fileName = generateImageFileName(item.getNo(), i, imageUrl);
+                                        
+                                        // 添加到ZIP文件
+                                        ZipEntry zipEntry = new ZipEntry(fileName);
+                                        zipOut.putNextEntry(zipEntry);
+                                        zipOut.write(imageData);
+                                        zipOut.closeEntry();
+                                    }
+                                } catch (Exception e) {
+                                    log.error("下载图片失败: {}", imageUrl, e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("按查询条件批量下载图片失败", e);
+            throw new RuntimeException("按查询条件批量下载图片失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 从URL下载图片
+     */
+    private byte[] downloadImageFromUrl(String imageUrl) throws Exception {
+        // 如果是相对路径，转换为完整URL
+        if (imageUrl.startsWith("/admin-api/")) {
+            // 从配置中获取域名，这里暂时使用localhost
+            imageUrl = "http://localhost:48080" + imageUrl;
+        } else if (imageUrl.startsWith("http://192.168.1.85:48080/admin-api/")) {
+            // 已经是完整的URL，直接使用
+        } else if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+            // 如果既不是完整URL也不是相对路径，可能是其他格式，尝试添加默认前缀
+            imageUrl = "http://192.168.1.85:48080/admin-api/infra/file/4/get/" + imageUrl;
+        }
+        
+        URL url = new URL(imageUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(10000);
+        
+        try (InputStream inputStream = connection.getInputStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            return outputStream.toByteArray();
+        }
+    }
+    
+    /**
+     * 生成图片文件名
+     */
+    private String generateImageFileName(String no, int index, String imageUrl) {
+        // 获取图片扩展名
+        String extension = ".jpg"; // 默认扩展名
+        if (imageUrl.contains(".")) {
+            int lastDotIndex = imageUrl.lastIndexOf(".");
+            int queryIndex = imageUrl.indexOf("?", lastDotIndex);
+            if (queryIndex > 0) {
+                extension = imageUrl.substring(lastDotIndex, queryIndex);
+            } else {
+                extension = imageUrl.substring(lastDotIndex);
+            }
+        }
+        
+        // 生成文件名：编号_001.扩展名
+        if (index == 0) {
+            return no + extension;
+        } else {
+            return String.format("%s_%03d%s", no, index + 1, extension);
+        }
     }
 }
