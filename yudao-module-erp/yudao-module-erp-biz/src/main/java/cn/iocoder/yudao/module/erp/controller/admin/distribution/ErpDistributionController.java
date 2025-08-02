@@ -795,6 +795,233 @@ public class ErpDistributionController {
         }
     }
 
+    @GetMapping("/purchase/unreviewed-summary")
+    @Operation(summary = "获得未审核代发采购合计")
+    @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:query')")
+    public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchaseSummary(@Valid ErpDistributionPageReqVO pageReqVO) {
+        // 设置未审核状态
+        pageReqVO.setPurchaseAuditStatus(10); // 10表示未审核
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
+
+        // 转换为ErpDistributionPurchaseAuditVO列表
+        List<ErpDistributionPurchaseAuditVO> list = allList.stream().map(item -> {
+            ErpDistributionPurchaseAuditVO vo = new ErpDistributionPurchaseAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算合计值
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalShippingFee = BigDecimal.ZERO;
+        BigDecimal totalOtherFees = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionPurchaseAuditVO vo : list) {
+            if (vo.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(vo.getPurchasePrice());
+            }
+            if (vo.getShippingFee() != null) {
+                totalShippingFee = totalShippingFee.add(vo.getShippingFee());
+            }
+            if (vo.getOtherFees() != null) {
+                totalOtherFees = totalOtherFees.add(vo.getOtherFees());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
+            }
+            if (vo.getPurchaseAfterSalesAmount() != null) {
+                totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getTotalPurchaseAmount());
+            }
+        }
+
+        // 创建返回结果
+        PageResultWithSummary<ErpDistributionPurchaseAuditVO> result = new PageResultWithSummary<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalPurchasePrice(totalPurchasePrice);
+        result.setTotalShippingFee(totalShippingFee);
+        result.setTotalOtherFees(totalOtherFees);
+        result.setTotalPurchaseAmount(totalPurchaseAmount);
+        result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
+
+        return success(result);
+    }
+
+    @GetMapping("/purchase/reviewed-summary")
+    @Operation(summary = "获得已审核代发采购合计")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getReviewedPurchaseSummary(@Valid ErpDistributionPageReqVO pageReqVO) {
+        // 设置已审核状态
+        pageReqVO.setPurchaseAuditStatus(20); // 20表示已审核
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
+
+        // 转换为ErpDistributionPurchaseAuditVO列表
+        List<ErpDistributionPurchaseAuditVO> list = allList.stream().map(item -> {
+            ErpDistributionPurchaseAuditVO vo = new ErpDistributionPurchaseAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算合计值
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalShippingFee = BigDecimal.ZERO;
+        BigDecimal totalOtherFees = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionPurchaseAuditVO vo : list) {
+            if (vo.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(vo.getPurchasePrice());
+            }
+            if (vo.getShippingFee() != null) {
+                totalShippingFee = totalShippingFee.add(vo.getShippingFee());
+            }
+            if (vo.getOtherFees() != null) {
+                totalOtherFees = totalOtherFees.add(vo.getOtherFees());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
+            }
+            if (vo.getPurchaseAfterSalesAmount() != null) {
+                totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
+            }
+            if (vo.getPurchaseAuditTotalAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        PageResultWithSummary<ErpDistributionPurchaseAuditVO> result = new PageResultWithSummary<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalPurchasePrice(totalPurchasePrice);
+        result.setTotalShippingFee(totalShippingFee);
+        result.setTotalOtherFees(totalOtherFees);
+        result.setTotalPurchaseAmount(totalPurchaseAmount);
+        result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
+
+        return success(result);
+    }
+
+    @GetMapping("/sale/unreviewed-summary")
+    @Operation(summary = "获得未审核代发销售合计")
+    @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:query')")
+    public CommonResult<SalesSummaryPageResult<ErpDistributionSaleAuditVO>> getUnreviewedSaleSummary(@Valid ErpDistributionPageReqVO pageReqVO) {
+        // 设置未审核状态
+        pageReqVO.setSaleAuditStatus(10); // 10表示未审核
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
+
+        // 转换为ErpDistributionSaleAuditVO列表
+        List<ErpDistributionSaleAuditVO> list = allList.stream().map(item -> {
+            ErpDistributionSaleAuditVO vo = new ErpDistributionSaleAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算销售合计值
+        BigDecimal totalSalePrice = BigDecimal.ZERO;
+        BigDecimal totalSaleShippingFee = BigDecimal.ZERO;
+        BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
+        BigDecimal totalSaleAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionSaleAuditVO vo : list) {
+            if (vo.getSalePrice() != null) {
+                totalSalePrice = totalSalePrice.add(vo.getSalePrice());
+            }
+            if (vo.getSaleShippingFee() != null) {
+                totalSaleShippingFee = totalSaleShippingFee.add(vo.getSaleShippingFee());
+            }
+            if (vo.getSaleOtherFees() != null) {
+                totalSaleOtherFees = totalSaleOtherFees.add(vo.getSaleOtherFees());
+            }
+            if (vo.getTotalSaleAmount() != null) {
+                totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
+            }
+            if (vo.getSaleAfterSalesAmount() != null) {
+                totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
+            }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        SalesSummaryPageResult<ErpDistributionSaleAuditVO> result = new SalesSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalSalePrice(totalSalePrice);
+        result.setTotalSaleShippingFee(totalSaleShippingFee);
+        result.setTotalSaleOtherFees(totalSaleOtherFees);
+        result.setTotalSaleAmount(totalSaleAmount);
+        result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
+
+        return success(result);
+    }
+
+    @GetMapping("/sale/reviewed-summary")
+    @Operation(summary = "获得已审核代发销售合计")
+    @PreAuthorize("@ss.hasPermission('erp:distribution:query')")
+    public CommonResult<SalesSummaryPageResult<ErpDistributionSaleAuditVO>> getReviewedSaleSummary(@Valid ErpDistributionPageReqVO pageReqVO) {
+        // 设置已审核状态
+        pageReqVO.setSaleAuditStatus(20); // 20表示已审核
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
+
+        // 转换为ErpDistributionSaleAuditVO列表
+        List<ErpDistributionSaleAuditVO> list = allList.stream().map(item -> {
+            ErpDistributionSaleAuditVO vo = new ErpDistributionSaleAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算销售合计值
+        BigDecimal totalSalePrice = BigDecimal.ZERO;
+        BigDecimal totalSaleShippingFee = BigDecimal.ZERO;
+        BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
+        BigDecimal totalSaleAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpDistributionSaleAuditVO vo : list) {
+            if (vo.getSalePrice() != null) {
+                totalSalePrice = totalSalePrice.add(vo.getSalePrice());
+            }
+            if (vo.getSaleShippingFee() != null) {
+                totalSaleShippingFee = totalSaleShippingFee.add(vo.getSaleShippingFee());
+            }
+            if (vo.getSaleOtherFees() != null) {
+                totalSaleOtherFees = totalSaleOtherFees.add(vo.getSaleOtherFees());
+            }
+            if (vo.getTotalSaleAmount() != null) {
+                totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
+            }
+            if (vo.getSaleAfterSalesAmount() != null) {
+                totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
+            }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        SalesSummaryPageResult<ErpDistributionSaleAuditVO> result = new SalesSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalSalePrice(totalSalePrice);
+        result.setTotalSaleShippingFee(totalSaleShippingFee);
+        result.setTotalSaleOtherFees(totalSaleOtherFees);
+        result.setTotalSaleAmount(totalSaleAmount);
+        result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
+
+        return success(result);
+    }
 
 
 }

@@ -134,7 +134,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 combinedIndexOps.create();
                 combinedIndexOps.putMapping(combinedIndexOps.createMapping(ErpDistributionCombinedESDO.class));
                 System.out.println("代发合并表索引创建成功");
-                
+
                 // 检查数据库中是否有数据需要同步到ES
                 long dbCount = distributionCombinedMapper.selectCount(null);
                 if (dbCount > 0) {
@@ -144,13 +144,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 }
             } else {
                 System.out.println("代发合并表索引已存在，检查数据同步情况...");
-                
+
                 // 检查数据库与ES数据量是否一致
                 long dbCount = distributionCombinedMapper.selectCount(null);
                 long esCount = distributionCombinedESRepository.count();
-                
+
                 System.out.println("数据库记录数: " + dbCount + ", ES记录数: " + esCount);
-                
+
                 if (dbCount != esCount) {
                     System.out.println("数据库与ES记录数不一致，需要重新同步...");
                     // 异步执行全量同步，避免启动时间过长
@@ -636,23 +636,23 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 首先检查索引是否存在
             IndexOperations indexOps = elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class);
             boolean indexExists = indexOps.exists();
-            
+
             if (!indexExists) {
                 System.out.println("代发合并表索引不存在，开始创建索引...");
                 // 创建索引和映射
                 indexOps.create();
                 indexOps.putMapping(indexOps.createMapping(ErpDistributionCombinedESDO.class));
                 System.out.println("代发合并表索引创建成功");
-                
+
                 // 全量同步数据
                 fullSyncToES();
             } else {
                 // 索引存在，检查数据库与ES数量是否一致
                 long dbCount = distributionCombinedMapper.selectCount(null);
                 long esCount = distributionCombinedESRepository.count();
-                
+
                 System.out.println("索引检查 - 数据库记录数: " + dbCount + ", ES记录数: " + esCount);
-                
+
                 if (dbCount != esCount) {
                     System.out.println("数据库与ES记录数不一致，开始重新同步...");
                     // 先清空ES
@@ -695,7 +695,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 System.err.println("警告：ES索引仍然不存在，尝试从数据库直接查询");
                 return getDistributionVOPageFromDB(pageReqVO);
             }
-            
+
             // 1. 构建ES查询
             NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                     .withPageable(PageRequest.of(pageReqVO.getPageNo() - 1, pageReqVO.getPageSize()))
@@ -842,7 +842,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         } catch (Exception e) {
             System.err.println("ES查询失败: " + e.getMessage());
             e.printStackTrace();
-            
+
             // 降级：当ES查询失败时，尝试从数据库直接查询
             System.out.println("降级处理：尝试从数据库直接查询");
             return getDistributionVOPageFromDB(pageReqVO);
@@ -2800,16 +2800,16 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     /**
      * 数据库直接查询方法，当ES查询出现问题时使用
-     * 
+     *
      * @param pageReqVO 分页查询参数
      * @return 分页结果
      */
     private PageResult<ErpDistributionRespVO> getDistributionVOPageFromDB(ErpDistributionPageReqVO pageReqVO) {
         System.out.println("开始从数据库直接查询代发数据...");
-        
+
         // 构建查询条件
         LambdaQueryWrapper<ErpDistributionCombinedDO> queryWrapper = new LambdaQueryWrapper<>();
-        
+
         // 添加搜索条件
         if (StrUtil.isNotBlank(pageReqVO.getNo())) {
             queryWrapper.eq(ErpDistributionCombinedDO::getNo, pageReqVO.getNo().trim());
@@ -2853,7 +2853,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
             queryWrapper.like(ErpDistributionCombinedDO::getCreator, pageReqVO.getCreator().trim());
         }
-        
+
         // 精确匹配字段
         // 注意：根据DO定义，status字段可能不存在或者有不同名称，暂时注释掉
         // if (pageReqVO.getStatus() != null) {
@@ -2865,32 +2865,32 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (pageReqVO.getSaleAuditStatus() != null) {
             queryWrapper.eq(ErpDistributionCombinedDO::getSaleAuditStatus, pageReqVO.getSaleAuditStatus());
         }
-        
+
         // 时间范围查询
         if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
-            queryWrapper.between(ErpDistributionCombinedDO::getCreateTime, 
+            queryWrapper.between(ErpDistributionCombinedDO::getCreateTime,
                                 pageReqVO.getCreateTime()[0], pageReqVO.getCreateTime()[1]);
         }
         if (pageReqVO.getAfterSalesTime() != null && pageReqVO.getAfterSalesTime().length == 2) {
-            queryWrapper.between(ErpDistributionCombinedDO::getAfterSalesTime, 
+            queryWrapper.between(ErpDistributionCombinedDO::getAfterSalesTime,
                                 pageReqVO.getAfterSalesTime()[0], pageReqVO.getAfterSalesTime()[1]);
         }
-        
+
         // 排序
         queryWrapper.orderByDesc(ErpDistributionCombinedDO::getId);
-        
+
         // 执行分页查询
         Page<ErpDistributionCombinedDO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         Page<ErpDistributionCombinedDO> pageResult = distributionCombinedMapper.selectPage(page, queryWrapper);
-        
+
         // 没有找到组品相关字段的查询（如组品编号、产品名称等），因为这些字段需要关联组品表
-        
+
         // 转换为VO
         List<ErpDistributionRespVO> voList = new ArrayList<>();
         for (ErpDistributionCombinedDO combinedDO : pageResult.getRecords()) {
             ErpDistributionRespVO vo = BeanUtils.toBean(combinedDO, ErpDistributionRespVO.class);
             vo.setOtherFees(combinedDO.getPurchaseOtherFees());
-            
+
             // 尝试从组品表获取相关信息
             if (combinedDO.getComboProductId() != null) {
                 try {
@@ -2903,7 +2903,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         vo.setSupplier(comboProduct.getSupplier());
                         vo.setPurchasePrice(comboProduct.getPurchasePrice());
                         vo.setComboProductNo(comboProduct.getNo());
-                        
+
                         // 计算采购费用
                         BigDecimal shippingFee = calculatePurchaseShippingFee(comboProduct, vo.getProductQuantity());
                         BigDecimal totalPurchaseAmount = comboProduct.getPurchasePrice()
@@ -2917,12 +2917,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     System.err.println("获取组品信息失败: " + e.getMessage());
                 }
             }
-            
+
             voList.add(vo);
         }
-        
+
         System.out.println("数据库查询完成，总记录数: " + pageResult.getTotal() + ", 当前页记录数: " + voList.size());
-        
+
         return new PageResult<>(voList, pageResult.getTotal());
     }
 }
