@@ -47,8 +47,11 @@ public class ErpDistributionSaleAuditVO {
     @Schema(description = "备注信息", example = "备注")
     private String remark;
 
-    @Schema(description = "组品编号", example = "1")
+    @Schema(description = "组品id", example = "1")
     private Long comboProductId;
+
+    @Schema(description = "组品编号", example = "1")
+    private String comboProductNo;
 
     @Schema(description = "发货编码", example = "SH202403250001")
     private String shippingCode;

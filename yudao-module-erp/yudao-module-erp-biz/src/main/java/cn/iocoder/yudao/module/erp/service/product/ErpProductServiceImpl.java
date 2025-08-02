@@ -635,11 +635,11 @@ public class ErpProductServiceImpl implements ErpProductService {
                         // 精确匹配（权重最高）
                         .should(QueryBuilders.termQuery("name", keyword).boost(10.0f))
                         .should(QueryBuilders.termQuery("no", keyword).boost(10.0f))
-                        
+
                         // 前缀匹配（权重次之）
                         .should(QueryBuilders.prefixQuery("name", keyword).boost(5.0f))
                         .should(QueryBuilders.prefixQuery("no", keyword).boost(5.0f))
-                        
+
                         // 包含匹配（通配符）
                         .should(QueryBuilders.wildcardQuery("name", "*" + keyword + "*").boost(3.0f))
                         .should(QueryBuilders.wildcardQuery("no", "*" + keyword + "*").boost(3.0f))
@@ -655,7 +655,7 @@ public class ErpProductServiceImpl implements ErpProductService {
 
                 boolQuery.must(keywordQuery);
             } else {
-                // 产品编号查询 
+                // 产品编号查询
                 if (StrUtil.isNotBlank(pageReqVO.getNo())) {
                     BoolQueryBuilder noQuery = QueryBuilders.boolQuery();
                     String no = pageReqVO.getNo().trim();
@@ -665,7 +665,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                            .should(QueryBuilders.prefixQuery("no", no).boost(5.0f))
                            .should(QueryBuilders.wildcardQuery("no", "*" + no + "*").boost(3.0f))
                            .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(noQuery);
                 }
 
@@ -678,7 +678,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                             .should(QueryBuilders.prefixQuery("name", name).boost(5.0f))
                             .should(QueryBuilders.wildcardQuery("name", "*" + name + "*").boost(3.0f))
                             .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(nameQuery);
                 }
 
@@ -691,7 +691,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                                .should(QueryBuilders.prefixQuery("product_short_name", shortName).boost(5.0f))
                                .should(QueryBuilders.wildcardQuery("product_short_name", "*" + shortName + "*").boost(3.0f))
                                .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(shortNameQuery);
                 }
 
@@ -704,7 +704,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                            .should(QueryBuilders.prefixQuery("shipping_code", code).boost(5.0f))
                            .should(QueryBuilders.wildcardQuery("shipping_code", "*" + code + "*").boost(3.0f))
                            .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(codeQuery);
                 }
 
@@ -727,7 +727,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                                 .should(QueryBuilders.prefixQuery("purchaser", purchaser).boost(5.0f))
                                 .should(QueryBuilders.wildcardQuery("purchaser", "*" + purchaser + "*").boost(3.0f))
                                 .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(purchaserQuery);
                 }
 
@@ -740,7 +740,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                                .should(QueryBuilders.prefixQuery("supplier", supplier).boost(5.0f))
                                .should(QueryBuilders.wildcardQuery("supplier", "*" + supplier + "*").boost(3.0f))
                                .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(supplierQuery);
                 }
 
@@ -753,7 +753,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                              .should(QueryBuilders.prefixQuery("creator", creator).boost(5.0f))
                              .should(QueryBuilders.wildcardQuery("creator", "*" + creator + "*").boost(3.0f))
                              .minimumShouldMatch(1);
-                    
+
                     boolQuery.must(creatorQuery);
                 }
             }
@@ -1219,7 +1219,7 @@ public class ErpProductServiceImpl implements ErpProductService {
                     respVO.getCreateNames().add(product.getName());
                 } else if (isUpdateSupport) {
                     // 更新产品
-                    product.setId(existProduct.getId()).setCreator(username).setCreateTime(now);
+                    product.setId(existProduct.getId()).setCreator(existProduct.getCreator()).setCreateTime(existProduct.getCreateTime());
                     updateList.add(product);
                     respVO.getUpdateNames().add(product.getName());
                 }
