@@ -994,10 +994,27 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                                             vo.setSalePrice(fallbackSalePrice.getDistributionPrice());
                                             vo.setSaleShippingFee(saleShippingFee);
                                             vo.setTotalSaleAmount(totalSaleAmount);
+                                        } else {
+                                            // 没有销售价格记录时，如果有出货杂费，仍然设置为出货总额
+                                            BigDecimal saleOtherFees = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
+                                            if (saleOtherFees.compareTo(BigDecimal.ZERO) > 0) {
+                                                vo.setTotalSaleAmount(saleOtherFees);
+                                            }
                                         }
                                     } catch (Exception e) {
                                         System.err.println("兜底销售价格查询失败: " + e.getMessage());
+                                        // 查询失败时，如果有出货杂费，仍然设置为出货总额
+                                        BigDecimal saleOtherFees = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
+                                        if (saleOtherFees.compareTo(BigDecimal.ZERO) > 0) {
+                                            vo.setTotalSaleAmount(saleOtherFees);
+                                        }
                                     }
+                                }
+                            } else {
+                                // 没有客户名称时，如果有出货杂费，仍然设置为出货总额
+                                BigDecimal saleOtherFees = combined.getSaleOtherFees() != null ? combined.getSaleOtherFees() : BigDecimal.ZERO;
+                                if (saleOtherFees.compareTo(BigDecimal.ZERO) > 0) {
+                                    vo.setTotalSaleAmount(saleOtherFees);
                                 }
                             }
                         }
@@ -1114,6 +1131,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             vo.setTotalSaleAmount(totalSaleAmount);
         } else {
             System.out.println("未找到匹配的销售价格记录");
+            // 没有销售价格记录时，如果有出货杂费，仍然设置为出货总额
+            BigDecimal saleOtherFees = sale.getOtherFees() != null ? sale.getOtherFees() : BigDecimal.ZERO;
+            if (saleOtherFees.compareTo(BigDecimal.ZERO) > 0) {
+                vo.setTotalSaleAmount(saleOtherFees);
+            }
         }
     }
 
