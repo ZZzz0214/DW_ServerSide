@@ -445,6 +445,255 @@ public class ErpWholesaleController {
 
         return success(result);
     }
+
+    @GetMapping("/purchase/unreviewed-summary")
+    @Operation(summary = "获得未审核批发采购合计")
+    @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:query')")
+    public CommonResult<WholesalePurchaseSummaryPageResult<ErpWholesalePurchaseAuditVO>> getUnreviewedPurchaseSummary(@Valid ErpWholesalePageReqVO pageReqVO) {
+        // 设置未审核状态
+        pageReqVO.setPurchaseAuditStatus(10); // 10表示未审核
+        List<ErpWholesaleRespVO> allList = wholesaleService.exportAllWholesales(pageReqVO);
+
+        // 转换为ErpWholesalePurchaseAuditVO列表
+        List<ErpWholesalePurchaseAuditVO> list = allList.stream().map(item -> {
+            ErpWholesalePurchaseAuditVO vo = new ErpWholesalePurchaseAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算合计值
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalTruckFee = BigDecimal.ZERO;
+        BigDecimal totalLogisticsFee = BigDecimal.ZERO;
+        BigDecimal totalOtherFees = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpWholesalePurchaseAuditVO vo : list) {
+            if (vo.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(vo.getPurchasePrice());
+            }
+            if (vo.getTruckFee() != null) {
+                totalTruckFee = totalTruckFee.add(vo.getTruckFee());
+            }
+            if (vo.getLogisticsFee() != null) {
+                totalLogisticsFee = totalLogisticsFee.add(vo.getLogisticsFee());
+            }
+            if (vo.getOtherFees() != null) {
+                totalOtherFees = totalOtherFees.add(vo.getOtherFees());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
+            }
+            if (vo.getPurchaseAfterSalesAmount() != null) {
+                totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
+            }
+            if (vo.getPurchaseAuditTotalAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        WholesalePurchaseSummaryPageResult<ErpWholesalePurchaseAuditVO> result = new WholesalePurchaseSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalPurchasePrice(totalPurchasePrice);
+        result.setTotalTruckFee(totalTruckFee);
+        result.setTotalLogisticsFee(totalLogisticsFee);
+        result.setTotalOtherFees(totalOtherFees);
+        result.setTotalPurchaseAmount(totalPurchaseAmount);
+        result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
+
+        return success(result);
+    }
+
+    @GetMapping("/purchase/reviewed-summary")
+    @Operation(summary = "获得已审核批发采购合计")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+    public CommonResult<WholesalePurchaseSummaryPageResult<ErpWholesalePurchaseAuditVO>> getReviewedPurchaseSummary(@Valid ErpWholesalePageReqVO pageReqVO) {
+        // 设置已审核状态
+        pageReqVO.setPurchaseAuditStatus(20); // 20表示已审核
+        List<ErpWholesaleRespVO> allList = wholesaleService.exportAllWholesales(pageReqVO);
+
+        // 转换为ErpWholesalePurchaseAuditVO列表
+        List<ErpWholesalePurchaseAuditVO> list = allList.stream().map(item -> {
+            ErpWholesalePurchaseAuditVO vo = new ErpWholesalePurchaseAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算合计值
+        BigDecimal totalPurchasePrice = BigDecimal.ZERO;
+        BigDecimal totalTruckFee = BigDecimal.ZERO;
+        BigDecimal totalLogisticsFee = BigDecimal.ZERO;
+        BigDecimal totalOtherFees = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalPurchaseAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpWholesalePurchaseAuditVO vo : list) {
+            if (vo.getPurchasePrice() != null) {
+                totalPurchasePrice = totalPurchasePrice.add(vo.getPurchasePrice());
+            }
+            if (vo.getTruckFee() != null) {
+                totalTruckFee = totalTruckFee.add(vo.getTruckFee());
+            }
+            if (vo.getLogisticsFee() != null) {
+                totalLogisticsFee = totalLogisticsFee.add(vo.getLogisticsFee());
+            }
+            if (vo.getOtherFees() != null) {
+                totalOtherFees = totalOtherFees.add(vo.getOtherFees());
+            }
+            if (vo.getTotalPurchaseAmount() != null) {
+                totalPurchaseAmount = totalPurchaseAmount.add(vo.getTotalPurchaseAmount());
+            }
+            if (vo.getPurchaseAfterSalesAmount() != null) {
+                totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
+            }
+            if (vo.getPurchaseAuditTotalAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        WholesalePurchaseSummaryPageResult<ErpWholesalePurchaseAuditVO> result = new WholesalePurchaseSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalPurchasePrice(totalPurchasePrice);
+        result.setTotalTruckFee(totalTruckFee);
+        result.setTotalLogisticsFee(totalLogisticsFee);
+        result.setTotalOtherFees(totalOtherFees);
+        result.setTotalPurchaseAmount(totalPurchaseAmount);
+        result.setTotalPurchaseAfterSalesAmount(totalPurchaseAfterSalesAmount);
+        result.setTotalPurchaseAuditTotalAmount(totalPurchaseAuditTotalAmount);
+
+        return success(result);
+    }
+
+    @GetMapping("/sale/unreviewed-summary")
+    @Operation(summary = "获得未审核批发销售合计")
+    @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:query')")
+    public CommonResult<WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO>> getUnreviewedSaleSummary(@Valid ErpWholesalePageReqVO pageReqVO) {
+        // 设置未审核状态
+        pageReqVO.setSaleAuditStatus(10); // 10表示未审核
+        List<ErpWholesaleRespVO> allList = wholesaleService.exportAllWholesales(pageReqVO);
+
+        // 转换为ErpWholesaleSaleAuditVO列表
+        List<ErpWholesaleSaleAuditVO> list = allList.stream().map(item -> {
+            ErpWholesaleSaleAuditVO vo = new ErpWholesaleSaleAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算销售合计值
+        BigDecimal totalSalePrice = BigDecimal.ZERO;
+        BigDecimal totalSaleTruckFee = BigDecimal.ZERO;
+        BigDecimal totalSaleLogisticsFee = BigDecimal.ZERO;
+        BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
+        BigDecimal totalSaleAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpWholesaleSaleAuditVO vo : list) {
+            if (vo.getSalePrice() != null) {
+                totalSalePrice = totalSalePrice.add(vo.getSalePrice());
+            }
+            if (vo.getSaleTruckFee() != null) {
+                totalSaleTruckFee = totalSaleTruckFee.add(vo.getSaleTruckFee());
+            }
+            if (vo.getSaleLogisticsFee() != null) {
+                totalSaleLogisticsFee = totalSaleLogisticsFee.add(vo.getSaleLogisticsFee());
+            }
+            if (vo.getSaleOtherFees() != null) {
+                totalSaleOtherFees = totalSaleOtherFees.add(vo.getSaleOtherFees());
+            }
+            if (vo.getTotalSaleAmount() != null) {
+                totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
+            }
+            if (vo.getSaleAfterSalesAmount() != null) {
+                totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
+            }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO> result = new WholesaleSalesSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalSalePrice(totalSalePrice);
+        result.setTotalSaleTruckFee(totalSaleTruckFee);
+        result.setTotalSaleLogisticsFee(totalSaleLogisticsFee);
+        result.setTotalSaleOtherFees(totalSaleOtherFees);
+        result.setTotalSaleAmount(totalSaleAmount);
+        result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
+
+        return success(result);
+    }
+
+    @GetMapping("/sale/reviewed-summary")
+    @Operation(summary = "获得已审核批发销售合计")
+    @PreAuthorize("@ss.hasPermission('erp:wholesale:query')")
+    public CommonResult<WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO>> getReviewedSaleSummary(@Valid ErpWholesalePageReqVO pageReqVO) {
+        // 设置已审核状态
+        pageReqVO.setSaleAuditStatus(20); // 20表示已审核
+        List<ErpWholesaleRespVO> allList = wholesaleService.exportAllWholesales(pageReqVO);
+
+        // 转换为ErpWholesaleSaleAuditVO列表
+        List<ErpWholesaleSaleAuditVO> list = allList.stream().map(item -> {
+            ErpWholesaleSaleAuditVO vo = new ErpWholesaleSaleAuditVO();
+            BeanUtils.copyProperties(item, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 计算销售合计值
+        BigDecimal totalSalePrice = BigDecimal.ZERO;
+        BigDecimal totalSaleTruckFee = BigDecimal.ZERO;
+        BigDecimal totalSaleLogisticsFee = BigDecimal.ZERO;
+        BigDecimal totalSaleOtherFees = BigDecimal.ZERO;
+        BigDecimal totalSaleAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAfterSalesAmount = BigDecimal.ZERO;
+        BigDecimal totalSaleAuditTotalAmount = BigDecimal.ZERO;
+
+        for (ErpWholesaleSaleAuditVO vo : list) {
+            if (vo.getSalePrice() != null) {
+                totalSalePrice = totalSalePrice.add(vo.getSalePrice());
+            }
+            if (vo.getSaleTruckFee() != null) {
+                totalSaleTruckFee = totalSaleTruckFee.add(vo.getSaleTruckFee());
+            }
+            if (vo.getSaleLogisticsFee() != null) {
+                totalSaleLogisticsFee = totalSaleLogisticsFee.add(vo.getSaleLogisticsFee());
+            }
+            if (vo.getSaleOtherFees() != null) {
+                totalSaleOtherFees = totalSaleOtherFees.add(vo.getSaleOtherFees());
+            }
+            if (vo.getTotalSaleAmount() != null) {
+                totalSaleAmount = totalSaleAmount.add(vo.getTotalSaleAmount());
+            }
+            if (vo.getSaleAfterSalesAmount() != null) {
+                totalSaleAfterSalesAmount = totalSaleAfterSalesAmount.add(vo.getSaleAfterSalesAmount());
+            }
+            if (vo.getSaleAuditTotalAmount() != null) {
+                totalSaleAuditTotalAmount = totalSaleAuditTotalAmount.add(vo.getSaleAuditTotalAmount());
+            }
+        }
+
+        // 创建返回结果
+        WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO> result = new WholesaleSalesSummaryPageResult<>();
+        result.setPageResult(new PageResult<>(list, (long) list.size()));
+        result.setTotalSalePrice(totalSalePrice);
+        result.setTotalSaleTruckFee(totalSaleTruckFee);
+        result.setTotalSaleLogisticsFee(totalSaleLogisticsFee);
+        result.setTotalSaleOtherFees(totalSaleOtherFees);
+        result.setTotalSaleAmount(totalSaleAmount);
+        result.setTotalSaleAfterSalesAmount(totalSaleAfterSalesAmount);
+        result.setTotalSaleAuditTotalAmount(totalSaleAuditTotalAmount);
+
+        return success(result);
+    }
+
         // 获取采购详情
 //    @GetMapping("/purchase/get2")
 //    @Operation(summary = "获得批发采购详情")
