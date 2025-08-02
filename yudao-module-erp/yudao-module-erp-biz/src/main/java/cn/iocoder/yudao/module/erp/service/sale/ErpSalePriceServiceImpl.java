@@ -1823,7 +1823,9 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             // 获取代发缺失价格记录 - 获取所有数据，不分页
             ErpSalePricePageReqVO allDataReqVO = new ErpSalePricePageReqVO();
             allDataReqVO.setGroupProductId(pageReqVO.getGroupProductId());
+            allDataReqVO.setGroupProductNo(pageReqVO.getGroupProductNo()); // 🔥 修复：传递组品编号参数
             allDataReqVO.setCustomerName(pageReqVO.getCustomerName());
+            allDataReqVO.setProductName(pageReqVO.getProductName()); // 🔥 修复：传递产品名称参数
             allDataReqVO.setPageNo(1);
             allDataReqVO.setPageSize(10000); // 设置一个很大的值，获取所有数据
             

@@ -2205,6 +2205,23 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             if (pageReqVO.getGroupProductId() != null) {
                 boolQuery.must(QueryBuilders.termQuery("combo_product_id", pageReqVO.getGroupProductId()));
             }
+            // 🔥 新增：支持通过组品编号搜索
+            if (StrUtil.isNotBlank(pageReqVO.getGroupProductNo())) {
+                try {
+                    // 通过组品编号查找组品ID
+                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findByNo(pageReqVO.getGroupProductNo());
+                    if (comboProductOpt.isPresent()) {
+                        boolQuery.must(QueryBuilders.termQuery("combo_product_id", comboProductOpt.get().getId()));
+                    } else {
+                        // 如果没找到对应的组品，设置一个不可能的条件，让搜索结果为空
+                        boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                    }
+                } catch (Exception e) {
+                    System.err.println("代发服务 - 通过组品编号查找组品失败: " + e.getMessage());
+                    // 查找失败时，设置一个不可能的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                }
+            }
             if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
                 boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + pageReqVO.getCustomerName() + "*"));
             }
@@ -2294,7 +2311,16 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                     return vo;
                 })
+                // 先过滤出没有价格的记录
                 .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
+                // 再根据产品名称过滤
+                .filter(vo -> {
+                    if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
+                        return StrUtil.isNotBlank(vo.getProductName()) && 
+                               vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
+                    }
+                    return true;
+                })
                 .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
@@ -2328,6 +2354,23 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 添加搜索条件
             if (pageReqVO.getGroupProductId() != null) {
                 queryWrapper.eq(ErpDistributionCombinedDO::getComboProductId, pageReqVO.getGroupProductId());
+            }
+            // 🔥 新增：支持通过组品编号搜索（降级方案）
+            if (StrUtil.isNotBlank(pageReqVO.getGroupProductNo())) {
+                try {
+                    // 通过组品编号查找组品ID
+                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findByNo(pageReqVO.getGroupProductNo());
+                    if (comboProductOpt.isPresent()) {
+                        queryWrapper.eq(ErpDistributionCombinedDO::getComboProductId, comboProductOpt.get().getId());
+                    } else {
+                        // 如果没找到对应的组品，设置一个不可能的条件，让搜索结果为空
+                        queryWrapper.eq(ErpDistributionCombinedDO::getComboProductId, -1L);
+                    }
+                } catch (Exception e) {
+                    System.err.println("代发服务降级方案 - 通过组品编号查找组品失败: " + e.getMessage());
+                    // 查找失败时，设置一个不可能的条件
+                    queryWrapper.eq(ErpDistributionCombinedDO::getComboProductId, -1L);
+                }
             }
             if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
                 queryWrapper.like(ErpDistributionCombinedDO::getCustomerName, pageReqVO.getCustomerName());
@@ -2403,7 +2446,16 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                     return vo;
                 })
+                // 先过滤出没有价格的记录
                 .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
+                // 再根据产品名称过滤
+                .filter(vo -> {
+                    if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
+                        return StrUtil.isNotBlank(vo.getProductName()) && 
+                               vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
+                    }
+                    return true;
+                })
                 .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());

@@ -1892,8 +1892,25 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             if (pageReqVO.getGroupProductId() != null) {
                 boolQuery.must(QueryBuilders.termQuery("combo_product_id", pageReqVO.getGroupProductId()));
             }
+            // 🔥 新增：支持通过组品编号搜索
+            if (StrUtil.isNotBlank(pageReqVO.getGroupProductNo())) {
+                try {
+                    // 通过组品编号查找组品ID
+                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findByNo(pageReqVO.getGroupProductNo());
+                    if (comboProductOpt.isPresent()) {
+                        boolQuery.must(QueryBuilders.termQuery("combo_product_id", comboProductOpt.get().getId()));
+                    } else {
+                        // 如果没找到对应的组品，设置一个不可能的条件，让搜索结果为空
+                        boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                    }
+                } catch (Exception e) {
+                    System.err.println("批发服务 - 通过组品编号查找组品失败: " + e.getMessage());
+                    // 查找失败时，设置一个不可能的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                }
+            }
             if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
-                boolQuery.must(QueryBuilders.wildcardQuery("customer_name.keyword", "*" + pageReqVO.getCustomerName() + "*"));
+                boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + pageReqVO.getCustomerName() + "*"));
             }
 
             queryBuilder.withQuery(boolQuery);
@@ -1971,7 +1988,16 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
                     return vo;
                 })
+                // 先过滤出没有价格的记录
                 .filter(vo -> vo.getWholesalePrice() == null || vo.getWholesalePrice().compareTo(BigDecimal.ZERO) == 0)
+                // 再根据产品名称过滤
+                .filter(vo -> {
+                    if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
+                        return StrUtil.isNotBlank(vo.getProductName()) && 
+                               vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
+                    }
+                    return true;
+                })
                 .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
@@ -2004,6 +2030,23 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             // 添加搜索条件
             if (pageReqVO.getGroupProductId() != null) {
                 queryWrapper.eq(ErpWholesaleCombinedDO::getComboProductId, pageReqVO.getGroupProductId());
+            }
+            // 🔥 新增：支持通过组品编号搜索（降级方案）
+            if (StrUtil.isNotBlank(pageReqVO.getGroupProductNo())) {
+                try {
+                    // 通过组品编号查找组品ID
+                    Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findByNo(pageReqVO.getGroupProductNo());
+                    if (comboProductOpt.isPresent()) {
+                        queryWrapper.eq(ErpWholesaleCombinedDO::getComboProductId, comboProductOpt.get().getId());
+                    } else {
+                        // 如果没找到对应的组品，设置一个不可能的条件，让搜索结果为空
+                        queryWrapper.eq(ErpWholesaleCombinedDO::getComboProductId, -1L);
+                    }
+                } catch (Exception e) {
+                    System.err.println("批发服务降级方案 - 通过组品编号查找组品失败: " + e.getMessage());
+                    // 查找失败时，设置一个不可能的条件
+                    queryWrapper.eq(ErpWholesaleCombinedDO::getComboProductId, -1L);
+                }
             }
             if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
                 queryWrapper.like(ErpWholesaleCombinedDO::getCustomerName, pageReqVO.getCustomerName());
@@ -2079,7 +2122,16 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
                     return vo;
                 })
+                // 先过滤出没有价格的记录
                 .filter(vo -> vo.getWholesalePrice() == null || vo.getWholesalePrice().compareTo(BigDecimal.ZERO) == 0)
+                // 再根据产品名称过滤
+                .filter(vo -> {
+                    if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
+                        return StrUtil.isNotBlank(vo.getProductName()) && 
+                               vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
+                    }
+                    return true;
+                })
                 .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
