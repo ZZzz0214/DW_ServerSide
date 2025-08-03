@@ -698,7 +698,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
         // 设置分页参数
         query.setPageable(PageRequest.of(0, pageReqVO.getPageSize()));
-        
+
         // 确保查询包含排序条件
         if (!query.getSort().isSorted()) {
             query.addSort(Sort.by(Sort.Direction.DESC, "id"));
@@ -841,10 +841,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     public void batchUpdatePurchaseAuditStatus(ErpWholesaleBatchUpdatePurchaseAuditReqVO reqVO) {
         Integer purchaseAuditStatus = reqVO.getPurchaseAuditStatus();
         LocalDateTime now = LocalDateTime.now();
-        
+
         List<Long> targetIds = new ArrayList<>();
         Map<Long, BigDecimal> idAmountMap = new HashMap<>();
-        
+
         // 处理订单数据：无论是选择的数据还是全选的数据，都使用传递的订单数据
         if (CollUtil.isNotEmpty(reqVO.getOrderData())) {
             for (ErpWholesaleBatchUpdatePurchaseAuditReqVO.OrderData orderData : reqVO.getOrderData()) {
@@ -852,7 +852,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 idAmountMap.put(orderData.getId(), orderData.getTotalPurchaseAmount());
             }
         }
-        
+
         if (CollUtil.isEmpty(targetIds)) {
             return;
         }
@@ -861,7 +861,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         Iterable<ErpWholesaleCombinedESDO> existingRecords = wholesaleCombinedESRepository.findAllById(targetIds);
         List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
         List<ErpWholesaleCombinedDO> dbUpdateList = new ArrayList<>();
-        
+
         for (ErpWholesaleCombinedESDO combined : existingRecords) {
             // 2. 校验状态是否重复
             if (combined.getPurchaseAuditStatus() != null &&
@@ -882,7 +882,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 }
             } else if (purchaseAuditStatus == 10) { // 反审核
                 combined.setPurchaseUnapproveTime(now);
-                combined.setPurchaseAuditTotalAmount(null);
+                combined.setPurchaseAuditTotalAmount(BigDecimal.ZERO);
             }
 
             esUpdateList.add(combined);
@@ -942,42 +942,71 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus) {
-        if (CollUtil.isEmpty(ids)) {
+    public void batchUpdateSaleAuditStatus(ErpWholesaleBatchUpdateSaleAuditReqVO reqVO) {
+        Integer saleAuditStatus = reqVO.getSaleAuditStatus();
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Long> targetIds = new ArrayList<>();
+        Map<Long, BigDecimal> idAmountMap = new HashMap<>();
+
+        // 处理订单数据：无论是选择的数据还是全选的数据，都使用传递的订单数据
+        if (CollUtil.isNotEmpty(reqVO.getOrderData())) {
+            for (ErpWholesaleBatchUpdateSaleAuditReqVO.OrderData orderData : reqVO.getOrderData()) {
+                targetIds.add(orderData.getId());
+                idAmountMap.put(orderData.getId(), orderData.getTotalSaleAmount());
+            }
+        }
+
+        if (CollUtil.isEmpty(targetIds)) {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        for (Long id : ids) {
-            // 1. 校验存在
-            Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
-            if (!combinedOpt.isPresent()) {
-                continue; // 跳过不存在的记录
-            }
+        // 1. 批量查询ES中的记录
+        Iterable<ErpWholesaleCombinedESDO> existingRecords = wholesaleCombinedESRepository.findAllById(targetIds);
+        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+        List<ErpWholesaleCombinedDO> dbUpdateList = new ArrayList<>();
 
+        for (ErpWholesaleCombinedESDO combined : existingRecords) {
             // 2. 校验状态是否重复
-            if (combinedOpt.get().getSaleAuditStatus() != null &&
-                combinedOpt.get().getSaleAuditStatus().equals(saleAuditStatus)) {
+            if (combined.getSaleAuditStatus() != null &&
+                combined.getSaleAuditStatus().equals(saleAuditStatus)) {
                 continue; // 跳过状态相同的记录
             }
 
             // 3. 更新销售审核状态
-            ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
-                    .setId(id)
-                    .setSaleAuditStatus(saleAuditStatus);
+            combined.setSaleAuditStatus(saleAuditStatus);
 
-            // 根据审核状态设置相应时间
+            // 根据审核状态设置相应时间和金额
             if (saleAuditStatus == 20) { // 审核通过
-                updateObj.setSaleApprovalTime(now);
+                combined.setSaleApprovalTime(now);
+                // 设置SaleAuditTotalAmount等于出货总额
+                BigDecimal totalSaleAmount = idAmountMap.get(combined.getId());
+                if (totalSaleAmount != null) {
+                    combined.setSaleAuditTotalAmount(totalSaleAmount);
+                }
             } else if (saleAuditStatus == 10) { // 反审核
-                updateObj.setSaleUnapproveTime(now);
+                combined.setSaleUnapproveTime(now);
+                combined.setSaleAuditTotalAmount(BigDecimal.ZERO);
             }
 
-            wholesaleCombinedMapper.updateById(updateObj);
-
-            // 4. 同步到ES
-            syncCombinedToES(id);
+            esUpdateList.add(combined);
+            dbUpdateList.add(BeanUtils.toBean(combined, ErpWholesaleCombinedDO.class));
         }
+
+        // 4. 批量保存到ES
+        if (CollUtil.isNotEmpty(esUpdateList)) {
+            wholesaleCombinedESRepository.saveAll(esUpdateList);
+        }
+
+        // 5. 批量更新数据库
+        if (CollUtil.isNotEmpty(dbUpdateList)) {
+            for (ErpWholesaleCombinedDO dbRecord : dbUpdateList) {
+                wholesaleCombinedMapper.updateById(dbRecord);
+            }
+        }
+
+        // 6. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpWholesaleCombinedESDO.class).refresh();
     }
 
     @Override
@@ -2032,7 +2061,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 // 再根据产品名称过滤
                 .filter(vo -> {
                     if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
-                        return StrUtil.isNotBlank(vo.getProductName()) && 
+                        return StrUtil.isNotBlank(vo.getProductName()) &&
                                vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
                     }
                     return true;
@@ -2166,7 +2195,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 // 再根据产品名称过滤
                 .filter(vo -> {
                     if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
-                        return StrUtil.isNotBlank(vo.getProductName()) && 
+                        return StrUtil.isNotBlank(vo.getProductName()) &&
                                vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
                     }
                     return true;
@@ -2514,14 +2543,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                 .withSort(Sort.by(Sort.Direction.DESC, "id"));
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-        
+
         // 批发表自身字段搜索
         if (StrUtil.isNotBlank(pageReqVO.getNo())) {
             boolQuery.must(QueryBuilders.termQuery("no", pageReqVO.getNo().trim()));
         }
-        
+
         // 注意：仅使用在ErpWholesalePageReqVO中定义的字段，移除未定义的字段
-        
+
         // 精确匹配字段
         if (pageReqVO.getPurchaseAuditStatus() != null) {
             boolQuery.must(QueryBuilders.termQuery("purchase_audit_status", pageReqVO.getPurchaseAuditStatus()));
@@ -2529,7 +2558,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (pageReqVO.getSaleAuditStatus() != null) {
             boolQuery.must(QueryBuilders.termQuery("sale_audit_status", pageReqVO.getSaleAuditStatus()));
         }
-        
+
         // 组品相关搜索条件需要先查询组品表
         if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) ||
             StrUtil.isNotBlank(pageReqVO.getShippingCode()) ||
@@ -2570,7 +2599,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
             }
         }
-        
+
         // 添加其他字段的搜索支持
         if (StrUtil.isNotBlank(pageReqVO.getLogisticsNumber())) {
             boolQuery.must(QueryBuilders.wildcardQuery("logistics_number", "*" + pageReqVO.getLogisticsNumber().trim() + "*"));
@@ -2608,14 +2637,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
             boolQuery.must(QueryBuilders.wildcardQuery("sale_remark.keyword", "*" + pageReqVO.getSaleRemark().trim() + "*"));
         }
-        
+
         // 时间范围
         if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
             boolQuery.must(QueryBuilders.rangeQuery("create_time")
                     .gte(pageReqVO.getCreateTime()[0])
                     .lte(pageReqVO.getCreateTime()[1]));
         }
-        
+
         queryBuilder.withQuery(boolQuery);
         return queryBuilder.build();
     }
@@ -2627,14 +2656,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     public List<ErpWholesaleRespVO> exportAllWholesales(ErpWholesalePageReqVO pageReqVO) {
         System.out.println("开始使用Scroll API导出批发数据...");
         long startTime = System.currentTimeMillis();
-        
+
         // 复用现有的ES查询构建逻辑
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                 .withSort(Sort.by(Sort.Direction.DESC, "id"));
-                
+
         // 构建基础查询条件
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-        
+
         // 批发表自身字段搜索
         if (StrUtil.isNotBlank(pageReqVO.getNo())) {
             boolQuery.must(QueryBuilders.termQuery("no", pageReqVO.getNo().trim()));
@@ -2675,7 +2704,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
             boolQuery.must(QueryBuilders.wildcardQuery("sale_remark.keyword", "*" + pageReqVO.getSaleRemark().trim() + "*"));
         }
-        
+
         // 精确匹配字段 - 只保留VO中已定义的字段
         if (pageReqVO.getPurchaseAuditStatus() != null) {
             boolQuery.must(QueryBuilders.termQuery("purchase_audit_status", pageReqVO.getPurchaseAuditStatus()));
@@ -2683,7 +2712,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         if (pageReqVO.getSaleAuditStatus() != null) {
             boolQuery.must(QueryBuilders.termQuery("sale_audit_status", pageReqVO.getSaleAuditStatus()));
         }
-        
+
         // 组品相关搜索条件需要先查询组品表
         if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) ||
             StrUtil.isNotBlank(pageReqVO.getShippingCode()) ||
@@ -2724,41 +2753,41 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
             }
         }
-        
+
         // 时间范围
         if (pageReqVO.getCreateTime() != null && pageReqVO.getCreateTime().length == 2) {
             boolQuery.must(QueryBuilders.rangeQuery("create_time")
                     .gte(pageReqVO.getCreateTime()[0])
                     .lte(pageReqVO.getCreateTime()[1]));
         }
-        
+
         // 添加查询条件到查询构建器
         queryBuilder.withQuery(boolQuery);
-        
+
         // 使用scroll API查询全部数据
         List<ErpWholesaleCombinedESDO> allESList = new ArrayList<>();
         String scrollId = null;
         IndexCoordinates index = IndexCoordinates.of("erp_wholesale_combined");
-        
+
         try {
             // 初始化scroll查询，设置60秒超时
-            SearchScrollHits<ErpWholesaleCombinedESDO> scrollHits = elasticsearchRestTemplate.searchScrollStart(60000, 
+            SearchScrollHits<ErpWholesaleCombinedESDO> scrollHits = elasticsearchRestTemplate.searchScrollStart(60000,
                     queryBuilder.build(), ErpWholesaleCombinedESDO.class, index);
             scrollId = scrollHits.getScrollId();
             int batchCount = 0;
-            
+
             // 持续scroll直到没有更多结果
             while (scrollHits.hasSearchHits()) {
                 batchCount++;
                 int batchSize = scrollHits.getSearchHits().size();
-                
+
                 // 添加当前批次的结果
                 for (SearchHit<ErpWholesaleCombinedESDO> hit : scrollHits.getSearchHits()) {
                     allESList.add(hit.getContent());
                 }
-                
+
                 System.out.println("批发导出数据：批次" + batchCount + "，获取" + batchSize + "条，累计" + allESList.size() + "条");
-                
+
                 // 继续下一批次的scroll
                 scrollHits = elasticsearchRestTemplate.searchScrollContinue(scrollId, 60000, ErpWholesaleCombinedESDO.class, index);
             }
@@ -2775,10 +2804,10 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 }
             }
         }
-        
+
         long endTime = System.currentTimeMillis();
         System.out.println("批发数据导出完成，共" + allESList.size() + "条，耗时: " + (endTime - startTime) + "ms");
-        
+
         // 批量转换为VO对象，复用现有的转换方法
         return convertToBatchOptimizedVOList(allESList, (long) allESList.size()).getList();
     }

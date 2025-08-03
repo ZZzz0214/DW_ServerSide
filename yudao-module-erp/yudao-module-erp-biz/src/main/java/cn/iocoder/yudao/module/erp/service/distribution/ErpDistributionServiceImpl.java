@@ -1317,10 +1317,10 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     public void batchUpdatePurchaseAuditStatus(ErpDistributionBatchUpdatePurchaseAuditReqVO reqVO) {
         Integer purchaseAuditStatus = reqVO.getPurchaseAuditStatus();
         LocalDateTime now = LocalDateTime.now();
-        
+
         List<Long> targetIds = new ArrayList<>();
         Map<Long, BigDecimal> idAmountMap = new HashMap<>();
-        
+
         // 处理订单数据：无论是选择的数据还是全选的数据，都使用传递的订单数据
         if (CollUtil.isNotEmpty(reqVO.getOrderData())) {
             for (ErpDistributionBatchUpdatePurchaseAuditReqVO.OrderData orderData : reqVO.getOrderData()) {
@@ -1328,7 +1328,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 idAmountMap.put(orderData.getId(), orderData.getTotalPurchaseAmount());
             }
         }
-        
+
         if (CollUtil.isEmpty(targetIds)) {
             return;
         }
@@ -1337,7 +1337,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         Iterable<ErpDistributionCombinedESDO> existingRecords = distributionCombinedESRepository.findAllById(targetIds);
         List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
         List<ErpDistributionCombinedDO> dbUpdateList = new ArrayList<>();
-        
+
         for (ErpDistributionCombinedESDO combined : existingRecords) {
             // 2. 校验状态是否重复
             if (combined.getPurchaseAuditStatus() != null &&
@@ -1358,7 +1358,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 }
             } else if (purchaseAuditStatus == 10) { // 反审核
                 combined.setPurchaseUnapproveTime(now);
-                combined.setPurchaseAuditTotalAmount(null);
+                combined.setPurchaseAuditTotalAmount(BigDecimal.ZERO);
             }
 
             esUpdateList.add(combined);
@@ -1419,10 +1419,10 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
     public void batchUpdateSaleAuditStatus(ErpDistributionBatchUpdateSaleAuditReqVO reqVO) {
         Integer saleAuditStatus = reqVO.getSaleAuditStatus();
         LocalDateTime now = LocalDateTime.now();
-        
+
         List<Long> targetIds = new ArrayList<>();
         Map<Long, BigDecimal> idAmountMap = new HashMap<>();
-        
+
         // 处理订单数据：无论是选择的数据还是全选的数据，都使用传递的订单数据
         if (CollUtil.isNotEmpty(reqVO.getOrderData())) {
             for (ErpDistributionBatchUpdateSaleAuditReqVO.OrderData orderData : reqVO.getOrderData()) {
@@ -1430,7 +1430,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 idAmountMap.put(orderData.getId(), orderData.getTotalSaleAmount());
             }
         }
-        
+
         if (CollUtil.isEmpty(targetIds)) {
             return;
         }
@@ -1439,7 +1439,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         Iterable<ErpDistributionCombinedESDO> existingRecords = distributionCombinedESRepository.findAllById(targetIds);
         List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
         List<ErpDistributionCombinedDO> dbUpdateList = new ArrayList<>();
-        
+
         for (ErpDistributionCombinedESDO combined : existingRecords) {
             // 2. 校验状态是否重复
             if (combined.getSaleAuditStatus() != null &&
@@ -1456,11 +1456,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 // 设置SaleAuditTotalAmount等于出货总额
                 BigDecimal totalSaleAmount = idAmountMap.get(combined.getId());
                 if (totalSaleAmount != null) {
+
                     combined.setSaleAuditTotalAmount(totalSaleAmount);
                 }
             } else if (saleAuditStatus == 10) { // 反审核
                 combined.setSaleUnapproveTime(now);
-                combined.setSaleAuditTotalAmount(null);
+                combined.setSaleAuditTotalAmount(BigDecimal.ZERO);
             }
 
             esUpdateList.add(combined);

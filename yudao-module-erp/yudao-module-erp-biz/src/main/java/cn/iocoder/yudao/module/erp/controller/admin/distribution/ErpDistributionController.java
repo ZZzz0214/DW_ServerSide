@@ -800,7 +800,7 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:query')")
     public CommonResult<PageResultWithSummary<ErpDistributionPurchaseAuditVO>> getUnreviewedPurchaseSummary(@Valid ErpDistributionPageReqVO pageReqVO) {
         // 设置未审核状态
-        pageReqVO.setPurchaseAuditStatus(10); // 10表示未审核
+       // pageReqVO.setPurchaseAuditStatus(10); // 10表示未审核
         List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
 
         // 转换为ErpDistributionPurchaseAuditVO列表
@@ -835,7 +835,7 @@ public class ErpDistributionController {
                 totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
             }
             if (vo.getTotalPurchaseAmount() != null) {
-                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getTotalPurchaseAmount());
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
             }
         }
 
@@ -914,7 +914,7 @@ public class ErpDistributionController {
     @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:query')")
     public CommonResult<SalesSummaryPageResult<ErpDistributionSaleAuditVO>> getUnreviewedSaleSummary(@Valid ErpDistributionPageReqVO pageReqVO) {
         // 设置未审核状态
-        pageReqVO.setSaleAuditStatus(10); // 10表示未审核
+        //pageReqVO.setSaleAuditStatus(10); // 10表示未审核
         List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
 
         // 转换为ErpDistributionSaleAuditVO列表

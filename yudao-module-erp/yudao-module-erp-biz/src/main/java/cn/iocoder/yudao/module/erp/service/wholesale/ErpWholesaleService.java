@@ -87,10 +87,9 @@ public interface ErpWholesaleService {
     /**
      * 批量更新销售审核状态
      *
-     * @param ids 编号列表
-     * @param saleAuditStatus 销售审核状态
+     * @param reqVO 批量更新销售审核状态请求
      */
-    void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus);
+    void batchUpdateSaleAuditStatus(ErpWholesaleBatchUpdateSaleAuditReqVO reqVO);
 
     /**
      * 更新采购售后信息

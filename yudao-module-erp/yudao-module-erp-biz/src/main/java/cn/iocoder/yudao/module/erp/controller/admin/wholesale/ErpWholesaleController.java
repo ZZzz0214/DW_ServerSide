@@ -451,7 +451,7 @@ public class ErpWholesaleController {
     @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:query')")
     public CommonResult<WholesalePurchaseSummaryPageResult<ErpWholesalePurchaseAuditVO>> getUnreviewedPurchaseSummary(@Valid ErpWholesalePageReqVO pageReqVO) {
         // 设置未审核状态
-        pageReqVO.setPurchaseAuditStatus(10); // 10表示未审核
+        //pageReqVO.setPurchaseAuditStatus(10); // 10表示未审核
         List<ErpWholesaleRespVO> allList = wholesaleService.exportAllWholesales(pageReqVO);
 
         // 转换为ErpWholesalePurchaseAuditVO列表
@@ -575,7 +575,7 @@ public class ErpWholesaleController {
     @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:query')")
     public CommonResult<WholesaleSalesSummaryPageResult<ErpWholesaleSaleAuditVO>> getUnreviewedSaleSummary(@Valid ErpWholesalePageReqVO pageReqVO) {
         // 设置未审核状态
-        pageReqVO.setSaleAuditStatus(10); // 10表示未审核
+        //pageReqVO.setSaleAuditStatus(10); // 10表示未审核
         List<ErpWholesaleRespVO> allList = wholesaleService.exportAllWholesales(pageReqVO);
 
         // 转换为ErpWholesaleSaleAuditVO列表
@@ -971,9 +971,8 @@ public class ErpWholesaleController {
     @PutMapping("/batch-update-sale-audit-status")
     @Operation(summary = "批量更新销售审核状态")
     @PreAuthorize("@ss.hasPermission('erp:wholesaleSaleAu:update-status')")
-    public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestParam("ids") List<Long> ids,
-                                                            @RequestParam("saleAuditStatus") Integer saleAuditStatus) {
-        wholesaleService.batchUpdateSaleAuditStatus(ids, saleAuditStatus);
+    public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestBody @Valid ErpWholesaleBatchUpdateSaleAuditReqVO reqVO) {
+        wholesaleService.batchUpdateSaleAuditStatus(reqVO);
         return success(true);
     }
 

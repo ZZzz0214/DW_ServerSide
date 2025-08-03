@@ -488,11 +488,11 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
 
                 // 参考组品表的简化搜索策略
                 // 第一优先级：完全精确匹配（最高权重）
-                comboNameQuery.should(QueryBuilders.termQuery("name_keyword", name).boost(1000000.0f));
+                comboNameQuery.should(QueryBuilders.termQuery("name", name).boost(1000000.0f));
                 // 第二优先级：前缀匹配
-                comboNameQuery.should(QueryBuilders.prefixQuery("name_keyword", name).boost(100000.0f));
+                comboNameQuery.should(QueryBuilders.prefixQuery("name", name).boost(100000.0f));
                 // 第三优先级：通配符包含匹配（支持中间字符搜索）
-                comboNameQuery.should(QueryBuilders.wildcardQuery("name_keyword", "*" + name + "*").boost(50000.0f));
+                comboNameQuery.should(QueryBuilders.wildcardQuery("name", "*" + name + "*").boost(50000.0f));
 
                 comboNameQuery.minimumShouldMatch(1);
 
@@ -1828,7 +1828,7 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             allDataReqVO.setProductName(pageReqVO.getProductName()); // 🔥 修复：传递产品名称参数
             allDataReqVO.setPageNo(1);
             allDataReqVO.setPageSize(10000); // 设置一个很大的值，获取所有数据
-            
+
             PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(allDataReqVO);
 
             // 获取批发缺失价格记录 - 获取所有数据，不分页
@@ -1909,11 +1909,11 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
             // 正确处理分页参数
             int pageNo = pageReqVO.getPageNo() != null ? pageReqVO.getPageNo() : 1;
             int pageSize = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
-            
+
             // 确保页码和页大小有效
             if (pageNo < 1) pageNo = 1;
             if (pageSize < 1) pageSize = 10;
-            
+
             // 计算分页范围
             int start = (pageNo - 1) * pageSize;
             int end = Math.min(start + pageSize, resultList.size());
