@@ -1416,21 +1416,32 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus) {
-        if (CollUtil.isEmpty(ids)) {
+    public void batchUpdateSaleAuditStatus(ErpDistributionBatchUpdateSaleAuditReqVO reqVO) {
+        Integer saleAuditStatus = reqVO.getSaleAuditStatus();
+        LocalDateTime now = LocalDateTime.now();
+        
+        List<Long> targetIds = new ArrayList<>();
+        Map<Long, BigDecimal> idAmountMap = new HashMap<>();
+        
+        // 处理订单数据：无论是选择的数据还是全选的数据，都使用传递的订单数据
+        if (CollUtil.isNotEmpty(reqVO.getOrderData())) {
+            for (ErpDistributionBatchUpdateSaleAuditReqVO.OrderData orderData : reqVO.getOrderData()) {
+                targetIds.add(orderData.getId());
+                idAmountMap.put(orderData.getId(), orderData.getTotalSaleAmount());
+            }
+        }
+        
+        if (CollUtil.isEmpty(targetIds)) {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        for (Long id : ids) {
-            // 1. 校验存在
-            Optional<ErpDistributionCombinedESDO> combinedOpt = distributionCombinedESRepository.findById(id);
-            if (!combinedOpt.isPresent()) {
-                continue; // 跳过不存在的记录
-            }
-
+        // 1. 批量查询ES中的记录
+        Iterable<ErpDistributionCombinedESDO> existingRecords = distributionCombinedESRepository.findAllById(targetIds);
+        List<ErpDistributionCombinedESDO> esUpdateList = new ArrayList<>();
+        List<ErpDistributionCombinedDO> dbUpdateList = new ArrayList<>();
+        
+        for (ErpDistributionCombinedESDO combined : existingRecords) {
             // 2. 校验状态是否重复
-            ErpDistributionCombinedESDO combined = combinedOpt.get();
             if (combined.getSaleAuditStatus() != null &&
                 combined.getSaleAuditStatus().equals(saleAuditStatus)) {
                 continue; // 跳过状态相同的记录
@@ -1439,21 +1450,37 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 3. 更新销售审核状态
             combined.setSaleAuditStatus(saleAuditStatus);
 
-
-            // 根据审核状态设置相应时间
+            // 根据审核状态设置相应时间和金额
             if (saleAuditStatus == 20) { // 审核通过
                 combined.setSaleApprovalTime(now);
-                combined.setSaleAuditTotalAmount(combined.getSaleAuditTotalAmount());
+                // 设置SaleAuditTotalAmount等于出货总额
+                BigDecimal totalSaleAmount = idAmountMap.get(combined.getId());
+                if (totalSaleAmount != null) {
+                    combined.setSaleAuditTotalAmount(totalSaleAmount);
+                }
             } else if (saleAuditStatus == 10) { // 反审核
                 combined.setSaleUnapproveTime(now);
                 combined.setSaleAuditTotalAmount(null);
             }
 
-            distributionCombinedESRepository.save(combined);
-
-            // 4. 同步更新数据库
-            distributionCombinedMapper.updateById(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
+            esUpdateList.add(combined);
+            dbUpdateList.add(BeanUtils.toBean(combined, ErpDistributionCombinedDO.class));
         }
+
+        // 4. 批量保存到ES
+        if (CollUtil.isNotEmpty(esUpdateList)) {
+            distributionCombinedESRepository.saveAll(esUpdateList);
+        }
+
+        // 5. 批量更新数据库
+        if (CollUtil.isNotEmpty(dbUpdateList)) {
+            for (ErpDistributionCombinedDO dbRecord : dbUpdateList) {
+                distributionCombinedMapper.updateById(dbRecord);
+            }
+        }
+
+        // 6. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).refresh();
     }
 
     @Override

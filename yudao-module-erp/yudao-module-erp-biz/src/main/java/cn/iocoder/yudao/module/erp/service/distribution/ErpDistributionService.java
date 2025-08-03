@@ -119,10 +119,9 @@ public interface ErpDistributionService {
     /**
      * 批量更新销售审核状态
      *
-     * @param ids 编号列表
-     * @param saleAuditStatus 销售审核状态
+     * @param reqVO 批量更新请求VO
      */
-    void batchUpdateSaleAuditStatus(List<Long> ids, Integer saleAuditStatus);
+    void batchUpdateSaleAuditStatus(ErpDistributionBatchUpdateSaleAuditReqVO reqVO);
 
    /**
      * 导入代发订单

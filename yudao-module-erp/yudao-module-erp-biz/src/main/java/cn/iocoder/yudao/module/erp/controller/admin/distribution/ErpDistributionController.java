@@ -514,9 +514,8 @@ public class ErpDistributionController {
     @PutMapping("/batch-update-sale-audit-status")
     @Operation(summary = "批量更新销售审核状态")
     @PreAuthorize("@ss.hasPermission('erp:distributionSaleAu:update-sale-audit-status')")
-    public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestParam("ids") List<Long> ids,
-                                                            @RequestParam("saleAuditStatus") Integer saleAuditStatus) {
-        distributionService.batchUpdateSaleAuditStatus(ids, saleAuditStatus);
+    public CommonResult<Boolean> batchUpdateSaleAuditStatus(@RequestBody @Valid ErpDistributionBatchUpdateSaleAuditReqVO reqVO) {
+        distributionService.batchUpdateSaleAuditStatus(reqVO);
         return success(true);
     }
 
