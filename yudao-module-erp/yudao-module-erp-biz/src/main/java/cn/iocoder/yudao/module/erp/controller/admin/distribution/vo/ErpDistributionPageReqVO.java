@@ -89,4 +89,10 @@ public class ErpDistributionPageReqVO extends PageParam {
     
     @Schema(description = "销售审核状态", example = "1")
     private Integer saleAuditStatus;
+
+    @Schema(description = "采购备注", example = "采购订单备注")
+    private String purchaseRemark;
+
+    @Schema(description = "销售备注", example = "销售订单备注")
+    private String saleRemark;
 }

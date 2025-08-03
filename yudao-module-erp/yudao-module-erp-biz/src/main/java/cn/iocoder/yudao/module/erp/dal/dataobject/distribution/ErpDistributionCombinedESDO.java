@@ -74,7 +74,7 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "purchase_other_fees", type = FieldType.Double)
     private BigDecimal purchaseOtherFees;
 
-    @Field(name = "purchase_remark", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "purchase_remark", type = FieldType.Keyword)
     private String purchaseRemark;
 
     @Field(name = "purchase_after_sales_status", type = FieldType.Integer)
@@ -105,7 +105,7 @@ public class ErpDistributionCombinedESDO {
     @Field(name = "sale_other_fees", type = FieldType.Double)
     private BigDecimal saleOtherFees;
 
-    @Field(name = "sale_remark", type = FieldType.Text, analyzer = "ik_max_word")
+    @Field(name = "sale_remark", type = FieldType.Keyword)
     private String saleRemark;
 
     @Field(name = "transfer_person", type = FieldType.Keyword)

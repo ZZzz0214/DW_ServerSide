@@ -821,6 +821,16 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         .lte(pageReqVO.getAfterSalesTime()[1]));
             }
 
+            // 🔥 新增：采购备注搜索
+            if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("purchase_remark", "*" + pageReqVO.getPurchaseRemark().trim() + "*"));
+            }
+            
+            // 🔥 新增：销售备注搜索
+            if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("sale_remark", "*" + pageReqVO.getSaleRemark().trim() + "*"));
+            }
+
             queryBuilder.withQuery(boolQuery);
 
             // 3. 处理深度分页
@@ -2842,6 +2852,17 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     .gte(pageReqVO.getAfterSalesTime()[0])
                     .lte(pageReqVO.getAfterSalesTime()[1]));
         }
+
+                    // 🔥 新增：采购备注搜索
+            if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("purchase_remark", "*" + pageReqVO.getPurchaseRemark().trim() + "*"));
+            }
+            
+            // 🔥 新增：销售备注搜索
+            if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("sale_remark", "*" + pageReqVO.getSaleRemark().trim() + "*"));
+            }
+
         queryBuilder.withQuery(boolQuery);
         return queryBuilder.build();
     }
@@ -2948,6 +2969,16 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (pageReqVO.getAfterSalesTime() != null && pageReqVO.getAfterSalesTime().length == 2) {
             queryWrapper.between(ErpDistributionCombinedDO::getAfterSalesTime,
                                 pageReqVO.getAfterSalesTime()[0], pageReqVO.getAfterSalesTime()[1]);
+        }
+
+        // 🔥 新增：采购备注搜索
+        if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
+            queryWrapper.like(ErpDistributionCombinedDO::getPurchaseRemark, pageReqVO.getPurchaseRemark().trim());
+        }
+        
+        // 🔥 新增：销售备注搜索
+        if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
+            queryWrapper.like(ErpDistributionCombinedDO::getSaleRemark, pageReqVO.getSaleRemark().trim());
         }
 
         // 排序
