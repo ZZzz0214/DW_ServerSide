@@ -621,6 +621,16 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 boolQuery.must(createSimplifiedKeywordMatchQuery("creator", pageReqVO.getCreator().trim()));
             }
 
+            // 采购备注搜索
+            if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
+                boolQuery.must(createSimplifiedKeywordMatchQuery("purchase_remark", pageReqVO.getPurchaseRemark().trim()));
+            }
+
+            // 出货备注搜索
+            if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
+                boolQuery.must(createSimplifiedKeywordMatchQuery("sale_remark", pageReqVO.getSaleRemark().trim()));
+            }
+
             // 精确匹配字段
             if (pageReqVO.getPurchaseAuditStatus() != null) {
                 boolQuery.must(QueryBuilders.termQuery("purchase_audit_status", pageReqVO.getPurchaseAuditStatus()));
@@ -2492,10 +2502,18 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         }
         
         // 组品相关搜索条件需要先查询组品表
-        if (StrUtil.isNotBlank(pageReqVO.getProductName()) ||
+        if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) ||
+            StrUtil.isNotBlank(pageReqVO.getShippingCode()) ||
+            StrUtil.isNotBlank(pageReqVO.getProductName()) ||
             StrUtil.isNotBlank(pageReqVO.getPurchaser()) ||
             StrUtil.isNotBlank(pageReqVO.getSupplier())) {
             BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
+            if (StrUtil.isNotBlank(pageReqVO.getComboProductNo())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("no", "*" + pageReqVO.getComboProductNo().trim() + "*"));
+            }
+            if (StrUtil.isNotBlank(pageReqVO.getShippingCode())) {
+                comboQuery.must(QueryBuilders.wildcardQuery("shipping_code", "*" + pageReqVO.getShippingCode().trim() + "*"));
+            }
             if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
                 comboQuery.must(QueryBuilders.wildcardQuery("name", "*" + pageReqVO.getProductName().trim() + "*"));
             }
@@ -2522,6 +2540,44 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 // 没有符合条件的组品，返回空查询
                 boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
             }
+        }
+        
+        // 添加其他字段的搜索支持
+        if (StrUtil.isNotBlank(pageReqVO.getLogisticsNumber())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("logistics_number", "*" + pageReqVO.getLogisticsNumber().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("receiver_name", "*" + pageReqVO.getReceiverName().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getReceiverPhone())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("receiver_phone", "*" + pageReqVO.getReceiverPhone().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getReceiverAddress())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("receiver_address", "*" + pageReqVO.getReceiverAddress().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getProductSpecification())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("product_specification", "*" + pageReqVO.getProductSpecification().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getAfterSalesStatus())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("after_sales_status", "*" + pageReqVO.getAfterSalesStatus().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getSalesperson())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("salesperson", "*" + pageReqVO.getSalesperson().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + pageReqVO.getCustomerName().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getTransferPerson())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("transfer_person", "*" + pageReqVO.getTransferPerson().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("creator", "*" + pageReqVO.getCreator().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("purchase_remark.keyword", "*" + pageReqVO.getPurchaseRemark().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("sale_remark.keyword", "*" + pageReqVO.getSaleRemark().trim() + "*"));
         }
         
         // 时间范围
@@ -2583,6 +2639,12 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         }
         if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
             boolQuery.must(QueryBuilders.wildcardQuery("creator", "*" + pageReqVO.getCreator().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("purchase_remark.keyword", "*" + pageReqVO.getPurchaseRemark().trim() + "*"));
+        }
+        if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
+            boolQuery.must(QueryBuilders.wildcardQuery("sale_remark.keyword", "*" + pageReqVO.getSaleRemark().trim() + "*"));
         }
         
         // 精确匹配字段 - 只保留VO中已定义的字段

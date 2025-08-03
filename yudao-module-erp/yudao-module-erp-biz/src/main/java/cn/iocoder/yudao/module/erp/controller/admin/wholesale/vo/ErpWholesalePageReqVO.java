@@ -65,6 +65,12 @@ public class ErpWholesalePageReqVO extends PageParam {
     @Schema(description = "中转人员", example = "赵六")
     private String transferPerson;
 
+    @Schema(description = "采购备注", example = "备注信息")
+    private String purchaseRemark;
+
+    @Schema(description = "出货备注", example = "备注信息")
+    private String saleRemark;
+
     @Schema(description = "创建人员", example = "admin")
     private String creator;
 
