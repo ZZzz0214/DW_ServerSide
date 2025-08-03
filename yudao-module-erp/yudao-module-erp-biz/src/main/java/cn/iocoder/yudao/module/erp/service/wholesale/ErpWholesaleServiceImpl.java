@@ -838,42 +838,71 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchUpdatePurchaseAuditStatus(List<Long> ids, Integer purchaseAuditStatus) {
-        if (CollUtil.isEmpty(ids)) {
+    public void batchUpdatePurchaseAuditStatus(ErpWholesaleBatchUpdatePurchaseAuditReqVO reqVO) {
+        Integer purchaseAuditStatus = reqVO.getPurchaseAuditStatus();
+        LocalDateTime now = LocalDateTime.now();
+        
+        List<Long> targetIds = new ArrayList<>();
+        Map<Long, BigDecimal> idAmountMap = new HashMap<>();
+        
+        // 处理订单数据：无论是选择的数据还是全选的数据，都使用传递的订单数据
+        if (CollUtil.isNotEmpty(reqVO.getOrderData())) {
+            for (ErpWholesaleBatchUpdatePurchaseAuditReqVO.OrderData orderData : reqVO.getOrderData()) {
+                targetIds.add(orderData.getId());
+                idAmountMap.put(orderData.getId(), orderData.getTotalPurchaseAmount());
+            }
+        }
+        
+        if (CollUtil.isEmpty(targetIds)) {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        for (Long id : ids) {
-            // 1. 校验存在
-            Optional<ErpWholesaleCombinedESDO> combinedOpt = wholesaleCombinedESRepository.findById(id);
-            if (!combinedOpt.isPresent()) {
-                continue; // 跳过不存在的记录
-            }
-
+        // 1. 批量查询ES中的记录
+        Iterable<ErpWholesaleCombinedESDO> existingRecords = wholesaleCombinedESRepository.findAllById(targetIds);
+        List<ErpWholesaleCombinedESDO> esUpdateList = new ArrayList<>();
+        List<ErpWholesaleCombinedDO> dbUpdateList = new ArrayList<>();
+        
+        for (ErpWholesaleCombinedESDO combined : existingRecords) {
             // 2. 校验状态是否重复
-            if (combinedOpt.get().getPurchaseAuditStatus() != null &&
-                combinedOpt.get().getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
+            if (combined.getPurchaseAuditStatus() != null &&
+                combined.getPurchaseAuditStatus().equals(purchaseAuditStatus)) {
                 continue; // 跳过状态相同的记录
             }
 
             // 3. 更新采购审核状态
-            ErpWholesaleCombinedDO updateObj = new ErpWholesaleCombinedDO()
-                    .setId(id)
-                    .setPurchaseAuditStatus(purchaseAuditStatus);
+            combined.setPurchaseAuditStatus(purchaseAuditStatus);
 
-            // 根据审核状态设置相应时间
+            // 根据审核状态设置相应时间和金额
             if (purchaseAuditStatus == 20) { // 审核通过
-                updateObj.setPurchaseApprovalTime(now);
+                combined.setPurchaseApprovalTime(now);
+                // 设置PurchaseAuditTotalAmount等于采购总额
+                BigDecimal totalPurchaseAmount = idAmountMap.get(combined.getId());
+                if (totalPurchaseAmount != null) {
+                    combined.setPurchaseAuditTotalAmount(totalPurchaseAmount);
+                }
             } else if (purchaseAuditStatus == 10) { // 反审核
-                updateObj.setPurchaseUnapproveTime(now);
+                combined.setPurchaseUnapproveTime(now);
+                combined.setPurchaseAuditTotalAmount(null);
             }
 
-            wholesaleCombinedMapper.updateById(updateObj);
-
-            // 4. 同步到ES
-            syncCombinedToES(id);
+            esUpdateList.add(combined);
+            dbUpdateList.add(BeanUtils.toBean(combined, ErpWholesaleCombinedDO.class));
         }
+
+        // 4. 批量保存到ES
+        if (CollUtil.isNotEmpty(esUpdateList)) {
+            wholesaleCombinedESRepository.saveAll(esUpdateList);
+        }
+
+        // 5. 批量更新数据库
+        if (CollUtil.isNotEmpty(dbUpdateList)) {
+            for (ErpWholesaleCombinedDO dbRecord : dbUpdateList) {
+                wholesaleCombinedMapper.updateById(dbRecord);
+            }
+        }
+
+        // 6. 刷新ES索引
+        elasticsearchRestTemplate.indexOps(ErpWholesaleCombinedESDO.class).refresh();
     }
 
     @Override

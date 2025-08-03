@@ -947,9 +947,8 @@ public class ErpWholesaleController {
     @PutMapping("/batch-update-purchase-audit-status")
     @Operation(summary = "批量更新采购审核状态")
     @PreAuthorize("@ss.hasPermission('erp:wholesalePurchaseAu:update-status')")
-    public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestParam("ids") List<Long> ids,
-                                                                @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus) {
-        wholesaleService.batchUpdatePurchaseAuditStatus(ids, purchaseAuditStatus);
+    public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestBody @Valid ErpWholesaleBatchUpdatePurchaseAuditReqVO reqVO) {
+        wholesaleService.batchUpdatePurchaseAuditStatus(reqVO);
         return success(true);
     }
 
@@ -1316,6 +1315,14 @@ public class ErpWholesaleController {
             } catch (Exception e) {
                 throw new RuntimeException("导入失败: " + e.getMessage());
             }
+        }
+
+        @GetMapping("/export-all-data")
+        @Operation(summary = "获取全部批发数据（用于批量操作）")
+        @PreAuthorize("@ss.hasAnyPermissions('erp:wholesalePurchaseAu:query','erp:wholesale:query')")
+        public CommonResult<List<ErpWholesaleRespVO>> exportAllData(@Valid ErpWholesalePageReqVO pageReqVO) {
+            List<ErpWholesaleRespVO> list = wholesaleService.exportAllWholesales(pageReqVO);
+            return success(list);
         }
 
 
