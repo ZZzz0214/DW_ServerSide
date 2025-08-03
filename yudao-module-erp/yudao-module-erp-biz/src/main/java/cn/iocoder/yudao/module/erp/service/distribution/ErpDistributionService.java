@@ -79,10 +79,9 @@ public interface ErpDistributionService {
     /**
      * 批量更新采购审核状态
      *
-     * @param ids 编号列表
-     * @param purchaseAuditStatus 采购审核状态
+     * @param reqVO 批量更新请求VO
      */
-    void batchUpdatePurchaseAuditStatus(List<Long> ids, Integer purchaseAuditStatus);
+    void batchUpdatePurchaseAuditStatus(ErpDistributionBatchUpdatePurchaseAuditReqVO reqVO);
 
     /**
      * 更新销售售后信息

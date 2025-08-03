@@ -25,6 +25,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import org.springframework.web.multipart.MultipartFile;
@@ -489,9 +491,8 @@ public class ErpDistributionController {
     @PutMapping("/batch-update-purchase-audit-status")
     @Operation(summary = "批量更新采购审核状态")
     @PreAuthorize("@ss.hasPermission('erp:distributionPurchaseAu:update-purchase-audit-status')")
-    public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestParam("ids") List<Long> ids,
-                                                                @RequestParam("purchaseAuditStatus") Integer purchaseAuditStatus) {
-        distributionService.batchUpdatePurchaseAuditStatus(ids, purchaseAuditStatus);
+    public CommonResult<Boolean> batchUpdatePurchaseAuditStatus(@RequestBody @Valid ErpDistributionBatchUpdatePurchaseAuditReqVO reqVO) {
+        distributionService.batchUpdatePurchaseAuditStatus(reqVO);
         return success(true);
     }
 
