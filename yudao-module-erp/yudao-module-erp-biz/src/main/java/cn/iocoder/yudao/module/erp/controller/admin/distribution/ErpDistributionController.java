@@ -215,8 +215,8 @@ public class ErpDistributionController {
             if (vo.getPurchaseAfterSalesAmount() != null) {
                 totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
             }
-            if (vo.getTotalPurchaseAmount() != null) {
-                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getTotalPurchaseAmount());
+            if (vo.getPurchaseAuditTotalAmount() != null) {
+                totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
             }
         }
 
@@ -834,7 +834,7 @@ public class ErpDistributionController {
             if (vo.getPurchaseAfterSalesAmount() != null) {
                 totalPurchaseAfterSalesAmount = totalPurchaseAfterSalesAmount.add(vo.getPurchaseAfterSalesAmount());
             }
-            if (vo.getTotalPurchaseAmount() != null) {
+            if (vo.getPurchaseAuditTotalAmount() != null) {
                 totalPurchaseAuditTotalAmount = totalPurchaseAuditTotalAmount.add(vo.getPurchaseAuditTotalAmount());
             }
         }
