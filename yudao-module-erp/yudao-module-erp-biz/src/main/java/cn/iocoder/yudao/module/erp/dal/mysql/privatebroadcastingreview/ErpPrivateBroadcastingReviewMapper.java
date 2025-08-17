@@ -22,6 +22,9 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
     default PageResult<ErpPrivateBroadcastingReviewRespVO> selectPage(ErpPrivateBroadcastingReviewPageReqVO reqVO, String currentUsername) {
         MPJLambdaWrapperX<ErpPrivateBroadcastingReviewDO> query = new MPJLambdaWrapperX<ErpPrivateBroadcastingReviewDO>()
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getNo, reqVO.getNo())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getProductNakedPrice, reqVO.getNakedPrice())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getExpressFee, reqVO.getExpressFee())
+                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getDropshipPrice, reqVO.getDropshippingPrice())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getCreator, reqVO.getCreator())
@@ -54,6 +57,9 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
         query.leftJoin(ErpPrivateBroadcastingDO.class, ErpPrivateBroadcastingDO::getId, ErpPrivateBroadcastingReviewDO::getPrivateBroadcastingId);
 
         // 添加联表查询条件
+        if (reqVO.getPrivateBroadcastingNo() != null && !reqVO.getPrivateBroadcastingNo().isEmpty()) {
+            query.like(ErpPrivateBroadcastingDO::getNo, reqVO.getPrivateBroadcastingNo());
+        }
         if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
             query.like(ErpPrivateBroadcastingDO::getProductName, reqVO.getProductName());
         }

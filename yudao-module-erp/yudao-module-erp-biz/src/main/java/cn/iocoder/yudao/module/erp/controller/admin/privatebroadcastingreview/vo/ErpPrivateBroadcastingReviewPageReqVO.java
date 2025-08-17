@@ -21,6 +21,9 @@ public class ErpPrivateBroadcastingReviewPageReqVO extends PageParam {
     @Schema(description = "编号", example = "SBF001")
     private String no;
 
+    @Schema(description = "私播货盘编号", example = "PB001")
+    private String privateBroadcastingNo;
+
     @Schema(description = "品牌名称", example = "品牌A")
     private String brandName;
 

@@ -55,6 +55,9 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
         query.leftJoin(ErpGroupBuyingDO.class, ErpGroupBuyingDO::getNo, ErpGroupBuyingReviewDO::getGroupBuyingId);
 
         // 团购货盘搜索条件
+        if (reqVO.getGroupBuyingNo() != null && !reqVO.getGroupBuyingNo().isEmpty()) {
+            query.like(ErpGroupBuyingDO::getNo, reqVO.getGroupBuyingNo());
+        }
         if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
             query.like(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName());
         }

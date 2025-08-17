@@ -59,6 +59,9 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
         query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId);
 
         // 添加联表查询条件（需要在leftJoin之后单独处理）
+        if (reqVO.getLiveBroadcastingNo() != null && !reqVO.getLiveBroadcastingNo().isEmpty()) {
+            query.like(ErpLiveBroadcastingDO::getNo, reqVO.getLiveBroadcastingNo());
+        }
         if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
             query.like(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName());
         }
@@ -70,6 +73,9 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
         }
         if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
             query.like(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName());
+        }
+        if (reqVO.getLivePrice() != null && !reqVO.getLivePrice().isEmpty()) {
+            query.like(ErpLiveBroadcastingDO::getLivePrice, reqVO.getLivePrice());
         }
 
         query.selectAs(ErpLiveBroadcastingDO::getNo, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingNo)

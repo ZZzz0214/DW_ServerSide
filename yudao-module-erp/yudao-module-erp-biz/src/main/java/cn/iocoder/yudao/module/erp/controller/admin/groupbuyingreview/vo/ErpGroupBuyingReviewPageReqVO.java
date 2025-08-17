@@ -22,6 +22,9 @@ public class ErpGroupBuyingReviewPageReqVO extends PageParam {
     @Schema(description = "编号", example = "GBR001")
     private String no;
 
+    @Schema(description = "团购货盘编号", example = "GB001")
+    private String groupBuyingNo;
+
     @Schema(description = "品牌名称", example = "品牌A")
     private String brandName;
 
