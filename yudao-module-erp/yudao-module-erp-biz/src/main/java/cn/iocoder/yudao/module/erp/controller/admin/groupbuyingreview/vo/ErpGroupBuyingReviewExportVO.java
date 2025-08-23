@@ -47,7 +47,7 @@ public class ErpGroupBuyingReviewExportVO {
     private String customerName;
 
 
-    @ExcelProperty("供团价格")
+    @ExcelProperty("供货价格")
     private BigDecimal supplyGroupPrice;
 
     @ExcelProperty("快递费用")

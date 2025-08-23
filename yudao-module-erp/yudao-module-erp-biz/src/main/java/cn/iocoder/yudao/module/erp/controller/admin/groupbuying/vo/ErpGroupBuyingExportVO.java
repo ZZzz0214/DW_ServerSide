@@ -65,8 +65,8 @@ public class ErpGroupBuyingExportVO {
     @ExcelProperty("分发价格")
     private BigDecimal distributionPrice;
 
-    @Schema(description = "供团价格", example = "90.00")
-    @ExcelProperty("供团价格")
+    @Schema(description = "供货价格", example = "90.00")
+    @ExcelProperty("供货价格")
     private BigDecimal supplyGroupPrice;
 
     @Schema(description = "帮卖佣金", example = "10.00")
