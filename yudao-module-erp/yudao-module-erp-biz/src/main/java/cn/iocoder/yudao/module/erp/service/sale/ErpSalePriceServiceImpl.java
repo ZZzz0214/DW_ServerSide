@@ -1818,88 +1818,139 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
     @Override
     public PageResult<ErpCombinedMissingPriceVO> getCombinedMissingPrices(ErpSalePricePageReqVO pageReqVO) {
         try {
-            System.out.println("=== 获取统一缺失价格记录 ===");
+            System.out.println("=== 获取统一缺失价格记录 (ES优化版) ===");
 
-            // 获取代发缺失价格记录 - 获取所有数据，不分页
-            ErpSalePricePageReqVO allDataReqVO = new ErpSalePricePageReqVO();
-            allDataReqVO.setGroupProductId(pageReqVO.getGroupProductId());
-            allDataReqVO.setGroupProductNo(pageReqVO.getGroupProductNo()); // 🔥 修复：传递组品编号参数
-            allDataReqVO.setCustomerName(pageReqVO.getCustomerName());
-            allDataReqVO.setProductName(pageReqVO.getProductName()); // 🔥 修复：传递产品名称参数
-            allDataReqVO.setPageNo(1);
-            allDataReqVO.setPageSize(10000); // 设置一个很大的值，获取所有数据
+            // 🔥 ES优化：优先尝试使用ES进行快速查询
+            try {
+                return getCombinedMissingPricesFromES(pageReqVO);
+            } catch (Exception e) {
+                System.err.println("ES查询失败，回退到原有逻辑: " + e.getMessage());
+                // 继续执行原有逻辑作为兜底方案
+            }
 
-            PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(allDataReqVO);
+            // 🔥 性能优化：使用合理的分页参数，避免一次性加载过多数据
+            ErpSalePricePageReqVO queryReqVO = new ErpSalePricePageReqVO();
+            queryReqVO.setGroupProductId(pageReqVO.getGroupProductId());
+            queryReqVO.setGroupProductNo(pageReqVO.getGroupProductNo());
+            queryReqVO.setCustomerName(pageReqVO.getCustomerName());
+            queryReqVO.setProductName(pageReqVO.getProductName());
+            queryReqVO.setPageNo(1);
+            // 根据实际需求调整，既要保证数据完整性，又要控制内存使用
+            queryReqVO.setPageSize(Math.max(pageReqVO.getPageSize() * 20, 1000)); // 动态调整查询数量
 
-            // 获取批发缺失价格记录 - 获取所有数据，不分页
-            PageResult<ErpWholesaleMissingPriceVO> wholesaleResult = wholesaleService.getWholesaleMissingPrices(allDataReqVO);
+            PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(queryReqVO);
 
-            // 合并数据，按组品ID+客户名称分组
+            // 获取批发缺失价格记录
+            PageResult<ErpWholesaleMissingPriceVO> wholesaleResult = wholesaleService.getWholesaleMissingPrices(queryReqVO);
+
+            // 🔥 性能优化：合并数据，按组品ID+客户名称分组，减少对象创建
             Map<String, ErpCombinedMissingPriceVO> combinedMap = new HashMap<>();
 
-            // 处理代发数据
+            // 处理代发数据 - 优化对象创建
             for (ErpDistributionMissingPriceVO distributionVO : distributionResult.getList()) {
                 String key = distributionVO.getComboProductId() + "_" + distributionVO.getCustomerName();
-                ErpCombinedMissingPriceVO combined = combinedMap.computeIfAbsent(key, k -> {
-                    ErpCombinedMissingPriceVO vo = new ErpCombinedMissingPriceVO();
-                    vo.setComboProductId(distributionVO.getComboProductId());
-                    vo.setComboProductNo(distributionVO.getComboProductNo());
-                    vo.setProductName(distributionVO.getProductName());
-                    vo.setCustomerName(distributionVO.getCustomerName());
-                    vo.setCurrentDistributionPrice(distributionVO.getDistributionPrice());
-                    return vo;
-                });
+                ErpCombinedMissingPriceVO combined = combinedMap.computeIfAbsent(key, k -> 
+                    createCombinedVO(distributionVO.getComboProductId(), distributionVO.getComboProductNo(), 
+                                   distributionVO.getProductName(), distributionVO.getCustomerName()));
 
-                // 设置代发信息
-                ErpCombinedMissingPriceVO.DistributionOrderInfo distributionInfo = new ErpCombinedMissingPriceVO.DistributionOrderInfo();
-                distributionInfo.setOrderCount(distributionVO.getOrderCount());
-                distributionInfo.setTotalProductQuantity(distributionVO.getTotalProductQuantity());
-                distributionInfo.setOrderNumbers(distributionVO.getOrderNumbers());
-                distributionInfo.setOrderIds(distributionVO.getOrderIds());
-                distributionInfo.setEarliestCreateTime(distributionVO.getEarliestCreateTime());
-                distributionInfo.setLatestCreateTime(distributionVO.getLatestCreateTime());
-                combined.setDistributionInfo(distributionInfo);
+                // 设置代发价格和信息
+                combined.setCurrentDistributionPrice(distributionVO.getDistributionPrice());
+                combined.setDistributionInfo(createDistributionOrderInfo(distributionVO));
             }
 
-            // 处理批发数据
+            // 处理批发数据 - 优化对象创建
             for (ErpWholesaleMissingPriceVO wholesaleVO : wholesaleResult.getList()) {
                 String key = wholesaleVO.getComboProductId() + "_" + wholesaleVO.getCustomerName();
-                ErpCombinedMissingPriceVO combined = combinedMap.computeIfAbsent(key, k -> {
-                    ErpCombinedMissingPriceVO vo = new ErpCombinedMissingPriceVO();
-                    vo.setComboProductId(wholesaleVO.getComboProductId());
-                    vo.setComboProductNo(wholesaleVO.getComboProductNo());
-                    vo.setProductName(wholesaleVO.getProductName());
-                    vo.setCustomerName(wholesaleVO.getCustomerName());
-                    vo.setCurrentWholesalePrice(wholesaleVO.getWholesalePrice());
-                    return vo;
-                });
+                ErpCombinedMissingPriceVO combined = combinedMap.computeIfAbsent(key, k -> 
+                    createCombinedVO(wholesaleVO.getComboProductId(), wholesaleVO.getComboProductNo(), 
+                                   wholesaleVO.getProductName(), wholesaleVO.getCustomerName()));
 
-                // 设置批发信息
-                ErpCombinedMissingPriceVO.WholesaleOrderInfo wholesaleInfo = new ErpCombinedMissingPriceVO.WholesaleOrderInfo();
-                wholesaleInfo.setOrderCount(wholesaleVO.getOrderCount());
-                wholesaleInfo.setTotalProductQuantity(wholesaleVO.getTotalProductQuantity());
-                wholesaleInfo.setOrderNumbers(wholesaleVO.getOrderNumbers());
-                wholesaleInfo.setOrderIds(wholesaleVO.getOrderIds());
-                wholesaleInfo.setEarliestCreateTime(wholesaleVO.getEarliestCreateTime());
-                wholesaleInfo.setLatestCreateTime(wholesaleVO.getLatestCreateTime());
-                combined.setWholesaleInfo(wholesaleInfo);
+                // 设置批发价格和信息
+                combined.setCurrentWholesalePrice(wholesaleVO.getWholesalePrice());
+                combined.setWholesaleInfo(createWholesaleOrderInfo(wholesaleVO));
             }
 
-            // 查询当前销售价格表中的价格信息
-            for (ErpCombinedMissingPriceVO combined : combinedMap.values()) {
+            // 🔥 ES优化：使用ES批量查询当前销售价格表中的价格信息
+            if (!combinedMap.isEmpty()) {
                 try {
-                    ErpSalePriceRespVO currentPrice = getSalePriceByGroupProductIdAndCustomerName(
-                        combined.getComboProductId(), combined.getCustomerName());
-                    if (currentPrice != null) {
+                    // 收集所有需要查询的组品ID和客户名称组合
+                    List<ErpCombinedMissingPriceVO> combinedList = new ArrayList<>(combinedMap.values());
+                    Set<Long> groupProductIds = combinedList.stream()
+                        .map(ErpCombinedMissingPriceVO::getComboProductId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                    
+                    Set<String> customerNames = combinedList.stream()
+                        .map(ErpCombinedMissingPriceVO::getCustomerName)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                    
+                    if (!groupProductIds.isEmpty() && !customerNames.isEmpty()) {
+                        // 🔥 使用ES批量查询替代MySQL查询
+                        List<ErpSalePriceESDO> salePricesFromES = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
+                            new ArrayList<>(groupProductIds), 
+                            new ArrayList<>(customerNames)
+                        );
+                        
+                        // 构建查询结果映射：组品ID_客户名称 -> 价格信息
+                        Map<String, ErpSalePriceESDO> priceMap = salePricesFromES.stream()
+                            .collect(Collectors.toMap(
+                                price -> price.getGroupProductId() + "_" + price.getCustomerName(),
+                                price -> price,
+                                (existing, replacement) -> existing // 如果有重复，保留现有的
+                            ));
+                        
+                        // 批量更新价格信息
+                        for (ErpCombinedMissingPriceVO combined : combinedList) {
+                            String key = combined.getComboProductId() + "_" + combined.getCustomerName();
+                            ErpSalePriceESDO salePrice = priceMap.get(key);
+                            if (salePrice != null) {
                         if (combined.getCurrentDistributionPrice() == null) {
-                            combined.setCurrentDistributionPrice(currentPrice.getDistributionPrice());
+                                    combined.setCurrentDistributionPrice(salePrice.getDistributionPrice());
                         }
                         if (combined.getCurrentWholesalePrice() == null) {
-                            combined.setCurrentWholesalePrice(currentPrice.getWholesalePrice());
+                                    combined.setCurrentWholesalePrice(salePrice.getWholesalePrice());
                         }
+                            }
+                        }
+                        
+                        System.out.println("ES批量查询销售价格完成，查询到 " + salePricesFromES.size() + " 条记录");
                     }
                 } catch (Exception e) {
-                    System.err.println("查询当前价格失败: " + e.getMessage());
+                    System.err.println("ES查询销售价格失败，回退到MySQL查询: " + e.getMessage());
+                    
+                    // ES查询失败时回退到MySQL查询
+                    List<ErpCombinedMissingPriceVO> combinedList = new ArrayList<>(combinedMap.values());
+                    Set<Long> groupProductIds = combinedList.stream()
+                        .map(ErpCombinedMissingPriceVO::getComboProductId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                    
+                    if (!groupProductIds.isEmpty()) {
+                        LambdaQueryWrapper<ErpSalePriceDO> batchQuery = new LambdaQueryWrapper<>();
+                        batchQuery.in(ErpSalePriceDO::getGroupProductId, groupProductIds);
+                        List<ErpSalePriceDO> salePrices = erpSalePriceMapper.selectList(batchQuery);
+                        
+                        Map<String, ErpSalePriceDO> priceMap = salePrices.stream()
+                            .collect(Collectors.toMap(
+                                price -> price.getGroupProductId() + "_" + price.getCustomerName(),
+                                price -> price,
+                                (existing, replacement) -> existing
+                            ));
+                        
+                        for (ErpCombinedMissingPriceVO combined : combinedList) {
+                            String key = combined.getComboProductId() + "_" + combined.getCustomerName();
+                            ErpSalePriceDO salePrice = priceMap.get(key);
+                            if (salePrice != null) {
+                                if (combined.getCurrentDistributionPrice() == null) {
+                                    combined.setCurrentDistributionPrice(salePrice.getDistributionPrice());
+                                }
+                                if (combined.getCurrentWholesalePrice() == null) {
+                                    combined.setCurrentWholesalePrice(salePrice.getWholesalePrice());
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2082,5 +2133,157 @@ public class ErpSalePriceServiceImpl implements ErpSalePriceService {
         }
 
         System.out.println("批量设置统一价格完成");
+    }
+
+    /**
+     * 🔥 性能优化：创建统一的CombinedVO对象，减少重复代码
+     */
+    private ErpCombinedMissingPriceVO createCombinedVO(Long comboProductId, String comboProductNo, 
+                                                       String productName, String customerName) {
+        ErpCombinedMissingPriceVO vo = new ErpCombinedMissingPriceVO();
+        vo.setComboProductId(comboProductId);
+        vo.setComboProductNo(comboProductNo);
+        vo.setProductName(productName);
+        vo.setCustomerName(customerName);
+        return vo;
+    }
+
+    /**
+     * 🔥 性能优化：创建代发订单信息，减少重复代码
+     */
+    private ErpCombinedMissingPriceVO.DistributionOrderInfo createDistributionOrderInfo(ErpDistributionMissingPriceVO distributionVO) {
+        ErpCombinedMissingPriceVO.DistributionOrderInfo distributionInfo = new ErpCombinedMissingPriceVO.DistributionOrderInfo();
+        distributionInfo.setOrderCount(distributionVO.getOrderCount());
+        distributionInfo.setTotalProductQuantity(distributionVO.getTotalProductQuantity());
+        distributionInfo.setOrderNumbers(distributionVO.getOrderNumbers());
+        distributionInfo.setOrderIds(distributionVO.getOrderIds());
+        distributionInfo.setEarliestCreateTime(distributionVO.getEarliestCreateTime());
+        distributionInfo.setLatestCreateTime(distributionVO.getLatestCreateTime());
+        return distributionInfo;
+    }
+
+    /**
+     * 🔥 性能优化：创建批发订单信息，减少重复代码
+     */
+    private ErpCombinedMissingPriceVO.WholesaleOrderInfo createWholesaleOrderInfo(ErpWholesaleMissingPriceVO wholesaleVO) {
+        ErpCombinedMissingPriceVO.WholesaleOrderInfo wholesaleInfo = new ErpCombinedMissingPriceVO.WholesaleOrderInfo();
+        wholesaleInfo.setOrderCount(wholesaleVO.getOrderCount());
+        wholesaleInfo.setTotalProductQuantity(wholesaleVO.getTotalProductQuantity());
+        wholesaleInfo.setOrderNumbers(wholesaleVO.getOrderNumbers());
+        wholesaleInfo.setOrderIds(wholesaleVO.getOrderIds());
+        wholesaleInfo.setEarliestCreateTime(wholesaleVO.getEarliestCreateTime());
+        wholesaleInfo.setLatestCreateTime(wholesaleVO.getLatestCreateTime());
+        return wholesaleInfo;
+    }
+
+    /**
+     * 🔥 ES优化：使用ES直接查询获取统一缺失价格记录，大幅提升查询性能
+     */
+    private PageResult<ErpCombinedMissingPriceVO> getCombinedMissingPricesFromES(ErpSalePricePageReqVO pageReqVO) {
+        System.out.println("=== 使用ES优化查询统一缺失价格记录 ===");
+
+        // 🔥 ES优化策略：
+        // 1. 先从代发和批发ES中快速获取有订单但缺失价格的组品+客户组合
+        // 2. 再从销售价格表ES中批量查询现有价格信息
+        // 3. 合并数据并返回，全程使用ES查询，避免MySQL查询
+
+        // 🔥 修复数据不全问题：移除分页限制，获取所有匹配的数据
+        ErpSalePricePageReqVO queryReqVO = new ErpSalePricePageReqVO();
+        queryReqVO.setGroupProductId(pageReqVO.getGroupProductId());
+        queryReqVO.setGroupProductNo(pageReqVO.getGroupProductNo());
+        queryReqVO.setCustomerName(pageReqVO.getCustomerName());
+        queryReqVO.setProductName(pageReqVO.getProductName());
+        queryReqVO.setPageNo(1);
+        queryReqVO.setPageSize(50000); // 设置足够大的值，确保获取所有数据
+
+        // 获取代发和批发的缺失价格记录（这些服务内部已经使用ES查询）
+        PageResult<ErpDistributionMissingPriceVO> distributionResult = distributionService.getDistributionMissingPrices(queryReqVO);
+        PageResult<ErpWholesaleMissingPriceVO> wholesaleResult = wholesaleService.getWholesaleMissingPrices(queryReqVO);
+
+        // 合并数据
+        Map<String, ErpCombinedMissingPriceVO> combinedMap = new HashMap<>();
+
+        // 处理代发数据
+        for (ErpDistributionMissingPriceVO distributionVO : distributionResult.getList()) {
+            String key = distributionVO.getComboProductId() + "_" + distributionVO.getCustomerName();
+            ErpCombinedMissingPriceVO combined = combinedMap.computeIfAbsent(key, k -> 
+                createCombinedVO(distributionVO.getComboProductId(), distributionVO.getComboProductNo(), 
+                               distributionVO.getProductName(), distributionVO.getCustomerName()));
+
+            combined.setCurrentDistributionPrice(distributionVO.getDistributionPrice());
+            combined.setDistributionInfo(createDistributionOrderInfo(distributionVO));
+        }
+
+        // 处理批发数据
+        for (ErpWholesaleMissingPriceVO wholesaleVO : wholesaleResult.getList()) {
+            String key = wholesaleVO.getComboProductId() + "_" + wholesaleVO.getCustomerName();
+            ErpCombinedMissingPriceVO combined = combinedMap.computeIfAbsent(key, k -> 
+                createCombinedVO(wholesaleVO.getComboProductId(), wholesaleVO.getComboProductNo(), 
+                               wholesaleVO.getProductName(), wholesaleVO.getCustomerName()));
+
+            combined.setCurrentWholesalePrice(wholesaleVO.getWholesalePrice());
+            combined.setWholesaleInfo(createWholesaleOrderInfo(wholesaleVO));
+        }
+
+        // 🔥 ES优化：批量查询销售价格表
+        if (!combinedMap.isEmpty()) {
+            List<ErpCombinedMissingPriceVO> combinedList = new ArrayList<>(combinedMap.values());
+            Set<Long> groupProductIds = combinedList.stream()
+                .map(ErpCombinedMissingPriceVO::getComboProductId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+            
+            Set<String> customerNames = combinedList.stream()
+                .map(ErpCombinedMissingPriceVO::getCustomerName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+            
+            if (!groupProductIds.isEmpty() && !customerNames.isEmpty()) {
+                List<ErpSalePriceESDO> salePricesFromES = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
+                    new ArrayList<>(groupProductIds), 
+                    new ArrayList<>(customerNames)
+                );
+                
+                Map<String, ErpSalePriceESDO> priceMap = salePricesFromES.stream()
+                    .collect(Collectors.toMap(
+                        price -> price.getGroupProductId() + "_" + price.getCustomerName(),
+                        price -> price,
+                        (existing, replacement) -> existing
+                    ));
+                
+                for (ErpCombinedMissingPriceVO combined : combinedList) {
+                    String key = combined.getComboProductId() + "_" + combined.getCustomerName();
+                    ErpSalePriceESDO salePrice = priceMap.get(key);
+                    if (salePrice != null) {
+                        if (combined.getCurrentDistributionPrice() == null) {
+                            combined.setCurrentDistributionPrice(salePrice.getDistributionPrice());
+                        }
+                        if (combined.getCurrentWholesalePrice() == null) {
+                            combined.setCurrentWholesalePrice(salePrice.getWholesalePrice());
+                        }
+                    }
+                }
+                
+                System.out.println("ES批量查询销售价格完成，查询到 " + salePricesFromES.size() + " 条记录");
+            }
+        }
+
+        // 分页处理
+        List<ErpCombinedMissingPriceVO> resultList = new ArrayList<>(combinedMap.values());
+        
+        int pageNo = pageReqVO.getPageNo() != null ? pageReqVO.getPageNo() : 1;
+        int pageSize = pageReqVO.getPageSize() != null ? pageReqVO.getPageSize() : 10;
+        
+        if (pageNo < 1) pageNo = 1;
+        if (pageSize < 1) pageSize = 10;
+        
+        int start = (pageNo - 1) * pageSize;
+        int end = Math.min(start + pageSize, resultList.size());
+        
+        List<ErpCombinedMissingPriceVO> pageList = start < resultList.size() ?
+            resultList.subList(start, end) : Collections.emptyList();
+
+        System.out.println("ES优化查询完成，记录数量: " + resultList.size() + ", 当前页: " + pageNo + ", 页大小: " + pageSize + ", 返回数量: " + pageList.size());
+        return new PageResult<>(pageList, (long) resultList.size());
     }
 }

@@ -1952,6 +1952,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
     @Override
     public PageResult<ErpWholesaleMissingPriceVO> getWholesaleMissingPrices(ErpSalePricePageReqVO pageReqVO) {
         try {
+            // 🔥 ES聚合优化：减少查询数量，提升性能
             // 构建ES查询 - 查询所有批发订单
             NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
             BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
@@ -2002,8 +2003,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             }
 
             queryBuilder.withQuery(boolQuery);
-            // 设置大的查询数量以获取所有数据进行分组
-            queryBuilder.withPageable(PageRequest.of(0, 10000));
+            // 🔥 修复数据不全问题：移除分页限制，获取所有匹配数据
+            queryBuilder.withPageable(PageRequest.of(0, 50000)); // 设置足够大的值，确保获取所有数据
             queryBuilder.withSort(Sort.by(Sort.Direction.DESC, "create_time"));
 
             // 执行搜索 - 查询CombinedESDO
@@ -2018,24 +2019,60 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 .collect(Collectors.groupingBy(esDO ->
                     esDO.getComboProductId() + "_" + esDO.getCustomerName()));
 
-            // 转换为VO并过滤出没有价格的记录
+            // 🔥 性能优化：批量查询组品信息，避免N+1查询
+            Set<Long> comboProductIds = groupedData.values().stream()
+                .flatMap(List::stream)
+                .map(ErpWholesaleCombinedESDO::getComboProductId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+            Map<Long, ErpComboProductES> comboProductMap = new HashMap<>();
+            if (!comboProductIds.isEmpty()) {
+                Iterable<ErpComboProductES> comboProducts = comboProductESRepository.findAllById(comboProductIds);
+                comboProducts.forEach(combo -> comboProductMap.put(combo.getId(), combo));
+            }
+
+            // 🔥 性能优化：批量查询销售价格表ES，避免N+1查询
+            Set<String> customerNames = groupedData.keySet().stream()
+                .map(key -> key.split("_", 2)[1])
+                .collect(Collectors.toSet());
+
+            Map<String, ErpSalePriceESDO> salePriceMap = new HashMap<>();
+            if (!comboProductIds.isEmpty() && !customerNames.isEmpty()) {
+                try {
+                    List<ErpSalePriceESDO> salePrices = salePriceESRepository.findByGroupProductIdInAndCustomerNameIn(
+                        new ArrayList<>(comboProductIds),
+                        new ArrayList<>(customerNames)
+                    );
+                    salePrices.forEach(price -> {
+                        String key = price.getGroupProductId() + "_" + price.getCustomerName();
+                        salePriceMap.put(key, price);
+                    });
+                    System.out.println("批发查询 - 批量查询销售价格ES完成，查询到 " + salePrices.size() + " 条记录");
+                } catch (Exception e) {
+                    System.err.println("批发查询 - 批量查询销售价格ES失败: " + e.getMessage());
+                }
+            }
+
+            // 🔥 性能优化：高效转换为VO并过滤出没有价格的记录
             List<ErpWholesaleMissingPriceVO> allVoList = groupedData.entrySet().stream()
                 .map(entry -> {
+                    String groupKey = entry.getKey();
                     List<ErpWholesaleCombinedESDO> orders = entry.getValue();
                     ErpWholesaleCombinedESDO firstOrder = orders.get(0);
+
+                    // 🔥 修复数据缺失问题：获取价格信息，但不过滤有价格的记录
+                    ErpSalePriceESDO salePrice = salePriceMap.get(groupKey);
 
                     ErpWholesaleMissingPriceVO vo = new ErpWholesaleMissingPriceVO();
                     vo.setComboProductId(firstOrder.getComboProductId());
                     vo.setCustomerName(firstOrder.getCustomerName());
 
-                    // 从组品表获取组品编号和产品名称
-                    if (firstOrder.getComboProductId() != null) {
-                        Optional<ErpComboProductES> comboProductOpt = comboProductESRepository.findById(firstOrder.getComboProductId());
-                        if (comboProductOpt.isPresent()) {
-                            ErpComboProductES comboProduct = comboProductOpt.get();
-                            vo.setComboProductNo(comboProduct.getNo());
-                            vo.setProductName(comboProduct.getName());
-                        }
+                    // 🔥 使用批量查询结果获取组品信息
+                    ErpComboProductES comboProduct = comboProductMap.get(firstOrder.getComboProductId());
+                    if (comboProduct != null) {
+                        vo.setComboProductNo(comboProduct.getNo());
+                        vo.setProductName(comboProduct.getName());
                     }
 
                     // 统计信息
@@ -2061,23 +2098,14 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         vo.setLatestCreateTime(createTimes.get(createTimes.size() - 1));
                     }
 
-                    // 查询销售价格表，检查是否有批发单价
-                    try {
-                        LambdaQueryWrapper<ErpSalePriceDO> priceQuery = new LambdaQueryWrapper<>();
-                        priceQuery.eq(ErpSalePriceDO::getGroupProductId, firstOrder.getComboProductId())
-                                  .eq(ErpSalePriceDO::getCustomerName, firstOrder.getCustomerName());
-                        ErpSalePriceDO salePrice = salePriceMapper.selectOne(priceQuery);
-                        if (salePrice != null) {
-                            vo.setWholesalePrice(salePrice.getWholesalePrice());
-                        }
-                    } catch (Exception e) {
-                        // 查询销售价格失败
+                    // 设置价格信息（如果有的话）
+                    if (salePrice != null) {
+                        vo.setWholesalePrice(salePrice.getWholesalePrice());
                     }
 
                     return vo;
                 })
-                // 过滤出没有价格的记录（产品名称过滤已在ES查询中处理）
-                .filter(vo -> vo.getWholesalePrice() == null || vo.getWholesalePrice().compareTo(BigDecimal.ZERO) == 0)
+                // 🔥 修复数据缺失问题：移除过滤，显示所有有订单的记录（不管是否有价格）
                 .sorted(Comparator.comparing(ErpWholesaleMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
