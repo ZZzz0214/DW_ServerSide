@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.wholesale.vo;
 
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.format.NumberFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -62,9 +63,11 @@ public class ErpWholesaleSaleExportExcelVO {
     private BigDecimal saleLogisticsFee;
 
     @ExcelProperty("出货杂费")
+    @NumberFormat("#.00")
     private BigDecimal saleOtherFees;
 
     @ExcelProperty("出货总额")
+    @NumberFormat("#.00")
     private BigDecimal totalSaleAmount;
 
     @ExcelProperty("出货备注")

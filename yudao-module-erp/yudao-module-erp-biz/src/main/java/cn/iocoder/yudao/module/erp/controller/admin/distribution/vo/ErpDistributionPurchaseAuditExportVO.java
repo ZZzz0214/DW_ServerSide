@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo;
 
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.format.NumberFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -79,9 +80,11 @@ public class ErpDistributionPurchaseAuditExportVO {
     private BigDecimal shippingFee;
 
     @ExcelProperty("采购杂费")
+    @NumberFormat("#.00")
     private BigDecimal otherFees;
 
     @ExcelProperty("采购总额")
+    @NumberFormat("#.00")
     private BigDecimal totalPurchaseAmount;
 
     @ExcelProperty("采购备注")
@@ -97,6 +100,7 @@ public class ErpDistributionPurchaseAuditExportVO {
     private Integer purchaseAuditStatus;
 
     @ExcelProperty("采购审核金额")
+    @NumberFormat("#.00")
     private BigDecimal purchaseAuditTotalAmount;
 
     @ExcelProperty("采购审核时间")
@@ -109,6 +113,7 @@ public class ErpDistributionPurchaseAuditExportVO {
     private Integer purchaseAfterSalesStatus;
 
     @ExcelProperty("采购售后金额")
+    @NumberFormat("#.00")
     private BigDecimal purchaseAfterSalesAmount;
 
     @ExcelProperty("采购售后时间")

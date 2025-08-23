@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.format.NumberFormat;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -75,9 +76,11 @@ public class ErpDistributionSaleAuditOutExportVO {
     private BigDecimal saleShippingFee;
 
     @ExcelProperty("出货杂费")
+    @NumberFormat("#.00")
     private BigDecimal saleOtherFees;
 
     @ExcelProperty("出货总额")
+    @NumberFormat("#.00")
     private BigDecimal totalSaleAmount;
 
     @ExcelProperty("出货备注")
@@ -96,6 +99,7 @@ public class ErpDistributionSaleAuditOutExportVO {
     private Integer saleAuditStatus;
 
     @ExcelProperty("出货审核金额")
+    @NumberFormat("#.00")
     private BigDecimal saleAuditTotalAmount;
 
     @ExcelProperty("出货审核时间")
