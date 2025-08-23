@@ -2664,45 +2664,45 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
         // 构建基础查询条件
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-        // 批发表自身字段搜索
+        // 批发表自身字段搜索 - 使用与分页查询相同的策略
         if (StrUtil.isNotBlank(pageReqVO.getNo())) {
-            boolQuery.must(QueryBuilders.termQuery("no", pageReqVO.getNo().trim()));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("no", pageReqVO.getNo().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getLogisticsNumber())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("logistics_number", "*" + pageReqVO.getLogisticsNumber().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("logistics_number", pageReqVO.getLogisticsNumber().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("receiver_name", "*" + pageReqVO.getReceiverName().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("receiver_name", pageReqVO.getReceiverName().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getReceiverPhone())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("receiver_phone", "*" + pageReqVO.getReceiverPhone().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("receiver_phone", pageReqVO.getReceiverPhone().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getReceiverAddress())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("receiver_address", "*" + pageReqVO.getReceiverAddress().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("receiver_address", pageReqVO.getReceiverAddress().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getProductSpecification())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("product_specification", "*" + pageReqVO.getProductSpecification().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("product_specification", pageReqVO.getProductSpecification().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getAfterSalesStatus())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("after_sales_status", "*" + pageReqVO.getAfterSalesStatus().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("after_sales_status", pageReqVO.getAfterSalesStatus().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getSalesperson())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("salesperson", "*" + pageReqVO.getSalesperson().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("salesperson", pageReqVO.getSalesperson().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + pageReqVO.getCustomerName().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("customer_name", pageReqVO.getCustomerName().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getTransferPerson())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("transfer_person", "*" + pageReqVO.getTransferPerson().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("transfer_person", pageReqVO.getTransferPerson().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getCreator())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("creator", "*" + pageReqVO.getCreator().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("creator", pageReqVO.getCreator().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getPurchaseRemark())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("purchase_remark.keyword", "*" + pageReqVO.getPurchaseRemark().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("purchase_remark", pageReqVO.getPurchaseRemark().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getSaleRemark())) {
-            boolQuery.must(QueryBuilders.wildcardQuery("sale_remark.keyword", "*" + pageReqVO.getSaleRemark().trim() + "*"));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("sale_remark", pageReqVO.getSaleRemark().trim()));
         }
 
         // 精确匹配字段 - 只保留VO中已定义的字段
@@ -2713,7 +2713,7 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             boolQuery.must(QueryBuilders.termQuery("sale_audit_status", pageReqVO.getSaleAuditStatus()));
         }
 
-        // 组品相关搜索条件需要先查询组品表
+        // 组品相关搜索条件需要先查询组品表 - 使用与分页查询相同的策略
         if (StrUtil.isNotBlank(pageReqVO.getComboProductNo()) ||
             StrUtil.isNotBlank(pageReqVO.getShippingCode()) ||
             StrUtil.isNotBlank(pageReqVO.getProductName()) ||
@@ -2721,19 +2721,19 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
             StrUtil.isNotBlank(pageReqVO.getSupplier())) {
             BoolQueryBuilder comboQuery = QueryBuilders.boolQuery();
             if (StrUtil.isNotBlank(pageReqVO.getComboProductNo())) {
-                comboQuery.must(QueryBuilders.wildcardQuery("no", "*" + pageReqVO.getComboProductNo().trim() + "*"));
+                comboQuery.must(createSimplifiedKeywordMatchQuery("no", pageReqVO.getComboProductNo().trim()));
             }
             if (StrUtil.isNotBlank(pageReqVO.getShippingCode())) {
-                comboQuery.must(QueryBuilders.wildcardQuery("shipping_code", "*" + pageReqVO.getShippingCode().trim() + "*"));
+                comboQuery.must(createSimplifiedKeywordMatchQuery("shipping_code", pageReqVO.getShippingCode().trim()));
             }
             if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
-                comboQuery.must(QueryBuilders.wildcardQuery("name", "*" + pageReqVO.getProductName().trim() + "*"));
+                comboQuery.must(createSimplifiedKeywordMatchQuery("name", pageReqVO.getProductName().trim()));
             }
             if (StrUtil.isNotBlank(pageReqVO.getPurchaser())) {
-                comboQuery.must(QueryBuilders.wildcardQuery("purchaser", "*" + pageReqVO.getPurchaser().trim() + "*"));
+                comboQuery.must(createSimplifiedKeywordMatchQuery("purchaser", pageReqVO.getPurchaser().trim()));
             }
             if (StrUtil.isNotBlank(pageReqVO.getSupplier())) {
-                comboQuery.must(QueryBuilders.wildcardQuery("supplier", "*" + pageReqVO.getSupplier().trim() + "*"));
+                comboQuery.must(createSimplifiedKeywordMatchQuery("supplier", pageReqVO.getSupplier().trim()));
             }
             NativeSearchQuery comboSearchQuery = new NativeSearchQueryBuilder()
                     .withQuery(comboQuery)
@@ -2749,8 +2749,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                         .collect(Collectors.toList());
                 boolQuery.must(QueryBuilders.termsQuery("combo_product_id", comboProductIds));
             } else {
-                // 没有符合条件的组品，返回空查询
-                boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                // 没有符合条件的组品，直接返回空结果
+                return Collections.emptyList();
             }
         }
 
