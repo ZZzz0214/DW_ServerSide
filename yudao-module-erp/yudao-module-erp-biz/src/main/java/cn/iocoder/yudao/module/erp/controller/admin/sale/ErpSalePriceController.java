@@ -181,7 +181,7 @@ public class ErpSalePriceController {
 
     @PostMapping("/batch-set-combined-prices")
     @Operation(summary = "批量设置统一价格（代发+批发）")
-    @PreAuthorize("@ss.hasPermission('erp:sale-price:update')")
+    @PreAuthorize("@ss.hasPermission('erp:sale-price:create')")
     public CommonResult<Boolean> batchSetCombinedPrices(@Valid @RequestBody List<ErpCombinedPriceSetReqVO> reqList) {
         salePriceService.batchSetCombinedPrices(reqList);
         return success(true);
