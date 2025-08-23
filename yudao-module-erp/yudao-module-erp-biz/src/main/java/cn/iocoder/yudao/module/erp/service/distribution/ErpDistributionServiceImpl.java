@@ -705,9 +705,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             // 2. 构建查询条件
             BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-            // 代发表自身字段搜索
+            // 代发表自身字段搜索 - 使用与批发表相同的多层次匹配策略
             if (StrUtil.isNotBlank(pageReqVO.getNo())) {
-                boolQuery.must(QueryBuilders.termQuery("no", pageReqVO.getNo().trim()));
+                boolQuery.must(createSimplifiedKeywordMatchQuery("no", pageReqVO.getNo().trim()));
             }
             if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
                 boolQuery.must(QueryBuilders.wildcardQuery("order_number", "*" + pageReqVO.getOrderNumber().trim() + "*"));
@@ -2803,9 +2803,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
                 .withSort(Sort.by(Sort.Direction.DESC, "id"));
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-        // 代发表自身字段搜索
+        // 代发表自身字段搜索 - 使用与批发表相同的多层次匹配策略
         if (StrUtil.isNotBlank(pageReqVO.getNo())) {
-            boolQuery.must(QueryBuilders.termQuery("no", pageReqVO.getNo().trim()));
+            boolQuery.must(createSimplifiedKeywordMatchQuery("no", pageReqVO.getNo().trim()));
         }
         if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
             boolQuery.must(QueryBuilders.wildcardQuery("order_number", "*" + pageReqVO.getOrderNumber().trim() + "*"));
@@ -2963,9 +2963,9 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         // 构建查询条件
         LambdaQueryWrapper<ErpDistributionCombinedDO> queryWrapper = new LambdaQueryWrapper<>();
 
-        // 添加搜索条件
+        // 添加搜索条件 - 使用模糊匹配与ES查询保持一致
         if (StrUtil.isNotBlank(pageReqVO.getNo())) {
-            queryWrapper.eq(ErpDistributionCombinedDO::getNo, pageReqVO.getNo().trim());
+            queryWrapper.like(ErpDistributionCombinedDO::getNo, pageReqVO.getNo().trim());
         }
         if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
             queryWrapper.like(ErpDistributionCombinedDO::getOrderNumber, pageReqVO.getOrderNumber().trim());
