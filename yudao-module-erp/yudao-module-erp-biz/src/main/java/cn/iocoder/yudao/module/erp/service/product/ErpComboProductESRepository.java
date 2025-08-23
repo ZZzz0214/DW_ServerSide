@@ -18,4 +18,7 @@ public interface ErpComboProductESRepository
     // 添加按编号列表批量查询的方法
     List<ErpComboProductES> findByNoIn(List<String> nos);
 
+    // 添加按产品名称模糊查询的方法
+    List<ErpComboProductES> findByNameContaining(String name);
+
 }

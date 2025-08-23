@@ -2293,6 +2293,26 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             if (StrUtil.isNotBlank(pageReqVO.getCustomerName())) {
                 boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + pageReqVO.getCustomerName() + "*"));
             }
+            // 🔥 新增：支持通过产品名称搜索 - 在ES查询阶段进行过滤
+            if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
+                try {
+                    // 通过产品名称查找对应的组品ID
+                    List<ErpComboProductES> matchingProducts = comboProductESRepository.findByNameContaining(pageReqVO.getProductName());
+                    if (!matchingProducts.isEmpty()) {
+                        List<Long> productIds = matchingProducts.stream()
+                            .map(ErpComboProductES::getId)
+                            .collect(Collectors.toList());
+                        boolQuery.must(QueryBuilders.termsQuery("combo_product_id", productIds));
+                    } else {
+                        // 如果没找到匹配的产品，设置一个不可能的条件，让搜索结果为空
+                        boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                    }
+                } catch (Exception e) {
+                    System.err.println("代发服务 - 通过产品名称查找组品失败: " + e.getMessage());
+                    // 查找失败时，设置一个不可能的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                }
+            }
 
             queryBuilder.withQuery(boolQuery);
             // 设置大的查询数量以获取所有数据进行分组
@@ -2379,16 +2399,8 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
 
                     return vo;
                 })
-                // 先过滤出没有价格的记录
+                // 过滤出没有价格的记录（产品名称过滤已在ES查询中处理）
                 .filter(vo -> vo.getDistributionPrice() == null || vo.getDistributionPrice().compareTo(BigDecimal.ZERO) == 0)
-                // 再根据产品名称过滤
-                .filter(vo -> {
-                    if (StrUtil.isNotBlank(pageReqVO.getProductName())) {
-                        return StrUtil.isNotBlank(vo.getProductName()) &&
-                               vo.getProductName().toLowerCase().contains(pageReqVO.getProductName().toLowerCase());
-                    }
-                    return true;
-                })
                 .sorted(Comparator.comparing(ErpDistributionMissingPriceVO::getLatestCreateTime,
                     Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
