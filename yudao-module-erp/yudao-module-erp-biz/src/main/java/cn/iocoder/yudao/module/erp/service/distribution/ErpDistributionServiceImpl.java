@@ -2267,7 +2267,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         try {
             // 🔥 ES聚合优化：使用ES聚合查询代替应用层分组，大幅提升性能
             return getDistributionMissingPricesWithESAggregation(pageReqVO);
-        } catch (Exception e) {
+                } catch (Exception e) {
             System.err.println("从ES聚合查询代发缺失价格记录失败，回退到原有逻辑: " + e.getMessage());
             // 降级到数据库查询
             return getDistributionMissingPricesFromDB(pageReqVO);

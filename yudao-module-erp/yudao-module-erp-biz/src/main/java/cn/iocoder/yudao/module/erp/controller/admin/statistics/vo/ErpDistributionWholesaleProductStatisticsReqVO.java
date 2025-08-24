@@ -22,6 +22,12 @@ public class ErpDistributionWholesaleProductStatisticsReqVO extends PageParam {
     @NotNull(message = "结束日期不能为空")
     private String endDate;
 
+    @Schema(description = "供应商名称", example = "供应商A")
+    private String supplier;
+
+    @Schema(description = "客户名称", example = "客户A")
+    private String customerName;
+
     /**
      * 获取开始日期
      */

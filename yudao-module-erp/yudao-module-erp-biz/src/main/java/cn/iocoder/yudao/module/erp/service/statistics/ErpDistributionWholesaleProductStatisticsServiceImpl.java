@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.service.statistics;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.module.erp.controller.admin.statistics.vo.ErpDistributionWholesaleProductStatisticsReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.statistics.vo.ErpDistributionWholesaleProductStatisticsRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.distribution.ErpDistributionBaseDO;
@@ -18,6 +19,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.product.ErpProductMapper;
 import cn.iocoder.yudao.module.erp.service.distribution.ErpDistributionCombinedESRepository;
 import cn.iocoder.yudao.module.erp.service.product.ErpComboProductService;
 import cn.iocoder.yudao.module.erp.service.wholesale.ErpWholesaleCombinedESRepository;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpComboProductES;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +30,9 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.Set;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Resource;
@@ -85,6 +90,23 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
         System.out.println("=== 开始统计代发批发产品组品数据 ===");
         System.out.println("请求参数: startDate=" + reqVO.getStartDate() + ", endDate=" + reqVO.getEndDate());
 
+        // 🔥 检查ES索引是否存在
+        try {
+            boolean distributionIndexExists = elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).exists();
+            boolean wholesaleIndexExists = elasticsearchRestTemplate.indexOps(ErpWholesaleCombinedESDO.class).exists();
+            
+            System.out.println("代发表索引存在: " + distributionIndexExists);
+            System.out.println("批发表索引存在: " + wholesaleIndexExists);
+            
+            if (!distributionIndexExists || !wholesaleIndexExists) {
+                System.err.println("⚠️ ES索引不存在，返回空统计结果");
+                return createEmptyStatisticsResult();
+            }
+        } catch (Exception e) {
+            System.err.println("检查ES索引时出错: " + e.getMessage());
+            return createEmptyStatisticsResult();
+        }
+
         // 构建查询条件 - 使用字符串格式日期优化ES查询
         String startDateStr = reqVO.getStartDate() + " 00:00:00";
         String endDateStr = reqVO.getEndDate() + " 23:59:59";
@@ -99,76 +121,111 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             boolQuery.must(QueryBuilders.rangeQuery("create_time")
                     .gte(startDateStr)
                     .lte(endDateStr));
+            
+            // 🔥 移除deleted字段查询，因为ES对象中可能没有这个字段
+            // boolQuery.must(QueryBuilders.termQuery("deleted", false)); // 排除已删除记录
+            
+            // 供应商名称搜索 - 需要先查询组品表获取匹配的combo_product_id
+            if (StrUtil.isNotBlank(reqVO.getSupplier())) {
+                Set<Long> matchingComboProductIds = getComboProductIdsBySupplier(reqVO.getSupplier().trim());
+                if (matchingComboProductIds.isEmpty()) {
+                    // 如果没有匹配的组品，添加一个不可能匹配的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                } else {
+                    boolQuery.must(QueryBuilders.termsQuery("combo_product_id", matchingComboProductIds));
+                }
+            }
+            
+            // 客户名称搜索
+            if (StrUtil.isNotBlank(reqVO.getCustomerName())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + reqVO.getCustomerName().trim() + "*"));
+            }
 
+            // 🔥 先测试简单查询，获取总数
+            NativeSearchQuery testQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 1))
+                    .build();
+            
+            SearchHits<ErpDistributionCombinedESDO> testHits = elasticsearchRestTemplate.search(
+                    testQuery, ErpDistributionCombinedESDO.class);
+            
+            System.out.println("代发表匹配记录总数: " + testHits.getTotalHits());
+            
             // 执行search_after查询
             final int batchSize = 2000; // 每批次大小
             int batchCount = 0;
             int totalCount = 0;
             
-            // 首次查询，不带search_after参数
-            NativeSearchQuery initialQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withSort(Sort.by(Sort.Direction.ASC, "id")) // 必须有稳定排序
-                    .withSort(Sort.by(Sort.Direction.ASC, "_id")) // 添加_id排序确保稳定性
-                    .withPageable(PageRequest.of(0, batchSize))
-                    .build();
-            
-            SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    initialQuery, ErpDistributionCombinedESDO.class);
-            
-            // 处理第一批结果
-            List<SearchHit<ErpDistributionCombinedESDO>> hits = new ArrayList<>(searchHits.getSearchHits());
-            if (!hits.isEmpty()) {
-                // 提取内容
-                List<ErpDistributionCombinedESDO> firstBatch = hits.stream()
-                        .map(SearchHit::getContent)
-                        .collect(Collectors.toList());
+            if (testHits.getTotalHits() == 0) {
+                System.out.println("⚠️ 代发表没有匹配的数据");
+            } else {
                 
-                distributionList.addAll(firstBatch);
-                totalCount += firstBatch.size();
-                batchCount++;
-                System.out.println("代发表查询批次" + batchCount + ", 获取数据: " + firstBatch.size() + 
-                                   ", 累计: " + totalCount);
+                // 首次查询，不带search_after参数
+                NativeSearchQuery initialQuery = new NativeSearchQueryBuilder()
+                        .withQuery(boolQuery)
+                        .withSort(Sort.by(Sort.Direction.ASC, "id")) // 必须有稳定排序
+                        .withSort(Sort.by(Sort.Direction.ASC, "_id")) // 添加_id排序确保稳定性
+                        .withPageable(PageRequest.of(0, batchSize))
+                        .build();
                 
-                // 如果第一批数据量等于批次大小，说明可能还有更多数据
-                while (hits.size() == batchSize) {
-                    // 获取最后一个文档的排序值
-                    List<Object> sortValues = hits.get(hits.size() - 1).getSortValues();
-                    
-                    // 构建下一批次查询，使用search_after
-                    NativeSearchQuery nextQuery = new NativeSearchQueryBuilder()
-                            .withQuery(boolQuery)
-                            .withSort(Sort.by(Sort.Direction.ASC, "id"))
-                            .withSort(Sort.by(Sort.Direction.ASC, "_id"))
-                            .withPageable(PageRequest.of(0, batchSize))
-                            .withSearchAfter(sortValues)
-                            .build();
-                    
-                    // 执行下一批次查询
-                    searchHits = elasticsearchRestTemplate.search(nextQuery, ErpDistributionCombinedESDO.class);
-                    hits = new ArrayList<>(searchHits.getSearchHits());
-                    
-                    // 处理查询结果
-                    List<ErpDistributionCombinedESDO> nextBatch = hits.stream()
+                SearchHits<ErpDistributionCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                        initialQuery, ErpDistributionCombinedESDO.class);
+                
+                // 处理第一批结果
+                List<SearchHit<ErpDistributionCombinedESDO>> hits = new ArrayList<>(searchHits.getSearchHits());
+                if (!hits.isEmpty()) {
+                    // 提取内容
+                    List<ErpDistributionCombinedESDO> firstBatch = hits.stream()
                             .map(SearchHit::getContent)
                             .collect(Collectors.toList());
                     
-                    distributionList.addAll(nextBatch);
-                    totalCount += nextBatch.size();
+                    distributionList.addAll(firstBatch);
+                    totalCount += firstBatch.size();
                     batchCount++;
-                    System.out.println("代发表查询批次" + batchCount + ", 获取数据: " + nextBatch.size() + 
+                    System.out.println("代发表查询批次" + batchCount + ", 获取数据: " + firstBatch.size() + 
                                        ", 累计: " + totalCount);
                     
-                    // 如果批次为空，退出循环
-                    if (hits.isEmpty()) {
-                        break;
+                    // 如果第一批数据量等于批次大小，说明可能还有更多数据
+                    while (hits.size() == batchSize) {
+                        // 获取最后一个文档的排序值
+                        List<Object> sortValues = hits.get(hits.size() - 1).getSortValues();
+                        
+                        // 构建下一批次查询，使用search_after
+                        NativeSearchQuery nextQuery = new NativeSearchQueryBuilder()
+                                .withQuery(boolQuery)
+                                .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                                .withSort(Sort.by(Sort.Direction.ASC, "_id"))
+                                .withPageable(PageRequest.of(0, batchSize))
+                                .withSearchAfter(sortValues)
+                                .build();
+                        
+                        // 执行下一批次查询
+                        searchHits = elasticsearchRestTemplate.search(nextQuery, ErpDistributionCombinedESDO.class);
+                        hits = new ArrayList<>(searchHits.getSearchHits());
+                        
+                        // 处理查询结果
+                        List<ErpDistributionCombinedESDO> nextBatch = hits.stream()
+                                .map(SearchHit::getContent)
+                                .collect(Collectors.toList());
+                        
+                        distributionList.addAll(nextBatch);
+                        totalCount += nextBatch.size();
+                        batchCount++;
+                        System.out.println("代发表查询批次" + batchCount + ", 获取数据: " + nextBatch.size() + 
+                                           ", 累计: " + totalCount);
+                        
+                        // 如果批次为空，退出循环
+                        if (hits.isEmpty()) {
+                            break;
+                        }
                     }
                 }
             }
             
-            System.out.println("ES查询代发表成功，总批次: " + batchCount + ", 数据量: " + totalCount);
+            System.out.println("ES查询代发表成功，总批次: " + batchCount + ", 数据量: " + distributionList.size());
         } catch (Exception e) {
-            System.out.println("ES查询代发表失败: " + e.getMessage());
+            System.err.println("ES查询代发表失败: " + e.getMessage());
             e.printStackTrace(); // 打印详细错误信息以便排查
         }
 
@@ -181,76 +238,111 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             boolQuery.must(QueryBuilders.rangeQuery("create_time")
                     .gte(startDateStr)
                     .lte(endDateStr));
+            
+            // 🔥 移除deleted字段查询，因为ES对象中可能没有这个字段
+            // boolQuery.must(QueryBuilders.termQuery("deleted", false)); // 排除已删除记录
+            
+            // 供应商名称搜索 - 需要先查询组品表获取匹配的combo_product_id
+            if (StrUtil.isNotBlank(reqVO.getSupplier())) {
+                Set<Long> matchingComboProductIds = getComboProductIdsBySupplier(reqVO.getSupplier().trim());
+                if (matchingComboProductIds.isEmpty()) {
+                    // 如果没有匹配的组品，添加一个不可能匹配的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                } else {
+                    boolQuery.must(QueryBuilders.termsQuery("combo_product_id", matchingComboProductIds));
+                }
+            }
+            
+            // 客户名称搜索
+            if (StrUtil.isNotBlank(reqVO.getCustomerName())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + reqVO.getCustomerName().trim() + "*"));
+            }
 
+            // 🔥 先测试简单查询，获取总数
+            NativeSearchQuery testQuery = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 1))
+                    .build();
+            
+            SearchHits<ErpWholesaleCombinedESDO> testHits = elasticsearchRestTemplate.search(
+                    testQuery, ErpWholesaleCombinedESDO.class);
+            
+            System.out.println("批发表匹配记录总数: " + testHits.getTotalHits());
+            
             // 执行search_after查询
             final int batchSize = 2000; // 每批次大小
             int batchCount = 0;
             int totalCount = 0;
             
-            // 首次查询，不带search_after参数
-            NativeSearchQuery initialQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withSort(Sort.by(Sort.Direction.ASC, "id")) // 必须有稳定排序
-                    .withSort(Sort.by(Sort.Direction.ASC, "_id")) // 添加_id排序确保稳定性
-                    .withPageable(PageRequest.of(0, batchSize))
-                    .build();
-            
-            SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
-                    initialQuery, ErpWholesaleCombinedESDO.class);
-            
-            // 处理第一批结果
-            List<SearchHit<ErpWholesaleCombinedESDO>> hits = new ArrayList<>(searchHits.getSearchHits());
-            if (!hits.isEmpty()) {
-                // 提取内容
-                List<ErpWholesaleCombinedESDO> firstBatch = hits.stream()
-                        .map(SearchHit::getContent)
-                        .collect(Collectors.toList());
+            if (testHits.getTotalHits() == 0) {
+                System.out.println("⚠️ 批发表没有匹配的数据");
+            } else {
                 
-                wholesaleList.addAll(firstBatch);
-                totalCount += firstBatch.size();
-                batchCount++;
-                System.out.println("批发表查询批次" + batchCount + ", 获取数据: " + firstBatch.size() + 
-                                   ", 累计: " + totalCount);
+                // 首次查询，不带search_after参数
+                NativeSearchQuery initialQuery = new NativeSearchQueryBuilder()
+                        .withQuery(boolQuery)
+                        .withSort(Sort.by(Sort.Direction.ASC, "id")) // 必须有稳定排序
+                        .withSort(Sort.by(Sort.Direction.ASC, "_id")) // 添加_id排序确保稳定性
+                        .withPageable(PageRequest.of(0, batchSize))
+                        .build();
                 
-                // 如果第一批数据量等于批次大小，说明可能还有更多数据
-                while (hits.size() == batchSize) {
-                    // 获取最后一个文档的排序值
-                    List<Object> sortValues = hits.get(hits.size() - 1).getSortValues();
-                    
-                    // 构建下一批次查询，使用search_after
-                    NativeSearchQuery nextQuery = new NativeSearchQueryBuilder()
-                            .withQuery(boolQuery)
-                            .withSort(Sort.by(Sort.Direction.ASC, "id"))
-                            .withSort(Sort.by(Sort.Direction.ASC, "_id"))
-                            .withPageable(PageRequest.of(0, batchSize))
-                            .withSearchAfter(sortValues)
-                            .build();
-                    
-                    // 执行下一批次查询
-                    searchHits = elasticsearchRestTemplate.search(nextQuery, ErpWholesaleCombinedESDO.class);
-                    hits = new ArrayList<>(searchHits.getSearchHits());
-                    
-                    // 处理查询结果
-                    List<ErpWholesaleCombinedESDO> nextBatch = hits.stream()
+                SearchHits<ErpWholesaleCombinedESDO> searchHits = elasticsearchRestTemplate.search(
+                        initialQuery, ErpWholesaleCombinedESDO.class);
+                
+                // 处理第一批结果
+                List<SearchHit<ErpWholesaleCombinedESDO>> hits = new ArrayList<>(searchHits.getSearchHits());
+                if (!hits.isEmpty()) {
+                    // 提取内容
+                    List<ErpWholesaleCombinedESDO> firstBatch = hits.stream()
                             .map(SearchHit::getContent)
                             .collect(Collectors.toList());
                     
-                    wholesaleList.addAll(nextBatch);
-                    totalCount += nextBatch.size();
+                    wholesaleList.addAll(firstBatch);
+                    totalCount += firstBatch.size();
                     batchCount++;
-                    System.out.println("批发表查询批次" + batchCount + ", 获取数据: " + nextBatch.size() + 
+                    System.out.println("批发表查询批次" + batchCount + ", 获取数据: " + firstBatch.size() + 
                                        ", 累计: " + totalCount);
                     
-                    // 如果批次为空，退出循环
-                    if (hits.isEmpty()) {
-                        break;
+                    // 如果第一批数据量等于批次大小，说明可能还有更多数据
+                    while (hits.size() == batchSize) {
+                        // 获取最后一个文档的排序值
+                        List<Object> sortValues = hits.get(hits.size() - 1).getSortValues();
+                        
+                        // 构建下一批次查询，使用search_after
+                        NativeSearchQuery nextQuery = new NativeSearchQueryBuilder()
+                                .withQuery(boolQuery)
+                                .withSort(Sort.by(Sort.Direction.ASC, "id"))
+                                .withSort(Sort.by(Sort.Direction.ASC, "_id"))
+                                .withPageable(PageRequest.of(0, batchSize))
+                                .withSearchAfter(sortValues)
+                                .build();
+                        
+                        // 执行下一批次查询
+                        searchHits = elasticsearchRestTemplate.search(nextQuery, ErpWholesaleCombinedESDO.class);
+                        hits = new ArrayList<>(searchHits.getSearchHits());
+                        
+                        // 处理查询结果
+                        List<ErpWholesaleCombinedESDO> nextBatch = hits.stream()
+                                .map(SearchHit::getContent)
+                                .collect(Collectors.toList());
+                        
+                        wholesaleList.addAll(nextBatch);
+                        totalCount += nextBatch.size();
+                        batchCount++;
+                        System.out.println("批发表查询批次" + batchCount + ", 获取数据: " + nextBatch.size() + 
+                                           ", 累计: " + totalCount);
+                        
+                        // 如果批次为空，退出循环
+                        if (hits.isEmpty()) {
+                            break;
+                        }
                     }
                 }
             }
             
-            System.out.println("ES查询批发表成功，总批次: " + batchCount + ", 数据量: " + totalCount);
+            System.out.println("ES查询批发表成功，总批次: " + batchCount + ", 数据量: " + wholesaleList.size());
         } catch (Exception e) {
-            System.out.println("ES查询批发表失败: " + e.getMessage());
+            System.err.println("ES查询批发表失败: " + e.getMessage());
             e.printStackTrace(); // 打印详细错误信息以便排查
         }
 
@@ -496,6 +588,23 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
         System.out.println("=== 开始统计代发批发产品组品数据（分页） ===");
         System.out.println("请求参数: startDate=" + reqVO.getStartDate() + ", endDate=" + reqVO.getEndDate() + 
                           ", pageNo=" + reqVO.getPageNo() + ", pageSize=" + reqVO.getPageSize());
+
+        // 🔥 检查ES索引是否存在
+        try {
+            boolean distributionIndexExists = elasticsearchRestTemplate.indexOps(ErpDistributionCombinedESDO.class).exists();
+            boolean wholesaleIndexExists = elasticsearchRestTemplate.indexOps(ErpWholesaleCombinedESDO.class).exists();
+            
+            System.out.println("代发表索引存在: " + distributionIndexExists);
+            System.out.println("批发表索引存在: " + wholesaleIndexExists);
+            
+            if (!distributionIndexExists || !wholesaleIndexExists) {
+                System.err.println("⚠️ ES索引不存在，返回空统计结果");
+                return createEmptyStatisticsResult();
+            }
+        } catch (Exception e) {
+            System.err.println("检查ES索引时出错: " + e.getMessage());
+            return createEmptyStatisticsResult();
+        }
         
         // 构建查询条件 - 使用字符串格式日期优化ES查询
         String startDateStr = reqVO.getStartDate() + " 00:00:00";
@@ -511,6 +620,25 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             boolQuery.must(QueryBuilders.rangeQuery("create_time")
                     .gte(startDateStr)
                     .lte(endDateStr));
+            
+            // 🔥 移除deleted字段查询，因为ES对象中可能没有这个字段
+            // boolQuery.must(QueryBuilders.termQuery("deleted", false)); // 排除已删除记录
+            
+            // 供应商名称搜索 - 需要先查询组品表获取匹配的combo_product_id
+            if (StrUtil.isNotBlank(reqVO.getSupplier())) {
+                Set<Long> matchingComboProductIds = getComboProductIdsBySupplier(reqVO.getSupplier().trim());
+                if (matchingComboProductIds.isEmpty()) {
+                    // 如果没有匹配的组品，添加一个不可能匹配的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                } else {
+                    boolQuery.must(QueryBuilders.termsQuery("combo_product_id", matchingComboProductIds));
+                }
+            }
+            
+            // 客户名称搜索
+            if (StrUtil.isNotBlank(reqVO.getCustomerName())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + reqVO.getCustomerName().trim() + "*"));
+            }
 
             // 执行search_after查询
             final int batchSize = 2000; // 每批次大小
@@ -593,6 +721,25 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
             boolQuery.must(QueryBuilders.rangeQuery("create_time")
                     .gte(startDateStr)
                     .lte(endDateStr));
+            
+            // 🔥 移除deleted字段查询，因为ES对象中可能没有这个字段
+            // boolQuery.must(QueryBuilders.termQuery("deleted", false)); // 排除已删除记录
+            
+            // 供应商名称搜索 - 需要先查询组品表获取匹配的combo_product_id
+            if (StrUtil.isNotBlank(reqVO.getSupplier())) {
+                Set<Long> matchingComboProductIds = getComboProductIdsBySupplier(reqVO.getSupplier().trim());
+                if (matchingComboProductIds.isEmpty()) {
+                    // 如果没有匹配的组品，添加一个不可能匹配的条件
+                    boolQuery.must(QueryBuilders.termQuery("combo_product_id", -1L));
+                } else {
+                    boolQuery.must(QueryBuilders.termsQuery("combo_product_id", matchingComboProductIds));
+                }
+            }
+            
+            // 客户名称搜索
+            if (StrUtil.isNotBlank(reqVO.getCustomerName())) {
+                boolQuery.must(QueryBuilders.wildcardQuery("customer_name", "*" + reqVO.getCustomerName().trim() + "*"));
+            }
 
             // 执行search_after查询
             final int batchSize = 2000; // 每批次大小
@@ -1051,5 +1198,66 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
 
         public int getWholesaleComboCount() { return wholesaleComboCount; }
         public void setWholesaleComboCount(int wholesaleComboCount) { this.wholesaleComboCount = wholesaleComboCount; }
+    }
+
+    /**
+     * 根据供应商名称查询匹配的组品ID集合
+     */
+    private Set<Long> getComboProductIdsBySupplier(String supplier) {
+        try {
+            System.out.println("🔍 查询供应商匹配的组品: " + supplier);
+            
+            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+            boolQuery.must(QueryBuilders.wildcardQuery("supplier", "*" + supplier + "*"));
+            
+            // 🔥 修复：移除status状态过滤条件，与代发表查询保持一致
+            // 原来的代码：boolQuery.must(QueryBuilders.termQuery("status", 1));
+            
+            NativeSearchQuery query = new NativeSearchQueryBuilder()
+                    .withQuery(boolQuery)
+                    .withPageable(PageRequest.of(0, 10000)) // 最多查询10000个
+                    .build();
+            
+            System.out.println("🔍 ES查询语句: " + query.getQuery().toString());
+            
+            SearchHits<ErpComboProductES> searchHits = elasticsearchRestTemplate.search(query, ErpComboProductES.class);
+            
+            Set<Long> result = searchHits.getSearchHits().stream()
+                    .map(hit -> hit.getContent().getId())
+                    .collect(Collectors.toSet());
+            
+            System.out.println("🔍 找到匹配的组品数量: " + result.size());
+            if (!result.isEmpty()) {
+                System.out.println("🔍 组品ID示例: " + result.iterator().next());
+                // 输出第一个匹配的组品信息用于调试
+                ErpComboProductES firstCombo = searchHits.getSearchHits().get(0).getContent();
+                System.out.println("🔍 第一个匹配组品信息: ID=" + firstCombo.getId() + 
+                                 ", 编号=" + firstCombo.getNo() + 
+                                 ", 供应商=" + firstCombo.getSupplier() + 
+                                 ", 状态=" + firstCombo.getStatus());
+            }
+            
+            return result;
+        } catch (Exception e) {
+            System.err.println("查询组品供应商失败: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptySet();
+        }
+    }
+
+    /**
+     * 创建一个空的统计结果对象，用于在ES索引不存在时返回
+     */
+    private ErpDistributionWholesaleProductStatisticsRespVO createEmptyStatisticsResult() {
+        ErpDistributionWholesaleProductStatisticsRespVO respVO = new ErpDistributionWholesaleProductStatisticsRespVO();
+        respVO.setSingleProductPageResult(new PageResult<>(Collections.emptyList(), 0L));
+        respVO.setComboProductPageResult(new PageResult<>(Collections.emptyList(), 0L));
+        respVO.setTotalDistributionSingleCount(0);
+        respVO.setTotalWholesaleSingleCount(0);
+        respVO.setTotalSingleCount(0);
+        respVO.setTotalDistributionComboCount(0);
+        respVO.setTotalWholesaleComboCount(0);
+        respVO.setTotalComboCount(0);
+        return respVO;
     }
 }

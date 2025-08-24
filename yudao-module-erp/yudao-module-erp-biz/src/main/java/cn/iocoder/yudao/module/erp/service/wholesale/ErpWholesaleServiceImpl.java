@@ -2071,8 +2071,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     // 🔥 使用批量查询结果获取组品信息
                     ErpComboProductES comboProduct = comboProductMap.get(firstOrder.getComboProductId());
                     if (comboProduct != null) {
-                        vo.setComboProductNo(comboProduct.getNo());
-                        vo.setProductName(comboProduct.getName());
+                            vo.setComboProductNo(comboProduct.getNo());
+                            vo.setProductName(comboProduct.getName());
                     }
 
                     // 统计信息
@@ -2099,8 +2099,8 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                     }
 
                     // 设置价格信息（如果有的话）
-                    if (salePrice != null) {
-                        vo.setWholesalePrice(salePrice.getWholesalePrice());
+                        if (salePrice != null) {
+                            vo.setWholesalePrice(salePrice.getWholesalePrice());
                     }
 
                     return vo;
