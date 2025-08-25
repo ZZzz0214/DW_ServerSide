@@ -88,7 +88,8 @@ public class ErpDistributionWholesaleProductStatisticsServiceImpl implements Erp
     @Override
     public ErpDistributionWholesaleProductStatisticsRespVO getDistributionWholesaleProductStatistics(ErpDistributionWholesaleProductStatisticsReqVO reqVO) {
         System.out.println("=== 开始统计代发批发产品组品数据 ===");
-        System.out.println("请求参数: startDate=" + reqVO.getStartDate() + ", endDate=" + reqVO.getEndDate());
+        System.out.println("请求参数: startDate=" + reqVO.getStartDate() + ", endDate=" + reqVO.getEndDate() + 
+                          ", supplier=" + reqVO.getSupplier() + ", customerName=" + reqVO.getCustomerName());
 
         // 🔥 检查ES索引是否存在
         try {

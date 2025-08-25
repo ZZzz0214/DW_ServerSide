@@ -56,7 +56,8 @@ public class ErpDistributionWholesaleProductStatisticsController {
     public void exportDistributionWholesaleProductStatistics(@Valid ErpDistributionWholesaleProductStatisticsReqVO reqVO,
                                                            HttpServletResponse response) throws IOException {
         System.out.println("=== 开始导出代发批发产品组品统计 ===");
-        System.out.println("导出参数: startDate=" + reqVO.getStartDate() + ", endDate=" + reqVO.getEndDate());
+        System.out.println("导出参数: startDate=" + reqVO.getStartDate() + ", endDate=" + reqVO.getEndDate() + 
+                          ", supplier=" + reqVO.getSupplier() + ", customerName=" + reqVO.getCustomerName());
         
         // 导出时获取所有数据，不进行分页
         ErpDistributionWholesaleProductStatisticsRespVO data = statisticsService.getDistributionWholesaleProductStatistics(reqVO);
