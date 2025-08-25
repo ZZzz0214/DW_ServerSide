@@ -63,11 +63,11 @@ public class ErpWholesalePurchaseExportExcelVO {
     private BigDecimal logisticsFee;
 
     @ExcelProperty("采购杂费")
-    @NumberFormat("#.00")
+    @NumberFormat("0.00")
     private BigDecimal otherFees;
 
     @ExcelProperty("采购总额")
-    @NumberFormat("#.00")
+    @NumberFormat("0.00")
     private BigDecimal totalPurchaseAmount;
 
     @ExcelProperty("采购备注")

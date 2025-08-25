@@ -79,11 +79,11 @@ public class ErpDistributionSaleAuditExportVO {
     private BigDecimal saleShippingFee;
 
     @ExcelProperty("出货杂费")
-    @NumberFormat("#.00")
+    @NumberFormat("0.00")
     private BigDecimal saleOtherFees;
 
     @ExcelProperty("出货总额")
-    @NumberFormat("#.00")
+    @NumberFormat("0.00")
     private BigDecimal totalSaleAmount;
 
     @ExcelProperty("出货备注")
@@ -102,7 +102,7 @@ public class ErpDistributionSaleAuditExportVO {
     private Integer saleAuditStatus;
 
     @ExcelProperty("出货审核金额")
-    @NumberFormat("#.00")
+    @NumberFormat("0.00")
     private BigDecimal saleAuditTotalAmount;
 
     @ExcelProperty("出货审核时间")
@@ -115,7 +115,7 @@ public class ErpDistributionSaleAuditExportVO {
     private Integer saleAfterSalesStatus;
 
     @ExcelProperty("出货售后金额")
-    @NumberFormat("#.00")
+    @NumberFormat("0.00")
     private BigDecimal saleAfterSalesAmount;
 
     @ExcelProperty("出货售后时间")
