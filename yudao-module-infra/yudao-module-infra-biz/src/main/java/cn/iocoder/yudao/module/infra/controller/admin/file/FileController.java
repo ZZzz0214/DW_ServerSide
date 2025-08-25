@@ -73,23 +73,52 @@ public class FileController {
     @Parameter(name = "configId", description = "配置编号", required = true)
     public void getFileContent(HttpServletRequest request,
                                HttpServletResponse response,
-                               @PathVariable("configId") Long configId) throws Exception {
-        // 获取请求的路径
-        String path = StrUtil.subAfter(request.getRequestURI(), "/get/", false);
-        if (StrUtil.isEmpty(path)) {
-            throw new IllegalArgumentException("结尾的 path 路径必须传递");
-        }
-        // 解码，解决中文路径的问题 https://gitee.com/zhijiantianya/ruoyi-vue-pro/pulls/807/
-        path = URLUtil.decode(path);
+                               @PathVariable("configId") Long configId) {
+        try {
+            // 获取请求的路径
+            String path = StrUtil.subAfter(request.getRequestURI(), "/get/", false);
+            if (StrUtil.isEmpty(path)) {
+                handleError(response, HttpStatus.BAD_REQUEST.value(), "结尾的 path 路径必须传递");
+                return;
+            }
+            // 解码，解决中文路径的问题 https://gitee.com/zhijiantianya/ruoyi-vue-pro/pulls/807/
+            path = URLUtil.decode(path);
 
-        // 读取内容
-        byte[] content = fileService.getFileContent(configId, path);
-        if (content == null) {
-            log.warn("[getFileContent][configId({}) path({}) 文件不存在]", configId, path);
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-            return;
+            // 读取内容
+            byte[] content = fileService.getFileContent(configId, path);
+            if (content == null) {
+                log.warn("[getFileContent][configId({}) path({}) 文件不存在]", configId, path);
+                handleError(response, HttpStatus.NOT_FOUND.value(), "文件不存在");
+                return;
+            }
+            writeAttachment(response, path, content);
+        } catch (Exception e) {
+            log.error("[getFileContent][configId({}) 文件下载异常]", configId, e);
+            // 检查响应是否已经提交
+            if (!response.isCommitted()) {
+                handleError(response, HttpStatus.INTERNAL_SERVER_ERROR.value(), "文件下载失败: " + e.getMessage());
+            } else {
+                // 响应已提交，无法再写入内容，只记录日志
+                log.error("[getFileContent][configId({}) 响应已提交，无法处理异常]", configId);
+            }
         }
-        writeAttachment(response, path, content);
+    }
+
+    /**
+     * 处理文件下载错误
+     */
+    private void handleError(HttpServletResponse response, int status, String message) {
+        try {
+            if (!response.isCommitted()) {
+                response.reset(); // 重置响应
+                response.setStatus(status);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":" + status + ",\"msg\":\"" + message.replace("\"", "\\\"") + "\"}");
+                response.getWriter().flush();
+            }
+        } catch (Exception e) {
+            log.error("[handleError] 写入错误响应失败", e);
+        }
     }
 
     @GetMapping("/page")
