@@ -624,12 +624,11 @@ public class ErpDistributionController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportPurchaseAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                       HttpServletResponse response) throws IOException {
-        pageReqVO.setPageSize(10000);
-
-        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
 
         // 转换为采购审核导出VO
-        List<ErpDistributionPurchaseAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseAuditExportVO.class);
+        List<ErpDistributionPurchaseAuditExportVO> exportList = BeanUtils.toBean(allList, ErpDistributionPurchaseAuditExportVO.class);
 
         ExcelUtils.write(response, "代发采购审核信息.xlsx", "数据", ErpDistributionPurchaseAuditExportVO.class, exportList);
     }
@@ -640,12 +639,11 @@ public class ErpDistributionController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportSaleAuditExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                     HttpServletResponse response) throws IOException {
-        pageReqVO.setPageSize(10000);
-
-        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
 
         // 转换为销售审核导出VO
-        List<ErpDistributionSaleAuditExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleAuditExportVO.class);
+        List<ErpDistributionSaleAuditExportVO> exportList = BeanUtils.toBean(allList, ErpDistributionSaleAuditExportVO.class);
 
         ExcelUtils.write(response, "代发销售审核信息.xlsx", "数据", ErpDistributionSaleAuditExportVO.class, exportList);
     }
@@ -655,12 +653,12 @@ public class ErpDistributionController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportReviewedPurchaseExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                          HttpServletResponse response) throws IOException {
-        pageReqVO.setPageSize(10000);
         pageReqVO.setPurchaseAuditStatus(20); // 设置采购审核状态为已审核
 
-        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
 
-        List<ErpDistributionPurchaseAuditExportOutVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionPurchaseAuditExportOutVO.class);
+        List<ErpDistributionPurchaseAuditExportOutVO> exportList = BeanUtils.toBean(allList, ErpDistributionPurchaseAuditExportOutVO.class);
 
         ExcelUtils.write(response, "已审核代发采购信息.xlsx", "数据", ErpDistributionPurchaseAuditExportOutVO.class, exportList);
     }
@@ -671,12 +669,12 @@ public class ErpDistributionController {
     @ApiAccessLog(operateType = EXPORT)
     public void exportReviewedSaleExcel(@Valid ErpDistributionPageReqVO pageReqVO,
                                      HttpServletResponse response) throws IOException {
-        pageReqVO.setPageSize(10000);
         pageReqVO.setSaleAuditStatus(20); // 设置销售审核状态为已审核
 
-        PageResult<ErpDistributionRespVO> pageResult = distributionService.getDistributionVOPage(pageReqVO);
+        // 全量查，保证和分页一致
+        List<ErpDistributionRespVO> allList = distributionService.exportAllDistributions(pageReqVO);
 
-        List<ErpDistributionSaleAuditOutExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpDistributionSaleAuditOutExportVO.class);
+        List<ErpDistributionSaleAuditOutExportVO> exportList = BeanUtils.toBean(allList, ErpDistributionSaleAuditOutExportVO.class);
 
         ExcelUtils.write(response, "已审核代发销售信息.xlsx", "数据", ErpDistributionSaleAuditOutExportVO.class, exportList);
     }
