@@ -41,6 +41,7 @@ import cn.iocoder.yudao.module.erp.service.product.ErpComboProductESRepository;
 import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalePriceESRepository;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSalespersonService;
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -2078,6 +2079,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                 existDistribution.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
                 existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
                 existDistribution.setAfterSalesTime(now);
+                existDistribution.setTransferPerson(importVO.getTransferPerson());
 
                 // 添加到更新列表
                 ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
@@ -3124,7 +3126,7 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         List<ErpDistributionMissingPriceVO> pagedVoList = start < allVoList.size() ?
             allVoList.subList(start, end) : Collections.emptyList();
 
-        System.out.println("ES聚合查询代发价格记录完成，记录数量: " + allVoList.size() + 
+        System.out.println("ES聚合查询代发价格记录完成，记录数量: " + allVoList.size() +
                          ", 当前页: " + (page + 1) + ", 页大小: " + size + ", 返回数量: " + pagedVoList.size());
         return new PageResult<>(pagedVoList, (long) allVoList.size());
     }
