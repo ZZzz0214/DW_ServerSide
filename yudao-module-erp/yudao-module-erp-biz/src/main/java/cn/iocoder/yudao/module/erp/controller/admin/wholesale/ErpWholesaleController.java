@@ -1127,7 +1127,7 @@ public class ErpWholesaleController {
             System.out.println("开始导出批发采购订单数据...");
             long startTime = System.currentTimeMillis();
 
-            // 使用导出全部数据的方法，不使用分页
+            // 全量查，保证和分页一致
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取批发采购订单数据完成，共 " + dataList.size() + " 条");
 
@@ -1155,7 +1155,7 @@ public class ErpWholesaleController {
             // 设置反审核状态过滤条件
             pageReqVO.setPurchaseAuditStatus(20); // 已反审核状态
 
-            // 使用导出全部数据的方法，不使用分页
+            // 全量查，保证和分页一致
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取已反审核批发采购订单数据完成，共 " + dataList.size() + " 条");
 
@@ -1180,7 +1180,7 @@ public class ErpWholesaleController {
             System.out.println("开始导出批发销售订单数据...");
             long startTime = System.currentTimeMillis();
 
-            // 使用导出全部数据的方法，不使用分页
+            // 全量查，保证和分页一致
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取批发销售订单数据完成，共 " + dataList.size() + " 条");
 
@@ -1208,7 +1208,7 @@ public class ErpWholesaleController {
             // 设置反审核状态过滤条件
             pageReqVO.setSaleAuditStatus(20); // 已反审核状态
 
-            // 使用导出全部数据的方法，不使用分页
+            // 全量查，保证和分页一致
             List<ErpWholesaleRespVO> dataList = wholesaleService.exportAllWholesales(pageReqVO);
             System.out.println("获取已反审核批发销售订单数据完成，共 " + dataList.size() + " 条");
 
