@@ -27,4 +27,7 @@ public class ErpWholesaleSaleAuditImportExcelVO {
 
     @ExcelProperty("出货售后金额")
     private BigDecimal saleAfterSalesAmount;
+
+    @ExcelProperty("中转人员")
+    private String transferPerson;
 } 

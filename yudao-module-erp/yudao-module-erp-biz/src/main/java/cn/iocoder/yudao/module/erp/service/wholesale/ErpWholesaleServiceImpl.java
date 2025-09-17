@@ -1884,6 +1884,9 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 if (importVO.getSaleAfterSalesAmount() != null) {
                     combined.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
                 }
+                if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                    combined.setTransferPerson(importVO.getTransferPerson());
+                }
 
                 LocalDateTime now = LocalDateTime.now();
                 combined.setAfterSalesTime(now);
@@ -1899,6 +1902,9 @@ public class ErpWholesaleServiceImpl implements ErpWholesaleService {
                 }
                 if (importVO.getSaleAfterSalesAmount() != null) {
                     esUpdateDO.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                }
+                if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                    esUpdateDO.setTransferPerson(importVO.getTransferPerson());
                 }
                 esUpdateDO.setAfterSalesTime(now);
                 esUpdateList.add(esUpdateDO);
