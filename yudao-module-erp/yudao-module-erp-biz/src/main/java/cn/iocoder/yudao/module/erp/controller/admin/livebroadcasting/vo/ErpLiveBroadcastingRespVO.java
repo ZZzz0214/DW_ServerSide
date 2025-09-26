@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -65,7 +66,7 @@ public class ErpLiveBroadcastingRespVO {
 
     @Schema(description = "直播价格", example = "80.00")
     @ExcelProperty("直播价格")
-    private BigDecimal livePrice;
+    private String livePrice;
 
     @Schema(description = "直播佣金", example = "10.00")
     @ExcelProperty("直播佣金")

@@ -60,8 +60,8 @@ public class ErpLiveBroadcastingImportExcelVO {
     private String remark;
 
 
-    @ExcelProperty(value = "直播价格", converter = BigDecimalConvert.class)
-    private BigDecimal livePrice;
+    @ExcelProperty("直播价格")
+    private String livePrice;
 
 
     @ExcelProperty(value = "直播佣金", converter = BigDecimalConvert.class)

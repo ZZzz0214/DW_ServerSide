@@ -51,8 +51,8 @@ public class ErpLiveBroadcastingSaveReqVO {
     private String remark;
 
     @Schema(description = "直播价格", example = "80.00")
-    @NotNull(message = "直播价格不能为空")
-    private BigDecimal livePrice;
+    @NotEmpty(message = "直播价格不能为空")
+    private String livePrice;
 
     @Schema(description = "直播佣金", example = "10.00")
     @NotNull(message = "直播佣金不能为空")

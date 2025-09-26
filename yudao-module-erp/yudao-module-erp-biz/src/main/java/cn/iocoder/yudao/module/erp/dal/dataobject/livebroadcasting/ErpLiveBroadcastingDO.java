@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.math.BigDecimal;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -88,7 +89,7 @@ public class ErpLiveBroadcastingDO extends BaseDO {
     /**
      * 直播价格
      */
-    private BigDecimal livePrice;
+    private String livePrice;
 
     /**
      * 直播佣金
