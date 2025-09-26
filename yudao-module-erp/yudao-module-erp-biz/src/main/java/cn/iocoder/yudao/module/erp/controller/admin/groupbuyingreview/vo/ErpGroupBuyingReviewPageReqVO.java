@@ -46,6 +46,9 @@ public class ErpGroupBuyingReviewPageReqVO extends PageParam {
     @Schema(description = "快递费用", example = "10.00")
     private String expressFee;
 
+    @Schema(description = "开团价格", example = "99.00")
+    private String groupPrice;
+
     @Schema(description = "寄样日期")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate[] sampleSendDate;

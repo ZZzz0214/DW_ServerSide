@@ -58,6 +58,10 @@ public class ErpGroupBuyingReviewRespVO {
     @ExcelProperty("快递费用")
     private BigDecimal expressFee;
 
+    @Schema(description = "开团价格", example = "99.00")
+    @ExcelProperty("开团价格")
+    private BigDecimal groupPrice;
+
     @Schema(description = "开团机制", example = "满100人成团")
     @ExcelProperty("开团机制")
     private String groupMechanism;

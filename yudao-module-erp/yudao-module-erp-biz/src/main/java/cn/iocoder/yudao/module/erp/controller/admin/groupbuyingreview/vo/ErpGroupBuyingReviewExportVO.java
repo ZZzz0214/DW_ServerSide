@@ -53,6 +53,9 @@ public class ErpGroupBuyingReviewExportVO {
     @ExcelProperty("快递费用")
     private BigDecimal expressFee;
 
+    @ExcelProperty("开团价格")
+    private BigDecimal groupPrice;
+
     @ExcelProperty("开团机制")
     private String groupMechanism;
 

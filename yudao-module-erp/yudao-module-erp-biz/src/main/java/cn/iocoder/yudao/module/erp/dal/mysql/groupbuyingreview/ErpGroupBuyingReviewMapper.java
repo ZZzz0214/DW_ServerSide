@@ -24,6 +24,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .likeIfPresent(ErpGroupBuyingReviewDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpGroupBuyingReviewDO::getSupplyGroupPrice, reqVO.getSupplyGroupPrice())
                 .likeIfPresent(ErpGroupBuyingReviewDO::getExpressFee, reqVO.getExpressFee())
+                .likeIfPresent(ErpGroupBuyingReviewDO::getGroupPrice, reqVO.getGroupPrice())
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
                 .likeIfPresent(ErpGroupBuyingReviewDO::getCreator, reqVO.getCreator())
@@ -41,6 +42,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getRemark, ErpGroupBuyingReviewRespVO::getRemark)
                 .selectAs(ErpGroupBuyingReviewDO::getSupplyGroupPrice, ErpGroupBuyingReviewRespVO::getSupplyGroupPrice)
                 .selectAs(ErpGroupBuyingReviewDO::getExpressFee, ErpGroupBuyingReviewRespVO::getExpressFee)
+                .selectAs(ErpGroupBuyingReviewDO::getGroupPrice, ErpGroupBuyingReviewRespVO::getGroupPrice)
                 .selectAs(ErpGroupBuyingReviewDO::getSampleSendDate, ErpGroupBuyingReviewRespVO::getSampleSendDate)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupStartDate, ErpGroupBuyingReviewRespVO::getGroupStartDate)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupSales, ErpGroupBuyingReviewRespVO::getGroupSales)
@@ -79,7 +81,6 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingDO::getProductName, ErpGroupBuyingReviewRespVO::getProductName)
                 .selectAs(ErpGroupBuyingDO::getProductSpec, ErpGroupBuyingReviewRespVO::getProductSpec)
                 .selectAs(ErpGroupBuyingDO::getProductSku, ErpGroupBuyingReviewRespVO::getProductSku)
-                .selectAs(ErpGroupBuyingDO::getSupplyGroupPrice, ErpGroupBuyingReviewRespVO::getSupplyGroupPrice)
                 .selectAs(ErpGroupBuyingDO::getGroupMechanism, ErpGroupBuyingReviewRespVO::getGroupMechanism)
                 .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus);
 
@@ -118,6 +119,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingReviewDO::getRemark, ErpGroupBuyingReviewRespVO::getRemark)
                 .selectAs(ErpGroupBuyingReviewDO::getSupplyGroupPrice, ErpGroupBuyingReviewRespVO::getSupplyGroupPrice)
                 .selectAs(ErpGroupBuyingReviewDO::getExpressFee, ErpGroupBuyingReviewRespVO::getExpressFee)
+                .selectAs(ErpGroupBuyingReviewDO::getGroupPrice, ErpGroupBuyingReviewRespVO::getGroupPrice)
                 .selectAs(ErpGroupBuyingReviewDO::getSampleSendDate, ErpGroupBuyingReviewRespVO::getSampleSendDate)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupStartDate, ErpGroupBuyingReviewRespVO::getGroupStartDate)
                 .selectAs(ErpGroupBuyingReviewDO::getGroupSales, ErpGroupBuyingReviewRespVO::getGroupSales)
@@ -136,8 +138,7 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .selectAs(ErpGroupBuyingDO::getProductSpec, ErpGroupBuyingReviewRespVO::getProductSpec)
                 .selectAs(ErpGroupBuyingDO::getProductSku, ErpGroupBuyingReviewRespVO::getProductSku)
                 .selectAs(ErpGroupBuyingDO::getGroupMechanism, ErpGroupBuyingReviewRespVO::getGroupMechanism)
-                .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus)
-                .selectAs(ErpGroupBuyingDO::getExpressFee, ErpGroupBuyingReviewRespVO::getExpressFee);
+                .selectAs(ErpGroupBuyingDO::getStatus, ErpGroupBuyingReviewRespVO::getStatus);
 
         // 联表查询客户信息
         query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getName, ErpGroupBuyingReviewDO::getCustomerId)

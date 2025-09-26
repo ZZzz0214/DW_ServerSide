@@ -35,6 +35,9 @@ public class ErpGroupBuyingReviewSaveReqVO {
     @Schema(description = "快递费用", example = "10.00")
     private BigDecimal expressFee;
 
+    @Schema(description = "开团价格", example = "99.00")
+    private BigDecimal groupPrice;
+
     @Schema(description = "寄样日期", example = "2023-01-01")
     private LocalDate sampleSendDate;
 
