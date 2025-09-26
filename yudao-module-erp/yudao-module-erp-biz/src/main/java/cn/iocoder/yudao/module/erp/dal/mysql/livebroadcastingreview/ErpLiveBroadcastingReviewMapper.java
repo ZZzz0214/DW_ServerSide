@@ -83,7 +83,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingDO::getProductName, ErpLiveBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpLiveBroadcastingDO::getProductSpec, ErpLiveBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpLiveBroadcastingDO::getProductSku, ErpLiveBroadcastingReviewRespVO::getProductSku)
-                .selectAs(ErpLiveBroadcastingDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
+                .selectAs(ErpLiveBroadcastingReviewDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpLiveBroadcastingDO::getLiveCommission, ErpLiveBroadcastingReviewRespVO::getLiveCommission)
                 .selectAs(ErpLiveBroadcastingDO::getPublicCommission, ErpLiveBroadcastingReviewRespVO::getPublicCommission)
                 .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingReviewRespVO::getLiveStatus);
@@ -125,9 +125,10 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveSales, ErpLiveBroadcastingReviewRespVO::getLiveSales)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveDate, ErpLiveBroadcastingReviewRespVO::getRepeatLiveDate)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveSales, ErpLiveBroadcastingReviewRespVO::getRepeatLiveSales)
+                .selectAs(ErpLiveBroadcastingReviewDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreateTime, ErpLiveBroadcastingReviewRespVO::getCreateTime);
 
-        // 联表查询直播货盘信息
+        // 联表查询直播货盘信息（除了直播价格）
         query.leftJoin(ErpLiveBroadcastingDO.class, ErpLiveBroadcastingDO::getId, ErpLiveBroadcastingReviewDO::getLiveBroadcastingId)
                 .selectAs(ErpLiveBroadcastingDO::getNo, ErpLiveBroadcastingReviewRespVO::getLiveBroadcastingNo)
                 .selectAs(ErpLiveBroadcastingDO::getProductImage, ErpLiveBroadcastingReviewRespVO::getProductImage)
@@ -135,7 +136,6 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingDO::getProductName, ErpLiveBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpLiveBroadcastingDO::getProductSpec, ErpLiveBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpLiveBroadcastingDO::getProductSku, ErpLiveBroadcastingReviewRespVO::getProductSku)
-                .selectAs(ErpLiveBroadcastingDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpLiveBroadcastingDO::getLiveStatus, ErpLiveBroadcastingReviewRespVO::getLiveStatus);
 
         // 客户名称直接使用，不再联表查询客户信息

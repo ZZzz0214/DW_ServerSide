@@ -70,6 +70,11 @@ public class ErpLiveBroadcastingReviewDO extends BaseDO {
     private BigDecimal rebateCommission;
 
     /**
+     * 直播价格
+     */
+    private String livePrice;
+
+    /**
      * 寄样日期
      */
     private LocalDate sampleSendDate;

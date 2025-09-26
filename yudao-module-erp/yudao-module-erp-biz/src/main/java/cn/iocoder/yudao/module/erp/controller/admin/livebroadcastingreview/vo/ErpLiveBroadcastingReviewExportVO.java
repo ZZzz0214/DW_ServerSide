@@ -65,7 +65,7 @@ public class ErpLiveBroadcastingReviewExportVO {
 
     @Schema(description = "直播价格", example = "100.00")
     @ExcelProperty("直播价格")
-    private BigDecimal livePrice;
+    private String livePrice;
 
     @Schema(description = "直播佣金", example = "10.00")
     @ExcelProperty("直播佣金")

@@ -52,6 +52,8 @@ public class ErpLiveBroadcastingReviewImportExcelVO {
     @ExcelProperty(value = "返点佣金", converter = BigDecimalConvert.class)
     private BigDecimal rebateCommission;
 
+    @ExcelProperty("直播价格")
+    private String livePrice;
 
     @ExcelProperty(value = "寄样日期", converter = LocalDateTimeConvert.class)
     private LocalDateTime sampleSendDate;

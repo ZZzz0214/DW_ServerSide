@@ -32,6 +32,9 @@ public class ErpLiveBroadcastingReviewSaveReqVO {
     @Schema(description = "直播平台", example = "抖音")
     private String livePlatform;
 
+    @Schema(description = "直播价格", example = "99.90")
+    private String livePrice;
+
     @Schema(description = "直播佣金", example = "10.00")
     private BigDecimal liveCommission;
 
