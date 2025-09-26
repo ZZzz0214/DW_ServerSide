@@ -76,7 +76,7 @@ public class ErpLiveBroadcastingReviewExportVO {
     private BigDecimal publicCommission;
 
     @Schema(description = "返点佣金", example = "5.00")
-    @ExcelProperty("返点佣金")
+    @ExcelProperty("服务佣金")
     private BigDecimal rebateCommission;
 
     @Schema(description = "寄样日期", example = "2023-01-01")
