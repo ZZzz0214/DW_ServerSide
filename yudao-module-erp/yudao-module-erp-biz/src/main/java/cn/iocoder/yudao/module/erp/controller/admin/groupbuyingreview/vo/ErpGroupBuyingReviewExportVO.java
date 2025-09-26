@@ -47,14 +47,14 @@ public class ErpGroupBuyingReviewExportVO {
     private String customerName;
 
 
+    @ExcelProperty("开团价格")
+    private BigDecimal groupPrice;
+
     @ExcelProperty("供货价格")
     private BigDecimal supplyGroupPrice;
 
     @ExcelProperty("快递费用")
     private BigDecimal expressFee;
-
-    @ExcelProperty("开团价格")
-    private BigDecimal groupPrice;
 
     @ExcelProperty("开团机制")
     private String groupMechanism;
