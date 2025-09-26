@@ -126,7 +126,14 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                 respVO.setProductName(privateBroadcastingDO.getProductName());
                 respVO.setProductSpec(privateBroadcastingDO.getProductSpec());
                 respVO.setProductSku(privateBroadcastingDO.getProductSku());
-                respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
+                
+                // 优先使用私播复盘表的直播价格，如果为空则使用私播货盘表的直播价格
+                if (privateBroadcastingReview.getLivePrice() != null) {
+                    respVO.setLivePrice(privateBroadcastingReview.getLivePrice());
+                } else {
+                    respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
+                }
+                
                 respVO.setPrivateStatus(privateBroadcastingDO.getPrivateStatus());
                 if (privateBroadcastingDO.getBrandName() != null) {
                     respVO.setBrandName(privateBroadcastingDO.getBrandName());
@@ -276,7 +283,10 @@ public class ErpPrivateBroadcastingReviewServiceImpl implements ErpPrivateBroadc
                     respVO.setProductName(privateBroadcastingDO.getProductName());
                     respVO.setProductSpec(privateBroadcastingDO.getProductSpec());
                     respVO.setProductSku(privateBroadcastingDO.getProductSku());
-                    respVO.setLivePrice(privateBroadcastingDO.getLivePrice());
+                    
+                    // 不要覆盖私播复盘表的直播价格，保持私播复盘表自己的livePrice
+                    // respVO.setLivePrice(privateBroadcastingDO.getLivePrice()); // 移除这行，保持私播复盘表的直播价格
+                    
                     respVO.setPrivateStatus(privateBroadcastingDO.getPrivateStatus());
                     // 直接设置品牌ID，不进行字典转换（前端处理）
                     if (privateBroadcastingDO.getBrandName() != null) {

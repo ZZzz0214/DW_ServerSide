@@ -48,6 +48,9 @@ public class ErpPrivateBroadcastingReviewSaveReqVO {
     @Schema(description = "复团销量", example = "50")
     private Integer repeatGroupSales;
 
+    @Schema(description = "直播价格", example = "100.00")
+    private BigDecimal livePrice;
+
     @Schema(description = "备注信息", example = "备注内容")
     private String remark;
 }

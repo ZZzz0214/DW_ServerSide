@@ -86,6 +86,11 @@ public class ErpPrivateBroadcastingReviewDO extends BaseDO {
     private Integer repeatGroupSales;
 
     /**
+     * 直播价格
+     */
+    private BigDecimal livePrice;
+
+    /**
      * 备注信息
      */
     private String remark;

@@ -78,7 +78,6 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingDO::getProductName, ErpPrivateBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSpec, ErpPrivateBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSku, ErpPrivateBroadcastingReviewRespVO::getProductSku)
-                .selectAs(ErpPrivateBroadcastingDO::getLivePrice, ErpPrivateBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpPrivateBroadcastingDO::getPrivateStatus, ErpPrivateBroadcastingReviewRespVO::getPrivateStatus);
 
         // 联表查询客户信息
@@ -89,7 +88,9 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
             query.like(ErpCustomerDO::getName, reqVO.getCustomerName());
         }
 
-        query.selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName);
+        query.selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName)
+                // 最后选择私播复盘表的直播价格，确保不被其他表覆盖
+                .selectAs(ErpPrivateBroadcastingReviewDO::getLivePrice, ErpPrivateBroadcastingReviewRespVO::getLivePrice);
 
         return selectJoinPage(reqVO, ErpPrivateBroadcastingReviewRespVO.class, query);
     }
@@ -134,12 +135,13 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingDO::getProductName, ErpPrivateBroadcastingReviewRespVO::getProductName)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSpec, ErpPrivateBroadcastingReviewRespVO::getProductSpec)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSku, ErpPrivateBroadcastingReviewRespVO::getProductSku)
-                .selectAs(ErpPrivateBroadcastingDO::getLivePrice, ErpPrivateBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpPrivateBroadcastingDO::getPrivateStatus, ErpPrivateBroadcastingReviewRespVO::getPrivateStatus);
 
         // 联表查询客户信息
         query.leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpPrivateBroadcastingReviewDO::getCustomerId)
-                .selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName);
+                .selectAs(ErpCustomerDO::getName, ErpPrivateBroadcastingReviewRespVO::getCustomerName)
+                // 最后选择私播复盘表的直播价格，确保不被其他表覆盖
+                .selectAs(ErpPrivateBroadcastingReviewDO::getLivePrice, ErpPrivateBroadcastingReviewRespVO::getLivePrice);
 
         return selectJoinList(ErpPrivateBroadcastingReviewRespVO.class, query);
     }

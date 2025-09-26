@@ -58,5 +58,7 @@ public class ErpPrivateBroadcastingReviewImportExcelVO {
     @ExcelProperty(value = "复团销量", converter = IntegerConvert.class)
     private Integer repeatGroupSales;
 
+    @ExcelProperty(value = "直播价格", converter = BigDecimalConvert.class)
+    private BigDecimal livePrice;
 
 }
