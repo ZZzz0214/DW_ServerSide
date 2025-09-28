@@ -65,17 +65,17 @@ public class ErpGroupBuyingExportVO {
     @ExcelProperty("分发价格")
     private BigDecimal distributionPrice;
 
-    @Schema(description = "供货价格", example = "90.00")
-    @ExcelProperty("供货价格")
-    private BigDecimal supplyGroupPrice;
+    @Schema(description = "开团价格", example = "95.00")
+    @ExcelProperty("开团价格")
+    private BigDecimal groupPrice;
 
     @Schema(description = "帮卖佣金", example = "10.00")
     @ExcelProperty("帮卖佣金")
     private BigDecimal sellingCommission;
 
-    @Schema(description = "开团价格", example = "95.00")
-    @ExcelProperty("开团价格")
-    private BigDecimal groupPrice;
+    @Schema(description = "供货价格", example = "90.00")
+    @ExcelProperty("供货价格")
+    private BigDecimal supplyGroupPrice;
 
     @Schema(description = "渠道毛利", example = "15.00")
     @ExcelProperty("渠道毛利")

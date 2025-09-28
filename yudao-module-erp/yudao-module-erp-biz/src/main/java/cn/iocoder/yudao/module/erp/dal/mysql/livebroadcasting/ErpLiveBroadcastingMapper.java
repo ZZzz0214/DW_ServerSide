@@ -19,7 +19,7 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
         MPJLambdaWrapperX<ErpLiveBroadcastingDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingDO>()
                 .likeIfPresent(ErpLiveBroadcastingDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName())
-                .likeIfPresent(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName())
+                .eqIfPresent(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName())
                 .likeIfPresent(ErpLiveBroadcastingDO::getProductSpec, reqVO.getProductSpec())
                 .betweenIfPresent(ErpLiveBroadcastingDO::getShelfLife, reqVO.getShelfLife())
                 .likeIfPresent(ErpLiveBroadcastingDO::getLivePrice, reqVO.getLivePrice())
