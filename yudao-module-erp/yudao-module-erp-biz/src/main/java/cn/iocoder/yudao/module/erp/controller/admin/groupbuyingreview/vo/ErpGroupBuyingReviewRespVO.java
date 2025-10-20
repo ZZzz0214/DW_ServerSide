@@ -89,9 +89,9 @@ public class ErpGroupBuyingReviewRespVO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate repeatGroupDate;
 
-    @Schema(description = "复团销量", example = "50")
-    @ExcelProperty("复团销量")
-    private Integer repeatGroupSales;
+    @Schema(description = "复盘状态", example = "已完成")
+    @ExcelProperty("复盘状态")
+    private String reviewStatus;
 
     @Schema(description = "创建者")
     @ExcelProperty("创建人员")

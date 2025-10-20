@@ -55,8 +55,8 @@ public class ErpPrivateBroadcastingReviewImportExcelVO {
     private LocalDate repeatGroupDate;
 
 
-    @ExcelProperty(value = "复团销量", converter = IntegerConvert.class)
-    private Integer repeatGroupSales;
+    @ExcelProperty("复盘状态")
+    private String reviewStatus;
 
     @ExcelProperty(value = "直播价格", converter = BigDecimalConvert.class)
     private BigDecimal livePrice;

@@ -50,6 +50,6 @@ public class ErpGroupBuyingReviewSaveReqVO {
     @Schema(description = "复团日期", example = "2023-02-01")
     private LocalDate repeatGroupDate;
 
-    @Schema(description = "复团销量", example = "50")
-    private Integer repeatGroupSales;
+    @Schema(description = "复盘状态", example = "已完成")
+    private String reviewStatus;
 }

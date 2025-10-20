@@ -286,8 +286,8 @@ public class ErpGroupBuyingReviewServiceImpl implements ErpGroupBuyingReviewServ
                     if (importVO.getRepeatGroupDate() == null) {
                         groupBuyingReview.setRepeatGroupDate(existGroupBuyingReview.getRepeatGroupDate());
                     }
-                    if (importVO.getRepeatGroupSales() == null) {
-                        groupBuyingReview.setRepeatGroupSales(existGroupBuyingReview.getRepeatGroupSales());
+                    if (importVO.getReviewStatus() == null) {
+                        groupBuyingReview.setReviewStatus(existGroupBuyingReview.getReviewStatus());
                     }
 
                     groupBuyingReviewMapper.updateById(groupBuyingReview);

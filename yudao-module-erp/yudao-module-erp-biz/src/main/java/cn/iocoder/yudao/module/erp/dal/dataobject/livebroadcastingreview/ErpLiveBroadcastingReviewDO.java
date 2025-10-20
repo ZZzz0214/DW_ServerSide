@@ -95,9 +95,9 @@ public class ErpLiveBroadcastingReviewDO extends BaseDO {
     private LocalDate repeatLiveDate;
 
     /**
-     * 复播销量
+     * 复盘状态
      */
-    private Integer repeatLiveSales;
+    private String reviewStatus;
 
     /**
      * 租户编号

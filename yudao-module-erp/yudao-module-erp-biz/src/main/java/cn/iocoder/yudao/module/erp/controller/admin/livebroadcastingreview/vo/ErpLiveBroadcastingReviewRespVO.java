@@ -78,9 +78,9 @@ public class ErpLiveBroadcastingReviewRespVO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate repeatLiveDate;
 
-    @Schema(description = "复播销量", example = "50")
-    @ExcelProperty("复播销量")
-    private Integer repeatLiveSales;
+    @Schema(description = "复盘状态", example = "已完成")
+    @ExcelProperty("复盘状态")
+    private String reviewStatus;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")

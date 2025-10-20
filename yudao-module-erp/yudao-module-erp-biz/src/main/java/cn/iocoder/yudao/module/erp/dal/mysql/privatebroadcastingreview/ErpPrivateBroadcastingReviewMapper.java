@@ -27,6 +27,7 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getDropshipPrice, reqVO.getDropshippingPrice())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
+                .eqIfPresent(ErpPrivateBroadcastingReviewDO::getReviewStatus, reqVO.getReviewStatus())
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime());
 
@@ -49,7 +50,7 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingReviewDO::getGroupStartDate, ErpPrivateBroadcastingReviewRespVO::getGroupStartDate)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getGroupSales, ErpPrivateBroadcastingReviewRespVO::getGroupSales)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupDate, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupDate)
-                .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupSales, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupSales)
+                .selectAs(ErpPrivateBroadcastingReviewDO::getReviewStatus, ErpPrivateBroadcastingReviewRespVO::getReviewStatus)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getCreator, ErpPrivateBroadcastingReviewRespVO::getCreator)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getCreateTime, ErpPrivateBroadcastingReviewRespVO::getCreateTime);
 
@@ -124,7 +125,7 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .selectAs(ErpPrivateBroadcastingReviewDO::getGroupStartDate, ErpPrivateBroadcastingReviewRespVO::getGroupStartDate)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getGroupSales, ErpPrivateBroadcastingReviewRespVO::getGroupSales)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupDate, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupDate)
-                .selectAs(ErpPrivateBroadcastingReviewDO::getRepeatGroupSales, ErpPrivateBroadcastingReviewRespVO::getRepeatGroupSales)
+                .selectAs(ErpPrivateBroadcastingReviewDO::getReviewStatus, ErpPrivateBroadcastingReviewRespVO::getReviewStatus)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getCreator, ErpPrivateBroadcastingReviewRespVO::getCreator)
                 .selectAs(ErpPrivateBroadcastingReviewDO::getCreateTime, ErpPrivateBroadcastingReviewRespVO::getCreateTime);
 

@@ -71,8 +71,8 @@ public class ErpGroupBuyingReviewExportVO {
     @ExcelProperty("复团日期")
     private LocalDateTime repeatGroupDate;
 
-    @ExcelProperty("复团销量")
-    private Integer repeatGroupSales;
+    @ExcelProperty("复盘状态")
+    private String reviewStatus;
 
     @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_GROUP_BUYING_STATUS)

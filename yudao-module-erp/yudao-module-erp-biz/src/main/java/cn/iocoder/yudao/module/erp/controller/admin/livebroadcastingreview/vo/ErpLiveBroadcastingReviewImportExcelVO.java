@@ -71,8 +71,8 @@ public class ErpLiveBroadcastingReviewImportExcelVO {
     private LocalDateTime repeatLiveDate;
 
 
-    @ExcelProperty(value = "复播销量", converter = IntegerConvert.class)
-    private Integer repeatLiveSales;
+    @ExcelProperty("复盘状态")
+    private String reviewStatus;
 
 
 }

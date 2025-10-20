@@ -60,6 +60,9 @@ public class ErpGroupBuyingReviewPageReqVO extends PageParam {
     @Schema(description = "货盘状态", example = "上架")
     private String status;
 
+    @Schema(description = "复盘状态", example = "已完成")
+    private String reviewStatus;
+
     @Schema(description = "创建人员", example = "张三")
     private String creator;
 

@@ -81,9 +81,9 @@ public class ErpPrivateBroadcastingReviewDO extends BaseDO {
     private LocalDate repeatGroupDate;
 
     /**
-     * 复团销量
+     * 复盘状态
      */
-    private Integer repeatGroupSales;
+    private String reviewStatus;
 
     /**
      * 直播价格

@@ -27,6 +27,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .eqIfPresent(ErpLiveBroadcastingReviewDO::getLivePlatform, reqVO.getLivePlatform())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getLiveStartDate, reqVO.getLiveStartDate())
+                .eqIfPresent(ErpLiveBroadcastingReviewDO::getReviewStatus, reqVO.getReviewStatus())
                 .likeIfPresent(ErpLiveBroadcastingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpLiveBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime());
 
@@ -50,7 +51,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveStartDate, ErpLiveBroadcastingReviewRespVO::getLiveStartDate)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveSales, ErpLiveBroadcastingReviewRespVO::getLiveSales)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveDate, ErpLiveBroadcastingReviewRespVO::getRepeatLiveDate)
-                .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveSales, ErpLiveBroadcastingReviewRespVO::getRepeatLiveSales)
+                .selectAs(ErpLiveBroadcastingReviewDO::getReviewStatus, ErpLiveBroadcastingReviewRespVO::getReviewStatus)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLivePlatform, ErpLiveBroadcastingReviewRespVO::getLivePlatform)
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreator, ErpLiveBroadcastingReviewRespVO::getCreator)
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreateTime, ErpLiveBroadcastingReviewRespVO::getCreateTime);
@@ -124,7 +125,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveStartDate, ErpLiveBroadcastingReviewRespVO::getLiveStartDate)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLiveSales, ErpLiveBroadcastingReviewRespVO::getLiveSales)
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveDate, ErpLiveBroadcastingReviewRespVO::getRepeatLiveDate)
-                .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveSales, ErpLiveBroadcastingReviewRespVO::getRepeatLiveSales)
+                .selectAs(ErpLiveBroadcastingReviewDO::getReviewStatus, ErpLiveBroadcastingReviewRespVO::getReviewStatus)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreateTime, ErpLiveBroadcastingReviewRespVO::getCreateTime);
 

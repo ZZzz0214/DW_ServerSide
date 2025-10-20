@@ -95,9 +95,9 @@ public class ErpLiveBroadcastingReviewExportVO {
     @ExcelProperty("复播日期")
     private LocalDate repeatLiveDate;
 
-    @Schema(description = "复播销量", example = "50")
-    @ExcelProperty("复播销量")
-    private Integer repeatLiveSales;
+    @Schema(description = "复盘状态", example = "已完成")
+    @ExcelProperty("复盘状态")
+    private String reviewStatus;
 
     @Schema(description = "货盘状态", example = "上架")
     @ExcelProperty(value = "货盘状态", converter = DictConvert.class)

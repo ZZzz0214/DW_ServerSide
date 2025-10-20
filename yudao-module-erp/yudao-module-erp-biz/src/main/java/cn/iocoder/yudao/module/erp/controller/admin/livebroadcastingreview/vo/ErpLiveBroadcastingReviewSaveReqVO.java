@@ -56,6 +56,6 @@ public class ErpLiveBroadcastingReviewSaveReqVO {
     @Schema(description = "复播日期", example = "2023-01-10")
     private LocalDate repeatLiveDate;
 
-    @Schema(description = "复播销量", example = "50")
-    private Integer repeatLiveSales;
+    @Schema(description = "复盘状态", example = "已完成")
+    private String reviewStatus;
 }
