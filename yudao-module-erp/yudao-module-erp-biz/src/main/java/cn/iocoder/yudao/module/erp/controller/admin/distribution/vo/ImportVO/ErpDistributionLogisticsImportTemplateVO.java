@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.erp.controller.admin.distribution.vo.ImportVO;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
@@ -23,4 +22,7 @@ public class ErpDistributionLogisticsImportTemplateVO {
 
     @ExcelProperty("物流单号")
     private String trackingNumber;
+
+    @ExcelProperty("采购备注")
+    private String purchaseRemark;
 } 

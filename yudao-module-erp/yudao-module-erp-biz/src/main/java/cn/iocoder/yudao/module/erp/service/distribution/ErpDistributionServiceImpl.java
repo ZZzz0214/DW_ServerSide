@@ -2493,6 +2493,11 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     // 更新物流信息
                     existDistribution.setLogisticsCompany(importVO.getLogisticsCompany());
                     existDistribution.setTrackingNumber(importVO.getTrackingNumber());
+                    
+                    // 更新采购备注（如果提供了采购备注）
+                    if (StrUtil.isNotBlank(importVO.getPurchaseRemark())) {
+                        existDistribution.setPurchaseRemark(importVO.getPurchaseRemark());
+                    }
 
                     // 添加到更新列表
                     ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
