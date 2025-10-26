@@ -88,7 +88,8 @@ public class ErpPrivateBroadcastingReviewExportVO {
     private LocalDateTime repeatGroupDate;
 
     @Schema(description = "复盘状态", example = "已完成")
-    @ExcelProperty("复盘状态")
+    @ExcelProperty(value = "复盘状态", converter = DictConvert.class)
+    @DictFormat("erp_private_broadcasting_review_status")
     private String reviewStatus;
 
     @Schema(description = "货盘状态", example = "已审核")
