@@ -23,4 +23,10 @@ public interface FileMapper extends BaseMapperX<FileDO> {
                 .orderByDesc(FileDO::getId));
     }
 
+    default java.util.List<FileDO> selectListByConfigId(Long configId) {
+        return selectList(new LambdaQueryWrapperX<FileDO>()
+                .eq(FileDO::getConfigId, configId)
+                .orderByAsc(FileDO::getId));
+    }
+
 }
