@@ -119,9 +119,46 @@ public class ErpGroupBuyingController {
         PageResult<ErpGroupBuyingRespVO> pageResult = groupBuyingService.getGroupBuyingVOPage(pageReqVO);
         // 转换为导出VO
         List<ErpGroupBuyingExportVO> exportList = BeanUtils.toBean(pageResult.getList(), ErpGroupBuyingExportVO.class);
-        // 导出 Excel
-        ExcelUtils.write(response, "团购货盘.xlsx", "数据", ErpGroupBuyingExportVO.class,
-                exportList);
+        
+        // 下载图片并转换为byte[]
+        int successCount = 0;
+        int failCount = 0;
+        for (ErpGroupBuyingExportVO exportVO : exportList) {
+            if (exportVO.getProductImage() != null && !exportVO.getProductImage().trim().isEmpty()) {
+                try {
+                    // 获取第一张图片URL
+                    String[] imageUrls = exportVO.getProductImage().split(",");
+                    if (imageUrls.length > 0) {
+                        String firstImageUrl = imageUrls[0].trim();
+                        if (!firstImageUrl.isEmpty()) {
+                            log.debug("开始获取图片，编号: {}, URL: {}", exportVO.getNo(), firstImageUrl);
+                            // 获取图片数据（优先使用本地文件服务，如果失败则使用HTTP下载）
+                            byte[] imageData = getImageData(firstImageUrl);
+                            if (imageData != null && imageData.length > 0) {
+                                exportVO.setProductImageData(imageData);
+                                // 清空productImage字段的文本内容，避免显示URL
+                                exportVO.setProductImage("");
+                                successCount++;
+                                log.debug("图片获取成功，编号: {}, 大小: {} bytes", exportVO.getNo(), imageData.length);
+                            } else {
+                                failCount++;
+                                log.warn("图片获取失败，编号: {}, URL: {}, 返回数据为空", exportVO.getNo(), firstImageUrl);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    failCount++;
+                    log.warn("下载产品图片失败，编号: {}, 错误: {}", exportVO.getNo(), e.getMessage(), e);
+                    // 图片下载失败不影响导出，继续处理
+                }
+            }
+        }
+        log.info("图片下载完成，成功: {}张，失败: {}张", successCount, failCount);
+        
+        // 导出 Excel（支持图片）
+        // 产品图片字段在ExportVO中是第2列（索引1），图片大小设置为200x200像素
+        ExcelUtils.writeWithImage(response, "团购货盘.xlsx", "数据", ErpGroupBuyingExportVO.class,
+                exportList, "productImageData", 1, 200, 200);
     }
 
     @PostMapping("/import")
@@ -338,19 +375,35 @@ public class ErpGroupBuyingController {
     }
     
     /**
-     * 从URL下载图片
+     * 获取图片数据（通过HTTP方式，支持本地文件存储）
+     */
+    private byte[] getImageData(String imageUrl) {
+        try {
+            return downloadImageFromUrl(imageUrl);
+        } catch (Exception e) {
+            log.warn("获取图片失败: {}, 错误: {}", imageUrl, e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * 从URL下载图片（HTTP方式，支持本地文件存储）
      */
     private byte[] downloadImageFromUrl(String imageUrl) throws Exception {
+        String originalUrl = imageUrl;
         // 如果是相对路径，转换为完整URL
         if (imageUrl.startsWith("/admin-api/")) {
             // 从配置中获取域名，这里暂时使用localhost
             imageUrl = "http://localhost:48080" + imageUrl;
-        } else if (imageUrl.startsWith("http://192.168.1.85:48080/admin-api/")) {
+        } else if (imageUrl.startsWith("http://localhost:48080/admin-api/") || 
+                   imageUrl.startsWith("http://192.168.1.85:48080/admin-api/") ||
+                   imageUrl.startsWith("https://")) {
             // 已经是完整的URL，直接使用
         } else if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
             // 如果既不是完整URL也不是相对路径，可能是其他格式，尝试添加默认前缀
-            imageUrl = "http://192.168.1.85:48080/admin-api/infra/file/4/get/" + imageUrl;
+            imageUrl = "http://localhost:48080/admin-api/infra/file/4/get/" + imageUrl;
         }
+        log.debug("下载图片，原始URL: {}, 处理后URL: {}", originalUrl, imageUrl);
         
         URL url = new URL(imageUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();

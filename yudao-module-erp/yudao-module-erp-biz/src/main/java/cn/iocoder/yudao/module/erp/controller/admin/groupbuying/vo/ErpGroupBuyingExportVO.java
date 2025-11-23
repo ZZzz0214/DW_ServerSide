@@ -24,6 +24,10 @@ public class ErpGroupBuyingExportVO {
     @ExcelProperty("产品图片")
     private String productImage;
 
+    @Schema(description = "产品图片数据（用于Excel导出）", hidden = true)
+    @com.alibaba.excel.annotation.ExcelIgnore
+    private byte[] productImageData;
+
     @Schema(description = "品牌名称", example = "品牌A")
     @ExcelProperty(value = "品牌名称", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)

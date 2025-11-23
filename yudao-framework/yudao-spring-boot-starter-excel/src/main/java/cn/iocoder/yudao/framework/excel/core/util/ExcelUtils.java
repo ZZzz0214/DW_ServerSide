@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.framework.excel.core.util;
 
 import cn.iocoder.yudao.framework.excel.core.handler.SelectSheetWriteHandler;
+import cn.iocoder.yudao.framework.excel.core.handler.ImageWriteHandler;
 import cn.iocoder.yudao.framework.excel.core.convert.AccountConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DoubleConvert;
@@ -12,7 +13,6 @@ import com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter;
 import com.alibaba.excel.converters.longconverter.LongStringConverter;
 import com.alibaba.excel.read.listener.ReadListener;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +23,9 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +60,54 @@ public class ExcelUtils {
                 .registerConverter(new BigDecimalStringConverter())
                 .sheet(sheetName).doWrite(data);
         // 设置 header 和 contentType。写在最后的原因是，避免报错时，响应 contentType 已经被修改了
+        response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(filename, StandardCharsets.UTF_8.name()));
+        response.setContentType("application/vnd.ms-excel;charset=UTF-8");
+    }
+
+    /**
+     * 将列表以 Excel 响应给前端（支持图片导出）
+     *
+     * @param response  响应
+     * @param filename  文件名
+     * @param sheetName Excel sheet 名
+     * @param head      Excel head 头
+     * @param data      数据列表
+     * @param imageFieldName 图片字段名称
+     * @param imageColumnIndex 图片列索引（从0开始）
+     * @param imageWidth 图片宽度（像素，默认100）
+     * @param imageHeight 图片高度（像素，默认100）
+     * @param <T>       泛型，保证 head 和 data 类型的一致性
+     * @throws IOException 写入失败的情况
+     */
+    public static <T> void writeWithImage(HttpServletResponse response, String filename, String sheetName,
+                                          Class<T> head, List<T> data, String imageFieldName, 
+                                          int imageColumnIndex, int imageWidth, int imageHeight) throws IOException {
+        ImageWriteHandler imageHandler = new ImageWriteHandler(imageFieldName, imageColumnIndex, imageWidth, imageHeight);
+        
+        // 使用ByteArrayOutputStream先写入数据
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, head)
+                .autoCloseStream(false)
+                .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                .registerWriteHandler(new SelectSheetWriteHandler(head))
+                .registerWriteHandler(imageHandler)
+                .registerConverter(new LongStringConverter())
+                .registerConverter(new BigDecimalStringConverter())
+                .sheet(sheetName).doWrite(data);
+        
+        // 读取已写入的Excel并插入图片
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        Workbook workbook = WorkbookFactory.create(inputStream);
+        Sheet sheet = workbook.getSheet(sheetName);
+        
+        // 处理图片插入
+        imageHandler.processImages(sheet, workbook, data);
+        
+        // 写入响应
+        workbook.write(response.getOutputStream());
+        workbook.close();
+        
+        // 设置 header 和 contentType
         response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(filename, StandardCharsets.UTF_8.name()));
         response.setContentType("application/vnd.ms-excel;charset=UTF-8");
     }

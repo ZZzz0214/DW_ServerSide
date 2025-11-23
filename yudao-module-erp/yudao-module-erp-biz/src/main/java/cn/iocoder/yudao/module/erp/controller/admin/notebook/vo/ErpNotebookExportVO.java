@@ -28,6 +28,10 @@ public class ErpNotebookExportVO {
     @ExcelProperty("图片")
     private String images;
 
+    @Schema(description = "图片数据（用于Excel导出）", hidden = true)
+    @com.alibaba.excel.annotation.ExcelIgnore
+    private byte[] imagesData;
+
     @ExcelProperty("任务名称")
     private String taskName;
 
