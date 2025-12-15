@@ -26,9 +26,28 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getExpressFee, reqVO.getExpressFee())
                 .likeIfPresent(ErpPrivateBroadcastingReviewDO::getDropshipPrice, reqVO.getDropshippingPrice())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
-                .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
-                .eqIfPresent(ErpPrivateBroadcastingReviewDO::getReviewStatus, reqVO.getReviewStatus())
-                .likeIfPresent(ErpPrivateBroadcastingReviewDO::getCreator, reqVO.getCreator())
+                .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getGroupStartDate, reqVO.getGroupStartDate());
+        
+        // 复盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getReviewStatuses()) || Boolean.TRUE.equals(reqVO.getReviewStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getReviewStatuses())) {
+                    w.in(ErpPrivateBroadcastingReviewDO::getReviewStatus, reqVO.getReviewStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getReviewStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpPrivateBroadcastingReviewDO::getReviewStatus).or().eq(ErpPrivateBroadcastingReviewDO::getReviewStatus, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpPrivateBroadcastingReviewDO::getReviewStatus, reqVO.getReviewStatus());
+        }
+        
+        query.likeIfPresent(ErpPrivateBroadcastingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpPrivateBroadcastingReviewDO::getCreateTime, reqVO.getCreateTime());
 
         // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
@@ -67,10 +86,40 @@ public interface ErpPrivateBroadcastingReviewMapper extends BaseMapperX<ErpPriva
         if (reqVO.getProductSpec() != null && !reqVO.getProductSpec().isEmpty()) {
             query.like(ErpPrivateBroadcastingDO::getProductSpec, reqVO.getProductSpec());
         }
-        if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
+        // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getStatuses()) || Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getStatuses())) {
+                    w.in(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpPrivateBroadcastingDO::getPrivateStatus).or().eq(ErpPrivateBroadcastingDO::getPrivateStatus, ""));
+                }
+            });
+        } else if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
             query.eq(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getStatus());
         }
-        if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
+        // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getBrandNames()) || Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getBrandNames())) {
+                    w.in(ErpPrivateBroadcastingDO::getBrandName, reqVO.getBrandNames());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpPrivateBroadcastingDO::getBrandName).or().eq(ErpPrivateBroadcastingDO::getBrandName, ""));
+                }
+            });
+        } else if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
             query.like(ErpPrivateBroadcastingDO::getBrandName, reqVO.getBrandName());
         }
 

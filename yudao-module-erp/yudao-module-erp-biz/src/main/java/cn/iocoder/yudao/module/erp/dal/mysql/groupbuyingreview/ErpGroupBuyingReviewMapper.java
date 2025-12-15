@@ -26,9 +26,28 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
                 .likeIfPresent(ErpGroupBuyingReviewDO::getExpressFee, reqVO.getExpressFee())
                 .likeIfPresent(ErpGroupBuyingReviewDO::getGroupPrice, reqVO.getGroupPrice())
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getSampleSendDate, reqVO.getSampleSendDate())
-                .betweenIfPresent(ErpGroupBuyingReviewDO::getGroupStartDate, reqVO.getGroupStartDate())
-                .eqIfPresent(ErpGroupBuyingReviewDO::getReviewStatus, reqVO.getReviewStatus())
-                .likeIfPresent(ErpGroupBuyingReviewDO::getCreator, reqVO.getCreator())
+                .betweenIfPresent(ErpGroupBuyingReviewDO::getGroupStartDate, reqVO.getGroupStartDate());
+        
+        // 复盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getReviewStatuses()) || Boolean.TRUE.equals(reqVO.getReviewStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getReviewStatuses())) {
+                    w.in(ErpGroupBuyingReviewDO::getReviewStatus, reqVO.getReviewStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getReviewStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpGroupBuyingReviewDO::getReviewStatus).or().eq(ErpGroupBuyingReviewDO::getReviewStatus, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpGroupBuyingReviewDO::getReviewStatus, reqVO.getReviewStatus());
+        }
+        
+        query.likeIfPresent(ErpGroupBuyingReviewDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpGroupBuyingReviewDO::getCreateTime, reqVO.getCreateTime());
 
         // 权限控制：admin用户可以查看全部数据，其他用户只能查看自己的数据
@@ -61,7 +80,22 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
         if (reqVO.getGroupBuyingNo() != null && !reqVO.getGroupBuyingNo().isEmpty()) {
             query.like(ErpGroupBuyingDO::getNo, reqVO.getGroupBuyingNo());
         }
-        if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
+        // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getBrandNames()) || Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getBrandNames())) {
+                    w.in(ErpGroupBuyingDO::getBrandName, reqVO.getBrandNames());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpGroupBuyingDO::getBrandName).or().eq(ErpGroupBuyingDO::getBrandName, ""));
+                }
+            });
+        } else if (reqVO.getBrandName() != null && !reqVO.getBrandName().isEmpty()) {
             query.like(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName());
         }
         if (reqVO.getProductName() != null && !reqVO.getProductName().isEmpty()) {
@@ -73,7 +107,22 @@ public interface ErpGroupBuyingReviewMapper extends BaseMapperX<ErpGroupBuyingRe
         if (reqVO.getProductSku() != null && !reqVO.getProductSku().isEmpty()) {
             query.like(ErpGroupBuyingDO::getProductSku, reqVO.getProductSku());
         }
-        if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
+        // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getStatuses()) || Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getStatuses())) {
+                    w.in(ErpGroupBuyingDO::getStatus, reqVO.getStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpGroupBuyingDO::getStatus).or().eq(ErpGroupBuyingDO::getStatus, ""));
+                }
+            });
+        } else if (reqVO.getStatus() != null && !reqVO.getStatus().isEmpty()) {
             query.eq(ErpGroupBuyingDO::getStatus, reqVO.getStatus());
         }
 
