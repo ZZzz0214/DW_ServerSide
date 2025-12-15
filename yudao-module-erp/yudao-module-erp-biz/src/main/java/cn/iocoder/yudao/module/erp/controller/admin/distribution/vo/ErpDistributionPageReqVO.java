@@ -21,8 +21,14 @@ public class ErpDistributionPageReqVO extends PageParam {
     @Schema(description = "物流公司", example = "顺丰速运")
     private String logisticsCompany;
 
+    @Schema(description = "物流公司为空筛选", example = "true")
+    private Boolean logisticsCompanyEmpty;
+
     @Schema(description = "物流单号", example = "SF1234567890")
     private String trackingNumber;
+
+    @Schema(description = "物流单号为空筛选", example = "true")
+    private Boolean trackingNumberEmpty;
 
     @Schema(description = "收件人姓名", example = "张三")
     private String receiverName;

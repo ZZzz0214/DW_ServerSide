@@ -713,10 +713,26 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
             if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
                 boolQuery.must(QueryBuilders.wildcardQuery("order_number", "*" + pageReqVO.getOrderNumber().trim() + "*"));
             }
-            if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
+            // 物流公司筛选：支持为空筛选
+            if (Boolean.TRUE.equals(pageReqVO.getLogisticsCompanyEmpty())) {
+                // 筛选物流公司为空（字段不存在或为空字符串）
+                BoolQueryBuilder emptyQuery = QueryBuilders.boolQuery();
+                emptyQuery.should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("logistics_company")));
+                emptyQuery.should(QueryBuilders.termQuery("logistics_company", ""));
+                emptyQuery.minimumShouldMatch(1);
+                boolQuery.must(emptyQuery);
+            } else if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
                 boolQuery.must(QueryBuilders.wildcardQuery("logistics_company", "*" + pageReqVO.getLogisticsCompany().trim() + "*"));
             }
-            if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
+            // 物流单号筛选：支持为空筛选
+            if (Boolean.TRUE.equals(pageReqVO.getTrackingNumberEmpty())) {
+                // 筛选物流单号为空（字段不存在或为空字符串）
+                BoolQueryBuilder emptyQuery = QueryBuilders.boolQuery();
+                emptyQuery.should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("tracking_number")));
+                emptyQuery.should(QueryBuilders.termQuery("tracking_number", ""));
+                emptyQuery.minimumShouldMatch(1);
+                boolQuery.must(emptyQuery);
+            } else if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
                 boolQuery.must(QueryBuilders.wildcardQuery("tracking_number", "*" + pageReqVO.getTrackingNumber().trim() + "*"));
             }
             if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
@@ -2719,10 +2735,26 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
             boolQuery.must(QueryBuilders.wildcardQuery("order_number", "*" + pageReqVO.getOrderNumber().trim() + "*"));
         }
-        if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
+        // 物流公司筛选：支持为空筛选
+        if (Boolean.TRUE.equals(pageReqVO.getLogisticsCompanyEmpty())) {
+            // 筛选物流公司为空（字段不存在或为空字符串）
+            BoolQueryBuilder emptyQuery = QueryBuilders.boolQuery();
+            emptyQuery.should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("logistics_company")));
+            emptyQuery.should(QueryBuilders.termQuery("logistics_company", ""));
+            emptyQuery.minimumShouldMatch(1);
+            boolQuery.must(emptyQuery);
+        } else if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
             boolQuery.must(QueryBuilders.wildcardQuery("logistics_company", "*" + pageReqVO.getLogisticsCompany().trim() + "*"));
         }
-        if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
+        // 物流单号筛选：支持为空筛选
+        if (Boolean.TRUE.equals(pageReqVO.getTrackingNumberEmpty())) {
+            // 筛选物流单号为空（字段不存在或为空字符串）
+            BoolQueryBuilder emptyQuery = QueryBuilders.boolQuery();
+            emptyQuery.should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("tracking_number")));
+            emptyQuery.should(QueryBuilders.termQuery("tracking_number", ""));
+            emptyQuery.minimumShouldMatch(1);
+            boolQuery.must(emptyQuery);
+        } else if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
             boolQuery.must(QueryBuilders.wildcardQuery("tracking_number", "*" + pageReqVO.getTrackingNumber().trim() + "*"));
         }
         if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
@@ -2879,10 +2911,24 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
         if (StrUtil.isNotBlank(pageReqVO.getOrderNumber())) {
             queryWrapper.like(ErpDistributionCombinedDO::getOrderNumber, pageReqVO.getOrderNumber().trim());
         }
-        if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
+        // 物流公司筛选：支持为空筛选
+        if (Boolean.TRUE.equals(pageReqVO.getLogisticsCompanyEmpty())) {
+            queryWrapper.and(wrapper -> wrapper
+                .isNull(ErpDistributionCombinedDO::getLogisticsCompany)
+                .or()
+                .eq(ErpDistributionCombinedDO::getLogisticsCompany, "")
+            );
+        } else if (StrUtil.isNotBlank(pageReqVO.getLogisticsCompany())) {
             queryWrapper.like(ErpDistributionCombinedDO::getLogisticsCompany, pageReqVO.getLogisticsCompany().trim());
         }
-        if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
+        // 物流单号筛选：支持为空筛选
+        if (Boolean.TRUE.equals(pageReqVO.getTrackingNumberEmpty())) {
+            queryWrapper.and(wrapper -> wrapper
+                .isNull(ErpDistributionCombinedDO::getTrackingNumber)
+                .or()
+                .eq(ErpDistributionCombinedDO::getTrackingNumber, "")
+            );
+        } else if (StrUtil.isNotBlank(pageReqVO.getTrackingNumber())) {
             queryWrapper.like(ErpDistributionCombinedDO::getTrackingNumber, pageReqVO.getTrackingNumber().trim());
         }
         if (StrUtil.isNotBlank(pageReqVO.getReceiverName())) {
