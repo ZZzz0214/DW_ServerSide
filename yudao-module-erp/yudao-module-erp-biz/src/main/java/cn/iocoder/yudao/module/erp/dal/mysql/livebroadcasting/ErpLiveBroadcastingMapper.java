@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.livebroadcasting;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
@@ -18,15 +19,53 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
     default PageResult<ErpLiveBroadcastingRespVO> selectPage(ErpLiveBroadcastingPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpLiveBroadcastingDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingDO>()
                 .likeIfPresent(ErpLiveBroadcastingDO::getNo, reqVO.getNo())
-                .likeIfPresent(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName())
-                .eqIfPresent(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName())
-                .likeIfPresent(ErpLiveBroadcastingDO::getProductSpec, reqVO.getProductSpec())
+                .likeIfPresent(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName());
+        
+        // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getBrandNames()) || Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getBrandNames())) {
+                    w.in(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandNames());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpLiveBroadcastingDO::getBrandName).or().eq(ErpLiveBroadcastingDO::getBrandName, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpLiveBroadcastingDO::getBrandName, reqVO.getBrandName());
+        }
+        
+        query.likeIfPresent(ErpLiveBroadcastingDO::getProductSpec, reqVO.getProductSpec())
                 .betweenIfPresent(ErpLiveBroadcastingDO::getShelfLife, reqVO.getShelfLife())
                 .likeIfPresent(ErpLiveBroadcastingDO::getLivePrice, reqVO.getLivePrice())
                 .likeIfPresent(ErpLiveBroadcastingDO::getLiveCommission, reqVO.getLiveCommission())
-                .likeIfPresent(ErpLiveBroadcastingDO::getPublicCommission, reqVO.getPublicCommission())
-                .eqIfPresent(ErpLiveBroadcastingDO::getLiveStatus, reqVO.getLiveStatus())
-                .likeIfPresent(ErpLiveBroadcastingDO::getCreator, reqVO.getCreator())
+                .likeIfPresent(ErpLiveBroadcastingDO::getPublicCommission, reqVO.getPublicCommission());
+        
+        // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getLiveStatuses()) || Boolean.TRUE.equals(reqVO.getLiveStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getLiveStatuses())) {
+                    w.in(ErpLiveBroadcastingDO::getLiveStatus, reqVO.getLiveStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getLiveStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpLiveBroadcastingDO::getLiveStatus).or().eq(ErpLiveBroadcastingDO::getLiveStatus, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpLiveBroadcastingDO::getLiveStatus, reqVO.getLiveStatus());
+        }
+        
+        query.likeIfPresent(ErpLiveBroadcastingDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpLiveBroadcastingDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpLiveBroadcastingDO::getId)
                 // 直播货盘表字段映射

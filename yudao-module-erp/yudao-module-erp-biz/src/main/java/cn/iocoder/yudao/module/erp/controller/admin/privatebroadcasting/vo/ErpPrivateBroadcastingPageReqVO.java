@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
 
@@ -24,6 +25,12 @@ public class ErpPrivateBroadcastingPageReqVO extends PageParam {
 
     @Schema(description = "品牌名称", example = "品牌A")
     private String brandName;
+
+    @Schema(description = "品牌名称（多选）", example = "[\"品牌A\", \"品牌B\"]")
+    private List<String> brandNames;
+
+    @Schema(description = "品牌名称为空筛选", example = "true")
+    private Boolean brandNameEmpty;
 
     @Schema(description = "产品名称", example = "产品A")
     private String productName;
@@ -49,6 +56,12 @@ public class ErpPrivateBroadcastingPageReqVO extends PageParam {
 
     @Schema(description = "货盘状态", example = "未设置")
     private String privateStatus;
+
+    @Schema(description = "货盘状态（多选）", example = "[\"未设置\", \"已设置\"]")
+    private List<String> privateStatuses;
+
+    @Schema(description = "货盘状态为空筛选", example = "true")
+    private Boolean privateStatusEmpty;
 
     @Schema(description = "创建人员", example = "张三")
     private String creator;

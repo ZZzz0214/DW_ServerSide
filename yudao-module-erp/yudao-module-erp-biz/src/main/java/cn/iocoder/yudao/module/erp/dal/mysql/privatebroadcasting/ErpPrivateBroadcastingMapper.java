@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.privatebroadcasting;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
@@ -18,16 +19,54 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
     default PageResult<ErpPrivateBroadcastingRespVO> selectPage(ErpPrivateBroadcastingPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpPrivateBroadcastingDO> query = new MPJLambdaWrapperX<ErpPrivateBroadcastingDO>()
                 .likeIfPresent(ErpPrivateBroadcastingDO::getNo, reqVO.getNo())
-                .likeIfPresent(ErpPrivateBroadcastingDO::getProductName, reqVO.getProductName())
-                .likeIfPresent(ErpPrivateBroadcastingDO::getBrandName, reqVO.getBrandName())
-                .likeIfPresent(ErpPrivateBroadcastingDO::getProductSpec, reqVO.getProductSpec())
+                .likeIfPresent(ErpPrivateBroadcastingDO::getProductName, reqVO.getProductName());
+        
+        // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getBrandNames()) || Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getBrandNames())) {
+                    w.in(ErpPrivateBroadcastingDO::getBrandName, reqVO.getBrandNames());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpPrivateBroadcastingDO::getBrandName).or().eq(ErpPrivateBroadcastingDO::getBrandName, ""));
+                }
+            });
+        } else {
+            query.likeIfPresent(ErpPrivateBroadcastingDO::getBrandName, reqVO.getBrandName());
+        }
+        
+        query.likeIfPresent(ErpPrivateBroadcastingDO::getProductSpec, reqVO.getProductSpec())
                 .betweenIfPresent(ErpPrivateBroadcastingDO::getShelfLife, reqVO.getShelfLife())
                 .likeIfPresent(ErpPrivateBroadcastingDO::getLivePrice, reqVO.getLivePrice())
                 .likeIfPresent(ErpPrivateBroadcastingDO::getProductNakedPrice, reqVO.getNakedPrice())
                 .likeIfPresent(ErpPrivateBroadcastingDO::getExpressFee, reqVO.getExpressFee())
-                .likeIfPresent(ErpPrivateBroadcastingDO::getDropshipPrice, reqVO.getDropshippingPrice())
-                .eqIfPresent(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getPrivateStatus())
-                .likeIfPresent(ErpPrivateBroadcastingDO::getCreator, reqVO.getCreator())
+                .likeIfPresent(ErpPrivateBroadcastingDO::getDropshipPrice, reqVO.getDropshippingPrice());
+        
+        // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getPrivateStatuses()) || Boolean.TRUE.equals(reqVO.getPrivateStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getPrivateStatuses())) {
+                    w.in(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getPrivateStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getPrivateStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpPrivateBroadcastingDO::getPrivateStatus).or().eq(ErpPrivateBroadcastingDO::getPrivateStatus, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getPrivateStatus());
+        }
+        
+        query.likeIfPresent(ErpPrivateBroadcastingDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpPrivateBroadcastingDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpPrivateBroadcastingDO::getId)
                 // 私播货盘表字段映射

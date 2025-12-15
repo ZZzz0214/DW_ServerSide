@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.dal.mysql.groupbuying;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
@@ -18,15 +19,53 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
     default PageResult<ErpGroupBuyingRespVO> selectPage(ErpGroupBuyingPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpGroupBuyingDO> query = new MPJLambdaWrapperX<ErpGroupBuyingDO>()
                 .likeIfPresent(ErpGroupBuyingDO::getNo, reqVO.getNo())
-                .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName())
-                .eqIfPresent(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName())
-                .likeIfPresent(ErpGroupBuyingDO::getProductSpec, reqVO.getProductSpec())
+                .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName());
+        
+        // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getBrandNames()) || Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getBrandNames())) {
+                    w.in(ErpGroupBuyingDO::getBrandName, reqVO.getBrandNames());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getBrandNameEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpGroupBuyingDO::getBrandName).or().eq(ErpGroupBuyingDO::getBrandName, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpGroupBuyingDO::getBrandName, reqVO.getBrandName());
+        }
+        
+        query.likeIfPresent(ErpGroupBuyingDO::getProductSpec, reqVO.getProductSpec())
                 .betweenIfPresent(ErpGroupBuyingDO::getShelfLife, reqVO.getShelfLife())
                 .likeIfPresent(ErpGroupBuyingDO::getSupplyGroupPrice, reqVO.getSupplyGroupPrice())
                 .likeIfPresent(ErpGroupBuyingDO::getSellingCommission, reqVO.getSellingCommission())
-                .likeIfPresent(ErpGroupBuyingDO::getGroupPrice, reqVO.getGroupPrice())
-                .eqIfPresent(ErpGroupBuyingDO::getStatus, reqVO.getStatus())
-                .likeIfPresent(ErpGroupBuyingDO::getCreator, reqVO.getCreator())
+                .likeIfPresent(ErpGroupBuyingDO::getGroupPrice, reqVO.getGroupPrice());
+        
+        // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        if (CollUtil.isNotEmpty(reqVO.getStatuses()) || Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
+            query.and(w -> {
+                boolean hasCondition = false;
+                if (CollUtil.isNotEmpty(reqVO.getStatuses())) {
+                    w.in(ErpGroupBuyingDO::getStatus, reqVO.getStatuses());
+                    hasCondition = true;
+                }
+                if (Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
+                    if (hasCondition) {
+                        w.or();
+                    }
+                    w.and(empty -> empty.isNull(ErpGroupBuyingDO::getStatus).or().eq(ErpGroupBuyingDO::getStatus, ""));
+                }
+            });
+        } else {
+            query.eqIfPresent(ErpGroupBuyingDO::getStatus, reqVO.getStatus());
+        }
+        
+        query.likeIfPresent(ErpGroupBuyingDO::getCreator, reqVO.getCreator())
                 .betweenIfPresent(ErpGroupBuyingDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ErpGroupBuyingDO::getId)
                 // 团购货盘表字段映射
