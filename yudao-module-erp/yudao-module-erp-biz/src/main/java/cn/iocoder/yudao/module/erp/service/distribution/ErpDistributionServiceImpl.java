@@ -1706,7 +1706,12 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         if (StrUtil.isNotBlank(importVO.getCustomerName())) {
                             existDistribution.setCustomerName(importVO.getCustomerName());
                         }
-                        existDistribution.setComboProductId(comboProductId);
+                        if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                            existDistribution.setTransferPerson(importVO.getTransferPerson());
+                        }
+                        if (comboProductId != null) {
+                            existDistribution.setComboProductId(comboProductId);
+                        }
 
                         updateList.add(existDistribution);
                         esUpdateList.add(convertCombinedToES(existDistribution));
@@ -1999,11 +2004,25 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     throw exception(DISTRIBUTION_NOT_EXISTS);
                 }
                 LocalDateTime now = LocalDateTime.now();
-                // 更新采购杂费、售后审核费用和售后状况
-                existDistribution.setPurchaseOtherFees(importVO.getOtherFees());
-                existDistribution.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
-                existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                existDistribution.setAfterSalesTime(now);
+                // 更新采购杂费、售后审核费用和售后状况 - 只更新导入文件中提供的非空字段
+                if (importVO.getOtherFees() != null) {
+                    existDistribution.setPurchaseOtherFees(importVO.getOtherFees());
+                }
+                if (importVO.getPurchaseAfterSalesAmount() != null) {
+                    existDistribution.setPurchaseAfterSalesAmount(importVO.getPurchaseAfterSalesAmount());
+                }
+                if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                    // 比较导入的售后状态和数据库中的售后状态
+                    String existingStatus = existDistribution.getAfterSalesStatus();
+                    String importStatus = importVO.getAfterSalesStatus();
+                    
+                    // 只有状态发生变化时才更新售后状态和售后时间
+                    if (!StrUtil.equals(existingStatus, importStatus)) {
+                        existDistribution.setAfterSalesStatus(importStatus);
+                        existDistribution.setAfterSalesTime(now);
+                    }
+                    // 如果状态相同，不更新售后时间，保持数据库原值
+                }
 
                 // 添加到更新列表
                 ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
@@ -2074,12 +2093,28 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                     throw exception(DISTRIBUTION_NOT_EXISTS);
                 }
                 LocalDateTime now = LocalDateTime.now();
-                // 更新销售杂费、销售售后金额和售后状况
-                existDistribution.setSaleOtherFees(importVO.getSaleOtherFees());
-                existDistribution.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
-                existDistribution.setAfterSalesStatus(importVO.getAfterSalesStatus());
-                existDistribution.setAfterSalesTime(now);
-                existDistribution.setTransferPerson(importVO.getTransferPerson());
+                // 更新销售杂费、销售售后金额和售后状况 - 只更新导入文件中提供的非空字段
+                if (importVO.getSaleOtherFees() != null) {
+                    existDistribution.setSaleOtherFees(importVO.getSaleOtherFees());
+                }
+                if (importVO.getSaleAfterSalesAmount() != null) {
+                    existDistribution.setSaleAfterSalesAmount(importVO.getSaleAfterSalesAmount());
+                }
+                if (StrUtil.isNotBlank(importVO.getAfterSalesStatus())) {
+                    // 比较导入的售后状态和数据库中的售后状态
+                    String existingStatus = existDistribution.getAfterSalesStatus();
+                    String importStatus = importVO.getAfterSalesStatus();
+                    
+                    // 只有状态发生变化时才更新售后状态和售后时间
+                    if (!StrUtil.equals(existingStatus, importStatus)) {
+                        existDistribution.setAfterSalesStatus(importStatus);
+                        existDistribution.setAfterSalesTime(now);
+                    }
+                    // 如果状态相同，不更新售后时间，保持数据库原值
+                }
+                if (StrUtil.isNotBlank(importVO.getTransferPerson())) {
+                    existDistribution.setTransferPerson(importVO.getTransferPerson());
+                }
 
                 // 添加到更新列表
                 ErpDistributionCombinedDO updateDO = convertESToCombinedDO(existDistribution);
@@ -2490,9 +2525,13 @@ public class ErpDistributionServiceImpl implements ErpDistributionService {
                         throw exception(DISTRIBUTION_NOT_EXISTS);
                     }
 
-                    // 更新物流信息
-                    existDistribution.setLogisticsCompany(importVO.getLogisticsCompany());
-                    existDistribution.setTrackingNumber(importVO.getTrackingNumber());
+                    // 更新物流信息 - 只更新导入文件中提供的非空字段
+                    if (StrUtil.isNotBlank(importVO.getLogisticsCompany())) {
+                        existDistribution.setLogisticsCompany(importVO.getLogisticsCompany());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getTrackingNumber())) {
+                        existDistribution.setTrackingNumber(importVO.getTrackingNumber());
+                    }
                     
                     // 更新采购备注（如果提供了采购备注）
                     if (StrUtil.isNotBlank(importVO.getPurchaseRemark())) {

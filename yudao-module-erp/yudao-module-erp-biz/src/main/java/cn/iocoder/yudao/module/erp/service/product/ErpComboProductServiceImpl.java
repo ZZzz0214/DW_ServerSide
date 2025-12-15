@@ -1657,23 +1657,64 @@ public class ErpComboProductServiceImpl implements ErpComboProductService {
                     // 保存编号到itemsString的映射
                     noToItemsStringMap.put(comboProduct.getNo(), importVO.getItemsString());
                 } else if (isUpdateSupport) {
-                    // 更新组合产品
-                    ErpComboProductDO updateCombo = BeanUtils.toBean(importVO, ErpComboProductDO.class);
-                    updateCombo.setId(existCombo.getId());
-                    updateCombo.setNo(existCombo.getNo()); // 保持原有编号
-                    // 保留原有的创建人和创建时间
-                    updateCombo.setCreator(existCombo.getCreator());
-                    updateCombo.setCreateTime(existCombo.getCreateTime());
+                    // 更新组合产品 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 先从现有记录复制
+                    ErpComboProductDO updateCombo = BeanUtils.toBean(existCombo, ErpComboProductDO.class);
+                    
+                    // 只更新导入的字段
+                    if (StrUtil.isNotBlank(importVO.getShortName())) {
+                        updateCombo.setShortName(importVO.getShortName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getShippingCode())) {
+                        updateCombo.setShippingCode(importVO.getShippingCode());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getPurchaser())) {
+                        updateCombo.setPurchaser(importVO.getPurchaser());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getSupplier())) {
+                        updateCombo.setSupplier(importVO.getSupplier());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        updateCombo.setRemark(importVO.getRemark());
+                    }
+                    if (importVO.getShippingFeeType() != null) {
+                        updateCombo.setShippingFeeType(importVO.getShippingFeeType());
+                    }
+                    if (importVO.getFixedShippingFee() != null) {
+                        updateCombo.setFixedShippingFee(importVO.getFixedShippingFee());
+                    }
+                    if (importVO.getAdditionalItemQuantity() != null) {
+                        updateCombo.setAdditionalItemQuantity(importVO.getAdditionalItemQuantity());
+                    }
+                    if (importVO.getAdditionalItemPrice() != null) {
+                        updateCombo.setAdditionalItemPrice(importVO.getAdditionalItemPrice());
+                    }
+                    if (importVO.getFirstWeight() != null) {
+                        updateCombo.setFirstWeight(importVO.getFirstWeight());
+                    }
+                    if (importVO.getFirstWeightPrice() != null) {
+                        updateCombo.setFirstWeightPrice(importVO.getFirstWeightPrice());
+                    }
+                    if (importVO.getAdditionalWeight() != null) {
+                        updateCombo.setAdditionalWeight(importVO.getAdditionalWeight());
+                    }
+                    if (importVO.getAdditionalWeightPrice() != null) {
+                        updateCombo.setAdditionalWeightPrice(importVO.getAdditionalWeightPrice());
+                    }
 
-                    // 计算价格和重量，并设置计算出的名称
-                    calculateAndSetPricesAndWeight(importVO, updateCombo, productMap);
-                    updateCombo.setName(calculatedName);
+                    // 如果有itemsString，则需要重新计算价格、重量和名称
+                    if (StrUtil.isNotBlank(importVO.getItemsString())) {
+                        calculateAndSetPricesAndWeight(importVO, updateCombo, productMap);
+                        updateCombo.setName(calculatedName);
+                    }
 
                     updateList.add(updateCombo);
                     respVO.getUpdateNames().add(updateCombo.getNo());
 
-                    // 保存编号到itemsString的映射
-                    noToItemsStringMap.put(updateCombo.getNo(), importVO.getItemsString());
+                    // 保存编号到itemsString的映射（如果有）
+                    if (StrUtil.isNotBlank(importVO.getItemsString())) {
+                        noToItemsStringMap.put(updateCombo.getNo(), importVO.getItemsString());
+                    }
                 }
             }
 

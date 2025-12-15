@@ -193,21 +193,52 @@ public class ErpGroupBuyingInfoServiceImpl implements ErpGroupBuyingInfoService 
             for (int i = 0; i < importList.size(); i++) {
                 ErpGroupBuyingInfoImportExcelVO importVO = importList.get(i);
 
-                // 数据转换
-                ErpGroupBuyingInfoDO groupBuyingInfo = BeanUtils.toBean(importVO, ErpGroupBuyingInfoDO.class);
-
                 // 判断是新增还是更新
                 ErpGroupBuyingInfoDO existGroupBuyingInfo = existMap.get(importVO.getNo());
                 if (existGroupBuyingInfo == null) {
-                    // 创建 - 自动生成新的no编号
+                    // 创建 - 数据转换
+                    ErpGroupBuyingInfoDO groupBuyingInfo = BeanUtils.toBean(importVO, ErpGroupBuyingInfoDO.class);
                     groupBuyingInfo.setNo(noRedisDAO.generate(ErpNoRedisDAO.GROUP_BUYING_INFO_NO_PREFIX));
                     createList.add(groupBuyingInfo);
                     respVO.getCreateNames().add(groupBuyingInfo.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    groupBuyingInfo.setId(existGroupBuyingInfo.getId());
-                    updateList.add(groupBuyingInfo);
-                    respVO.getUpdateNames().add(groupBuyingInfo.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                        existGroupBuyingInfo.setCustomerName(importVO.getCustomerName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerPosition())) {
+                        existGroupBuyingInfo.setCustomerPosition(importVO.getCustomerPosition());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerWechat())) {
+                        existGroupBuyingInfo.setCustomerWechat(importVO.getCustomerWechat());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getPlatformName())) {
+                        existGroupBuyingInfo.setPlatformName(importVO.getPlatformName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerAttribute())) {
+                        existGroupBuyingInfo.setCustomerAttribute(importVO.getCustomerAttribute());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerCity())) {
+                        existGroupBuyingInfo.setCustomerCity(importVO.getCustomerCity());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerDistrict())) {
+                        existGroupBuyingInfo.setCustomerDistrict(importVO.getCustomerDistrict());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getUserPortrait())) {
+                        existGroupBuyingInfo.setUserPortrait(importVO.getUserPortrait());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRecruitmentCategory())) {
+                        existGroupBuyingInfo.setRecruitmentCategory(importVO.getRecruitmentCategory());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getSelectionCriteria())) {
+                        existGroupBuyingInfo.setSelectionCriteria(importVO.getSelectionCriteria());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        existGroupBuyingInfo.setRemark(importVO.getRemark());
+                    }
+                    
+                    updateList.add(existGroupBuyingInfo);
+                    respVO.getUpdateNames().add(existGroupBuyingInfo.getNo());
                 }
             }
 

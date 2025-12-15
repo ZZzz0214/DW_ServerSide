@@ -261,21 +261,59 @@ public class ErpSampleServiceImpl implements ErpSampleService {
             for (int i = 0; i < importList.size(); i++) {
                 ErpSampleImportExcelVO importVO = importList.get(i);
 
-                // 数据转换
-                ErpSampleDO sample = convertImportVOToDO(importVO);
-
                 // 判断是新增还是更新
                 ErpSampleDO existSample = existMap.get(importVO.getNo());
                 if (existSample == null) {
-                    // 创建 - 自动生成新的no编号
+                    // 创建 - 数据转换
+                    ErpSampleDO sample = convertImportVOToDO(importVO);
                     sample.setNo(noRedisDAO.generate(ErpNoRedisDAO.SAMPLE_NO_PREFIX));
                     createList.add(sample);
                     respVO.getCreateNames().add(sample.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    sample.setId(existSample.getId());
-                    updateList.add(sample);
-                    respVO.getUpdateNames().add(sample.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 从现有记录复制
+                    ErpSampleDO updateSample = BeanUtils.toBean(existSample, ErpSampleDO.class);
+                    
+                    // 数据转换
+                    ErpSampleDO importSample = convertImportVOToDO(importVO);
+                    
+                    // 只更新ImportVO中非null的字段
+                    if (StrUtil.isNotBlank(importSample.getLogisticsCompany())) {
+                        updateSample.setLogisticsCompany(importSample.getLogisticsCompany());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getLogisticsNo())) {
+                        updateSample.setLogisticsNo(importSample.getLogisticsNo());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getReceiverName())) {
+                        updateSample.setReceiverName(importSample.getReceiverName());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getContactPhone())) {
+                        updateSample.setContactPhone(importSample.getContactPhone());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getAddress())) {
+                        updateSample.setAddress(importSample.getAddress());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getRemark())) {
+                        updateSample.setRemark(importSample.getRemark());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getComboProductId())) {
+                        updateSample.setComboProductId(importSample.getComboProductId());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getProductSpec())) {
+                        updateSample.setProductSpec(importSample.getProductSpec());
+                    }
+                    if (importSample.getProductQuantity() != null) {
+                        updateSample.setProductQuantity(importSample.getProductQuantity());
+                    }
+                    if (StrUtil.isNotBlank(importSample.getCustomerName())) {
+                        updateSample.setCustomerName(importSample.getCustomerName());
+                    }
+                    if (importSample.getSampleStatus() != null) {
+                        updateSample.setSampleStatus(importSample.getSampleStatus());
+                    }
+                    
+                    updateList.add(updateSample);
+                    respVO.getUpdateNames().add(updateSample.getNo());
                 }
             }
 

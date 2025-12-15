@@ -266,12 +266,14 @@ public class ErpLiveBroadcastingReviewServiceImpl implements ErpLiveBroadcasting
                     createList.add(review);
                     respVO.getCreateNames().add(review.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    ErpLiveBroadcastingReviewDO updateReview = BeanUtils.toBean(importVO, ErpLiveBroadcastingReviewDO.class);
-                    updateReview.setId(existReview.getId());
-                    updateReview.setLiveBroadcastingId(liveBroadcastingId);
-                    updateList.add(updateReview);
-                    respVO.getUpdateNames().add(updateReview.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 更新直播货盘ID（如果提供）
+                    if (liveBroadcastingId != null) {
+                        existReview.setLiveBroadcastingId(liveBroadcastingId);
+                    }
+                    // 更新其他字段（需要根据ErpLiveBroadcastingReviewImportExcelVO的实际字段来补充）
+                    updateList.add(existReview);
+                    respVO.getUpdateNames().add(existReview.getNo());
                 }
             }
 

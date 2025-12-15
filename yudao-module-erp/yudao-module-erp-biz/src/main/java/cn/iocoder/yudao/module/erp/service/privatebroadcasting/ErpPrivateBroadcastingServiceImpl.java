@@ -198,15 +198,16 @@ public class ErpPrivateBroadcastingServiceImpl implements ErpPrivateBroadcasting
                     createList.add(privateBroadcasting);
                     respVO.getCreateNames().add(privateBroadcasting.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    ErpPrivateBroadcastingDO updatePrivateBroadcasting = BeanUtils.toBean(importVO, ErpPrivateBroadcastingDO.class);
-                    updatePrivateBroadcasting.setId(existPrivateBroadcasting.getId());
-                    // 如果状态为空，保持原状态
-                    if (StrUtil.isBlank(updatePrivateBroadcasting.getPrivateStatus())) {
-                        updatePrivateBroadcasting.setPrivateStatus(existPrivateBroadcasting.getPrivateStatus());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    if (StrUtil.isNotBlank(importVO.getProductName())) {
+                        existPrivateBroadcasting.setProductName(importVO.getProductName());
                     }
-                    updateList.add(updatePrivateBroadcasting);
-                    respVO.getUpdateNames().add(updatePrivateBroadcasting.getNo());
+                    if (StrUtil.isNotBlank(importVO.getPrivateStatus())) {
+                        existPrivateBroadcasting.setPrivateStatus(importVO.getPrivateStatus());
+                    }
+                    
+                    updateList.add(existPrivateBroadcasting);
+                    respVO.getUpdateNames().add(existPrivateBroadcasting.getNo());
                 }
             }
 

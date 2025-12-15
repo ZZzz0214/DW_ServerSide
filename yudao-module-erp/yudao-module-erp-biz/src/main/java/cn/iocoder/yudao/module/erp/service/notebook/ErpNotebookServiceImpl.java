@@ -4,7 +4,6 @@ package cn.iocoder.yudao.module.erp.service.notebook;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
@@ -183,21 +182,38 @@ public class ErpNotebookServiceImpl implements ErpNotebookService {
             for (int i = 0; i < importList.size(); i++) {
                 ErpNotebookImportExcelVO importVO = importList.get(i);
 
-                // 数据转换
-                ErpNotebookDO notebook = convertImportVOToDO(importVO);
-
                 // 判断是新增还是更新
                 ErpNotebookDO existNotebook = existMap.get(importVO.getNo());
                 if (existNotebook == null) {
-                    // 创建记事本
+                    // 创建记事本 - 数据转换
+                    ErpNotebookDO notebook = convertImportVOToDO(importVO);
                     notebook.setNo(noRedisDAO.generate(ErpNoRedisDAO.NOTEBOOK_NO_PREFIX));
                     createList.add(notebook);
                     respVO.getCreateNames().add(notebook.getTaskName());
                 } else if (isUpdateSupport) {
-                    // 更新记事本
-                    notebook.setId(existNotebook.getId());
-                    updateList.add(notebook);
-                    respVO.getUpdateNames().add(notebook.getTaskName());
+                    // 更新记事本 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 从现有记录复制
+                    ErpNotebookDO updateNotebook = BeanUtils.toBean(existNotebook, ErpNotebookDO.class);
+                    
+                    // 数据转换
+                    ErpNotebookDO importNotebook = convertImportVOToDO(importVO);
+                    
+                    // 只更新ImportVO中非null的字段
+                    if (StrUtil.isNotBlank(importNotebook.getTaskName())) {
+                        updateNotebook.setTaskName(importNotebook.getTaskName());
+                    }
+                    if (importNotebook.getTaskStatus() != null) {
+                        updateNotebook.setTaskStatus(importNotebook.getTaskStatus());
+                    }
+                    if (StrUtil.isNotBlank(importNotebook.getTaskPerson())) {
+                        updateNotebook.setTaskPerson(importNotebook.getTaskPerson());
+                    }
+                    if (StrUtil.isNotBlank(importNotebook.getRemark())) {
+                        updateNotebook.setRemark(importNotebook.getRemark());
+                    }
+                    
+                    updateList.add(updateNotebook);
+                    respVO.getUpdateNames().add(updateNotebook.getTaskName());
                 }
             }
 

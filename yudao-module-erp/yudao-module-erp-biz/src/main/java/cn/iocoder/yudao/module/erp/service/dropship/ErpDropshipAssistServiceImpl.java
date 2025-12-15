@@ -403,15 +403,35 @@ public class ErpDropshipAssistServiceImpl implements ErpDropshipAssistService {
                        createList.add(dropshipAssist);
                        respVO.getCreateNames().add(dropshipAssist.getNo());
                     } else if (isUpdateSupport) {
-                        // 更新
-                        ErpDropshipAssistDO updateDropshipAssist = BeanUtils.toBean(importVO, ErpDropshipAssistDO.class);
-                        updateDropshipAssist.setId(existDropshipAssist.getId())
-                                .setComboProductId(comboProductIdLong != null ? comboProductIdLong.toString() : null)
-                                .setCreator(existDropshipAssist.getCreator())        // 保留原始创建人
-                                .setCreateTime(existDropshipAssist.getCreateTime());  // 保留原始创建时间
+                        // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                        // 只更新导入的字段
+                        if (StrUtil.isNotBlank(importVO.getOriginalProduct())) {
+                            existDropshipAssist.setOriginalProduct(importVO.getOriginalProduct());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getOriginalSpec())) {
+                            existDropshipAssist.setOriginalSpec(importVO.getOriginalSpec());
+                        }
+                        if (importVO.getOriginalQuantity() != null) {
+                            existDropshipAssist.setOriginalQuantity(importVO.getOriginalQuantity());
+                        }
+                        if (comboProductIdLong != null) {
+                            existDropshipAssist.setComboProductId(comboProductIdLong.toString());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getProductSpec())) {
+                            existDropshipAssist.setProductSpec(importVO.getProductSpec());
+                        }
+                        if (importVO.getProductQuantity() != null) {
+                            existDropshipAssist.setProductQuantity(importVO.getProductQuantity());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getRemark())) {
+                            existDropshipAssist.setRemark(importVO.getRemark());
+                        }
+                        if (StrUtil.isNotBlank(importVO.getStatus())) {
+                            existDropshipAssist.setStatus(importVO.getStatus());
+                        }
 
-                        updateList.add(updateDropshipAssist);
-                        respVO.getUpdateNames().add(updateDropshipAssist.getNo());
+                        updateList.add(existDropshipAssist);
+                        respVO.getUpdateNames().add(existDropshipAssist.getNo());
                     } else {
                         throw exception(DROPSHIP_ASSIST_IMPORT_NO_EXISTS_UPDATE_NOT_SUPPORT, i + 1, importVO.getNo());
                     }

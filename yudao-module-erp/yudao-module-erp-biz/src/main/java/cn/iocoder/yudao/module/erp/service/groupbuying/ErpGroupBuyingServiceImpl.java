@@ -193,31 +193,112 @@ public class ErpGroupBuyingServiceImpl implements ErpGroupBuyingService {
             for (int i = 0; i < importList.size(); i++) {
                 ErpGroupBuyingImportExcelVO importVO = importList.get(i);
 
-                // 数据转换
-                ErpGroupBuyingDO groupBuying = BeanUtils.toBean(importVO, ErpGroupBuyingDO.class);
-                
-                // 自动计算渠道毛利：渠道毛利 = ((开团价格 - 供团价格) / 开团价格) * 100
-                if (groupBuying.getSupplyGroupPrice() != null && groupBuying.getGroupPrice() != null 
-                    && groupBuying.getGroupPrice().compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal channelProfit = groupBuying.getGroupPrice()
-                            .subtract(groupBuying.getSupplyGroupPrice())
-                            .divide(groupBuying.getGroupPrice(), 4, BigDecimal.ROUND_HALF_UP)
-                            .multiply(new BigDecimal("100"));
-                    groupBuying.setChannelProfit(channelProfit);
-                }
-
                 // 判断是新增还是更新
                 ErpGroupBuyingDO existGroupBuying = existMap.get(importVO.getNo());
                 if (existGroupBuying == null) {
-                    // 创建 - 自动生成新的no编号
+                    // 创建 - 数据转换
+                    ErpGroupBuyingDO groupBuying = BeanUtils.toBean(importVO, ErpGroupBuyingDO.class);
+                    
+                    // 自动计算渠道毛利：渠道毛利 = ((开团价格 - 供团价格) / 开团价格) * 100
+                    if (groupBuying.getSupplyGroupPrice() != null && groupBuying.getGroupPrice() != null 
+                        && groupBuying.getGroupPrice().compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal channelProfit = groupBuying.getGroupPrice()
+                                .subtract(groupBuying.getSupplyGroupPrice())
+                                .divide(groupBuying.getGroupPrice(), 4, BigDecimal.ROUND_HALF_UP)
+                                .multiply(new BigDecimal("100"));
+                        groupBuying.setChannelProfit(channelProfit);
+                    }
+                    
                     groupBuying.setNo(noRedisDAO.generate(ErpNoRedisDAO.GROUP_BUYING_NO_PREFIX));
                     createList.add(groupBuying);
                     respVO.getCreateNames().add(groupBuying.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    groupBuying.setId(existGroupBuying.getId());
-                    updateList.add(groupBuying);
-                    respVO.getUpdateNames().add(groupBuying.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    if (StrUtil.isNotBlank(importVO.getBrandName())) {
+                        existGroupBuying.setBrandName(importVO.getBrandName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductName())) {
+                        existGroupBuying.setProductName(importVO.getProductName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductSpec())) {
+                        existGroupBuying.setProductSpec(importVO.getProductSpec());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductSku())) {
+                        existGroupBuying.setProductSku(importVO.getProductSku());
+                    }
+                    if (importVO.getMarketPrice() != null) {
+                        existGroupBuying.setMarketPrice(importVO.getMarketPrice());
+                    }
+                    if (importVO.getShelfLife() != null) {
+                        existGroupBuying.setShelfLife(importVO.getShelfLife());
+                    }
+                    if (importVO.getProductStock() != null) {
+                        existGroupBuying.setProductStock(importVO.getProductStock());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        existGroupBuying.setRemark(importVO.getRemark());
+                    }
+                    if (importVO.getCorePrice() != null) {
+                        existGroupBuying.setCorePrice(importVO.getCorePrice());
+                    }
+                    if (importVO.getDistributionPrice() != null) {
+                        existGroupBuying.setDistributionPrice(importVO.getDistributionPrice());
+                    }
+                    if (importVO.getSupplyGroupPrice() != null) {
+                        existGroupBuying.setSupplyGroupPrice(importVO.getSupplyGroupPrice());
+                    }
+                    if (importVO.getSellingCommission() != null) {
+                        existGroupBuying.setSellingCommission(importVO.getSellingCommission());
+                    }
+                    if (importVO.getGroupPrice() != null) {
+                        existGroupBuying.setGroupPrice(importVO.getGroupPrice());
+                    }
+                    // 如果更新了供团价格或开团价格，重新计算渠道毛利
+                    if ((importVO.getSupplyGroupPrice() != null || importVO.getGroupPrice() != null) 
+                        && existGroupBuying.getSupplyGroupPrice() != null && existGroupBuying.getGroupPrice() != null
+                        && existGroupBuying.getGroupPrice().compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal channelProfit = existGroupBuying.getGroupPrice()
+                                .subtract(existGroupBuying.getSupplyGroupPrice())
+                                .divide(existGroupBuying.getGroupPrice(), 4, BigDecimal.ROUND_HALF_UP)
+                                .multiply(new BigDecimal("100"));
+                        existGroupBuying.setChannelProfit(channelProfit);
+                    }
+                    if (StrUtil.isNotBlank(importVO.getGroupMechanism())) {
+                        existGroupBuying.setGroupMechanism(importVO.getGroupMechanism());
+                    }
+                    if (importVO.getExpressFee() != null) {
+                        existGroupBuying.setExpressFee(importVO.getExpressFee());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getTmallJd())) {
+                        existGroupBuying.setTmallJd(importVO.getTmallJd());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getPublicData())) {
+                        existGroupBuying.setPublicData(importVO.getPublicData());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getPrivateData())) {
+                        existGroupBuying.setPrivateData(importVO.getPrivateData());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getBrandEndorsement())) {
+                        existGroupBuying.setBrandEndorsement(importVO.getBrandEndorsement());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCompetitiveAnalysis())) {
+                        existGroupBuying.setCompetitiveAnalysis(importVO.getCompetitiveAnalysis());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getExpressCompany())) {
+                        existGroupBuying.setExpressCompany(importVO.getExpressCompany());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getShippingTime())) {
+                        existGroupBuying.setShippingTime(importVO.getShippingTime());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getShippingArea())) {
+                        existGroupBuying.setShippingArea(importVO.getShippingArea());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getStatus())) {
+                        existGroupBuying.setStatus(importVO.getStatus());
+                    }
+                    
+                    updateList.add(existGroupBuying);
+                    respVO.getUpdateNames().add(existGroupBuying.getNo());
                 }
             }
 

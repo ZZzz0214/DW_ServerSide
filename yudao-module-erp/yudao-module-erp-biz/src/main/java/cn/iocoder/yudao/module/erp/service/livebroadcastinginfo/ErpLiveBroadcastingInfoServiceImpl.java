@@ -3,7 +3,6 @@ package cn.iocoder.yudao.module.erp.service.livebroadcastinginfo;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
@@ -13,7 +12,6 @@ import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpL
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpLiveBroadcastingInfoRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.livebroadcastinginfo.vo.ErpLiveBroadcastingInfoSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.livebroadcastinginfo.ErpLiveBroadcastingInfoDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.livebroadcastinginfo.ErpLiveBroadcastingInfoMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpCustomerMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
@@ -193,11 +191,43 @@ public class ErpLiveBroadcastingInfoServiceImpl implements ErpLiveBroadcastingIn
                     createList.add(liveBroadcastingInfo);
                     respVO.getCreateNames().add(liveBroadcastingInfo.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    ErpLiveBroadcastingInfoDO updateLiveBroadcastingInfo = BeanUtils.toBean(importVO, ErpLiveBroadcastingInfoDO.class);
-                    updateLiveBroadcastingInfo.setId(existLiveBroadcastingInfo.getId());
-                    updateList.add(updateLiveBroadcastingInfo);
-                    respVO.getUpdateNames().add(updateLiveBroadcastingInfo.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 逐字段判断并更新
+                    if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                        existLiveBroadcastingInfo.setCustomerName(importVO.getCustomerName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerPosition())) {
+                        existLiveBroadcastingInfo.setCustomerPosition(importVO.getCustomerPosition());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerWechat())) {
+                        existLiveBroadcastingInfo.setCustomerWechat(importVO.getCustomerWechat());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getPlatformName())) {
+                        existLiveBroadcastingInfo.setPlatformName(importVO.getPlatformName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerAttribute())) {
+                        existLiveBroadcastingInfo.setCustomerAttribute(importVO.getCustomerAttribute());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerCity())) {
+                        existLiveBroadcastingInfo.setCustomerCity(importVO.getCustomerCity());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerDistrict())) {
+                        existLiveBroadcastingInfo.setCustomerDistrict(importVO.getCustomerDistrict());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getUserPortrait())) {
+                        existLiveBroadcastingInfo.setUserPortrait(importVO.getUserPortrait());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRecruitmentCategory())) {
+                        existLiveBroadcastingInfo.setRecruitmentCategory(importVO.getRecruitmentCategory());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getSelectionCriteria())) {
+                        existLiveBroadcastingInfo.setSelectionCriteria(importVO.getSelectionCriteria());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        existLiveBroadcastingInfo.setRemark(importVO.getRemark());
+                    }
+                    updateList.add(existLiveBroadcastingInfo);
+                    respVO.getUpdateNames().add(existLiveBroadcastingInfo.getNo());
                 }
             }
 

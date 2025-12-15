@@ -26,6 +26,10 @@ public class ErpFinanceExportVO {
     @ExcelProperty("轮播图片")
     private String carouselImages;
 
+    @Schema(description = "轮播图片数据（用于Excel导出）", hidden = true)
+    @com.alibaba.excel.annotation.ExcelIgnore
+    private byte[] carouselImagesData;
+
     @Schema(description = "账单名称", example = "办公用品采购")
     @ExcelProperty("账单名称")
     private String billName;

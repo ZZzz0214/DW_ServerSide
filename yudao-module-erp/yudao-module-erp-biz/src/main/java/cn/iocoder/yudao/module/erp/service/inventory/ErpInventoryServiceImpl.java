@@ -2,9 +2,7 @@ package cn.iocoder.yudao.module.erp.service.inventory;
 
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
@@ -402,23 +400,37 @@ public class ErpInventoryServiceImpl implements ErpInventoryService {
             for (int i = 0; i < importList.size(); i++) {
                 ErpInventoryImportExcelVO importVO = importList.get(i);
 
-                // 数据转换
-                ErpInventoryDO inventory = convertImportVOToDO(importVO, productMap);
-
                 // 判断是新增还是更新
                 ErpInventoryDO existInventory = existMap.get(importVO.getNo());
                 if (existInventory == null) {
-                    // 创建库存
+                    // 创建库存 - 数据转换
+                    ErpInventoryDO inventory = convertImportVOToDO(importVO, productMap);
                     inventory.setNo(noRedisDAO.generate(ErpNoRedisDAO.INVENTORY_NO_PREFIX));
                     inventory.setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
                     createList.add(inventory);
                     respVO.getCreateNames().add(inventory.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新库存
-                    inventory.setId(existInventory.getId());
-                    inventory.setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
-                    updateList.add(inventory);
-                    respVO.getUpdateNames().add(inventory.getNo());
+                    // 更新库存 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 从现有记录复制
+                    ErpInventoryDO updateInventory = BeanUtils.toBean(existInventory, ErpInventoryDO.class);
+                    
+                    // 数据转换
+                    ErpInventoryDO importInventory = convertImportVOToDO(importVO, productMap);
+                    
+                    // 只更新ImportVO中非null的字段
+                    if (importInventory.getProductId() != null) {
+                        updateInventory.setProductId(importInventory.getProductId());
+                    }
+                    if (importInventory.getSpotInventory() != null) {
+                        updateInventory.setSpotInventory(importInventory.getSpotInventory());
+                    }
+                    if (StrUtil.isNotBlank(importInventory.getRemark())) {
+                        updateInventory.setRemark(importInventory.getRemark());
+                    }
+                    
+                    updateInventory.setRemainingInventory(null); // 不存储剩余库存，仅在查询时计算
+                    updateList.add(updateInventory);
+                    respVO.getUpdateNames().add(updateInventory.getNo());
                 }
             }
 

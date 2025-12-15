@@ -1,9 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.livebroadcasting;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.convert.ConversionErrorHolder;
@@ -20,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -202,11 +199,61 @@ public class ErpLiveBroadcastingServiceImpl implements ErpLiveBroadcastingServic
                     createList.add(liveBroadcasting);
                     respVO.getCreateNames().add(liveBroadcasting.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    ErpLiveBroadcastingDO updateLiveBroadcasting = BeanUtils.toBean(importVO, ErpLiveBroadcastingDO.class);
-                    updateLiveBroadcasting.setId(existLiveBroadcasting.getId());
-                    updateList.add(updateLiveBroadcasting);
-                    respVO.getUpdateNames().add(updateLiveBroadcasting.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 逐字段判断并更新
+                    if (StrUtil.isNotBlank(importVO.getBrandName())) {
+                        existLiveBroadcasting.setBrandName(importVO.getBrandName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductName())) {
+                        existLiveBroadcasting.setProductName(importVO.getProductName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductSpec())) {
+                        existLiveBroadcasting.setProductSpec(importVO.getProductSpec());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getProductSku())) {
+                        existLiveBroadcasting.setProductSku(importVO.getProductSku());
+                    }
+                    if (importVO.getMarketPrice() != null) {
+                        existLiveBroadcasting.setMarketPrice(importVO.getMarketPrice());
+                    }
+                    if (importVO.getShelfLife() != null) {
+                        existLiveBroadcasting.setShelfLife(importVO.getShelfLife());
+                    }
+                    if (importVO.getProductStock() != null) {
+                        existLiveBroadcasting.setProductStock(importVO.getProductStock());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCoreSellingPoint())) {
+                        existLiveBroadcasting.setCoreSellingPoint(importVO.getCoreSellingPoint());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        existLiveBroadcasting.setRemark(importVO.getRemark());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getLivePrice())) {
+                        existLiveBroadcasting.setLivePrice(importVO.getLivePrice());
+                    }
+                    if (importVO.getLiveCommission() != null) {
+                        existLiveBroadcasting.setLiveCommission(importVO.getLiveCommission());
+                    }
+                    if (importVO.getPublicCommission() != null) {
+                        existLiveBroadcasting.setPublicCommission(importVO.getPublicCommission());
+                    }
+                    if (importVO.getRebateCommission() != null) {
+                        existLiveBroadcasting.setRebateCommission(importVO.getRebateCommission());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getExpressCompany())) {
+                        existLiveBroadcasting.setExpressCompany(importVO.getExpressCompany());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getShippingTime())) {
+                        existLiveBroadcasting.setShippingTime(importVO.getShippingTime());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getShippingArea())) {
+                        existLiveBroadcasting.setShippingArea(importVO.getShippingArea());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getLiveStatus())) {
+                        existLiveBroadcasting.setLiveStatus(importVO.getLiveStatus());
+                    }
+                    updateList.add(existLiveBroadcasting);
+                    respVO.getUpdateNames().add(existLiveBroadcasting.getNo());
                 }
             }
 

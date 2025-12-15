@@ -1206,22 +1206,107 @@ public class ErpProductServiceImpl implements ErpProductService {
             for (int i = 0; i < importProducts.size(); i++) {
                 ErpProductImportExcelVO importVO = importProducts.get(i);
 
-                // 数据转换
-                ErpProductDO product = convertImportVOToDO(importVO);
-
                 // 判断是新增还是更新
                 ErpProductDO existProduct = existMap.get(importVO.getNo());
                 if (existProduct == null) {
-                    // 创建产品
+                    // 创建产品 - 数据转换
+                    ErpProductDO product = convertImportVOToDO(importVO);
                     product.setNo(noRedisDAO.generate(ErpNoRedisDAO.PRODUCT_NO_PREFIX)).setCreator(username).setCreateTime(now);
-                    //product.setNo(importVO.getNo()).setCreator(username).setCreateTime(now);
                     createList.add(product);
                     respVO.getCreateNames().add(product.getName());
                 } else if (isUpdateSupport) {
-                    // 更新产品
-                    product.setId(existProduct.getId()).setCreator(existProduct.getCreator()).setCreateTime(existProduct.getCreateTime());
-                    updateList.add(product);
-                    respVO.getUpdateNames().add(product.getName());
+                    // 更新产品 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 从现有产品复制数据
+                    ErpProductDO updateProduct = BeanUtils.toBean(existProduct, ErpProductDO.class);
+                    
+                    // 数据转换
+                    ErpProductDO importProduct = convertImportVOToDO(importVO);
+                    
+                    // 只更新ImportVO中非null的字段
+                    if (StrUtil.isNotBlank(importProduct.getName())) {
+                        updateProduct.setName(importProduct.getName());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getProductShortName())) {
+                        updateProduct.setProductShortName(importProduct.getProductShortName());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getImage())) {
+                        updateProduct.setImage(importProduct.getImage());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getShippingCode())) {
+                        updateProduct.setShippingCode(importProduct.getShippingCode());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getBrand())) {
+                        updateProduct.setBrand(importProduct.getBrand());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getStandard())) {
+                        updateProduct.setStandard(importProduct.getStandard());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getPurchaser())) {
+                        updateProduct.setPurchaser(importProduct.getPurchaser());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getSupplier())) {
+                        updateProduct.setSupplier(importProduct.getSupplier());
+                    }
+                    if (StrUtil.isNotBlank(importProduct.getRemark())) {
+                        updateProduct.setRemark(importProduct.getRemark());
+                    }
+                    if (importProduct.getCategoryId() != null) {
+                        updateProduct.setCategoryId(importProduct.getCategoryId());
+                    }
+                    if (importProduct.getStatus() != null) {
+                        updateProduct.setStatus(importProduct.getStatus());
+                    }
+                    if (importProduct.getExpiryDay() != null) {
+                        updateProduct.setExpiryDay(importProduct.getExpiryDay());
+                    }
+                    if (importProduct.getPurchasePrice() != null) {
+                        updateProduct.setPurchasePrice(importProduct.getPurchasePrice());
+                    }
+                    if (importProduct.getWholesalePrice() != null) {
+                        updateProduct.setWholesalePrice(importProduct.getWholesalePrice());
+                    }
+                    if (importProduct.getProductionDate() != null) {
+                        updateProduct.setProductionDate(importProduct.getProductionDate());
+                    }
+                    if (importProduct.getCartonWeight() != null) {
+                        updateProduct.setCartonWeight(importProduct.getCartonWeight());
+                    }
+                    if (importProduct.getWeight() != null) {
+                        updateProduct.setWeight(importProduct.getWeight());
+                    }
+                    if (importProduct.getShippingFeeType() != null) {
+                        updateProduct.setShippingFeeType(importProduct.getShippingFeeType());
+                    }
+                    if (importProduct.getFixedShippingFee() != null) {
+                        updateProduct.setFixedShippingFee(importProduct.getFixedShippingFee());
+                    }
+                    if (importProduct.getAdditionalItemQuantity() != null) {
+                        updateProduct.setAdditionalItemQuantity(importProduct.getAdditionalItemQuantity());
+                    }
+                    if (importProduct.getAdditionalItemPrice() != null) {
+                        updateProduct.setAdditionalItemPrice(importProduct.getAdditionalItemPrice());
+                    }
+                    if (importProduct.getFirstWeight() != null) {
+                        updateProduct.setFirstWeight(importProduct.getFirstWeight());
+                    }
+                    if (importProduct.getFirstWeightPrice() != null) {
+                        updateProduct.setFirstWeightPrice(importProduct.getFirstWeightPrice());
+                    }
+                    if (importProduct.getAdditionalWeight() != null) {
+                        updateProduct.setAdditionalWeight(importProduct.getAdditionalWeight());
+                    }
+                    if (importProduct.getAdditionalWeightPrice() != null) {
+                        updateProduct.setAdditionalWeightPrice(importProduct.getAdditionalWeightPrice());
+                    }
+                    if (importProduct.getTotalQuantity() != null) {
+                        updateProduct.setTotalQuantity(importProduct.getTotalQuantity());
+                    }
+                    if (importProduct.getPackagingMaterialQuantity() != null) {
+                        updateProduct.setPackagingMaterialQuantity(importProduct.getPackagingMaterialQuantity());
+                    }
+                    
+                    updateList.add(updateProduct);
+                    respVO.getUpdateNames().add(updateProduct.getName());
                 }
             }
 

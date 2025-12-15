@@ -239,22 +239,44 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             for (int i = 0; i < importList.size(); i++) {
                 ErpFinanceImportExcelVO importVO = importList.get(i);
 
-                // 数据转换
-                ErpFinanceDO finance = convertImportVOToDO(importVO);
-
                 // 判断是新增还是更新
                 ErpFinanceDO existFinance = existMap.get(importVO.getNo());
                 if (existFinance == null) {
-                    // 创建财务记录
+                    // 创建财务记录 - 数据转换
+                    ErpFinanceDO finance = convertImportVOToDO(importVO);
                     finance.setNo(noRedisDAO.generate(ErpNoRedisDAO.FINANCE_NO_PREFIX));
                     finance.setAuditStatus(10); // 默认待审核
                     createList.add(finance);
                     respVO.getCreateNames().add(finance.getBillName());
                 } else if (isUpdateSupport) {
-                    // 更新财务记录
-                    finance.setId(existFinance.getId());
-                    updateList.add(finance);
-                    respVO.getUpdateNames().add(finance.getBillName());
+                    // 更新财务记录 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    if (StrUtil.isNotBlank(importVO.getBillName())) {
+                        existFinance.setBillName(importVO.getBillName());
+                    }
+                    if (importVO.getAmount() != null) {
+                        existFinance.setAmount(importVO.getAmount());
+                    }
+                    if (importVO.getIncomeExpense() != null) {
+                        existFinance.setIncomeExpense(importVO.getIncomeExpense());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCategory())) {
+                        existFinance.setCategory(importVO.getCategory());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getAccount())) {
+                        existFinance.setAccount(importVO.getAccount());
+                    }
+                    if (importVO.getStatus() != null) {
+                        existFinance.setStatus(importVO.getStatus());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        existFinance.setRemark(importVO.getRemark());
+                    }
+                    if (importVO.getOrderDate() != null) {
+                        existFinance.setOrderDate(importVO.getOrderDate());
+                    }
+                    
+                    updateList.add(existFinance);
+                    respVO.getUpdateNames().add(existFinance.getBillName());
                 }
             }
 

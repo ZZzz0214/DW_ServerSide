@@ -203,11 +203,43 @@ public class ErpPrivateBroadcastingInfoServiceImpl implements ErpPrivateBroadcas
                     createList.add(privateBroadcastingInfo);
                     respVO.getCreateNames().add(privateBroadcastingInfo.getNo());
                 } else if (isUpdateSupport) {
-                    // 更新
-                    ErpPrivateBroadcastingInfoDO updatePrivateBroadcastingInfo = BeanUtils.toBean(importVO, ErpPrivateBroadcastingInfoDO.class);
-                    updatePrivateBroadcastingInfo.setId(existPrivateBroadcastingInfo.getId());
-                    updateList.add(updatePrivateBroadcastingInfo);
-                    respVO.getUpdateNames().add(updatePrivateBroadcastingInfo.getNo());
+                    // 更新 - 只更新导入文件中提供的非空字段，保留数据库中其他字段的原有值
+                    // 逐字段判断并更新
+                    if (StrUtil.isNotBlank(importVO.getCustomerName())) {
+                        existPrivateBroadcastingInfo.setCustomerName(importVO.getCustomerName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerPosition())) {
+                        existPrivateBroadcastingInfo.setCustomerPosition(importVO.getCustomerPosition());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerWechat())) {
+                        existPrivateBroadcastingInfo.setCustomerWechat(importVO.getCustomerWechat());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getPlatformName())) {
+                        existPrivateBroadcastingInfo.setPlatformName(importVO.getPlatformName());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerAttribute())) {
+                        existPrivateBroadcastingInfo.setCustomerAttribute(importVO.getCustomerAttribute());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerCity())) {
+                        existPrivateBroadcastingInfo.setCustomerCity(importVO.getCustomerCity());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getCustomerDistrict())) {
+                        existPrivateBroadcastingInfo.setCustomerDistrict(importVO.getCustomerDistrict());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getUserPortrait())) {
+                        existPrivateBroadcastingInfo.setUserPortrait(importVO.getUserPortrait());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRecruitmentCategory())) {
+                        existPrivateBroadcastingInfo.setRecruitmentCategory(importVO.getRecruitmentCategory());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getSelectionCriteria())) {
+                        existPrivateBroadcastingInfo.setSelectionCriteria(importVO.getSelectionCriteria());
+                    }
+                    if (StrUtil.isNotBlank(importVO.getRemark())) {
+                        existPrivateBroadcastingInfo.setRemark(importVO.getRemark());
+                    }
+                    updateList.add(existPrivateBroadcastingInfo);
+                    respVO.getUpdateNames().add(existPrivateBroadcastingInfo.getNo());
                 }
             }
 
