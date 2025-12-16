@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAmountDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceAmountMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -506,13 +507,14 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             financeAmounts.add(financeAmount);
         }
 
-        // 2. 批量更新审核状态
+        // 2. 批量更新审核状态（只更新审核相关字段，避免覆盖其他字段如图片）
         for (ErpFinanceAmountDO financeAmount : financeAmounts) {
-            financeAmount.setAuditStatus(auditReqVO.getAuditStatus());
-            financeAmount.setAuditor(currentUsername);
-            financeAmount.setAuditTime(LocalDateTime.now());
-            financeAmount.setAuditRemark(auditReqVO.getAuditRemark());
-            financeAmountMapper.updateById(financeAmount);
+            financeAmountMapper.update(null, new LambdaUpdateWrapper<ErpFinanceAmountDO>()
+                    .eq(ErpFinanceAmountDO::getId, financeAmount.getId())
+                    .set(ErpFinanceAmountDO::getAuditStatus, auditReqVO.getAuditStatus())
+                    .set(ErpFinanceAmountDO::getAuditor, currentUsername)
+                    .set(ErpFinanceAmountDO::getAuditTime, LocalDateTime.now())
+                    .set(ErpFinanceAmountDO::getAuditRemark, auditReqVO.getAuditRemark()));
         }
     }
 
@@ -534,13 +536,14 @@ public class ErpFinanceAmountServiceImpl implements ErpFinanceAmountService {
             financeAmounts.add(financeAmount);
         }
 
-        // 2. 批量更新审核状态为待审核
+        // 2. 批量更新审核状态为待审核（只更新审核相关字段，避免覆盖其他字段如图片）
         for (ErpFinanceAmountDO financeAmount : financeAmounts) {
-            financeAmount.setAuditStatus(10);
-            financeAmount.setAuditor(null);
-            financeAmount.setAuditTime(null);
-            financeAmount.setAuditRemark(null);
-            financeAmountMapper.updateById(financeAmount);
+            financeAmountMapper.update(null, new LambdaUpdateWrapper<ErpFinanceAmountDO>()
+                    .eq(ErpFinanceAmountDO::getId, financeAmount.getId())
+                    .set(ErpFinanceAmountDO::getAuditStatus, 10)
+                    .set(ErpFinanceAmountDO::getAuditor, null)
+                    .set(ErpFinanceAmountDO::getAuditTime, null)
+                    .set(ErpFinanceAmountDO::getAuditRemark, null));
         }
     }
 

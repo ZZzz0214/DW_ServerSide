@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import cn.iocoder.yudao.module.system.api.dict.DictDataApi;
 import cn.iocoder.yudao.module.system.api.dict.dto.DictDataRespDTO;
 import org.springframework.stereotype.Service;
@@ -467,13 +468,14 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             finances.add(finance);
         }
 
-        // 2. 批量更新审核状态
+        // 2. 批量更新审核状态（只更新审核相关字段，避免覆盖其他字段如图片）
         for (ErpFinanceDO finance : finances) {
-            finance.setAuditStatus(auditReqVO.getAuditStatus());
-            finance.setAuditor(currentUsername);
-            finance.setAuditTime(LocalDateTime.now());
-            finance.setAuditRemark(auditReqVO.getAuditRemark());
-            financeMapper.updateById(finance);
+            financeMapper.update(null, new LambdaUpdateWrapper<ErpFinanceDO>()
+                    .eq(ErpFinanceDO::getId, finance.getId())
+                    .set(ErpFinanceDO::getAuditStatus, auditReqVO.getAuditStatus())
+                    .set(ErpFinanceDO::getAuditor, currentUsername)
+                    .set(ErpFinanceDO::getAuditTime, LocalDateTime.now())
+                    .set(ErpFinanceDO::getAuditRemark, auditReqVO.getAuditRemark()));
         }
     }
 
@@ -495,13 +497,14 @@ public class ErpFinanceServiceImpl implements ErpFinanceService {
             finances.add(finance);
         }
 
-        // 2. 批量更新审核状态为待审核
+        // 2. 批量更新审核状态为待审核（只更新审核相关字段，避免覆盖其他字段如图片）
         for (ErpFinanceDO finance : finances) {
-            finance.setAuditStatus(10);
-            finance.setAuditor(null);
-            finance.setAuditTime(null);
-            finance.setAuditRemark(null);
-            financeMapper.updateById(finance);
+            financeMapper.update(null, new LambdaUpdateWrapper<ErpFinanceDO>()
+                    .eq(ErpFinanceDO::getId, finance.getId())
+                    .set(ErpFinanceDO::getAuditStatus, 10)
+                    .set(ErpFinanceDO::getAuditor, null)
+                    .set(ErpFinanceDO::getAuditTime, null)
+                    .set(ErpFinanceDO::getAuditRemark, null));
         }
     }
 }
