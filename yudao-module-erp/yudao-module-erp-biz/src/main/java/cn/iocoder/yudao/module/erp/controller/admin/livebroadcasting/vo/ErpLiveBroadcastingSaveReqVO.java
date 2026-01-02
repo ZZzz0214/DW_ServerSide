@@ -75,4 +75,45 @@ public class ErpLiveBroadcastingSaveReqVO {
 
     @Schema(description = "直播货盘状态", example = "未设置")
     private String liveStatus;
+
+    // ==================== 新增字段：资料信息（富文本+文件上传，JSON格式） ====================
+
+    @Schema(description = "主图（富文本+文件，JSON格式）")
+    private String mainImage;
+
+    @Schema(description = "详情（富文本+文件，JSON格式）")
+    private String detailInfo;
+
+    @Schema(description = "SKU图（富文本+文件，JSON格式）")
+    private String skuImage;
+
+    @Schema(description = "基础笔记（富文本+文件，JSON格式）")
+    private String basicNotes;
+
+    @Schema(description = "升级笔记（富文本+文件，JSON格式）")
+    private String upgradeNotes;
+
+    @Schema(description = "社群推广（富文本+文件，JSON格式）")
+    private String communityPromotion;
+
+    @Schema(description = "详细信息（富文本+文件，JSON格式）")
+    private String detailedInfo;
+
+    @Schema(description = "资质（富文本+文件，JSON格式）")
+    private String qualification;
+
+    @Schema(description = "卖点成分（富文本+文件，JSON格式）")
+    private String sellingPointsIngredients;
+
+    @Schema(description = "背书（富文本+文件，JSON格式）")
+    private String endorsement;
+
+    @Schema(description = "实拍（富文本+文件，JSON格式）")
+    private String actualPhotos;
+
+    @Schema(description = "六面图（富文本+文件，JSON格式）")
+    private String sixSideImages;
+
+    @Schema(description = "打包图（富文本+文件，JSON格式）")
+    private String packagingImages;
 }

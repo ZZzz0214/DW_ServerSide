@@ -68,6 +68,25 @@ public class ErpGroupBuyingServiceImpl implements ErpGroupBuyingService {
 
         // 2. 更新团购货盘记录
         ErpGroupBuyingDO updateObj = BeanUtils.toBean(updateReqVO, ErpGroupBuyingDO.class);
+        
+        // 调试：打印资料信息字段
+        System.out.println("==================== 团购货盘更新 - 资料信息字段检查 ====================");
+        System.out.println("ID: " + updateObj.getId());
+        System.out.println("mainImage: " + updateObj.getMainImage());
+        System.out.println("detailInfo: " + updateObj.getDetailInfo());
+        System.out.println("skuImage: " + updateObj.getSkuImage());
+        System.out.println("basicNotes: " + updateObj.getBasicNotes());
+        System.out.println("upgradeNotes: " + updateObj.getUpgradeNotes());
+        System.out.println("communityPromotion: " + updateObj.getCommunityPromotion());
+        System.out.println("detailedInfo: " + updateObj.getDetailedInfo());
+        System.out.println("qualification: " + updateObj.getQualification());
+        System.out.println("sellingPointsIngredients: " + updateObj.getSellingPointsIngredients());
+        System.out.println("endorsement: " + updateObj.getEndorsement());
+        System.out.println("actualPhotos: " + updateObj.getActualPhotos());
+        System.out.println("sixSideImages: " + updateObj.getSixSideImages());
+        System.out.println("packagingImages: " + updateObj.getPackagingImages());
+        System.out.println("=====================================================================");
+        
         groupBuyingMapper.updateById(updateObj);
     }
 

@@ -168,4 +168,71 @@ public class ErpGroupBuyingDO extends BaseDO {
      * 租户编号
      */
     private Long tenantId;
+
+    // ==================== 新增字段：资料信息（富文本+文件上传，JSON格式） ====================
+
+    /**
+     * 主图（富文本+文件，JSON格式）
+     */
+    private String mainImage;
+
+    /**
+     * 详情（富文本+文件，JSON格式）
+     */
+    private String detailInfo;
+
+    /**
+     * SKU图（富文本+文件，JSON格式）
+     */
+    private String skuImage;
+
+    /**
+     * 基础笔记（富文本+文件，JSON格式）
+     */
+    private String basicNotes;
+
+    /**
+     * 升级笔记（富文本+文件，JSON格式）
+     */
+    private String upgradeNotes;
+
+    /**
+     * 社群推广（富文本+文件，JSON格式）
+     */
+    private String communityPromotion;
+
+    /**
+     * 详细信息（富文本+文件，JSON格式）
+     */
+    private String detailedInfo;
+
+    /**
+     * 资质（富文本+文件，JSON格式）
+     */
+    private String qualification;
+
+    /**
+     * 卖点成分（富文本+文件，JSON格式）
+     */
+    private String sellingPointsIngredients;
+
+    /**
+     * 背书（富文本+文件，JSON格式）
+     */
+    private String endorsement;
+
+    /**
+     * 实拍（富文本+文件，JSON格式）
+     */
+    private String actualPhotos;
+
+    /**
+     * 六面图（富文本+文件，JSON格式）
+     */
+    private String sixSideImages;
+
+    /**
+     * 打包图（富文本+文件，JSON格式）
+     */
+    private String packagingImages;
 }
