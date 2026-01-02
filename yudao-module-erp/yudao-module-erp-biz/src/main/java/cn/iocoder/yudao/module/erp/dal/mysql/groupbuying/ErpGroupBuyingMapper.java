@@ -19,6 +19,7 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
     default PageResult<ErpGroupBuyingRespVO> selectPage(ErpGroupBuyingPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpGroupBuyingDO> query = new MPJLambdaWrapperX<ErpGroupBuyingDO>()
                 .likeIfPresent(ErpGroupBuyingDO::getNo, reqVO.getNo())
+                .eqIfPresent(ErpGroupBuyingDO::getCategoryId, reqVO.getCategoryId())
                 .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName());
         
         // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
@@ -73,6 +74,7 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
                 .selectAs(ErpGroupBuyingDO::getNo, ErpGroupBuyingRespVO::getNo)
                 .selectAs(ErpGroupBuyingDO::getProductImage, ErpGroupBuyingRespVO::getProductImage)
                 .selectAs(ErpGroupBuyingDO::getBrandName, ErpGroupBuyingRespVO::getBrandName)
+                .selectAs(ErpGroupBuyingDO::getCategoryId, ErpGroupBuyingRespVO::getCategoryId)
                 .selectAs(ErpGroupBuyingDO::getProductName, ErpGroupBuyingRespVO::getProductName)
                 .selectAs(ErpGroupBuyingDO::getProductSpec, ErpGroupBuyingRespVO::getProductSpec)
                 .selectAs(ErpGroupBuyingDO::getProductSku, ErpGroupBuyingRespVO::getProductSku)

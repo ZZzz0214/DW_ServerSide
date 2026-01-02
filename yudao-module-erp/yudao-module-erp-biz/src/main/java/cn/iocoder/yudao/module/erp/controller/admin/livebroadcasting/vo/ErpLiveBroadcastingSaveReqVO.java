@@ -26,6 +26,9 @@ public class ErpLiveBroadcastingSaveReqVO {
     @Schema(description = "品牌名称", example = "品牌A")
     private String brandName;
 
+    @Schema(description = "产品分类编号", example = "1")
+    private Long categoryId;
+
     @Schema(description = "产品名称", example = "产品A")
     private String productName;
 

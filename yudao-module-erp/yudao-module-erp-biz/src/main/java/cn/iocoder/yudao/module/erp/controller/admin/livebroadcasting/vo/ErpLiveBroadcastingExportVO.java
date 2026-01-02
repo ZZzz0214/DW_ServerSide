@@ -33,6 +33,11 @@ public class ErpLiveBroadcastingExportVO {
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
 
+    @Schema(description = "产品分类编号", example = "1")
+    @ExcelProperty(value = "产品分类", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
+    private Long categoryId;
+
     @Schema(description = "产品名称", example = "产品A")
     @ExcelProperty("产品名称")
     private String productName;

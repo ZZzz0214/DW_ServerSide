@@ -19,6 +19,7 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
     default PageResult<ErpPrivateBroadcastingRespVO> selectPage(ErpPrivateBroadcastingPageReqVO reqVO) {
         MPJLambdaWrapperX<ErpPrivateBroadcastingDO> query = new MPJLambdaWrapperX<ErpPrivateBroadcastingDO>()
                 .likeIfPresent(ErpPrivateBroadcastingDO::getNo, reqVO.getNo())
+                .eqIfPresent(ErpPrivateBroadcastingDO::getCategoryId, reqVO.getCategoryId())
                 .likeIfPresent(ErpPrivateBroadcastingDO::getProductName, reqVO.getProductName());
         
         // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
@@ -74,6 +75,7 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
                 .selectAs(ErpPrivateBroadcastingDO::getNo, ErpPrivateBroadcastingRespVO::getNo)
                 .selectAs(ErpPrivateBroadcastingDO::getProductImage, ErpPrivateBroadcastingRespVO::getProductImage)
                 .selectAs(ErpPrivateBroadcastingDO::getBrandName, ErpPrivateBroadcastingRespVO::getBrandName)
+                .selectAs(ErpPrivateBroadcastingDO::getCategoryId, ErpPrivateBroadcastingRespVO::getCategoryId)
                 .selectAs(ErpPrivateBroadcastingDO::getProductName, ErpPrivateBroadcastingRespVO::getProductName)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSpec, ErpPrivateBroadcastingRespVO::getProductSpec)
                 .selectAs(ErpPrivateBroadcastingDO::getProductSku, ErpPrivateBroadcastingRespVO::getProductSku)

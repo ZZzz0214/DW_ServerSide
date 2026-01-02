@@ -26,6 +26,9 @@ public class ErpGroupBuyingSaveReqVO {
     @Schema(description = "品牌名称", example = "品牌A")
     private String brandName;
 
+    @Schema(description = "产品分类编号", example = "1")
+    private Long categoryId;
+
     @Schema(description = "产品名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "产品A")
     @NotNull(message = "产品名称不能为空")
     private String productName;

@@ -29,6 +29,9 @@ public class ErpGroupBuyingPageReqVO extends PageParam {
     @Schema(description = "品牌名称", example = "品牌A")
     private String brandName;
 
+    @Schema(description = "产品分类编号", example = "1")
+    private Long categoryId;
+
     @Schema(description = "品牌名称（多选）", example = "[\"品牌A\", \"品牌B\"]")
     private List<String> brandNames;
 

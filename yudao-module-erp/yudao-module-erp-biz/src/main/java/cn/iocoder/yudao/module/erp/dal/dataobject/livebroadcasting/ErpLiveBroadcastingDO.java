@@ -47,6 +47,11 @@ public class ErpLiveBroadcastingDO extends BaseDO {
     private String brandName;
 
     /**
+     * 产品分类编号
+     */
+    private Long categoryId;
+
+    /**
      * 产品名称
      */
     private String productName;

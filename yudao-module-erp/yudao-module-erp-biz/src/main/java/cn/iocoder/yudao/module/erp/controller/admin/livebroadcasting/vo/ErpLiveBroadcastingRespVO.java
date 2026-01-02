@@ -1,14 +1,15 @@
 package cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo;
 
 
+import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
+import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 直播货盘 Response VO")
@@ -31,6 +32,11 @@ public class ErpLiveBroadcastingRespVO {
     @Schema(description = "品牌名称", example = "品牌A")
     @ExcelProperty("品牌名称")
     private String brandName;
+
+    @Schema(description = "产品分类编号", example = "1")
+    @ExcelProperty(value = "产品分类", converter = DictConvert.class)
+    @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
+    private Long categoryId;
 
     @Schema(description = "产品名称", example = "产品A")
     @ExcelProperty("产品名称")
