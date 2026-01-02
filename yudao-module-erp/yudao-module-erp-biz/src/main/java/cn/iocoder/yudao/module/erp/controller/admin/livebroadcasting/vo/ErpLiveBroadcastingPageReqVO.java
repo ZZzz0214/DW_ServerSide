@@ -28,6 +28,9 @@ public class ErpLiveBroadcastingPageReqVO extends PageParam {
     @Schema(description = "产品分类编号", example = "1")
     private Long categoryId;
 
+    @Schema(description = "产品分类编号（多选）", example = "[1, 2, 3]")
+    private List<Long> categoryIds;
+
     @Schema(description = "品牌名称（多选）", example = "[\"品牌A\", \"品牌B\"]")
     private List<String> brandNames;
 

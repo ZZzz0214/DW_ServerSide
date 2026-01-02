@@ -20,6 +20,7 @@ public interface ErpLiveBroadcastingMapper extends BaseMapperX<ErpLiveBroadcasti
         MPJLambdaWrapperX<ErpLiveBroadcastingDO> query = new MPJLambdaWrapperX<ErpLiveBroadcastingDO>()
                 .likeIfPresent(ErpLiveBroadcastingDO::getNo, reqVO.getNo())
                 .eqIfPresent(ErpLiveBroadcastingDO::getCategoryId, reqVO.getCategoryId())
+                .inIfPresent(ErpLiveBroadcastingDO::getCategoryId, reqVO.getCategoryIds()) // 产品分类多选
                 .likeIfPresent(ErpLiveBroadcastingDO::getProductName, reqVO.getProductName());
         
         // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）

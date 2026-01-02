@@ -20,6 +20,7 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
         MPJLambdaWrapperX<ErpGroupBuyingDO> query = new MPJLambdaWrapperX<ErpGroupBuyingDO>()
                 .likeIfPresent(ErpGroupBuyingDO::getNo, reqVO.getNo())
                 .eqIfPresent(ErpGroupBuyingDO::getCategoryId, reqVO.getCategoryId())
+                .inIfPresent(ErpGroupBuyingDO::getCategoryId, reqVO.getCategoryIds()) // 产品分类多选
                 .likeIfPresent(ErpGroupBuyingDO::getProductName, reqVO.getProductName());
         
         // 品牌名称筛选：支持多选和为空筛选（可以同时选择多个值和为空）
