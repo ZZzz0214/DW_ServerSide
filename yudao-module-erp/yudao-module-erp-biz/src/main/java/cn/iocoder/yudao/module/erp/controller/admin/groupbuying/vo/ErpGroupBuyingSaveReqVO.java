@@ -1,14 +1,19 @@
 package cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo;
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Schema(description = "管理后台 - ERP 团购货盘新增/修改 Request VO")
 @Data
@@ -99,8 +104,35 @@ public class ErpGroupBuyingSaveReqVO {
     @Schema(description = "发货地区", example = "广东省深圳市")
     private String shippingArea;
 
-    @Schema(description = "货盘状态", example = "上架")
+    @Schema(description = "货盘状态（多个状态用逗号分隔）", example = "上架,热卖")
     private String status;
+
+    /**
+     * 设置状态列表（前端传递数组时使用）
+     * 将数组转换为逗号分隔的字符串
+     */
+    public void setStatusList(List<String> statusList) {
+        if (CollUtil.isNotEmpty(statusList)) {
+            this.status = String.join(",", statusList);
+        } else {
+            this.status = null;
+        }
+    }
+
+    /**
+     * 获取状态列表（前端获取数组时使用）
+     * 将逗号分隔的字符串转换为数组
+     */
+    @JsonIgnore
+    public List<String> getStatusList() {
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        return Arrays.stream(status.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
 
     // ==================== 新增字段：资料信息（富文本+文件上传，JSON格式） ====================
 

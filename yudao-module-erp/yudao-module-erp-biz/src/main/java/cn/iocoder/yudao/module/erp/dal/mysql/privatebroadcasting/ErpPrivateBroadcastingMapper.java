@@ -49,11 +49,27 @@ public interface ErpPrivateBroadcastingMapper extends BaseMapperX<ErpPrivateBroa
                 .likeIfPresent(ErpPrivateBroadcastingDO::getDropshipPrice, reqVO.getDropshippingPrice());
         
         // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        // 注意：数据库中状态可能存储为逗号分隔的多个值（如 "上架,热卖"），需要使用 LIKE 查询
         if (CollUtil.isNotEmpty(reqVO.getPrivateStatuses()) || Boolean.TRUE.equals(reqVO.getPrivateStatusEmpty())) {
             query.and(w -> {
                 boolean hasCondition = false;
                 if (CollUtil.isNotEmpty(reqVO.getPrivateStatuses())) {
-                    w.in(ErpPrivateBroadcastingDO::getPrivateStatus, reqVO.getPrivateStatuses());
+                    // 使用 OR 连接多个状态的 LIKE 查询
+                    w.nested(nested -> {
+                        for (int i = 0; i < reqVO.getPrivateStatuses().size(); i++) {
+                            if (i > 0) {
+                                nested.or();
+                            }
+                            String status = reqVO.getPrivateStatuses().get(i);
+                            // 使用 LIKE 查询支持逗号分隔的多状态
+                            nested.and(like -> like
+                                .eq(ErpPrivateBroadcastingDO::getPrivateStatus, status)  // 完全匹配单个状态
+                                .or().like(ErpPrivateBroadcastingDO::getPrivateStatus, status + ",%")  // 匹配开头
+                                .or().like(ErpPrivateBroadcastingDO::getPrivateStatus, "%," + status + ",%")  // 匹配中间
+                                .or().like(ErpPrivateBroadcastingDO::getPrivateStatus, "%," + status)  // 匹配结尾
+                            );
+                        }
+                    });
                     hasCondition = true;
                 }
                 if (Boolean.TRUE.equals(reqVO.getPrivateStatusEmpty())) {

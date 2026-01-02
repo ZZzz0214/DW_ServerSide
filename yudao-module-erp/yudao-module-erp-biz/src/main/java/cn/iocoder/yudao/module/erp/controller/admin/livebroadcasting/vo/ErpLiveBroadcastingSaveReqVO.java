@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo;
 
 
+import cn.hutool.core.collection.CollUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -9,6 +11,9 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Schema(description = "管理后台 - ERP 直播货盘新增/修改 Request VO")
 @Data
@@ -76,8 +81,35 @@ public class ErpLiveBroadcastingSaveReqVO {
     @Schema(description = "发货地区", example = "浙江杭州")
     private String shippingArea;
 
-    @Schema(description = "直播货盘状态", example = "未设置")
+    @Schema(description = "直播货盘状态（多个状态用逗号分隔）", example = "上架,热卖")
     private String liveStatus;
+
+    /**
+     * 设置直播状态列表（前端传递数组时使用）
+     * 将数组转换为逗号分隔的字符串
+     */
+    public void setLiveStatusList(List<String> liveStatusList) {
+        if (CollUtil.isNotEmpty(liveStatusList)) {
+            this.liveStatus = String.join(",", liveStatusList);
+        } else {
+            this.liveStatus = null;
+        }
+    }
+
+    /**
+     * 获取直播状态列表（前端获取数组时使用）
+     * 将逗号分隔的字符串转换为数组
+     */
+    @JsonIgnore
+    public List<String> getLiveStatusList() {
+        if (liveStatus == null || liveStatus.trim().isEmpty()) {
+            return null;
+        }
+        return Arrays.stream(liveStatus.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
 
     // ==================== 新增字段：资料信息（富文本+文件上传，JSON格式） ====================
 

@@ -48,11 +48,27 @@ public interface ErpGroupBuyingMapper extends BaseMapperX<ErpGroupBuyingDO> {
                 .likeIfPresent(ErpGroupBuyingDO::getGroupPrice, reqVO.getGroupPrice());
         
         // 货盘状态筛选：支持多选和为空筛选（可以同时选择多个值和为空）
+        // 注意：数据库中状态可能存储为逗号分隔的多个值（如 "上架,热卖"），需要使用 LIKE 查询
         if (CollUtil.isNotEmpty(reqVO.getStatuses()) || Boolean.TRUE.equals(reqVO.getStatusEmpty())) {
             query.and(w -> {
                 boolean hasCondition = false;
                 if (CollUtil.isNotEmpty(reqVO.getStatuses())) {
-                    w.in(ErpGroupBuyingDO::getStatus, reqVO.getStatuses());
+                    // 使用 OR 连接多个状态的 LIKE 查询
+                    w.nested(nested -> {
+                        for (int i = 0; i < reqVO.getStatuses().size(); i++) {
+                            if (i > 0) {
+                                nested.or();
+                            }
+                            String status = reqVO.getStatuses().get(i);
+                            // 使用 LIKE 查询支持逗号分隔的多状态
+                            nested.and(like -> like
+                                .eq(ErpGroupBuyingDO::getStatus, status)  // 完全匹配单个状态
+                                .or().like(ErpGroupBuyingDO::getStatus, status + ",%")  // 匹配开头
+                                .or().like(ErpGroupBuyingDO::getStatus, "%," + status + ",%")  // 匹配中间
+                                .or().like(ErpGroupBuyingDO::getStatus, "%," + status)  // 匹配结尾
+                            );
+                        }
+                    });
                     hasCondition = true;
                 }
                 if (Boolean.TRUE.equals(reqVO.getStatusEmpty())) {

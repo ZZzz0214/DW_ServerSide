@@ -1,11 +1,16 @@
 package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo;
 
 
+import cn.hutool.core.collection.CollUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Schema(description = "管理后台 - ERP 私播货盘新增/修改 Request VO")
 @Data
@@ -76,8 +81,35 @@ public class ErpPrivateBroadcastingSaveReqVO {
     @Schema(description = "备注信息", example = "备注内容")
     private String remark;
 
-    @Schema(description = "私播货盘状态", example = "未设置")
+    @Schema(description = "私播货盘状态（多个状态用逗号分隔）", example = "上架,热卖")
     private String privateStatus;
+
+    /**
+     * 设置私播状态列表（前端传递数组时使用）
+     * 将数组转换为逗号分隔的字符串
+     */
+    public void setPrivateStatusList(List<String> privateStatusList) {
+        if (CollUtil.isNotEmpty(privateStatusList)) {
+            this.privateStatus = String.join(",", privateStatusList);
+        } else {
+            this.privateStatus = null;
+        }
+    }
+
+    /**
+     * 获取私播状态列表（前端获取数组时使用）
+     * 将逗号分隔的字符串转换为数组
+     */
+    @JsonIgnore
+    public List<String> getPrivateStatusList() {
+        if (privateStatus == null || privateStatus.trim().isEmpty()) {
+            return null;
+        }
+        return Arrays.stream(privateStatus.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
 
     // ==================== 新增字段：资料信息（富文本+文件上传，JSON格式） ====================
 
