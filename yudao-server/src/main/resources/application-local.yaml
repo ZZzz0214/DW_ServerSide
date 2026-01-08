@@ -4,6 +4,13 @@ server:
 
 --- #################### 数据库相关配置 ####################
 spring:
+  # Servlet 配置
+  servlet:
+    # 文件上传相关配置项
+    multipart:
+      max-file-size: 5GB # 单个文件大小（支持视频500MB、压缩包5GB）
+      max-request-size: 5GB # 设置总上传的文件大小
+  
   # 数据源配置项
   autoconfigure:
     exclude:
