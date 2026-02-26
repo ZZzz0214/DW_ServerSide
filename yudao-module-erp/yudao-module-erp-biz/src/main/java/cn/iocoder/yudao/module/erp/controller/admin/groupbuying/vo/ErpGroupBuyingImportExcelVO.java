@@ -30,7 +30,7 @@ public class ErpGroupBuyingImportExcelVO {
     @DictFormat(DictTypeConstants.ERP_PRODUCT_BRAND)
     private String brandName;
 
-    @ExcelProperty(value = "产品分类", converter = DictConvert.class)
+    @ExcelProperty(value = "产品品类", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
     private Long categoryId;
 

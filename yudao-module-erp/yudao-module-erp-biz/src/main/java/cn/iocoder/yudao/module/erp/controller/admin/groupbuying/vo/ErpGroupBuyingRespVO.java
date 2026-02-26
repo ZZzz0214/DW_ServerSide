@@ -33,7 +33,7 @@ public class ErpGroupBuyingRespVO {
     private String brandName;
 
     @Schema(description = "产品分类编号", example = "1")
-    @ExcelProperty(value = "产品分类", converter = DictConvert.class)
+    @ExcelProperty(value = "产品品类", converter = DictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRODUCT_CATEGORY)
     private Long categoryId;
 
