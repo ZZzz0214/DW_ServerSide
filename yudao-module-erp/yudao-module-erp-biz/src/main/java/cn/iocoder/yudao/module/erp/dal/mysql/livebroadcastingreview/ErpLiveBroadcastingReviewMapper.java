@@ -176,6 +176,7 @@ public interface ErpLiveBroadcastingReviewMapper extends BaseMapperX<ErpLiveBroa
                 .selectAs(ErpLiveBroadcastingReviewDO::getRepeatLiveDate, ErpLiveBroadcastingReviewRespVO::getRepeatLiveDate)
                 .selectAs(ErpLiveBroadcastingReviewDO::getReviewStatus, ErpLiveBroadcastingReviewRespVO::getReviewStatus)
                 .selectAs(ErpLiveBroadcastingReviewDO::getLivePrice, ErpLiveBroadcastingReviewRespVO::getLivePrice)
+                .selectAs(ErpLiveBroadcastingReviewDO::getCreator, ErpLiveBroadcastingReviewRespVO::getCreator)
                 .selectAs(ErpLiveBroadcastingReviewDO::getCreateTime, ErpLiveBroadcastingReviewRespVO::getCreateTime);
 
         // 联表查询直播货盘信息（除了直播价格）
