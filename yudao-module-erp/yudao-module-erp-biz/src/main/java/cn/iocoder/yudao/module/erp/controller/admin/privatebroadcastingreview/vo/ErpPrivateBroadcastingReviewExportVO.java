@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcastingreview.v
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.MultiValueDictConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
@@ -93,7 +94,7 @@ public class ErpPrivateBroadcastingReviewExportVO {
     private String reviewStatus;
 
     @Schema(description = "货盘状态", example = "已审核")
-    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @ExcelProperty(value = "货盘状态", converter = MultiValueDictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRIVATE_STATUS)
     private String privateStatus;
 

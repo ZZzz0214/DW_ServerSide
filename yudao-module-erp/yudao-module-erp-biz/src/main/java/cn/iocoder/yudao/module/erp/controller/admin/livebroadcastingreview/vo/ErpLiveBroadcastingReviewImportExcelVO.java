@@ -5,7 +5,6 @@ import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.LocalDateTimeConvert;
-import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 import lombok.Builder;
@@ -32,8 +31,7 @@ public class ErpLiveBroadcastingReviewImportExcelVO {
     @ExcelProperty("备注信息")
     private String remark;
 
-    @ExcelProperty(value = "客户名称", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_LIVE_CUSTOMER_NAME)
+    @ExcelProperty("客户名称")
     private String customerName;
 
     @ExcelProperty(value = "直播平台", converter = DictConvert.class)

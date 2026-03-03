@@ -4,6 +4,7 @@ import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.MultiValueDictConvert;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,8 +55,7 @@ public class ErpLiveBroadcastingReviewExportVO {
 
 
     @Schema(description = "客户名称", example = "客户A")
-    @ExcelProperty(value = "客户名称", converter = DictConvert.class)
-    @DictFormat(DictTypeConstants.ERP_LIVE_CUSTOMER_NAME)
+    @ExcelProperty("客户名称")
     private String customerName;
 
     @Schema(description = "直播平台", example = "抖音")
@@ -101,7 +101,7 @@ public class ErpLiveBroadcastingReviewExportVO {
     private String reviewStatus;
 
     @Schema(description = "货盘状态", example = "上架")
-    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @ExcelProperty(value = "货盘状态", converter = MultiValueDictConvert.class)
     @DictFormat("erp_live_status")
     private String liveStatus;
 

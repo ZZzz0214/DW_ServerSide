@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.privatebroadcasting.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.MultiValueDictConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -103,7 +104,7 @@ public class ErpPrivateBroadcastingExportVO {
     private String remark;
 
     @Schema(description = "私播货盘状态", example = "未设置")
-    @ExcelProperty(value = "私播货盘状态", converter = DictConvert.class)
+    @ExcelProperty(value = "私播货盘状态", converter = MultiValueDictConvert.class)
     @DictFormat(DictTypeConstants.ERP_PRIVATE_STATUS)
     private String privateStatus;
 

@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.livebroadcasting.vo;
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.BigDecimalConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.MultiValueDictConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.IntegerConvert;
 import cn.iocoder.yudao.framework.excel.core.convert.LocalDateConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
@@ -88,7 +89,7 @@ public class ErpLiveBroadcastingImportExcelVO {
     @ExcelProperty("发货地区")
     private String shippingArea;
 
-    @ExcelProperty(value = "直播货盘状态", converter = DictConvert.class)
+    @ExcelProperty(value = "直播货盘状态", converter = MultiValueDictConvert.class)
     @DictFormat(DictTypeConstants.ERP_LIVE_STATUS)
     private String liveStatus;
 }

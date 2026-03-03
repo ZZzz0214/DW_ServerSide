@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.groupbuyingreview.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.MultiValueDictConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
@@ -75,7 +76,7 @@ public class ErpGroupBuyingReviewExportVO {
     @DictFormat("erp_group_buying_review_status")
     private String reviewStatus;
 
-    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @ExcelProperty(value = "货盘状态", converter = MultiValueDictConvert.class)
     @DictFormat(DictTypeConstants.ERP_GROUP_BUYING_STATUS)
     private String status;
 

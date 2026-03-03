@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.groupbuying.vo;
 
 import cn.iocoder.yudao.framework.excel.core.annotations.DictFormat;
 import cn.iocoder.yudao.framework.excel.core.convert.DictConvert;
+import cn.iocoder.yudao.framework.excel.core.convert.MultiValueDictConvert;
 import cn.iocoder.yudao.module.system.enums.DictTypeConstants;
 import com.alibaba.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -131,7 +132,7 @@ public class ErpGroupBuyingExportVO {
     private String shippingArea;
 
     @Schema(description = "货盘状态", example = "上架")
-    @ExcelProperty(value = "货盘状态", converter = DictConvert.class)
+    @ExcelProperty(value = "货盘状态", converter = MultiValueDictConvert.class)
     @DictFormat(DictTypeConstants.ERP_GROUP_BUYING_STATUS)
     private String status;
 
