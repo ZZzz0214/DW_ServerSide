@@ -88,4 +88,13 @@ public class ErpDistributionSaleExportExcelVO {
 
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
+
+    @ExcelProperty("原表商品")
+    private String originalProductName;
+
+    @ExcelProperty("原表规格")
+    private String originalStandard;
+
+    @ExcelProperty("原表数量")
+    private Integer originalQuantity;
 }
